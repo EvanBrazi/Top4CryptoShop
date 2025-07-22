@@ -15,15 +15,30 @@ const userSchema = new Schema({
     required: true,
     minlength: 6
   },
+  email: {
+    type: String,
+    unique: true,
+    sparse: true, // يسمح بقيم null مع الحفاظ على التفرد
+    trim: true,
+    lowercase: true
+  },
   balance: {
     type: Number,
     default: 0
+  },
+  resetPasswordToken: {
+    type: String,
+    default: null
+  },
+  resetPasswordExpires: {
+    type: Date,
+    default: null
   },
   createdAt: {
     type: Date,
     default: Date.now
   }
-});
+}, { timestamps: true });
 
 // تشفير كلمة المرور قبل الحفظ
 userSchema.pre('save', async function(next) {
@@ -41,6 +56,20 @@ userSchema.pre('save', async function(next) {
 // مقارنة كلمات المرور
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
+};
+
+// إنشاء توكن استعادة كلمة المرور
+userSchema.methods.createPasswordResetToken = function() {
+  const resetToken = require('crypto').randomBytes(32).toString('hex');
+  
+  this.resetPasswordToken = require('crypto')
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+  
+  this.resetPasswordExpires = Date.now() + 10 * 60 * 1000; // 10 دقائق
+  
+  return resetToken;
 };
 
 module.exports = mongoose.model('User', userSchema);

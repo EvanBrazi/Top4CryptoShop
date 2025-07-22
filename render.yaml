@@ -1,0 +1,14 @@
+services:
+    type: web
+    name: top4cryptoshop
+    runtime: node
+    rootDirectory: backend
+    buildCommand: |
+      rm -rf node_modules
+      npm install --force
+      npm install dotenv express mongoose cors bcryptjs jsonwebtoken
+    startCommand: node server.js
+    databases:
+      name: Top4CryptoShop
+      type: mongodb  # نوع خاص للقواعد البيانات
+      plan: free

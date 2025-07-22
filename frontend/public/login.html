@@ -1,27 +1,217 @@
-<!-- نفس الهيكل مع تغيير النموذج -->
-<form id="loginForm">
-    <input type="text" id="username" placeholder="اسم المستخدم" required>
-    <input type="password" id="password" placeholder="كلمة المرور" required>
-    <button type="submit">تسجيل الدخول</button>
-</form>
-
-<script>
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const response = await fetch('/api/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                username: document.getElementById('username').value,
-                password: document.getElementById('password').value
-            })
-        });
-        const result = await response.json();
-        if (response.ok) {
-            localStorage.setItem('token', result.token);
-            window.location.href = 'dashboard.html';
-        } else {
-            alert(result.error || 'بيانات الدخول غير صحيحة');
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل الدخول - متجر العملات الرقمية</title>
+    <style>
+        :root {
+            --beige: #F5F5DC;
+            --chocolate: #D2691E;
+            --dark-chocolate: #8B4513;
+            --google-red: #DB4437;
+            --apple-black: #000000;
         }
-    });
-</script>
+        
+        body {
+            font-family: 'Tahoma', sans-serif;
+            background: var(--beige);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+        }
+        
+        .container {
+            width: 90%;
+            max-width: 400px;
+            padding: 2rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(139, 69, 19, 0.1);
+            border: 1px solid var(--chocolate);
+        }
+        
+        h2 {
+            color: var(--dark-chocolate);
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--chocolate);
+            border-radius: 6px;
+            font-size: 1rem;
+            background: rgba(210, 105, 30, 0.05);
+        }
+        
+        button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .btn-primary {
+            background-color: var(--chocolate);
+            color: white;
+        }
+        
+        .btn-google {
+            background-color: var(--google-red);
+            color: white;
+            margin-top: 15px;
+        }
+        
+        .btn-apple {
+            background-color: var(--apple-black);
+            color: white;
+            margin-top: 10px;
+        }
+        
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+            color: var(--dark-chocolate);
+        }
+        
+        .divider::before,
+        .divider::after {
+            content: "";
+            flex: 1;
+            border-bottom: 1px solid var(--chocolate);
+        }
+        
+        .divider::before {
+            margin-right: 10px;
+        }
+        
+        .divider::after {
+            margin-left: 10px;
+        }
+        
+        .links {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1rem;
+            padding: 0 10px;
+        }
+        
+        .links a {
+            color: var(--dark-chocolate);
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        
+        .links a:hover {
+            text-decoration: underline;
+        }
+    </style>
+    <!-- تعريف تسجيل الدخول عبر Google -->
+    <meta name="google-signin-client_id" content="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+    <div class="container">
+        <h2>تسجيل الدخول</h2>
+        
+        <!-- زر تسجيل الدخول عبر Google -->
+        <button class="btn-google" id="googleSignIn">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="20" alt="Google">
+            الدخول عبر Google
+        </button>
+        
+        <!-- زر تسجيل الدخول عبر Apple -->
+        <button class="btn-apple" id="appleSignIn">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" width="20" alt="Apple">
+            الدخول عبر Apple
+        </button>
+        
+        <div class="divider">أو</div>
+        
+        <!-- نموذج تسجيل الدخول التقليدي -->
+        <form id="loginForm">
+            <div class="form-group">
+                <input type="text" id="username" placeholder="اسم المستخدم" required>
+            </div>
+            <div class="form-group">
+                <input type="password" id="password" placeholder="كلمة المرور" required>
+            </div>
+            <button type="submit" class="btn-primary">تسجيل الدخول</button>
+        </form>
+        
+        <div class="links">
+            <a href="forgot-password.html">نسيت كلمة المرور؟</a>
+            <a href="https://top4cryptoshop.onrender.com/signup.html">إنشاء حساب جديد</a>
+        </div>
+    </div>
+
+    <script>
+        // 1. تسجيل الدخول عبر Google
+        document.getElementById('googleSignIn').addEventListener('click', () => {
+            window.location.href = 'https://accounts.google.com/o/oauth2/auth?' +
+                'response_type=code&' +
+                'client_id=YOUR_GOOGLE_CLIENT_ID&' +
+                'redirect_uri=https://top4cryptoshop.onrender.com/api/auth/google/callback&' +
+                'scope=email profile&' +
+                'state=random_state_string';
+        });
+
+        // 2. تسجيل الدخول عبر Apple
+        document.getElementById('appleSignIn').addEventListener('click', () => {
+            window.location.href = 'https://appleid.apple.com/auth/authorize?' +
+                'client_id=YOUR_APPLE_SERVICE_ID&' +
+                'redirect_uri=https://top4cryptoshop.onrender.com/api/auth/apple/callback&' +
+                'response_type=code&' +
+                'scope=email name&' +
+                'response_mode=form_post';
+        });
+
+        // 3. تسجيل الدخول التقليدي
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json' 
+                    },
+                    body: JSON.stringify({
+                        username: document.getElementById('username').value,
+                        password: document.getElementById('password').value
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    localStorage.setItem('token', result.token);
+                    window.location.href = 'dashboard.html';
+                } else {
+                    alert(result.error || 'بيانات الدخول غير صحيحة');
+                }
+            } catch (error) {
+                console.error('Error during login:', error);
+                alert('حدث خطأ أثناء محاولة تسجيل الدخول. الرجاء المحاولة لاحقاً.');
+            }
+        });
+    </script>
+</body>
+</html>

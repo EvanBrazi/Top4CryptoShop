@@ -1,44 +1,46 @@
-const { MongoClient } = require('mongodb');
-const bcrypt = require('bcryptjs'); // إلى
-require('dotenv').config();
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+const { Schema } = mongoose;
 
-const SALT_ROUNDS = 10;
-
-class User {
-  constructor() {
-    this.client = new MongoClient(process.env.MONGO_URI);
-    this.collection = null;
+const userSchema = new Schema({
+  username: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
+    minlength: 3
+  },
+  password: {
+    type: String,
+    required: true,
+    minlength: 6
+  },
+  balance: {
+    type: Number,
+    default: 0
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
   }
+});
 
-  async connect() {
-    await this.client.connect();
-    this.collection = this.client.db('Top4CryptoShop').collection('users');
-    await this._createIndexes();
+// تشفير كلمة المرور قبل الحفظ
+userSchema.pre('save', async function(next) {
+  if (!this.isModified('password')) return next();
+  
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (err) {
+    next(err);
   }
+});
 
-  async _createIndexes() {
-    await this.collection.createIndex({ email: 1 }, { unique: true });
-  }
+// مقارنة كلمات المرور
+userSchema.methods.comparePassword = async function(candidatePassword) {
+  return await bcrypt.compare(candidatePassword, this.password);
+};
 
-  async register(userData) {
-    const hashedPassword = await bcrypt.hash(userData.password, SALT_ROUNDS);
-    const result = await this.collection.insertOne({
-      ...userData,
-      password: hashedPassword,
-      createdAt: new Date()
-    });
-    return result.insertedId;
-  }
-
-  async login(email, password) {
-    const user = await this.collection.findOne({ email });
-    if (!user) throw new Error('المستخدم غير موجود');
-    
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) throw new Error('كلمة المرور غير صحيحة');
-    
-    return { userId: user._id, email: user.email };
-  }
-}
-
-module.exports = new User();
+module.exports = mongoose.model('User', userSchema);

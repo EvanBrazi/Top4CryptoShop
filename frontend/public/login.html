@@ -1,0 +1,27 @@
+<!-- نفس الهيكل مع تغيير النموذج -->
+<form id="loginForm">
+    <input type="text" id="username" placeholder="اسم المستخدم" required>
+    <input type="password" id="password" placeholder="كلمة المرور" required>
+    <button type="submit">تسجيل الدخول</button>
+</form>
+
+<script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value
+            })
+        });
+        const result = await response.json();
+        if (response.ok) {
+            localStorage.setItem('token', result.token);
+            window.location.href = 'dashboard.html';
+        } else {
+            alert(result.error || 'بيانات الدخول غير صحيحة');
+        }
+    });
+</script>

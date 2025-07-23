@@ -141,9 +141,10 @@ app.get('/api/auth/user', async (req, res) => {
 
 // ──────────── إعادة توجيه باقي الطلبات ──────────── //
 app.get('*', (req, res) => {
-  if (!req.path.startsWith('/api')) {
-    res.sendFile(path.join(staticFilesPath, 'index.html'));
+  if (req.path.startsWith('/api') || req.path.includes('.')) {
+    return res.status(404).send('Not found');
   }
+  res.sendFile(path.join(staticFilesPath, 'dashboard.html'));  // تغيير هنا
 });
 
 // بدء الخادم

@@ -22,12 +22,12 @@ if (localStorage.getItem('authToken')) {
 </script>
 
 <body>
-    <script>
+    <!--script>
         // تحقق من وجود token
         if (!localStorage.getItem('authToken')) {
             window.location.href = '/login.html';
         }
-    </script>
+    </script-->
     
     <!-- زر القائمة الرئيسي -->
     <button class="menu-btn" id="menuBtn">
@@ -37,7 +37,7 @@ if (localStorage.getItem('authToken')) {
     <!-- الدرج الجانبي -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <img src="images/logo.png" alt="Logo" class="logo">
+            <img src="/assets/images/logo.png" alt="Logo" class="logo">
             <button class="close-btn" id="closeBtn">
                 <i class="fas fa-times"></i>
             </button>
@@ -68,8 +68,8 @@ if (localStorage.getItem('authToken')) {
             <h1>مرحباً بكم في متجر Top4CryptoShop</h1>
             
             <div class="buttons">
-                <button class="btn primary">تسجيل الدخول</button>
-                <button class="btn secondary">التسجيل</button>
+                <a href="/login.html" class="btn primary">تسجيل الدخول</a>
+                <a href="/signup.html" class="btn secondary">التسجيل</a>
             </div>
             
             <div class="payment-methods">

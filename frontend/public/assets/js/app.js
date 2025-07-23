@@ -43,6 +43,37 @@ function initApp() {
             hideDialog(AppState.currentDialog);
         }
     });
+
+// ============= تحويل المستخدم عند النقر على الأزرار =============
+document.addEventListener('DOMContentLoaded', function() {
+    // زر تسجيل الدخول
+    const loginBtn = document.getElementById('loginBtn');
+    if (loginBtn) {
+        loginBtn.addEventListener('click', function() {
+            window.location.href = '/login.html';
+        });
+    }
+
+    // زر التسجيل
+    const signupBtn = document.getElementById('signupBtn');
+    if (signupBtn) {
+        signupBtn.addEventListener('click', function() {
+            window.location.href = '/signup.html';
+        });
+    }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    const menuBtn = document.getElementById('menuBtn');
+    const sidebar = document.getElementById('sidebar');
+
+    if (menuBtn && sidebar) {
+        menuBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+        });
+    }
+});
+
 }
 
 // تحميل الإعدادات
@@ -113,7 +144,7 @@ async function checkAuth() {
                 'Authorization': `Bearer ${localStorage.getItem('authToken')}`
             }
         });
-        
+
         if (!response.ok) window.location.href = '/login.html';
     } catch (error) {
         window.location.href = '/login.html';
@@ -121,7 +152,7 @@ async function checkAuth() {
 }
 
 // استدعاء الدالة عند تحميل الصفحة
-checkAuth();
+/**checkAuth();*/
 
 // بدء التطبيق عند تحميل الصفحة
 document.addEventListener('DOMContentLoaded', initApp);

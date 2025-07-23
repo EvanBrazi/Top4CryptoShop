@@ -11,6 +11,11 @@
 <meta http-equiv="Expires" content="0">
 </head>
 
+<script>
+    console.log('Dashboard loaded');
+    document.body.style.border = "5px solid red"; // للتأكد من ظهور الجسم
+</script>
+
 // في dashboard.html قبل </body>
 <script>
 if (localStorage.getItem('authToken')) {
@@ -25,13 +30,7 @@ if (localStorage.getItem('authToken')) {
 </script>
 
 <body>
-    <!--script>
-        // تحقق من وجود token
-        if (!localStorage.getItem('authToken')) {
-            window.location.href = '/login.html';
-        }
-    </script-->
-    
+
     <!-- زر القائمة الرئيسي -->
     <button class="menu-btn" id="menuBtn">
         <i class="fas fa-bars"></i>

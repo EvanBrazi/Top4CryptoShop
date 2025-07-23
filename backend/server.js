@@ -39,12 +39,9 @@ app.get('/login', (req, res) => {
 });
 
 // ──────────── اتصال MongoDB ──────────── //
-mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/Top4CryptoShop', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-.then(() => console.log('✅ تم الاتصال بـ MongoDB بنجاح'))
-.catch(err => console.error('❌ فشل الاتصال:', err));
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/Top4CryptoShop')
+  .then(() => console.log('✅ تم الاتصال بـ MongoDB بنجاح'))
+  .catch(err => console.error('❌ فشل الاتصال بـ MongoDB:', err));
 
 
 // ============== مسارات API ============== //

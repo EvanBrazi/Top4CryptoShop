@@ -1,12 +1,42 @@
 <!DOCTYPE html>
-<html>
+<html lang="ar" dir="rtl">
 <head>
-<title>سيتم تحويلك تلقائياً</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>فحص الاتصال الآمن</title>
+    <script>
+        // فحص إذا كان الاتصال عبر HTTPS
+        if (window.location.protocol !== 'https:') {
+            // إذا لم يكن اتصال آمن، أعد التوجيه إلى النسخة الآمنة
+            window.location.href = 'https://' + window.location.host + window.location.pathname;
+        } else {
+            // إذا كان الاتصال آمناً، أعد التوجيه إلى الصفحة الرئيسية بعد تأخير
+            setTimeout(function() {
+                window.location.href = 'https://موقعك.com/الصفحة-الرئيسية';
+            }, 3000); // تأخير 3 ثواني قبل إعادة التوجيه
+        }
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background-color: #f5f5f5;
+        }
+        .message {
+            background-color: white;
+            padding: 30px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+    </style>
 </head>
 <body>
-
-  <p>جاري فحص الاتصال...</p>
-  <a href="/dashboard.html">اتصال آمن</a>
-
+    <div class="message">
+        <h1>جاري فحص اتصالك الآمن...</h1>
+        <p>إذا لم يتم توجيهك تلقائياً، يرجى النقر <a href="/dashboard.html">هنا</a>.</p>
+    </div>
 </body>
 </html>

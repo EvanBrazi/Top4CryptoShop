@@ -1,141 +1,95 @@
-// حالة التطبيق
-const AppState = {
-    isSidebarOpen: false,
-    currentDialog: null,
-    isNightMode: false
-};
+// تأكد من تحميل DOM بالكامل
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Dashboard loaded');
+    
+    // تحقق من وجود token وإرسال الإحصاءات
+    if (localStorage.getItem('authToken')) {
+        try {
+            fetch('/api/analytics', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .catch(error => {
+                console.error('Error sending analytics:', error);
+            });
+        } catch (error) {
+            console.error('Analytics error:', error);
+        }
+    }
 
-// تهيئة التطبيق
-function initApp() {
-    // عناصر DOM
+    // تهيئة عناصر الواجهة
     const menuBtn = document.getElementById('menuBtn');
     const closeBtn = document.getElementById('closeBtn');
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('overlay');
-    const themeBtn = document.getElementById('themeBtn');
     const aboutBtn = document.getElementById('aboutBtn');
     const contactBtn = document.getElementById('contactBtn');
     const closeAboutBtn = document.getElementById('closeAboutBtn');
     const closeContactBtn = document.getElementById('closeContactBtn');
     const aboutDialog = document.getElementById('aboutDialog');
     const contactDialog = document.getElementById('contactDialog');
+    const themeBtn = document.getElementById('themeBtn');
 
-    // تحميل الإعدادات المحفوظة
-    loadSettings();
-
-    // أحداث الدرج الجانبي
-    menuBtn.addEventListener('click', toggleSidebar);
-    closeBtn.addEventListener('click', toggleSidebar);
-    overlay.addEventListener('click', toggleSidebar);
-
-    // أحداث تغيير الثيم
-    themeBtn.addEventListener('click', toggleTheme);
-
-    // أحداث الحوارات
-    aboutBtn.addEventListener('click', () => showDialog(aboutDialog));
-    contactBtn.addEventListener('click', () => showDialog(contactDialog));
-    closeAboutBtn.addEventListener('click', () => hideDialog(aboutDialog));
-    closeContactBtn.addEventListener('click', () => hideDialog(contactDialog));
-
-    // إغلاق الحوارات بالضغط على ESC
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && AppState.currentDialog) {
-            hideDialog(AppState.currentDialog);
-        }
-    });
-
-// ============= تحويل المستخدم عند النقر على الأزرار =============
-document.addEventListener('DOMContentLoaded', function() {
-    // زر تسجيل الدخول
-    const loginBtn = document.getElementById('loginBtn');
-    if (loginBtn) {
-        loginBtn.addEventListener('click', function() {
-            window.location.href = '/login.html';
-        });
-    }
-
-    // زر التسجيل
-    const signupBtn = document.getElementById('signupBtn');
-    if (signupBtn) {
-        signupBtn.addEventListener('click', function() {
-            window.location.href = '/signup.html';
-        });
-    }
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-    const menuBtn = document.getElementById('menuBtn');
-    const sidebar = document.getElementById('sidebar');
-
-    if (menuBtn && sidebar) {
-        menuBtn.addEventListener('click', () => {
-            sidebar.classList.toggle('active');
-        });
-    }
-});
-
-}
-
-// تحميل الإعدادات
-function loadSettings() {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'night') {
-        toggleTheme();
-    }
-}
-
-// تبديل الدرج الجانبي
-function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('overlay');
-
-    AppState.isSidebarOpen = !AppState.isSidebarOpen;
-
-    if (AppState.isSidebarOpen) {
+    // وظائف فتح/إغلاق القائمة الجانبية
+    menuBtn.addEventListener('click', () => {
         sidebar.classList.add('active');
         overlay.classList.add('active');
-    } else {
+    });
+
+    closeBtn.addEventListener('click', () => {
         sidebar.classList.remove('active');
         overlay.classList.remove('active');
-    }
-}
+    });
 
-// تبديل الثيم
-function toggleTheme() {
-    const body = document.body;
-    AppState.isNightMode = !AppState.isNightMode;
+    overlay.addEventListener('click', () => {
+        sidebar.classList.remove('active');
+        overlay.classList.remove('active');
+        aboutDialog.classList.remove('active');
+        contactDialog.classList.remove('active');
+    });
 
-    if (AppState.isNightMode) {
-        body.classList.add('night-mode');
-        localStorage.setItem('theme', 'night');
-    } else {
-        body.classList.remove('night-mode');
-        localStorage.setItem('theme', 'day');
-    }
-}
+    // وظائف فتح/إغلاق نوافذ الحوار
+    aboutBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        aboutDialog.classList.add('active');
+        overlay.classList.add('active');
+    });
 
-// عرض الحوار
-function showDialog(dialog) {
-    const overlay = document.getElementById('overlay');
+    contactBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        contactDialog.classList.add('active');
+        overlay.classList.add('active');
+    });
 
-    if (AppState.currentDialog) {
-        hideDialog(AppState.currentDialog);
-    }
+    closeAboutBtn.addEventListener('click', () => {
+        aboutDialog.classList.remove('active');
+        overlay.classList.remove('active');
+    });
 
-    AppState.currentDialog = dialog;
-    dialog.classList.add('active');
-    overlay.classList.add('active');
-}
+    closeContactBtn.addEventListener('click', () => {
+        contactDialog.classList.remove('active');
+        overlay.classList.remove('active');
+    });
 
-// إخفاء الحوار
-function hideDialog(dialog) {
-    const overlay = document.getElementById('overlay');
-
-    dialog.classList.remove('active');
-    overlay.classList.remove('active');
-    AppState.currentDialog = null;
-}
-
-
-// بدء التطبيق عند تحميل الصفحة
-document.addEventListener('DOMContentLoaded', initApp);
+    // تبديل الثيم
+    themeBtn.addEventListener('click', () => {
+        document.body.classList.toggle('dark-theme');
+        const icon = themeBtn.querySelector('i');
+        if (document.body.classList.contains('dark-theme')) {
+            icon.classList.replace('fa-moon', 'fa-sun');
+            themeBtn.setAttribute('aria-label', 'تبديل إلى الثيم الفاتح');
+        } else {
+            icon.classList.replace('fa-sun', 'fa-moon');
+            themeBtn.setAttribute('aria-label', 'تبديل إلى الثيم الداكن');
+        }
+    });
+});

@@ -6,59 +6,40 @@
     <title>Top4CryptoShop</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/assets/css/style.css">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
 </head>
 
-<script>
-    console.log('Dashboard loaded');
-    document.body.style.border = "5px solid red"; // للتأكد من ظهور الجسم
-</script>
-
-// في dashboard.html قبل </body>
-<script>
-if (localStorage.getItem('authToken')) {
-    // إرسال إحصاءات استخدام
-    fetch('/api/analytics', {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
-    });
-}
-</script>
-
 <body>
-
     <!-- زر القائمة الرئيسي -->
-    <button class="menu-btn" id="menuBtn">
-        <i class="fas fa-bars"></i>
+    <button class="menu-btn" id="menuBtn" aria-label="فتح القائمة">
+        <i class="fas fa-bars" aria-hidden="true"></i>
     </button>
 
     <!-- الدرج الجانبي -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <img src="/assets/images/logo.png" alt="Logo" class="logo">
-            <button class="close-btn" id="closeBtn">
-                <i class="fas fa-times"></i>
+            <img src="/assets/images/logo.png" alt="شعار Top4CryptoShop" class="logo">
+            <button class="close-btn" id="closeBtn" aria-label="إغلاق القائمة">
+                <i class="fas fa-times" aria-hidden="true"></i>
             </button>
         </div>
-        
+
         <div class="sidebar-content">
             <ul class="sidebar-menu">
                 <li><a href="#" class="menu-link" id="aboutBtn">
-                    <i class="fas fa-info-circle"></i> من نحن
+                    <i class="fas fa-info-circle" aria-hidden="true"></i> من نحن
                 </a></li>
                 <li><a href="#" class="menu-link" id="contactBtn">
-                    <i class="fas fa-envelope"></i> تواصل معنا
+                    <i class="fas fa-envelope" aria-hidden="true"></i> تواصل معنا
                 </a></li>
             </ul>
         </div>
-        
+
         <div class="sidebar-footer">
-            <button class="theme-btn" id="themeBtn">
-                <i class="fas fa-moon"></i> تبديل الثيم
+            <button class="theme-btn" id="themeBtn" aria-label="تبديل الثيم">
+                <i class="fas fa-moon" aria-hidden="true"></i> تبديل الثيم
             </button>
             <p class="copyright">Top4CryptoShop &copy; 2024</p>
         </div>
@@ -68,41 +49,41 @@ if (localStorage.getItem('authToken')) {
     <main class="main-content">
         <div class="card">
             <h1>مرحباً بكم في متجر Top4CryptoShop</h1>
-            
+
             <div class="buttons">
                 <a href="/login.html" class="btn primary">تسجيل الدخول</a>
                 <a href="/signup.html" class="btn secondary">التسجيل</a>
             </div>
-            
+
             <div class="payment-methods">
                 <h2>طرق الدفع المتاحة</h2>
                 <div class="payment-icons">
-                    <div class="payment-method" title="Visa">
-                        <i class="fab fa-cc-visa"></i>
+                    <div class="payment-method" title="Visa" aria-label="دفع عبر فيزا">
+                        <i class="fab fa-cc-visa" aria-hidden="true"></i>
                         <span>فيزا</span>
                     </div>
-                    <div class="payment-method" title="شام كاش">
-                        <i class="fas fa-money-bill-wave"></i>
+                    <div class="payment-method" title="شام كاش" aria-label="دفع عبر شام كاش">
+                        <i class="fas fa-money-bill-wave" aria-hidden="true"></i>
                         <span>شام كاش</span>
                     </div>
-                    <div class="payment-method" title="سيرياتيل كاش">
-                        <i class="fas fa-mobile-alt"></i>
+                    <div class="payment-method" title="سيرياتيل كاش" aria-label="دفع عبر سيرياتيل كاش">
+                        <i class="fas fa-mobile-alt" aria-hidden="true"></i>
                         <span>سيرياتيل</span>
                     </div>
-                    <div class="payment-method" title="MTN كاش">
-                        <i class="fas fa-sim-card"></i>
+                    <div class="payment-method" title="MTN كاش" aria-label="دفع عبر MTN كاش">
+                        <i class="fas fa-sim-card" aria-hidden="true"></i>
                         <span>MTN</span>
                     </div>
-                    <div class="payment-method" title="حوالة بنكية">
-                        <i class="fas fa-university"></i>
+                    <div class="payment-method" title="حوالة بنكية" aria-label="دفع عبر حوالة بنكية">
+                        <i class="fas fa-university" aria-hidden="true"></i>
                         <span>حوالة</span>
                     </div>
-                    <div class="payment-method" title="ويب موني">
-                        <i class="fab fa-cc-mastercard"></i>
+                    <div class="payment-method" title="ويب موني" aria-label="دفع عبر ويب موني">
+                        <i class="fab fa-cc-mastercard" aria-hidden="true"></i>
                         <span>ويب موني</span>
                     </div>
-                    <div class="payment-method" title="USDT">
-                        <i class="fab fa-bitcoin"></i>
+                    <div class="payment-method" title="USDT" aria-label="دفع عبر USDT">
+                        <i class="fab fa-bitcoin" aria-hidden="true"></i>
                         <span>USDT</span>
                     </div>
                 </div>
@@ -111,16 +92,16 @@ if (localStorage.getItem('authToken')) {
     </main>
 
     <!-- نوافذ الحوار -->
-    <div class="dialog" id="aboutDialog">
+    <div class="dialog" id="aboutDialog" role="dialog" aria-labelledby="aboutDialogTitle">
         <div class="dialog-header">
-            <h3>من نحن</h3>
-            <button class="close-btn" id="closeAboutBtn">
-                <i class="fas fa-times"></i>
+            <h3 id="aboutDialogTitle">من نحن</h3>
+            <button class="close-btn" id="closeAboutBtn" aria-label="إغلاق نافذة من نحن">
+                <i class="fas fa-times" aria-hidden="true"></i>
             </button>
         </div>
         <div class="dialog-body">
             <div class="dialog-content">
-                <i class="fas fa-info-circle dialog-icon"></i>
+                <i class="fas fa-info-circle dialog-icon" aria-hidden="true"></i>
                 <p class="dialog-text">
                     نحن شركة رائدة في مجال شراء العملات المشفرة على منصات متنوعة وشحن الألعاب وكافة تطبيقات الدردشة الصوتية والفيديو وشراء بطاقات الشحن والمتاجر الرسمية.
                 </p>
@@ -134,7 +115,7 @@ if (localStorage.getItem('authToken')) {
                     لتقديم اقتراحاتكم وآرائكم لا تترددوا بالتواصل مع خدمة العملاء عبر:
                 </p>
                 <div class="contact-info">
-                    <i class="fas fa-envelope"></i>
+                    <i class="fas fa-envelope" aria-hidden="true"></i>
                     <span>support@top4cryptoshop.onrender.com</span>
                 </div>
                 <p class="team-signature">فريق Top4CryptoShop</p>
@@ -142,20 +123,20 @@ if (localStorage.getItem('authToken')) {
         </div>
     </div>
 
-    <div class="dialog" id="contactDialog">
+    <div class="dialog" id="contactDialog" role="dialog" aria-labelledby="contactDialogTitle">
         <div class="dialog-header">
-            <h3>تواصل معنا</h3>
-            <button class="close-btn" id="closeContactBtn">
-                <i class="fas fa-times"></i>
+            <h3 id="contactDialogTitle">تواصل معنا</h3>
+            <button class="close-btn" id="closeContactBtn" aria-label="إغلاق نافذة التواصل">
+                <i class="fas fa-times" aria-hidden="true"></i>
             </button>
         </div>
         <div class="dialog-body">
             <div class="dialog-content">
-                <i class="fab fa-whatsapp dialog-icon whatsapp-icon"></i>
+                <i class="fab fa-whatsapp dialog-icon whatsapp-icon" aria-hidden="true"></i>
                 <p class="dialog-text">للتواصل عبر واتساب:</p>
-                <a href="https://wa.me/963980217649" class="whatsapp-link" target="_blank">
+                <a href="https://wa.me/963980217649" class="whatsapp-link" target="_blank" rel="noopener noreferrer">
                     <div class="contact-info">
-                        <i class="fas fa-phone"></i>
+                        <i class="fas fa-phone" aria-hidden="true"></i>
                         <span>+963 980 217 649</span>
                     </div>
                 </a>
@@ -170,7 +151,8 @@ if (localStorage.getItem('authToken')) {
     </footer>
 
     <div class="overlay" id="overlay"></div>
-<script src="https://cdn.jsdelivr.net/npm/speedlify@0.0.5"></script>
+
+    <!-- جميع الأكواد البرمجية في ملف واحد خارجي -->
     <script src="/assets/js/app.js"></script>
 </body>
 </html>

@@ -109,4 +109,9 @@ router.post('/reset-password', async (req, res) => {
     }
 });
 
+// التحقق من صحة التوكن
+router.get('/verify', authenticateToken, (req, res) => {
+    res.json({ user: req.user });
+});
+
 module.exports = router;

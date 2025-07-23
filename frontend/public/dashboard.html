@@ -1,0 +1,171 @@
+// تحقق من وجود token
+if (!localStorage.getItem('authToken')) {
+    window.location.href = '/login.html';
+}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top4CryptoShop</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+
+// في dashboard.html قبل </body>
+<script>
+if (localStorage.getItem('authToken')) {
+    // إرسال إحصاءات استخدام
+    fetch('/api/analytics', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
+    });
+}
+</script>
+
+<body>
+    <!-- زر القائمة الرئيسي -->
+    <button class="menu-btn" id="menuBtn">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- الدرج الجانبي -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <img src="images/logo.png" alt="Logo" class="logo">
+            <button class="close-btn" id="closeBtn">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="sidebar-content">
+            <ul class="sidebar-menu">
+                <li><a href="#" class="menu-link" id="aboutBtn">
+                    <i class="fas fa-info-circle"></i> من نحن
+                </a></li>
+                <li><a href="#" class="menu-link" id="contactBtn">
+                    <i class="fas fa-envelope"></i> تواصل معنا
+                </a></li>
+            </ul>
+        </div>
+        
+        <div class="sidebar-footer">
+            <button class="theme-btn" id="themeBtn">
+                <i class="fas fa-moon"></i> تبديل الثيم
+            </button>
+            <p class="copyright">Top4CryptoShop &copy; 2024</p>
+        </div>
+    </div>
+
+    <!-- المحتوى الرئيسي -->
+    <main class="main-content">
+        <div class="card">
+            <h1>مرحباً بكم في متجر Top4CryptoShop</h1>
+            
+            <div class="buttons">
+                <button class="btn primary">تسجيل الدخول</button>
+                <button class="btn secondary">التسجيل</button>
+            </div>
+            
+            <div class="payment-methods">
+                <h2>طرق الدفع المتاحة</h2>
+                <div class="payment-icons">
+                    <div class="payment-method" title="Visa">
+                        <i class="fab fa-cc-visa"></i>
+                        <span>فيزا</span>
+                    </div>
+                    <div class="payment-method" title="شام كاش">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span>شام كاش</span>
+                    </div>
+                    <div class="payment-method" title="سيرياتيل كاش">
+                        <i class="fas fa-mobile-alt"></i>
+                        <span>سيرياتيل</span>
+                    </div>
+                    <div class="payment-method" title="MTN كاش">
+                        <i class="fas fa-sim-card"></i>
+                        <span>MTN</span>
+                    </div>
+                    <div class="payment-method" title="حوالة بنكية">
+                        <i class="fas fa-university"></i>
+                        <span>حوالة</span>
+                    </div>
+                    <div class="payment-method" title="ويب موني">
+                        <i class="fab fa-cc-mastercard"></i>
+                        <span>ويب موني</span>
+                    </div>
+                    <div class="payment-method" title="USDT">
+                        <i class="fab fa-bitcoin"></i>
+                        <span>USDT</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- نوافذ الحوار -->
+    <div class="dialog" id="aboutDialog">
+        <div class="dialog-header">
+            <h3>من نحن</h3>
+            <button class="close-btn" id="closeAboutBtn">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="dialog-body">
+            <div class="dialog-content">
+                <i class="fas fa-info-circle dialog-icon"></i>
+                <p class="dialog-text">
+                    نحن شركة رائدة في مجال شراء العملات المشفرة على منصات متنوعة وشحن الألعاب وكافة تطبيقات الدردشة الصوتية والفيديو وشراء بطاقات الشحن والمتاجر الرسمية.
+                </p>
+                <p class="dialog-text">
+                    هدفنا إيصال منتجاتنا للسوق المستهلكة بأحدث الطرق المبتكرة وأفضل العروض والأسعار.
+                </p>
+                <p class="dialog-text">
+                    لماذا تختارنا؟ لأننا فريق مستعد لتلبية كافة احتياجاتك على مدار الساعة مع الحفاظ على سرية العميل، وشركة مرخصة وموثوقة في مجالات متعددة.
+                </p>
+                <p class="dialog-text">
+                    لتقديم اقتراحاتكم وآرائكم لا تترددوا بالتواصل مع خدمة العملاء عبر:
+                </p>
+                <div class="contact-info">
+                    <i class="fas fa-envelope"></i>
+                    <span>support@top4cryptoshop.onrender.com</span>
+                </div>
+                <p class="team-signature">فريق Top4CryptoShop</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="dialog" id="contactDialog">
+        <div class="dialog-header">
+            <h3>تواصل معنا</h3>
+            <button class="close-btn" id="closeContactBtn">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="dialog-body">
+            <div class="dialog-content">
+                <i class="fab fa-whatsapp dialog-icon whatsapp-icon"></i>
+                <p class="dialog-text">للتواصل عبر واتساب:</p>
+                <a href="https://wa.me/963980217649" class="whatsapp-link" target="_blank">
+                    <div class="contact-info">
+                        <i class="fas fa-phone"></i>
+                        <span>+963 980 217 649</span>
+                    </div>
+                </a>
+                <p class="dialog-text">اضغط على الرقم للتواصل مباشرة عبر واتساب</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- الفوتر الرئيسي -->
+    <footer class="footer">
+        <p>جميع الحقوق محفوظة &copy; 2024</p>
+    </footer>
+
+    <div class="overlay" id="overlay"></div>
+<script src="https://cdn.jsdelivr.net/npm/speedlify@0.0.5"></script>
+    <script src="/assets/js/app.js"></script>
+</body>
+</html>

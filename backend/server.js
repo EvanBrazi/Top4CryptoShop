@@ -13,7 +13,7 @@ const app = express();
 // Middlewares
 app.use(cors({
   origin: [
-    'http://localhost:8000', 
+    'http://localhost:8000',
     'https://top4cryptoshop.onrender.com'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -140,11 +140,15 @@ app.get('/api/auth/user', async (req, res) => {
 });
 
 // ──────────── إعادة توجيه باقي الطلبات ──────────── //
+// ──────────── إعادة توجيه باقي الطلبات ──────────── //
 app.get('*', (req, res) => {
+  // تجاهل طلبات API والملفات الثابتة
   if (req.path.startsWith('/api') || req.path.includes('.')) {
     return res.status(404).send('Not found');
   }
-  res.sendFile(path.join(staticFilesPath, 'dashboard.html'));  // تغيير هنا
+
+  // إذا كان المسار غير معروف، أرسل dashboard.html
+  res.sendFile(path.join(staticFilesPath, 'dashboard.html'));
 });
 
 // بدء الخادم

@@ -136,23 +136,6 @@ function hideDialog(dialog) {
     AppState.currentDialog = null;
 }
 
-// التحقق من الجلسة عند التحميل
-async function checkAuth() {
-    try {
-        const response = await fetch('/api/auth/verify', {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-            }
-        });
-
-        if (!response.ok) window.location.href = '/login.html';
-    } catch (error) {
-        window.location.href = '/login.html';
-    }
-}
-
-// استدعاء الدالة عند تحميل الصفحة
-/**checkAuth();*/
 
 // بدء التطبيق عند تحميل الصفحة
 document.addEventListener('DOMContentLoaded', initApp);

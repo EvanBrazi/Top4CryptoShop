@@ -1,0 +1,4 @@
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/top4cryptoshop
+ssh -T git@github.com
+

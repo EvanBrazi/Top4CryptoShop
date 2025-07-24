@@ -176,3 +176,51 @@
     logicalSessionTimeoutMinutes: null
   }
 }
+📂 يتم خدمة الملفات من: /data/data/com.termux/files/home/Top4CryptoShop/frontend/public
+🔍 محتوى المجلد: [
+  'assets',
+  'dashboard.html',
+  'deposit.html',
+  'forget-password.html',
+  'index.html',
+  'login.html',
+  'reset-password.html',
+  'signup.html'
+]
+🚀 الخادم يعمل على http://localhost:10000
+🌐 يمكنك الوصول إلى:
+  - التسجيل: http://localhost:10000/signup
+  - الدخول: http://localhost:10000/login
+  
+❌ فشل الاتصال بـ MongoDB: MongooseServerSelectionError: connect ECONNREFUSED 127.0.0.1:27017
+    at _handleConnectionErrors (/data/data/com.termux/files/home/Top4CryptoShop/backend/node_modules/mongoose/lib/connection.js:1165:11)
+    at NativeConnection.openUri (/data/data/com.termux/files/home/Top4CryptoShop/backend/node_modules/mongoose/lib/connection.js:1096:11) {
+  errorLabelSet: Set(0) {},
+  reason: TopologyDescription {
+    type: 'Unknown',
+    servers: Map(1) { 'localhost:27017' => [ServerDescription] },
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: null,
+    maxElectionId: null,
+    maxSetVersion: null,
+    commonWireVersion: 0,
+    logicalSessionTimeoutMinutes: null
+  },
+  code: undefined,
+  cause: TopologyDescription {
+    type: 'Unknown',
+    servers: Map(1) { 'localhost:27017' => [ServerDescription] },
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: null,
+    maxElectionId: null,
+    maxSetVersion: null,
+    commonWireVersion: 0,
+    logicalSessionTimeoutMinutes: null
+  }
+}

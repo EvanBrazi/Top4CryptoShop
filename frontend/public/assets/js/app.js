@@ -1,95 +1,185 @@
-// تأكد من تحميل DOM بالكامل
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('Dashboard loaded');
-    
-    // تحقق من وجود token وإرسال الإحصاءات
-    if (localStorage.getItem('authToken')) {
-        try {
-            fetch('/api/analytics', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .catch(error => {
-                console.error('Error sending analytics:', error);
-            });
-        } catch (error) {
-            console.error('Analytics error:', error);
-        }
-    }
+// حالة التطبيق
+const AppState = {
+    isSidebarOpen: false,
+    currentDialog: null,
+    isNightMode: false
+};
 
-    // تهيئة عناصر الواجهة
+// تهيئة التطبيق
+function initApp() {
+    // عناصر DOM
     const menuBtn = document.getElementById('menuBtn');
     const closeBtn = document.getElementById('closeBtn');
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('overlay');
+    const themeBtn = document.getElementById('themeBtn');
     const aboutBtn = document.getElementById('aboutBtn');
     const contactBtn = document.getElementById('contactBtn');
     const closeAboutBtn = document.getElementById('closeAboutBtn');
     const closeContactBtn = document.getElementById('closeContactBtn');
     const aboutDialog = document.getElementById('aboutDialog');
     const contactDialog = document.getElementById('contactDialog');
-    const themeBtn = document.getElementById('themeBtn');
 
-    // وظائف فتح/إغلاق القائمة الجانبية
-    menuBtn.addEventListener('click', () => {
-        sidebar.classList.add('active');
-        overlay.classList.add('active');
-    });
+    // تحميل الإعدادات المحفوظة
+    loadSettings();
 
-    closeBtn.addEventListener('click', () => {
-        sidebar.classList.remove('active');
-        overlay.classList.remove('active');
-    });
+    // أحداث الدرج الجانبي
+    menuBtn.addEventListener('click', toggleSidebar);
+    closeBtn.addEventListener('click', toggleSidebar);
+    overlay.addEventListener('click', closeAll);
 
-    overlay.addEventListener('click', () => {
-        sidebar.classList.remove('active');
-        overlay.classList.remove('active');
-        aboutDialog.classList.remove('active');
-        contactDialog.classList.remove('active');
-    });
+    // أحداث تغيير الثيم
+    themeBtn.addEventListener('click', toggleTheme);
 
-    // وظائف فتح/إغلاق نوافذ الحوار
-    aboutBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        aboutDialog.classList.add('active');
-        overlay.classList.add('active');
-    });
+    // أحداث الحوارات
+    aboutBtn.addEventListener('click', () => showDialog(aboutDialog));
+    contactBtn.addEventListener('click', () => showDialog(contactDialog));
+    closeAboutBtn.addEventListener('click', () => hideDialog(aboutDialog));
+    closeContactBtn.addEventListener('click', () => hideDialog(contactDialog));
 
-    contactBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        contactDialog.classList.add('active');
-        overlay.classList.add('active');
-    });
-
-    closeAboutBtn.addEventListener('click', () => {
-        aboutDialog.classList.remove('active');
-        overlay.classList.remove('active');
-    });
-
-    closeContactBtn.addEventListener('click', () => {
-        contactDialog.classList.remove('active');
-        overlay.classList.remove('active');
-    });
-
-    // تبديل الثيم
-    themeBtn.addEventListener('click', () => {
-        document.body.classList.toggle('dark-theme');
-        const icon = themeBtn.querySelector('i');
-        if (document.body.classList.contains('dark-theme')) {
-            icon.classList.replace('fa-moon', 'fa-sun');
-            themeBtn.setAttribute('aria-label', 'تبديل إلى الثيم الفاتح');
-        } else {
-            icon.classList.replace('fa-sun', 'fa-moon');
-            themeBtn.setAttribute('aria-label', 'تبديل إلى الثيم الداكن');
+    // إغلاق الحوارات بالضغط على ESC
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && AppState.currentDialog) {
+            hideDialog(AppState.currentDialog);
         }
     });
+
+    // تحليل وإرسال إحصاءات الاستخدام إذا كان هناك token
+    if (localStorage.getItem('authToken')) {
+        sendAnalytics();
+    }
+}
+
+// تحميل الإعدادات
+function loadSettings() {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'night') {
+        document.body.classList.add('night-mode');
+        const themeBtn = document.getElementById('themeBtn');
+        if (themeBtn) {
+            const icon = themeBtn.querySelector('i');
+            icon.classList.replace('fa-moon', 'fa-sun');
+            themeBtn.setAttribute('aria-label', 'تبديل إلى الثيم الفاتح');
+        }
+        AppState.isNightMode = true;
+    }
+}
+
+// تبديل الدرج الجانبي
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+
+    AppState.isSidebarOpen = !AppState.isSidebarOpen;
+
+    if (AppState.isSidebarOpen) {
+        sidebar.classList.add('active');
+        overlay.classList.add('active');
+    } else {
+        sidebar.classList.remove('active');
+        overlay.classList.remove('active');
+    }
+}
+
+// إغلاق كل شيء
+function closeAll() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+    const dialogs = document.querySelectorAll('.dialog.active');
+
+    sidebar.classList.remove('active');
+    overlay.classList.remove('active');
+    dialogs.forEach(dialog => dialog.classList.remove('active'));
+
+    AppState.isSidebarOpen = false;
+    AppState.currentDialog = null;
+}
+
+// تبديل الثيم
+function toggleTheme() {
+    const body = document.body;
+    const themeBtn = document.getElementById('themeBtn');
+    const icon = themeBtn.querySelector('i');
+
+    AppState.isNightMode = !AppState.isNightMode;
+
+    if (AppState.isNightMode) {
+        body.classList.add('night-mode');
+        localStorage.setItem('theme', 'night');
+        icon.classList.replace('fa-moon', 'fa-sun');
+        themeBtn.setAttribute('aria-label', 'تبديل إلى الثيم الفاتح');
+    } else {
+        body.classList.remove('night-mode');
+        localStorage.setItem('theme', 'day');
+        icon.classList.replace('fa-sun', 'fa-moon');
+        themeBtn.setAttribute('aria-label', 'تبديل إلى الثيم الداكن');
+    }
+}
+
+// عرض الحوار
+function showDialog(dialog) {
+    const overlay = document.getElementById('overlay');
+
+    if (AppState.currentDialog) {
+        hideDialog(AppState.currentDialog);
+    }
+
+    AppState.currentDialog = dialog;
+    dialog.classList.add('active');
+    overlay.classList.add('active');
+}
+
+// إخفاء الحوار
+function hideDialog(dialog) {
+    const overlay = document.getElementById('overlay');
+
+    dialog.classList.remove('active');
+    overlay.classList.remove('active');
+    AppState.currentDialog = null;
+}
+
+// إرسال إحصاءات الاستخدام
+function sendAnalytics() {
+    try {
+        fetch('/api/analytics', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .catch(error => {
+            console.error('Error sending analytics:', error);
+        });
+    } catch (error) {
+        console.error('Analytics error:', error);
+    }
+}
+
+// تهيئة التطبيق عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', initApp);
+
+// تحويل المستخدم عند النقر على أزرار التسجيل/الدخول
+document.addEventListener('DOMContentLoaded', function() {
+    // زر تسجيل الدخول
+    const loginBtn = document.getElementById('loginBtn');
+    if (loginBtn) {
+        loginBtn.addEventListener('click', function() {
+            window.location.href = '/login.html';
+        });
+    }
+
+    // زر التسجيل
+    const signupBtn = document.getElementById('signupBtn');
+    if (signupBtn) {
+        signupBtn.addEventListener('click', function() {
+            window.location.href = '/signup.html';
+        });
+    }
 });

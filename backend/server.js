@@ -9,6 +9,15 @@ const { checkTokenRevocation } = require('./middlewares/authMiddleware');
 // التهيئة
 const app = express();
 
+// في server.js
+const https = require('https');
+const fs = require('fs');
+const options = {
+  key: fs.readFileSync('server.key'),
+  cert: fs.readFileSync('server.cert')
+};
+https.createServer(options, app).listen(443);
+
 // Middlewares
 app.use(cors({
   origin: ['http://localhost:8000', 'https://top4cryptoshop.onrender.com'],
@@ -37,6 +46,9 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/Top4Crypt
 // المسارات
 const authRoutes = require('./routes/auth');
 app.use('/api/auth', authRoutes);
+
+const adminRoutes = require('./routes/admin');
+app.use('/api/admin', adminRoutes);
 
 // جميع الطلبات الأخرى
 app.get('*', (req, res) => {

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html dir="rtl">
+<head>
+    <title>لوحة الأدمن</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px; border: 1px solid #ddd; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>لوحة تحكم الأدمن</h1>
+        
+        <div>
+            <h2>تحديث رصيد مستخدم</h2>
+            <input type="text" id="userId" placeholder="معرف المستخدم">
+            <input type="number" id="newBalance" placeholder="الرصيد الجديد">
+            <button onclick="updateBalance()">تحديث</button>
+        </div>
+
+        <h2>قائمة المستخدمين</h2>
+        <table id="usersTable">
+            <thead>
+                <tr>
+                    <th>المعرف</th>
+                    <th>اسم المستخدم</th>
+                    <th>الرصيد</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <script>
+        let currentToken = localStorage.getItem('adminToken');
+
+        async function fetchUsers() {
+            const res = await fetch('/api/admin/users', {
+                headers: { 'Authorization': `Bearer ${currentToken}` }
+            });
+            return await res.json();
+        }
+
+        async function updateBalance() {
+            const userId = document.getElementById('userId').value;
+            const newBalance = document.getElementById('newBalance').value;
+
+            const res = await fetch(`/api/admin/update-balance/${userId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${currentToken}`
+                },
+                body: JSON.stringify({ balance: newBalance })
+            });
+
+            const result = await res.json();
+            alert(result.success ? 'تم التحديث' : 'خطأ: ' + result.error);
+            loadUsers();
+        }
+
+        async function loadUsers() {
+            const users = await fetchUsers();
+            const table = document.querySelector('#usersTable tbody');
+            table.innerHTML = users.map(user => `
+                <tr>
+                    <td>${user._id}</td>
+                    <td>${user.username}</td>
+                    <td>${user.balance}</td>
+                </tr>
+            `).join('');
+        }
+
+        // تسجيل الدخول للأدمن
+        async function adminLogin() {
+            const username = prompt('اسم المستخدم:');
+            const password = prompt('كلمة المرور:');
+
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            const data = await res.json();
+            if (data.token) {
+                currentToken = data.token;
+                localStorage.setItem('adminToken', data.token);
+                loadUsers();
+            } else {
+                alert('فشل تسجيل الدخول');
+            }
+        }
+
+        // تحقق من التوكن عند التحميل
+        if (!currentToken) {
+            adminLogin();
+        } else {
+            loadUsers();
+        }
+    </script>
+</body>
+</html>

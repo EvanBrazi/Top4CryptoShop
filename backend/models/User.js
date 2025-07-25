@@ -49,6 +49,15 @@ const userSchema = new Schema({
   lastLogin: {
     type: Date
   },
+role: {
+    type: String,
+    enum: ['user', 'admin'], // أنواع الصلاحيات
+    default: 'user'
+  },
+  tokenVersion: {
+    type: Number,
+    default: 0
+},
   resetPasswordToken: String,
   resetPasswordExpires: Date,
   changeHistory: {

@@ -12,7 +12,7 @@
             --google-red: #DB4437;
             --apple-black: #000000;
         }
-        
+
         body {
             font-family: 'Tahoma', sans-serif;
             background: var(--beige);
@@ -22,7 +22,7 @@
             align-items: center;
             margin: 0;
         }
-        
+
         .container {
             width: 90%;
             max-width: 400px;
@@ -32,17 +32,17 @@
             box-shadow: 0 4px 15px rgba(139, 69, 19, 0.1);
             border: 1px solid var(--chocolate);
         }
-        
+
         h2 {
             color: var(--dark-chocolate);
             text-align: center;
             margin-bottom: 1.5rem;
         }
-        
+
         .form-group {
             margin-bottom: 1.2rem;
         }
-        
+
         input {
             width: 100%;
             padding: 12px;
@@ -51,21 +51,21 @@
             font-size: 1rem;
             background: rgba(210, 105, 30, 0.05);
         }
-        
+
         .phone-input-group {
             display: flex;
             gap: 10px;
         }
-        
+
         .country-code {
             width: 30%;
             min-width: 100px;
         }
-        
+
         .phone-number {
             flex: 1;
         }
-        
+
         button {
             width: 100%;
             padding: 12px;
@@ -80,44 +80,51 @@
             justify-content: center;
             gap: 10px;
         }
-        
+
         .btn-primary {
             background-color: var(--chocolate);
             color: white;
         }
-        
+
         .btn-google {
             background-color: var(--google-red);
             color: white;
             margin-top: 15px;
         }
-        
+
         .btn-apple {
             background-color: var(--apple-black);
             color: white;
             margin-top: 10px;
         }
-        
+
         .divider {
             display: flex;
             align-items: center;
             margin: 20px 0;
             color: var(--dark-chocolate);
         }
-        
+
         .divider::before,
         .divider::after {
             content: "";
             flex: 1;
             border-bottom: 1px solid var(--chocolate);
         }
-        
+
         .divider::before {
             margin-right: 10px;
         }
-        
+
         .divider::after {
             margin-left: 10px;
+        }
+
+        .error-message {
+            color: red;
+            font-size: 0.9rem;
+            margin-top: 5px;
+            display: none;
         }
     </style>
     <!-- تعريف تسجيل الدخول عبر Google -->
@@ -127,28 +134,34 @@
 <body>
     <div class="container">
         <h2>إنشاء حساب جديد</h2>
-        
+
         <!-- زر تسجيل الدخول عبر Google -->
         <button class="btn-google" id="googleSignIn">
             <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="20" alt="Google">
             التسجيل عبر Google
         </button>
-        
+
         <!-- زر تسجيل الدخول عبر Apple -->
         <button class="btn-apple" id="appleSignIn">
             <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" width="20" alt="Apple">
             التسجيل عبر Apple
         </button>
-        
+
         <div class="divider">أو</div>
-        
+
         <!-- نموذج التسجيل التقليدي -->
         <form id="signupForm">
             <div class="form-group">
                 <input type="text" id="username" placeholder="اسم المستخدم" required>
+                <div id="usernameError" class="error-message"></div>
             </div>
             <div class="form-group">
-                <input type="password" id="password" placeholder="كلمة المرور" required>
+                <input type="password" id="password" placeholder="كلمة المرور" required minlength="6">
+                <div id="passwordError" class="error-message"></div>
+            </div>
+            <div class="form-group">
+                <input type="email" id="email" placeholder="البريد الإلكتروني (اختياري)">
+                <div id="emailError" class="error-message"></div>
             </div>
             <div class="form-group">
                 <div class="phone-input-group">
@@ -176,6 +189,7 @@
                     </select>
                     <input type="tel" id="phoneNumber" class="phone-number" placeholder="رقم الجوال" required>
                 </div>
+                <div id="phoneError" class="error-message"></div>
             </div>
             <button type="submit" class="btn-primary">تسجيل</button>
         </form>
@@ -204,29 +218,70 @@
                 'response_mode=form_post';
         });
 
-        // 3. التسجيل التقليدي (كودك الحالي)
+        // 3. التسجيل التقليدي
         document.getElementById('signupForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
+            // إخفاء رسائل الخطأ السابقة
+            document.querySelectorAll('.error-message').forEach(el => {
+                el.style.display = 'none';
+                el.textContent = '';
+            });
+
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
+            const email = document.getElementById('email').value;
             const countryCode = document.getElementById('countryCode').value;
             const phoneNumber = document.getElementById('phoneNumber').value;
-            
             const fullPhoneNumber = countryCode + phoneNumber;
-            
-            // يمكنك هنا إضافة كود إرسال البيانات إلى الخادم
-            console.log({
-                username,
-                password,
-                phone: fullPhoneNumber
-            });
-            
-            // مثال بسيط لإظهار رسالة نجاح
-            alert('تم تسجيل الحساب بنجاح! سيتم التحقق من رقم الجوال.');
-// بعد التسجيل الناجح
-window.location.href = '/dashboard.html';
+
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username,
+                        password,
+                        email: email || undefined,
+                        phone: fullPhoneNumber
+                    })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'حدث خطأ أثناء التسجيل');
+                }
+
+                // إذا نجح التسجيل
+                alert('تم تسجيل الحساب بنجاح!');
+                window.location.href = '/dashboard.html';
+
+            } catch (err) {
+                console.error('Error:', err);
+                
+                // عرض رسائل الخطأ المناسبة
+                if (err.message.includes('اسم المستخدم')) {
+                    showError('usernameError', err.message);
+                } else if (err.message.includes('كلمة المرور')) {
+                    showError('passwordError', err.message);
+                } else if (err.message.includes('الهاتف')) {
+                    showError('phoneError', err.message);
+                } else if (err.message.includes('البريد')) {
+                    showError('emailError', err.message);
+                } else {
+                    showError('usernameError', 'حدث خطأ أثناء التسجيل. يرجى المحاولة لاحقاً');
+                }
+            }
         });
+
+        function showError(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.style.display = 'block';
+        }
     </script>
 </body>
 </html>

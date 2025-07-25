@@ -1,4 +1,7 @@
-eval "$(ssh-agent -s)"
-ssh-add ~/.ssh/top4cryptoshop
+#!/bin/bash
+if [ -z "$SSH_AUTH_SOCK" ]; then
+   eval "$(ssh-agent -s)"
+      ssh-add ~/.ssh/top4cryptoshop
+fi
 ssh -T git@github.com
 

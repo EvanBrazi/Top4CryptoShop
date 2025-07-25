@@ -14,30 +14,58 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-router.post('/register', async (req, res) => {
-  try {
-    const { username, password, phone, theme } = req.body; // إضافة phone و theme
+app.post('/api/auth/register', async (req, res) => {
+  console.log('بيانات الطلب الواردة:', req.body); // تسجيل البيانات الواردة
 
-    const existingUser = await User.findOne({ $or: [{ username }, { phone }] });
-    if (existingUser) {
-      return res.status(400).json({ 
-        error: existingUser.username === username ? 
-          'اسم المستخدم موجود' : 'رقم الهاتف مسجل بالفعل'
-      });
+  try {
+    const { username, password, phone, theme } = req.body;
+
+    // تحقق من البيانات المطلوبة
+    if (!username || !password) {
+      console.log('بيانات ناقصة');
+      return res.status(400).json({ error: 'يجب إدخال اسم المستخدم وكلمة المرور' });
     }
 
-    const newUser = new User({
-      username,
+    console.log('جاري البحث عن مستخدم موجود...');
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      console.log('المستخدم موجود بالفعل:', username);
+      return res.status(400).json({ error: 'اسم المستخدم موجود بالفعل' });
+    }
+
+    console.log('جاري إنشاء مستخدم جديد...');
+    const newUser = new User({ 
+      username, 
       password,
-      phone,
-      theme: theme || 0, // افتراضيًا 0 إذا لم يُحدد
+      phone: phone || null,
+      theme: theme || 0,
       balance: 0
     });
 
+    console.log('جاري حفظ المستخدم...', newUser);
     await newUser.save();
-    res.status(201).json({ message: 'تم التسجيل بنجاح', userId: newUser._id });
+    console.log('تم الحفظ بنجاح!');
+
+    res.status(201).json({
+      success: true,
+      user: {
+        id: newUser._id,
+        username: newUser.username,
+        balance: newUser.balance
+      }
+    });
+
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('🔥 خطأ مفصل:', {
+      message: err.message,
+      stack: err.stack,
+      code: err.code,
+      keyValue: err.keyValue
+    });
+    res.status(500).json({ 
+      error: err.code === 11000 ? 'بيانات مكررة' : 'حدث خطأ في الخادم',
+      details: process.env.NODE_ENV === 'development' ? err.message : null
+    });
   }
 });
 

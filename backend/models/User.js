@@ -15,35 +15,43 @@ const userSchema = new Schema({
     required: true,
     minlength: 6
   },
-  email: {
+  // أضف هذه الحقول الجديدة:
+  phone: {
     type: String,
     unique: true,
-    sparse: true, // يسمح بقيم null مع الحفاظ على التفرد
-    trim: true,
-    lowercase: true
+    sparse: true,
+    validate: {
+      validator: v => /^\+?\d{10,15}$/.test(v), // تحقق من رقم الهاتف
+      message: 'رقم الهاتف غير صالح'
+    }
+  },
+  theme: {
+    type: Number,
+    default: 0, // 0 = فاتح، 1 = داكن
+    enum: [0, 1] // يسمح فقط بالقيم 0 أو 1
   },
   balance: {
     type: Number,
     default: 0
   },
-  resetPasswordToken: {
-    type: String,
-    default: null
-  },
-  resetPasswordExpires: {
-    type: Date,
-    default: null
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
+  // أضف سجل التغييرات:
+  changeHistory: {
+    phoneUpdates: [{
+      oldPhone: String,
+      newPhone: String,
+      changedAt: { type: Date, default: Date.now }
+    }],
+    emailUpdates: [{
+      oldEmail: String,
+      newEmail: String,
+      changedAt: { type: Date, default: Date.now }
+    }]
   }
 }, { timestamps: true });
 
 // تشفير كلمة المرور قبل الحفظ
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
-  
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);

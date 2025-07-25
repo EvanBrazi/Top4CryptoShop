@@ -14,29 +14,31 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// مسار التسجيل
 router.post('/register', async (req, res) => {
-    try {
-        const { username, password } = req.body;
+  try {
+    const { username, password, phone, theme } = req.body; // إضافة phone و theme
 
-        const existingUser = await User.findOne({ username });
-        if (existingUser) {
-            return res.status(400).json({ error: 'اسم المستخدم موجود بالفعل' });
-        }
-
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        const newUser = new User({
-            username,
-            password: hashedPassword,
-            balance: 0
-        });
-
-        await newUser.save();
-        res.status(201).json({ message: 'تم إنشاء الحساب بنجاح' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+    const existingUser = await User.findOne({ $or: [{ username }, { phone }] });
+    if (existingUser) {
+      return res.status(400).json({ 
+        error: existingUser.username === username ? 
+          'اسم المستخدم موجود' : 'رقم الهاتف مسجل بالفعل'
+      });
     }
+
+    const newUser = new User({
+      username,
+      password,
+      phone,
+      theme: theme || 0, // افتراضيًا 0 إذا لم يُحدد
+      balance: 0
+    });
+
+    await newUser.save();
+    res.status(201).json({ message: 'تم التسجيل بنجاح', userId: newUser._id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // مسار استعادة كلمة المرور
@@ -59,7 +61,6 @@ router.post('/forgot-password', async (req, res) => {
 
         // 3. إرسال البريد الإلكتروني
         const resetUrl = `https://top4cryptoshop.onrender.com/reset-password.html?token=${resetToken}`;
-        
         const mailOptions = {
             to: email,
             subject: 'استعادة كلمة المرور - متجر العملات الرقمية',
@@ -107,6 +108,38 @@ router.post('/reset-password', async (req, res) => {
         console.error(error);
         res.status(500).json({ error: 'خطأ في الخادم' });
     }
+});
+
+router.post('/update-phone', async (req, res) => {
+  try {
+    const { userId, newPhone } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ error: 'المستخدم غير موجود' });
+
+    user.changeHistory.phoneUpdates.push({
+      oldPhone: user.phone,
+      newPhone
+    });
+
+    user.phone = newPhone;
+    await user.save();
+
+    res.json({ message: 'تم تحديث الهاتف بنجاح' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/update-theme', async (req, res) => {
+  try {
+    const { userId, theme } = req.body;
+
+    await User.findByIdAndUpdate(userId, { theme });
+    res.json({ message: 'تم تحديث الثيم بنجاح' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // التحقق من صحة التوكن

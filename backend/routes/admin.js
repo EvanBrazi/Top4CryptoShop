@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
-const { verifyToken } = require('../middlewares/authMiddleware');
-const checkAdmin = require('../middlewares/adminAuth');
+const { verifyToken, checkAdmin } = require('../middlewares/authMiddleware');
+
 
 router.put('/update-balance/:userId', verifyToken, checkAdmin, async (req, res) => {
   try {

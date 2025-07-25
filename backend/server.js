@@ -4,19 +4,10 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
-const { checkTokenRevocation } = require('./middlewares/authMiddleware');
+const { verifyToken, checkAdmin } = require('./middlewares/authMiddleware');
 
 // التهيئة
 const app = express();
-
-// في server.js
-const https = require('https');
-const fs = require('fs');
-const options = {
-  key: fs.readFileSync('server.key'),
-  cert: fs.readFileSync('server.cert')
-};
-https.createServer(options, app).listen(443);
 
 // Middlewares
 app.use(cors({
@@ -25,9 +16,6 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
-
-// حماية المسارات
-app.use('/api', checkTokenRevocation);
 
 // الملفات الثابتة
 const staticFilesPath = path.join(__dirname, '../frontend/public');
@@ -45,9 +33,9 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/Top4Crypt
 
 // المسارات
 const authRoutes = require('./routes/auth');
-app.use('/api/auth', authRoutes);
-
 const adminRoutes = require('./routes/admin');
+
+app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 
 // جميع الطلبات الأخرى
@@ -55,6 +43,21 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(staticFilesPath, 'dashboard.html'));
 });
 
-// التشغيل
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`🚀 الخادم يعمل على http://localhost:${PORT}`));
+// التشغيل (الحل النهائي الموصى به)
+function startServer(port = 10000, maxAttempts = 5) {
+  const server = app.listen(port, () => {
+    console.log(`🚀 الخادم يعمل على http://localhost:${port}`);
+  });
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE' && port < port + maxAttempts) {
+      console.log(`⚠️ المنفذ ${port} مشغول، جرب ${port + 1}...`);
+      startServer(port + 1, maxAttempts);
+    } else {
+      console.error('خطأ في الخادم:', err);
+      process.exit(1);
+    }
+  });
+}
+
+startServer();

@@ -104,4 +104,9 @@ router.post('/logout', async (req, res) => {
     }
 });
 
+
+router.get('/admin-panel', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/public/admin.html'));
+});
+
 module.exports = router;

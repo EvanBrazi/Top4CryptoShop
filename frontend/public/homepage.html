@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/brands.min.css">
+    <link rel="stylesheet" href="assets/css/homepage.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.19.0/js/md5.min.js"></script>
+</head>
+<body class="light-theme">
+    <!-- الشريط العلوي -->
+    <header class="top-bar">
+        <div class="top-bar-content">
+            <button class="toggle-sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
+            
+            <div class="balance-container">
+                <span class="balance-amount" id="top-balance-display">0.00</span>
+                <button class="add-balance-btn">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+            
+            <div class="logo-back-container">
+                <div class="site-logo">
+                    <img src="assets/images/logo.png" alt="شعار الموقع" class="logo-img">
+                </div>
+                <a href="#" class="back-btn" id="back-btn">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- الدرج الجانبي -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="profile-header">
+                <div class="profile-img-container">
+                    <img id="profile-img" class="profile-sidebar-img" 
+                         src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDExQzE0LjIwOTEgMTEgMTYgOS4yMDkxIDE2IDdDMTYgNC43OTA4NiAxNC4yMDkxIDMgMTIgM0M5Ljc5MDg2IDMgOCA0Ljc5MDg2IDggN0M4IDkuMjA5MTQgOS43OTA4NiAxMSAxMiAxMVoiIGZpbGw9IiNjY2MiLz4KPHBhdGggZD0iTTEyIDIxQzE2Ljk3MDYgMjEgMjEgMTYuOTcwNiAyMSAxMkMyMSA3LjAyOTQ0IDE2Ljk3MDYgMyAxMiAzQzcuMDI5NDQgMyAzIDcuMDI5NDQgMyAxMkMzIDE2Ljk3MDYgNy4wMjk0NCAyMSAxMiAyMVoiIHN0cm9rZT0iI2NjYyIgc3Ryb2tlLXdpZHRoPSIyIi8+Cjwvc3ZnPg=="
+                         alt="صورة البروفايل">
+                </div>
+                <div class="profile-info">
+                    <span class="user-name" id="username-display">زائر</span>
+                    <div class="user-balance">
+                        <span id="balance-display">0.00</span>
+                        <span class="currency-icon">💵</span>
+                    </div>
+                </div>
+                <div class="profile-actions">
+                    <button class="profile-btn favorite-btn" title="المفضلة">
+                        <i class="fas fa-star"></i>
+                    </button>
+                    <button class="profile-btn edit-btn" title="تعديل البروفايل">
+                        <i class="fas fa-user-edit"></i>
+                    </button>
+                    <button class="profile-btn logout-btn" title="تسجيل الخروج">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+                <div class="header-divider"></div>
+            </div>
+        </div>
+        
+        <div class="sidebar-menu-container">
+            <ul class="sidebar-menu">
+                <li><a href="#" data-tab="home"><i class="fas fa-home"></i> الرئيسية</a></li>
+                <li><a href="#" data-tab="wallet"><i class="fas fa-wallet"></i> إضافة رصيد</a></li>
+                <li><a href="#" data-tab="payments"><i class="fas fa-money-bill-wave"></i> دفعاتي</a></li>
+                <li><a href="#" data-tab="portfolio"><i class="fas fa-piggy-bank"></i> محفظتي</a></li>
+                <li><a href="#" data-tab="orders"><i class="fas fa-list"></i> طلباتي</a></li>
+                <li><a href="#" data-tab="security"><i class="fas fa-shield-alt"></i> الحماية</a></li>
+                <li><a href="#" data-tab="about"><i class="fas fa-info-circle"></i> من نحن</a></li>
+            </ul>
+        </div>
+        
+        <div class="sidebar-footer">
+            <div class="theme-container">
+                <button id="theme-toggle-btn" class="theme-toggle">
+                    <i class="fas fa-moon"></i> تبديل الثيم
+                </button>
+            </div>
+            <div class="social-links">
+                <a href="#" class="social-link fab fa-facebook-f" title="Facebook"></a>
+                <a href="#" class="social-link fab fa-instagram" title="Instagram"></a>
+                <a href="#" class="social-link fab fa-telegram-plane" title="Telegram"></a>
+                <a href="#" class="social-link fab fa-youtube" title="YouTube"></a>
+                <a href="#" class="social-link fab fa-x" title="X (Twitter)"></a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- المحتوى الرئيسي -->
+    <div class="main-content">
+        <div class="content">
+            <h1>مرحباً بك في لوحة التحكم</h1>
+            <p id="current-page-indicator">الصفحة الرئيسية</p>
+            
+            <!-- نظام التبويبات الجديد -->
+            <div class="tabs-container">
+                <div class="tabs-content">
+                    <div class="tab-pane active" id="home-tab">
+                        <h2>الصفحة الرئيسية</h2>
+                        <p>مرحباً بك في لوحة التحكم الخاصة بك. يمكنك التنقل بين الأقسام المختلفة باستخدام التبويبات أعلاه أو القائمة الجانبية.</p>
+                        <button id="test-user1-btn">تحميل مستخدم تجريبي 1</button>
+                        <button id="test-user2-btn">تحميل مستخدم تجريبي 2</button>
+                        <div class="dummy-content"></div>
+                    </div>
+                    
+                    <div class="tab-pane" id="wallet-tab">
+                        <h2>إضافة رصيد</h2>
+                        <div class="wallet-content">
+                            <div class="balance-card">
+                                <h3>رصيدك الحالي</h3>
+                                <div class="balance-amount">0.00 <span>ر.س</span></div>
+                                <button class="add-funds-btn">إضافة رصيد</button>
+                            </div>
+                            <div class="payment-methods">
+                                <h3>طرق الدفع</h3>
+                                <!-- محتوى طرق الدفع -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane" id="payments-tab">
+                        <h2>دفعاتي</h2>
+                        <div class="payments-list">
+                            <div class="empty-state">
+                                <i class="fas fa-money-bill-wave"></i>
+                                <p>لا توجد دفعات سابقة</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane" id="portfolio-tab">
+                        <h2>محفظتي</h2>
+                        <div class="portfolio-stats">
+                            <div class="stat-card">
+                                <h3>القيمة الإجمالية</h3>
+                                <div class="stat-value">0.00 <span>ر.س</span></div>
+                            </div>
+                            <!-- المزيد من البطاقات الإحصائية -->
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane" id="orders-tab">
+                        <h2>طلباتي</h2>
+                        <div class="orders-table">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>رقم الطلب</th>
+                                        <th>التاريخ</th>
+                                        <th>الحالة</th>
+                                        <th>المبلغ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="empty-row">
+                                        <td colspan="4">لا توجد طلبات سابقة</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane" id="security-tab">
+                        <h2>الحماية</h2>
+                        <div class="security-settings">
+                            <div class="setting-item">
+                                <h3>كلمة المرور</h3>
+                                <button class="change-password-btn">تغيير كلمة المرور</button>
+                            </div>
+                            <!-- المزيد من إعدادات الحماية -->
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane" id="about-tab">
+                        <h2>من نحن</h2>
+                        <div class="about-content">
+                            <p>نحن شركة رائدة في مجال التكنولوجيا نقدم حلولاً متكاملة لعملائنا.</p>
+                            <div class="contact-info">
+                                <h3>معلومات التواصل</h3>
+                                <!-- معلومات التواصل -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- طبقة التعتيم -->
+    <div class="overlay"></div>
+    
+    <!-- الفوتر الجديد -->
+    <footer class="site-footer">
+        <div class="footer-links">
+            <button class="footer-link" id="terms-btn">شروط الخدمة</button>
+            <button class="footer-link" id="privacy-btn">سياسة الخصوصية</button>
+        </div>
+        <div class="footer-copyright">
+            <span>TOP4CRYPTOSHOP <span class="copyright-icon">©</span> 2024</span>
+        </div>
+    </footer>
+
+    <!-- نافذة الشروط -->
+    <div class="modal" id="terms-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>شروط الخدمة</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>- يمنع المراجعة بطلب بعد مدة تتجاوز ( 24 ) ساعة على ان يقدم الزبون فيديو يوضح فيه عدم وصول الألماس لرصيده<br><br>
+                يستثنى من ذلك الفري فاير و الببجي و الرصيد السوري و الرصيد التركي<br><br>
+                - بعد ارسال إشعار التحويل من طرفنا فإننا بذلك نخلي مسؤوليتنا في حال عدم وصول الألماس للزبون<br><br>
+                -لا يمكن ارسال اشعار لاي منتج يعمل بشكل اوتوماتيك<br><br>
+                يرجى ارسال فيديو من الاسم والايدي وصولا لسجل الشحن توضح فيه عدم وصول الماس للزبون<br><br>
+                -المنتجات التي يمكن ارسال اشعار لها و تعمل بشكل اوتوماتيك هي الفري فاير و الببجي و الرصيد السوري فقط<br><br>
+                - يحق للعميل سحب امواله الموجودة في موقعنا بعد الشحن بالخطأ او عند وجود سبب مقنع لذلك<br><br>
+                - قد تتأخر بعض الطلبات من 10 دقائق حتى 45 دقيقة بسبب ضغط العمل<br><br>
+                - عند مراجعة الادارة بطلب لم يصل يرجى ارسال رقم العملية للطلب وليس لقطة شاشة<br><br>
+                - عدم ارسال شحنتين متتاليتين لنفس الايدي بنفس التوقيت<br><br>
+                - لا يمكن سحب الكوينز بحال شحن الايدي غلط بعد اكتمال الطلب يرجى التمهل بكتابة الايدي قبل الارسال<br><br>
+                -المنتجات التي تعمل بشكل اوتوماتيك<br><br>
+                قد تحدث فيها مشاكل مثل ( تعليق الروبوت - توقف الاستضافة - مشكلة بالتطبيق - مشكلة بالموقع )<br><br>
+                بناء على ما تم ذكره لا يمكن الغاء اي طلب يعمل بشكل اوتوماتيك مهما كانت الاسباب<br><br>
+                يرجى الالتزام بالتعليمات و عدم مراسلتنا على الخاص<br><br>
+                - اي عميل غير موجود ضمن مجتمع محطة كونان لن يكون على علم بالتعاميم التي نقوم بنشرها<br><br>
+                وبناء على ذلك فان العميل يتحمل المسوولية الكاملة عن اي تعميم لا يكون على علم به<br><br>
+                - يستغرق قبول طلبات الشحن( اضافة الرصيد ) من دقيقة حتى 30 دقيقة بسبب صعوبات تواجهنا<br><br>
+                - اوقات العمل للمنتجات التي تعمل بشكل يدوي من العاشرة صباحا حتى الثانية عشر و النصف مساء<br><br>
+                و تمتد في رمضان لساعة اضافية<br><br>
+                - يتم قبول طلبات الشحن ( اضافة الرصيد ) من العاشرة صباحا حتى الثانية عشر مساء<br><br>
+                وتمتد في رمضان ساعة اضافية ايضا<br><br>
+                -عند تحويل منتج يعمل بشكل يدوي يرجى الاطلاع على الملاحظة المكتوبة عند الشراء والتي تتضمن مدة تحويل الطلب واوقات عمل هذا المنتج<br><br>
+                -عند ارسال حوالة ( اضافة رصيد ) ويش ماني<br><br>
+                يرجى كتابة اسم المرسل عند الوصف ( الملاحظة ) في تطبيق الويش<br><br>
+                و من ثم ارسالها لنا<br><br>
+                من اجل جعل عملية اضافة الرصيد تتم بشكل سريع و دقيق<br><br>
+                يجب اخبار الزبون-<br><br>
+                بذلك قبل التحويل<br><br>
+                حتى يكون على علم بذلك<br><br>
+                يرجى قراءة الشروط جيدا و التقيد بها .</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة الخصوصية -->
+    <div class="modal" id="privacy-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>سياسة الخصوصية</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>أنت مسؤول عن الحفاظ على سرية بيانات حسابك وكلمة المرور وتحديد من يصل إلى جهاز الكمبيوتر الخاص بك أو التطبيق الخاص بنا, كما أنك توافق على قبول المسؤولية عن جميع الأنشطة التي تتم من خلال حسابك أو كلمة المرور الخاصة بك.<br><br>
+                إن جميع المعلومات التي يحصل عليها محطة كونان سرية للغاية ولا يطلع عليها إلا القائمين على المتجر بغرض تنفيذ المعاملات ولن يقوم بنشرها أو بثها للغير ولن يقوم بمشاركة، أو بيع بياناتك الشخصية لأي طرف كان. ( إن موظفينا مؤهلون ومدربون على احترام سرية المعلومات الشخصية لعملائنا. )<br><br>
+                قد يستخدم متجر محطة كونان هذه المعلومات من أجل تزويدك بالعروض أو المنتجات التي قد تكون مهتماً بها أو من أجل تحسين خدمات المتجر وتطويره لتقديم أفضل خدمة ممكنة أو لأي سبب آخر يراه متجر محطة كونان مناسباً لتعزيز تجربة استخدام المتجر.<br><br>
+                تنويه: لا يقوم متجر محطة كونان بجمع معلومات شخصية عن المستخدمين الزائرين أو متصفحي الموقع إلا إذا اختاروا تحديدًا وبمعرفتهم تقديم هذه المعلومات من خلال إنشائهم حساب في الموقع ويعتبر إنشاء الحساب في الموقع موافقة من المستخدم على الخضوع لأحكام الخصوصية هذه وشروط الاستخدام.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/js/homepage.js"></script>
+</body>
+</html>

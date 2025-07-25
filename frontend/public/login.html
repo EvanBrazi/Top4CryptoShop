@@ -11,8 +11,9 @@
             --dark-chocolate: #8B4513;
             --google-red: #DB4437;
             --apple-black: #000000;
+            --error-red: #FF3333;
         }
-        
+
         body {
             font-family: 'Tahoma', sans-serif;
             background: var(--beige);
@@ -22,7 +23,7 @@
             align-items: center;
             margin: 0;
         }
-        
+
         .container {
             width: 90%;
             max-width: 400px;
@@ -32,17 +33,18 @@
             box-shadow: 0 4px 15px rgba(139, 69, 19, 0.1);
             border: 1px solid var(--chocolate);
         }
-        
+
         h2 {
             color: var(--dark-chocolate);
             text-align: center;
             margin-bottom: 1.5rem;
         }
-        
+
         .form-group {
             margin-bottom: 1.2rem;
+            position: relative;
         }
-        
+
         input {
             width: 100%;
             padding: 12px;
@@ -51,7 +53,7 @@
             font-size: 1rem;
             background: rgba(210, 105, 30, 0.05);
         }
-        
+
         button {
             width: 100%;
             padding: 12px;
@@ -66,61 +68,87 @@
             justify-content: center;
             gap: 10px;
         }
-        
+
         .btn-primary {
             background-color: var(--chocolate);
             color: white;
         }
-        
+
+        .btn-primary:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
         .btn-google {
             background-color: var(--google-red);
             color: white;
             margin-top: 15px;
         }
-        
+
         .btn-apple {
             background-color: var(--apple-black);
             color: white;
             margin-top: 10px;
         }
-        
+
         .divider {
             display: flex;
             align-items: center;
             margin: 20px 0;
             color: var(--dark-chocolate);
         }
-        
+
         .divider::before,
         .divider::after {
             content: "";
             flex: 1;
             border-bottom: 1px solid var(--chocolate);
         }
-        
+
         .divider::before {
             margin-right: 10px;
         }
-        
+
         .divider::after {
             margin-left: 10px;
         }
-        
+
         .links {
             display: flex;
             justify-content: space-between;
             margin-top: 1rem;
             padding: 0 10px;
         }
-        
+
         .links a {
             color: var(--dark-chocolate);
             text-decoration: none;
             font-size: 0.9rem;
         }
-        
+
         .links a:hover {
             text-decoration: underline;
+        }
+
+        .error-message {
+            color: var(--error-red);
+            font-size: 0.8rem;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .password-container {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            top: 50%;
+            left: 10px;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: var(--dark-chocolate);
+            font-size: 0.9rem;
         }
     </style>
     <!-- تعريف تسجيل الدخول عبر Google -->
@@ -130,32 +158,35 @@
 <body>
     <div class="container">
         <h2>تسجيل الدخول</h2>
-        
+
         <!-- زر تسجيل الدخول عبر Google -->
         <button class="btn-google" id="googleSignIn">
             <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="20" alt="Google">
             الدخول عبر Google
         </button>
-        
+
         <!-- زر تسجيل الدخول عبر Apple -->
         <button class="btn-apple" id="appleSignIn">
             <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" width="20" alt="Apple">
             الدخول عبر Apple
         </button>
-        
+
         <div class="divider">أو</div>
-        
+
         <!-- نموذج تسجيل الدخول التقليدي -->
         <form id="loginForm">
             <div class="form-group">
                 <input type="text" id="username" placeholder="اسم المستخدم" required>
+                <div id="usernameError" class="error-message"></div>
             </div>
-            <div class="form-group">
+            <div class="form-group password-container">
                 <input type="password" id="password" placeholder="كلمة المرور" required>
+                <span class="toggle-password" id="togglePassword">👁️</span>
+                <div id="passwordError" class="error-message"></div>
             </div>
-            <button type="submit" class="btn-primary">تسجيل الدخول</button>
+            <button type="submit" class="btn-primary" id="loginBtn">تسجيل الدخول</button>
         </form>
-        
+
         <div class="links">
             <a href="forgot-password.html">نسيت كلمة المرور؟</a>
             <a href="signup.html">إنشاء حساب جديد</a>
@@ -163,7 +194,20 @@
     </div>
 
     <script>
-        // 1. تسجيل الدخول عبر Google
+        // عناصر DOM
+        const loginForm = document.getElementById('loginForm');
+        const loginBtn = document.getElementById('loginBtn');
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+
+        // 1. إظهار/إخفاء كلمة المرور
+        togglePassword.addEventListener('click', () => {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            togglePassword.textContent = type === 'password' ? '👁️' : '👁️‍🗨️';
+        });
+
+        // 2. تسجيل الدخول عبر Google
         document.getElementById('googleSignIn').addEventListener('click', () => {
             window.location.href = 'https://accounts.google.com/o/oauth2/auth?' +
                 'response_type=code&' +
@@ -173,7 +217,7 @@
                 'state=random_state_string';
         });
 
-        // 2. تسجيل الدخول عبر Apple
+        // 3. تسجيل الدخول عبر Apple
         document.getElementById('appleSignIn').addEventListener('click', () => {
             window.location.href = 'https://appleid.apple.com/auth/authorize?' +
                 'client_id=YOUR_APPLE_SERVICE_ID&' +
@@ -183,33 +227,83 @@
                 'response_mode=form_post';
         });
 
-        // 3. تسجيل الدخول التقليدي
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        // 4. تسجيل الدخول التقليدي
+        loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
+            // إخفاء رسائل الخطأ السابقة
+            document.querySelectorAll('.error-message').forEach(el => {
+                el.style.display = 'none';
+                el.textContent = '';
+            });
+
+            // تعطيل الزر أثناء المعالجة
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'جاري تسجيل الدخول...';
+
             try {
                 const response = await fetch('/api/auth/login', {
                     method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json' 
+                    headers: {
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         username: document.getElementById('username').value,
                         password: document.getElementById('password').value
                     })
                 });
-                
+
                 const result = await response.json();
-                
-                if (response.ok) {
-                    localStorage.setItem('token', result.token);
-                    window.location.href = 'dashboard.html';
-                } else {
-                    alert(result.error || 'بيانات الدخول غير صحيحة');
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'بيانات الدخول غير صحيحة');
                 }
+
+                // حفظ التوكن في localStorage و sessionStorage
+                localStorage.setItem('token', result.token);
+                sessionStorage.setItem('user', JSON.stringify(result.user));
+                
+                // توجيه المستخدم إلى لوحة التحكم
+                window.location.href = 'homepage.html';
+
             } catch (error) {
                 console.error('Error during login:', error);
-                alert('حدث خطأ أثناء محاولة تسجيل الدخول. الرجاء المحاولة لاحقاً.');
+                
+                // عرض رسالة الخطأ المناسبة
+                if (error.message.includes('اسم المستخدم') || error.message.includes('بيانات الدخول')) {
+                    showError('usernameError', error.message);
+                    showError('passwordError', error.message);
+                } else {
+                    showError('usernameError', 'حدث خطأ أثناء تسجيل الدخول. الرجاء المحاولة لاحقاً.');
+                }
+                
+                // إعادة تمكين زر التسجيل
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'تسجيل الدخول';
+            }
+        });
+
+        function showError(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.style.display = 'block';
+        }
+
+        // 5. التحقق من وجود توكن مسجل مسبقاً
+        window.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('token')) {
+                fetch('/api/auth/user', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        window.location.href = 'homepage.html';
+                    } else {
+                        localStorage.removeItem('token');
+                    }
+                });
             }
         });
     </script>

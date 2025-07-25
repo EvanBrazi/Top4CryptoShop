@@ -38,6 +38,10 @@ app.get('/login', (req, res) => {
   res.sendFile(path.join(staticFilesPath, 'login.html'));
 });
 
+app.get('/homepage.html', (req, res) => {
+    res.sendFile(path.join(staticFilesPath, 'homepage.html'));
+});
+
 // ──────────── اتصال MongoDB ──────────── //
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/Top4CryptoShop')
   .then(() => console.log('✅ تم الاتصال بـ MongoDB بنجاح'))

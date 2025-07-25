@@ -45,79 +45,209 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/Top4Crypt
 
 
 // ============== مسارات API ============== //
-
-// 1. تسجيل مستخدم جديد
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { username, password, phone, email, theme } = req.body;
 
+    // 1. تحقق من البيانات المطلوبة
     if (!username || !password) {
-      return res.status(400).json({ error: 'يجب إدخال اسم المستخدم وكلمة المرور' });
+      return res.status(400).json({ 
+        error: 'يجب إدخال اسم المستخدم وكلمة المرور',
+        details: {
+          missing_fields: {
+            username: !username,
+            password: !password
+          }
+        }
+      });
     }
 
-    const newUser = new User({ username, password });
+    // 2. تحقق من عدم تكرار البيانات
+    const existingUser = await User.findOne({
+      $or: [
+        { username },
+        { phone },
+        { email }
+      ]
+    });
+
+    if (existingUser) {
+      let duplicateField = '';
+      if (existingUser.username === username) duplicateField = 'اسم المستخدم';
+      if (existingUser.phone === phone) duplicateField = 'رقم الهاتف';
+      if (existingUser.email === email) duplicateField = 'البريد الإلكتروني';
+
+      return res.status(409).json({
+        error: `${duplicateField} مسجل مسبقاً`,
+        code: 'DUPLICATE_ENTRY'
+      });
+    }
+
+    // 3. إنشاء المستخدم الجديد
+    const newUser = new User({
+      username,
+      password, // سيتم تشفيرها تلقائياً في middleware
+      phone: phone || null,
+      email: email || null,
+      theme: theme || 0,
+      balance: 0
+    });
+
+    // 4. حفظ المستخدم في قاعدة البيانات
     await newUser.save();
 
+    // 5. إنشاء توكن الدخول
     const token = jwt.sign(
       { userId: newUser._id },
       process.env.JWT_SECRET || 'fallback_secret',
       { expiresIn: '1h' }
     );
 
+    // 6. إرسال الرد الناجح
     res.status(201).json({
       success: true,
       token,
       user: {
         id: newUser._id,
         username: newUser.username,
-        balance: newUser.balance
+        balance: newUser.balance,
+        theme: newUser.theme
       }
     });
 
   } catch (err) {
-    console.error('🚨 خطأ في التسجيل:', err);
+    console.error('🚨 خطأ مفصل في التسجيل:', {
+      message: err.message,
+      stack: err.stack,
+      code: err.code,
+      keyValue: err.keyValue
+    });
+
     res.status(500).json({
-      error: err.code === 11000 ? 'اسم المستخدم موجود بالفعل' : 'حدث خطأ في الخادم'
+      error: 'حدث خطأ في الخادم',
+      ...(process.env.NODE_ENV === 'development' && {
+        details: err.message,
+        stack: err.stack
+      })
     });
   }
 });
 
-// 2. تسجيل الدخول
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { username, password } = req.body;
 
-    const user = await User.findOne({ username });
+    // 1. التحقق من وجود البيانات المطلوبة
+    if (!username || !password) {
+      return res.status(400).json({ 
+        error: 'اسم المستخدم وكلمة المرور مطلوبان',
+        code: 'MISSING_CREDENTIALS'
+      });
+    }
+
+    // 2. البحث عن المستخدم مع تحديد الحقول المطلوبة فقط
+    const user = await User.findOne({ username })
+      .select('+password +loginAttempts +lastLogin')
+      .lean();
+
     if (!user) {
-      return res.status(401).json({ error: 'بيانات الدخول غير صحيحة' });
+      return res.status(401).json({ 
+        error: 'بيانات الدخول غير صحيحة',
+        code: 'INVALID_CREDENTIALS'
+      });
     }
 
-    const isMatch = await user.comparePassword(password);
+    // 3. التحقق من عدد محاولات الدخول الفاشلة
+    if (user.loginAttempts >= 5) {
+      const timeSinceLastAttempt = Date.now() - user.lastLogin;
+      const lockoutDuration = 15 * 60 * 1000; // 15 دقيقة
+      
+      if (timeSinceLastAttempt < lockoutDuration) {
+        return res.status(429).json({
+          error: 'تم تجاوز عدد المحاولات المسموح بها',
+          code: 'ACCOUNT_LOCKED',
+          retryAfter: Math.ceil((lockoutDuration - timeSinceLastAttempt) / 1000)
+        });
+      }
+    }
+
+    // 4. مقارنة كلمة المرور
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ error: 'بيانات الدخول غير صحيحة' });
+      // زيادة عداد المحاولات الفاشلة
+      await User.updateOne(
+        { _id: user._id },
+        { 
+          $inc: { loginAttempts: 1 },
+          $set: { lastLogin: Date.now() }
+        }
+      );
+      
+      return res.status(401).json({ 
+        error: 'بيانات الدخول غير صحيحة',
+        code: 'INVALID_CREDENTIALS'
+      });
     }
 
-    const token = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_SECRET || 'fallback_secret',
-      { expiresIn: '1h' }
+    // 5. إعادة تعيين عداد المحاولات بعد تسجيل الدخول الناجح
+    await User.updateOne(
+      { _id: user._id },
+      { 
+        $set: { loginAttempts: 0 },
+        $currentDate: { lastLogin: true }
+      }
     );
 
+    // 6. إنشاء توكن الدخول
+    const token = jwt.sign(
+      {
+        userId: user._id,
+        username: user.username
+      },
+      process.env.JWT_SECRET || 'fallback_secret',
+      { 
+        expiresIn: '1h',
+        issuer: 'Top4CryptoShop',
+        audience: 'user-auth'
+      }
+    );
+
+    // 7. إعداد كوكي آمن (اختياري)
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 3600000 // 1 ساعة
+    });
+
+    // 8. إرسال الاستجابة
     res.json({
       success: true,
       token,
       user: {
         id: user._id,
         username: user.username,
-        balance: user.balance
+        balance: user.balance,
+        theme: user.theme || 0
       }
     });
 
   } catch (err) {
-    console.error('🚨 خطأ في تسجيل الدخول:', err);
-    res.status(500).json({ error: 'حدث خطأ في الخادم' });
+    console.error('🚨 خطأ في تسجيل الدخول:', {
+      message: err.message,
+      stack: err.stack,
+      timestamp: new Date().toISOString()
+    });
+    
+    res.status(500).json({ 
+      error: 'حدث خطأ في الخادم',
+      ...(process.env.NODE_ENV === 'development' && {
+        details: err.message
+      })
+    });
   }
 });
+
 
 // 3. بيانات المستخدم
 app.get('/api/auth/user', async (req, res) => {

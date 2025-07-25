@@ -88,6 +88,40 @@ document.addEventListener('DOMContentLoaded', function() {
             currentPageIndicator.textContent = 'صفحة أخرى';
         }
     }
+
+document.querySelector('.logout-btn').addEventListener('click', async () => {
+        if (!confirm('هل أنت متأكد من تسجيل الخروج؟'))return;
+        
+        try {
+            const token = localStorage.getItem('token');
+        
+        // إرسال طلب تسجيل الخروج
+        
+            const response = await fetch('/api/auth/logout', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) throw new Error('فشل في تسجيل الخروج');
+        
+        // مسح البيانات المحلية
+        
+            localStorage.removeItem('token');
+            sessionStorage.removeItem('user');
+        
+        // التوجيه لصفحة الدخول
+        
+            window.location.href = 'login.html';
+        } catch (err) {
+            console.error('حدث خطأ:', err);
+            alert('حدث خطأ أثناء تسجيل الخروج. يرجى المحاولة مرة أخرى.');
+        }
+    });
+
+
     
     // ------ إدارة بيانات المستخدم ------
     

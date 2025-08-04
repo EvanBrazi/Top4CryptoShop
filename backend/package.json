@@ -19,7 +19,8 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.16.4",
-    "portfinder": "^1.0.37"
+    "portfinder": "^1.0.37",
+    "validator": "^13.15.15"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"

@@ -1,6 +1,6 @@
 {
   "name": "backend",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "Backend server for Top4CryptoShop",
   "main": "server.js",
   "scripts": {
@@ -9,8 +9,9 @@
     "test": "jest --passWithNoTests",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "prepare": "exit 0",
-    "build": "echo \"No build step required\" && exit 0"
+    "prepare": "echo 'Hooks installation disabled' && exit 0",
+    "build": "echo 'No build required' && exit 0",
+    "postinstall": "echo 'Installation completed'"
   },
   "dependencies": {
     "bcryptjs": "3.0.2",
@@ -37,16 +38,11 @@
     "prettier": "^3.6.2",
     "rimraf": "6.0.1"
   },
+  "config": {
+    "ignore-scripts": true
+  },
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=9.0.0"
-  },
-  "keywords": [
-    "node",
-    "express",
-    "mongodb",
-    "authentication"
-  ],
-  "author": "EvanBrazi",
-  "license": "MIT"
+  }
 }

@@ -1,7 +1,12 @@
 /**
  * server.js - ملف التشغيل الرئيسي للتطبيق
- * إصدار: 1.0.0
+ * إصدار: 2.0.0
  * وصف: يحتوي على إعدادات الخادم الأساسية، وسائط الأمان، إدارة الجلسات، تعريف المسارات ومعالجة الأخطاء
+ * التغييرات:
+ * - إزالة الخيارات deprecated لـ MongoDB
+ * - تحسين إدارة اتصال MongoDB
+ * - تحسين إعادة التوجيه HTTPS
+ * - تحسين معالجة الأخطاء
  */
 
 require('dotenv').config();
@@ -17,7 +22,9 @@ const MongoStore = require('connect-mongo');
 const compression = require('compression');
 const morgan = require('morgan');
 
-// تهيئة تطبيق Express
+// =============================================
+//               تهيئة التطبيق
+// =============================================
 const app = express();
 
 // =============================================
@@ -25,49 +32,68 @@ const app = express();
 // =============================================
 
 // 1. وسائط الأمان الأساسية
-app.use(helmet()); // حماية من الثغرات الشائعة
-app.use(cookieParser()); // تحليل الكوكيز
-app.use(compression()); // ضغط الردود
-app.use(morgan('combined')); // تسجيل الطلبات
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:"]
+    }
+  }
+}));
+app.use(cookieParser());
+app.use(compression());
+app.use(morgan('combined'));
 
 // 2. إعداد الجلسات مع MongoDB
 const sessionConfig = {
-  secret: process.env.SESSION_SECRET || 'your-secret-key',
+  secret: process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex'),
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({
     mongoUrl: process.env.MONGODB_URI,
-    ttl: 24 * 60 * 60 // انتهاء الجلسة بعد 24 ساعة
+    ttl: 24 * 60 * 60,
+    crypto: {
+      secret: process.env.SESSION_CRYPTO_SECRET || crypto.randomBytes(32).toString('hex')
+    }
   }),
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     sameSite: 'lax',
-    maxAge: 24 * 60 * 60 * 1000
+    maxAge: 24 * 60 * 60 * 1000,
+    domain: process.env.COOKIE_DOMAIN || undefined
   }
 };
 
 if (app.get('env') === 'production') {
-  app.set('trust proxy', 1); // الثقة في بروكسي HTTPS
+  app.set('trust proxy', 1);
   sessionConfig.cookie.secure = true;
 }
 
 app.use(session(sessionConfig));
 
-// 3. الحد من معدل الطلبات للحماية من هجمات Brute Force
+// 3. الحد من معدل الطلبات
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 دقيقة
-  max: 100, // 100 طلب لكل IP
-  message: 'لقد تجاوزت الحد المسموح من الطلبات، يرجى المحاولة لاحقاً'
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  handler: (req, res) => {
+    res.status(429).json({
+      error: 'لقد تجاوزت الحد المسموح من الطلبات',
+      retryAfter: '15 دقيقة'
+    });
+  }
 });
 app.use(limiter);
 
-// 4. إعداد CORS
+// 4. إعداد CORS المحسن
 const corsOptions = {
   origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:8000'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-csrf-token']
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-csrf-token'],
+  exposedHeaders: ['x-csrf-token']
 };
 app.use(cors(corsOptions));
 
@@ -85,7 +111,7 @@ app.use(express.static(staticFilesPath, {
   maxAge: '1d',
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.html')) {
-      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     }
   }
 }));
@@ -97,7 +123,8 @@ app.use((req, res, next) => {
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  res.setHeader('Referrer-Policy', 'same-origin');
   next();
 });
 
@@ -107,11 +134,9 @@ app.use((req, res, next) => {
 const connectDB = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
-      maxPoolSize: 10, // تغيير من poolSize إلى maxPoolSize
+      maxPoolSize: 10,
       retryWrites: true,
       w: 'majority'
     });
@@ -122,18 +147,23 @@ const connectDB = async () => {
   }
 };
 
-// معالجة أحداث الاتصال
 mongoose.connection.on('disconnected', () => {
   console.log('❌ فقدان الاتصال بقاعدة البيانات، جاري إعادة الاتصال...');
   setTimeout(connectDB, 5000);
 });
 
+mongoose.connection.on('connected', () => {
+  console.log('✔ اتصال مستقر بقاعدة البيانات');
+});
+
 connectDB();
 
-// إعادة توجيه HTTP إلى HTTPS (قبل تعريف المسارات)
+// =============================================
+//             إعادة توجيه HTTPS
+// =============================================
 app.use((req, res, next) => {
-  if (req.headers['x-forwarded-proto'] !== 'https' && process.env.NODE_ENV === 'production') {
-    return res.redirect(301, `https://${req.headers.host}${req.url}`);
+  if (!req.secure && req.get('x-forwarded-proto') !== 'https' && process.env.NODE_ENV === 'production') {
+    return res.redirect(301, `https://${req.get('host')}${req.url}`);
   }
   next();
 });
@@ -152,33 +182,40 @@ app.use('/api', apiRoutes);
 // =============================================
 //              الصفحات الرئيسية
 // =============================================
-app.get('/signup', (req, res) => res.sendFile(path.join(staticFilesPath, 'signup.html')));
-app.get('/login', (req, res) => res.sendFile(path.join(staticFilesPath, 'login.html')));
-app.get('/homepage', (req, res) => res.sendFile(path.join(staticFilesPath, 'homepage.html')));
+const serveStaticPage = (page) => (req, res) => {
+  res.sendFile(path.join(staticFilesPath, `${page}.html`), (err) => {
+    if (err) {
+      res.status(404).json({ error: 'الصفحة غير موجودة' });
+    }
+  };
+};
+
+app.get('/signup', serveStaticPage('signup'));
+app.get('/login', serveStaticPage('login'));
+app.get('/homepage', serveStaticPage('homepage'));
 
 // =============================================
 //              معالجة الأخطاء
 // =============================================
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error(`[${new Date().toISOString()}]`, err.stack);
   
-  const response = {
-    error: 'حدث خطأ في الخادم!',
-    requestId: req.id
+  const errorResponse = {
+    error: 'حدث خطأ في الخادم',
+    requestId: req.id,
+    ...(process.env.NODE_ENV === 'development' && {
+      message: err.message,
+      stack: err.stack
+    })
   };
 
-  if (process.env.NODE_ENV === 'development') {
-    response.details = err.message;
-    response.stack = err.stack;
-  }
-
-  res.status(err.status || 500).json(response);
+  res.status(err.status || 500).json(errorResponse);
 });
 
-// جميع الطلبات الأخرى
-app.get('*', (req, res) => {
-  res.sendFile(path.join(staticFilesPath, 'dashboard.html'));
-});
+// =============================================
+//              جميع الطلبات الأخرى
+// =============================================
+app.get('*', serveStaticPage('dashboard'));
 
 // =============================================
 //              تشغيل الخادم

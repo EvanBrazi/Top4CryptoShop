@@ -1,7 +1,11 @@
 /**
  * User.js - نموذج مستخدم MongoDB
- * إصدار: 1.0.0
+ * إصدار: 2.0.0
  * وصف: يحتوي على تعريف نموذج المستخدم وجميع الوظائف المرتبطة به
+ * التغييرات:
+ * - إزالة الفهارس المكررة
+ * - تحسين التحقق من الصحة
+ * - تحسين أداء الاستعلامات
  */
 
 const mongoose = require('mongoose');
@@ -11,8 +15,20 @@ const validator = require('validator');
 const crypto = require('crypto');
 
 /**
- * تعريف مخطط المستخدم
+ * @typedef {Object} User
+ * @property {string} username - اسم المستخدم الفريد
+ * @property {string} password - كلمة المرور المشفرة
+ * @property {string} [phone] - رقم الهاتف (اختياري)
+ * @property {string} [email] - البريد الإلكتروني (اختياري)
+ * @property {number} [theme=0] - إعدادات الثيم
+ * @property {number} [balance=0] - رصيد المستخدم
+ * @property {number} [loginAttempts=0] - عدد محاولات الدخول الفاشلة
+ * @property {Date} [lastLogin] - تاريخ آخر دخول
+ * @property {string} [role='user'] - دور المستخدم (user/admin/moderator)
+ * @property {string} [accountStatus='active'] - حالة الحساب
+ * @property {number} [tokenVersion=0] - إصدار التوكن
  */
+
 const userSchema = new Schema({
   username: {
     type: String,
@@ -89,26 +105,31 @@ const userSchema = new Schema({
   toJSON: { 
     virtuals: true,
     transform: function(doc, ret) {
-      delete ret.password; // إزالة كلمة المرور من الناتج
-      delete ret.__v; // إزالة حقل الإصدار
+      delete ret.password;
+      delete ret.__v;
       return ret;
+    }
+  },
+  statics: {
+    /**
+     * البحث عن مستخدم باسم مستخدم معين
+     * @param {string} username - اسم المستخدم للبحث
+     * @returns {Promise<User>} - وثيقة المستخدم
+     */
+    findByUsername(username) {
+      return this.findOne({ username }).select('+password +loginAttempts');
     }
   }
 });
 
-// =============================================
-//               Middlewares
-// =============================================
-
 /**
- * Middleware قبل الحفظ لتشفير كلمة المرور
+ * تشفير كلمة المرور قبل الحفظ
  */
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
 
   try {
-    const saltRounds = process.env.NODE_ENV === 'production' ? 12 : 10;
-    const salt = await bcrypt.genSalt(saltRounds);
+    const salt = await bcrypt.genSalt(12);
     this.password = await bcrypt.hash(this.password, salt);
     this.tokenVersion += 1;
     next();
@@ -117,14 +138,10 @@ userSchema.pre('save', async function(next) {
   }
 });
 
-// =============================================
-//               Methods
-// =============================================
-
 /**
  * مقارنة كلمة المرور المدخلة مع المشفرة
- * @param {String} candidatePassword - كلمة المرور المدخلة
- * @returns {Boolean} - نتيجة المقارنة
+ * @param {string} candidatePassword - كلمة المرور المدخلة
+ * @returns {Promise<boolean>} - نتيجة المقارنة
  */
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
@@ -143,7 +160,7 @@ userSchema.methods.incrementLoginAttempts = async function() {
 
 /**
  * إنشاء رمز إعادة تعيين كلمة المرور
- * @returns {String} - رمز إعادة التعيين
+ * @returns {string} - رمز إعادة التعيين
  */
 userSchema.methods.createPasswordResetToken = function() {
   const resetToken = crypto.randomBytes(32).toString('hex');
@@ -151,13 +168,11 @@ userSchema.methods.createPasswordResetToken = function() {
     .createHash('sha256')
     .update(resetToken)
     .digest('hex');
-  this.resetPasswordExpires = Date.now() + 10 * 60 * 1000; // 10 دقائق
+  this.resetPasswordExpires = Date.now() + 10 * 60 * 1000;
   return resetToken;
 };
 
-// =============================================
-//               Indexes
-// =============================================
+// تعريف الفهارس (مرة واحدة فقط)
 userSchema.index({ username: 1 });
 userSchema.index({ email: 1 }, { sparse: true });
 userSchema.index({ phone: 1 }, { sparse: true });

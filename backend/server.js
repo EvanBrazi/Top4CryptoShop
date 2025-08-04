@@ -1,12 +1,14 @@
 /**
  * server.js - ملف التشغيل الرئيسي للتطبيق
- * إصدار: 2.0.0
+ * إصدار: 2.1.0
  * وصف: يحتوي على إعدادات الخادم الأساسية، وسائط الأمان، إدارة الجلسات، تعريف المسارات ومعالجة الأخطاء
  * التغييرات:
  * - إزالة الخيارات deprecated لـ MongoDB
  * - تحسين إدارة اتصال MongoDB
  * - تحسين إعادة التوجيه HTTPS
  * - تحسين معالجة الأخطاء
+ * - إضافة تحسينات للأداء والمرونة
+ * - إصلاح مشاكل المسارات المفقودة
  */
 
 require('dotenv').config();
@@ -23,6 +25,7 @@ const compression = require('compression');
 const morgan = require('morgan');
 const crypto = require('crypto');
 const fs = require('fs');
+const favicon = require('serve-favicon');
 
 // =============================================
 //               تهيئة التطبيق
@@ -40,7 +43,8 @@ app.use(helmet({
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:"]
+      imgSrc: ["'self'", "data:"],
+      connectSrc: ["'self'"]
     }
   }
 }));
@@ -76,18 +80,20 @@ if (app.get('env') === 'production') {
 
 app.use(session(sessionConfig));
 
-// 3. الحد من معدل الطلبات
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  handler: (req, res) => {
-    res.status(429).json({
-      error: 'لقد تجاوزت الحد المسموح من الطلبات',
-      retryAfter: '15 دقيقة'
-    });
+// 3. الحد من معدل الطلبات (محسّن)
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 دقيقة
+  max: 300, // 300 طلب لكل IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: 'لقد تجاوزت الحد المسموح من الطلبات',
+    retryAfter: '15 دقيقة'
   }
 });
-app.use(limiter);
+
+// تطبيق معدل الطلبات على مسارات API فقط
+app.use('/api/', apiLimiter);
 
 // 4. إعداد CORS المحسن
 const corsOptions = {
@@ -122,11 +128,19 @@ try {
   process.exit(1);
 }
 
+// إعداد Favicon
+app.use(favicon(path.join(staticFilesPath, 'favicon.ico')));
+
+// تحسين معالجة الملفات الثابتة
 app.use(express.static(staticFilesPath, {
-  maxAge: '1d',
+  maxAge: '7d', // زيادة مدة التخزين المؤقت
+  etag: true, // تمكين ETag
+  lastModified: true, // تمكين Last-Modified
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.html')) {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    } else {
+      res.setHeader('Cache-Control', 'public, max-age=604800'); // أسبوع واحد
     }
   }
 }));
@@ -135,6 +149,14 @@ app.use(express.static(staticFilesPath, {
 //             رؤوس الأمان الإضافية
 // =============================================
 app.use((req, res, next) => {
+  // تسجيل وقت بدء الطلب
+  req.startTime = Date.now();
+  
+  res.on('finish', () => {
+    const duration = Date.now() - req.startTime;
+    console.log(`${req.method} ${req.url} - ${res.statusCode} [${duration}ms]`);
+  });
+
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
@@ -144,20 +166,31 @@ app.use((req, res, next) => {
 });
 
 // =============================================
-//             اتصال قاعدة البيانات
+//             اتصال قاعدة البيانات (محسّن)
 // =============================================
 const connectDB = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URI, {
       serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000,
-      maxPoolSize: 10,
+      socketTimeoutMS: 30000,
+      maxPoolSize: 50,
       retryWrites: true,
-      w: 'majority'
+      w: 'majority',
+      retryReads: true
     });
     console.log('✅ تم الاتصال بـ MongoDB بنجاح');
   } catch (err) {
-    console.error('❌ فشل الاتصال بقاعدة البيانات:', err);
+    console.error('❌ فشل الاتصال بقاعدة البيانات:', err.message);
+    
+    // رسائل خطأ موضحة
+    if (err.message.includes('Invalid scheme')) {
+      console.error('الرجاء التأكد أن رابط الاتصال يبدأ بـ mongodb:// أو mongodb+srv://');
+    } else if (err.message.includes('bad auth')) {
+      console.error('خطأ في اسم المستخدم/كلمة المرور');
+    } else if (err.message.includes('ETIMEOUT')) {
+      console.error('مهلة الاتصال انتهت - تأكد من اتصال الإنترنت');
+    }
+    
     process.exit(1);
   }
 };
@@ -194,8 +227,17 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api', apiRoutes);
 
+// نقطة نهاية للصحة
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'UP',
+    db: mongoose.connection.readyState === 1 ? 'CONNECTED' : 'DISCONNECTED',
+    memoryUsage: process.memoryUsage()
+  });
+});
+
 // =============================================
-//              الصفحات الرئيسية
+//              الصفحات الرئيسية (محسّنة)
 // =============================================
 const serveStaticPage = (page) => (req, res) => {
   res.sendFile(path.join(staticFilesPath, `${page}.html`), (err) => {
@@ -213,8 +255,23 @@ app.get('/signup', serveStaticPage('signup'));
 app.get('/login', serveStaticPage('login'));
 app.get('/homepage', serveStaticPage('homepage'));
 
+// إضافة مسار /apps/icons المفقود
+app.post('/api/apps/icons', (req, res) => {
+  try {
+    // منطق معالجة الطلب هنا
+    res.status(200).json({ 
+      success: true,
+      message: 'API under development' 
+    });
+  } catch (err) {
+    res.status(500).json({ 
+      error: err.message 
+    });
+  }
+});
+
 // =============================================
-//              معالجة الأخطاء
+//              معالجة الأخطاء (محسّنة)
 // =============================================
 app.use((err, req, res, next) => {
   const timestamp = new Date().toISOString();
@@ -226,6 +283,8 @@ app.use((err, req, res, next) => {
     error: 'حدث خطأ في الخادم',
     errorId,
     timestamp,
+    path: req.path,
+    method: req.method,
     ...(process.env.NODE_ENV === 'development' && {
       message: err.message,
       stack: err.stack.split('\n')
@@ -248,10 +307,21 @@ const server = app.listen(PORT, () => {
   console.log(`🚀 الخادم يعمل على http://localhost:${PORT}`);
 });
 
-// معالجة الأخطاء غير الملتقطة
+// معالجة الأخطاء غير الملتقطة (محسّنة)
 process.on('unhandledRejection', (err) => {
   console.error('Unhandled Rejection:', err);
-  server.close(() => process.exit(1));
+  
+  // إعطاء وقت للإغلاق بشكل أنيق
+  server.close(() => {
+    console.log('Server closed due to unhandled rejection');
+    process.exit(1);
+  });
+  
+  // إغلاق قسري بعد 5 ثواني إذا لم يتم الإغلاق
+  setTimeout(() => {
+    console.error('Forcing shutdown due to timeout');
+    process.exit(1);
+  }, 5000);
 });
 
 module.exports = app;

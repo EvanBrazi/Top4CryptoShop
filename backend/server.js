@@ -130,6 +130,14 @@ mongoose.connection.on('disconnected', () => {
 
 connectDB();
 
+// إعادة توجيه HTTP إلى HTTPS (قبل تعريف المسارات)
+app.use((req, res, next) => {
+  if (req.headers['x-forwarded-proto'] !== 'https' && process.env.NODE_ENV === 'production') {
+    return res.redirect(301, `https://${req.headers.host}${req.url}`);
+  }
+  next();
+});
+
 // =============================================
 //                تعريف المسارات
 // =============================================

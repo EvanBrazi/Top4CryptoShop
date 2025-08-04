@@ -1,257 +1,120 @@
-document.addEventListener('DOMContentLoaded', function() {
+import * as main from "./tabmanager.js";
+import * as cm from "./cardsmanager.js";
+import * as th from "./theme.js";
+import * as um from "./usermanager.js";
+import { Taber } from "./core/taber.js";
+import { AppManager } from "./appmanager.js";
+
+document.addEventListener('DOMContentLoaded', function () {
     // العناصر الأساسية
     const sidebar = document.querySelector('.sidebar');
+    const sidebarMenuContainer = document.querySelector('.sidebar-menu-container');
+    const tabsContent = document.querySelector('.tabs-container');
     const toggleBtn = document.querySelector('.toggle-sidebar');
     const overlay = document.querySelector('.overlay');
-    const themeToggleBtn = document.getElementById('theme-toggle-btn');
+
     const body = document.body;
+    const addBalanceBtn = document.getElementById('add-balance-btn');
     const backBtn = document.getElementById('back-btn');
     const currentPageIndicator = document.getElementById('current-page-indicator');
-    
+
     // عناصر البروفايل
     const profileImg = document.getElementById('profile-img');
     const usernameDisplay = document.getElementById('username-display');
     const balanceDisplay = document.getElementById('balance-display');
     const topBalanceDisplay = document.getElementById('top-balance-display');
-    
-    // أزرار الاختبار
-    const testUser1Btn = document.getElementById('test-user1-btn');
-    const testUser2Btn = document.getElementById('test-user2-btn');
-    
+
     // عناصر الفوتر والنوافذ المنبثقة
     const termsBtn = document.getElementById('terms-btn');
     const privacyBtn = document.getElementById('privacy-btn');
     const termsModal = document.getElementById('terms-modal');
     const privacyModal = document.getElementById('privacy-modal');
     const closeModalBtns = document.querySelectorAll('.close-modal');
-    
-    // بيانات المستخدم الافتراضية
-    let currentUser = {
-        name: 'زائر',
-        email: null,
-        balance: 0.00,
-        theme: 0,
-        isHomePage: true
-    };
-    
+
+    // Constant Variables
+    const STORAGE_ACTIVE_TAB_KEY = 'top4cryptoshop_activeTab';
+    addBalanceBtn.addEventListener('click', () => {
+        taber.activateTab('wallet');
+    });
+
+    let scrollTimer;
+    const mainContent = document.querySelector('.main-content');
+    const logoutBtn = document.getElementById('logoutBtn');
+    //if (logoutBtn) logoutBtn.addEventListener('click', um.logout());
+
     // ------ وظائف التحكم الأساسية ------
+    mainContent.addEventListener('scroll', function () {
+        if (sidebar.classList.contains('active')) {
+            toggleSidebar();
+        }
+    });
     
     // فتح/إغلاق الدرج
     toggleBtn.addEventListener('click', toggleSidebar);
     overlay.addEventListener('click', toggleSidebar);
-    
+
     function toggleSidebar() {
         sidebar.classList.toggle('active');
         overlay.classList.toggle('active');
     }
-    
-    // تبديل الثيم
-    themeToggleBtn.addEventListener('click', toggleTheme);
-    
-    function toggleTheme() {
-        body.classList.toggle('day-theme');
-        body.classList.toggle('night-theme');
-        currentUser.theme = body.classList.contains('night-theme') ? 1 : 0;
-        updateThemeButton();
-        localStorage.setItem('theme', currentUser.theme === 1 ? 'night' : 'day');
-    }
-    
-    function updateThemeButton() {
-        if (currentUser.theme === 1) {
-            themeToggleBtn.innerHTML = '<i class="fas fa-sun"></i> تبديل الثيم';
-        } else {
-            themeToggleBtn.innerHTML = '<i class="fas fa-moon"></i> تبديل الثيم';
-        }
-    }
-    
-    function initTheme() {
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'night') {
-            body.classList.add('night-theme');
-            body.classList.remove('day-theme');
-            currentUser.theme = 1;
-        } else {
-            body.classList.add('day-theme');
-            body.classList.remove('night-theme');
-            currentUser.theme = 0;
-        }
-        updateThemeButton();
-    }
-    
-    // تحديث زر الرجوع
-    function updateBackButton() {
-        if (currentUser.isHomePage) {
-            backBtn.classList.remove('visible');
-            currentPageIndicator.textContent = 'الصفحة الرئيسية';
-        } else {
-            backBtn.classList.add('visible');
-            currentPageIndicator.textContent = 'صفحة أخرى';
-        }
-    }
 
-document.querySelector('.logout-btn').addEventListener('click', async () => {
-        if (!confirm('هل أنت متأكد من تسجيل الخروج؟'))return;
-        
-        try {
-            const token = localStorage.getItem('token');
-        
-        // إرسال طلب تسجيل الخروج
-        
-            const response = await fetch('/api/auth/logout', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            if (!response.ok) throw new Error('فشل في تسجيل الخروج');
-        
-        // مسح البيانات المحلية
-        
-            localStorage.removeItem('token');
-            sessionStorage.removeItem('user');
-        
-        // التوجيه لصفحة الدخول
-        
-            window.location.href = 'login.html';
-        } catch (err) {
-            console.error('حدث خطأ:', err);
-            alert('حدث خطأ أثناء تسجيل الخروج. يرجى المحاولة مرة أخرى.');
-        }
-    });
-
-
-    
-    // ------ إدارة بيانات المستخدم ------
-    
-    // اختبار المستخدم 1 (وضع ليلي)
-    testUser1Btn.addEventListener('click', function() {
-        loadUser({
-            name: 'أحمد محمد',
-            email: 'ahmed.mohamed@example.com',
-            balance: 1250.50,
-            theme: 1,
-            isHomePage: false
-        });
-    });
-    
-    // اختبار المستخدم 2 (وضع نهاري)
-    testUser2Btn.addEventListener('click', function() {
-        loadUser({
-            name: 'نورا أحمد',
-            email: 'nora.ahmed@test.com',
-            balance: 850.75,
-            theme: 0,
-            isHomePage: true
-        });
-    });
-    
-    function loadUser(userData) {
-        currentUser = userData;
-        updateUserProfile();
-        
-        // تطبيق الثيم
-        if (userData.theme === 1) {
-            body.classList.add('night-theme');
-            body.classList.remove('day-theme');
-        } else {
-            body.classList.add('day-theme');
-            body.classList.remove('night-theme');
-        }
-        
-        updateThemeButton();
-        updateBackButton();
-    }
-    
-    function updateUserProfile() {
-        // تحديث الاسم والرصيد
-        usernameDisplay.textContent = currentUser.name;
-        balanceDisplay.textContent = currentUser.balance.toFixed(2);
-        topBalanceDisplay.textContent = currentUser.balance.toFixed(2);
-        
-        // إعداد معالج الخطأ للصورة
-        profileImg.onerror = function() {
-            this.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDExQzE0LjIwOTEgMTEgMTYgOS4yMDkxIDE2IDdDMTYgNC43OTA4NiAxNC4yMDkxIDMgMTIgM0M5Ljc5MDg2IDMgOCA0Ljc5MDg2IDggN0M4IDkuMjA5MTQgOS43OTA4NiAxMSAxMiAxMVoiIGZpbGw9IiNjY2MiLz4KPHBhdGggZD0iTTEyIDIxQzE2Ljk3MDYgMjEgMjEgMTYuOTcwNiAyMSAxMkMyMSA3LjAyOTQ0IDE2Ljk3MDYgMyAxMiAzQzcuMDI5NDQgMyAzIDcuMDI5NDQgMyAxMkMzIDE2Ljk3MDYgNy4wMjk0NCAyMSAxMiAyMVoiIHN0cm9rZT0iI2NjYyIgc3Ryb2tlLXdpZHRoPSIyIi8+Cjwvc3ZnPg==';
-            this.onerror = null;
-        };
-        
-        // تحديث صورة البروفايل
-        if (currentUser.email) {
-            const emailHash = md5(currentUser.email.trim().toLowerCase());
-            profileImg.src = `https://www.gravatar.com/avatar/${emailHash}?d=404&s=160`;
-        } else {
-            profileImg.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=random`;
-        }
-    }
-    
-    // ------ نظام التبويبات الجديد ------
-    
-    const tabPanes = document.querySelectorAll('.tab-pane');
     const sidebarLinks = document.querySelectorAll('.sidebar-menu a');
-    
-    // وظيفة تبديل التبويب
-    function switchTab(tabId) {
-        // إخفاء كل التبويبات
-        tabPanes.forEach(pane => {
-            pane.classList.remove('active');
-        });
-        
-        // إظهار التبويب المحدد
-        const activePane = document.getElementById(`${tabId}-tab`);
-        if (activePane) {
-            activePane.classList.add('active');
-        }
-        
-        // تحديث مؤشر الصفحة الحالية
-        const activeLink = document.querySelector(`.sidebar-menu a[data-tab="${tabId}"]`);
-        if (activeLink) {
-            currentPageIndicator.textContent = activeLink.textContent.trim();
-        }
-        
-        // تحديث حالة الصفحة الرئيسية
-        currentUser.isHomePage = tabId === 'home';
-        updateBackButton();
+
+    // احداث النقر على البطاقات
+    async function handler(id, size) {
+        console.log('handler : ' + id + ' size : ' + size);
+        const appCards = await cm.loadCards('apps');
+        cm.renderCards('small-cards-container', appCards, 'small');
     }
-    
-    // إضافة أحداث النقر لروابط القائمة الجانبية
-    sidebarLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            const tabId = link.dataset.tab;
-            if (tabId) {
-                switchTab(tabId);
-                
-                // إغلاق الدرج الجانبي على الأجهزة الصغيرة
-                if (window.innerWidth < 992) {
-                    sidebar.classList.remove('active');
-                    overlay.classList.remove('active');
-                }
-            }
-        });
+
+    let counter = 1;
+
+    // إنشاء مثيل من Taber
+    const taber = new Taber(sidebarMenuContainer, tabsContent, {
+        activeClass: 'active',
+        defaultTab: 'home',
+        storageKey: STORAGE_ACTIVE_TAB_KEY,
+        useCookies: true
     });
-    
+
+    const appManager = new AppManager(taber);
+
+    // إضافة تاب جديد ديناميكيًا
+    const newTabId = `custom-${counter}`;
+    const newTabInfo = {
+        id: newTabId,
+        title: `Custom Tab ${counter}`,
+        icon: 'fas fa-star',
+        content: `<h3>Content Custom Tab ${counter}</h3><p>This Content Dynamic Added!</p>`
+    };
+    // @TODO: Edit Taber._validateTabExists to add new Tab
+    //taber.addTab(newTabInfo);
+
     // ------ إدارة الفوتر والنوافذ المنبثقة ------
-    
-    termsBtn.addEventListener('click', function() {
+
+    termsBtn.addEventListener('click', function () {
+        document.body.style.overflowX = 'visible';
         termsModal.style.display = 'block';
         document.body.style.overflow = 'hidden';
+        document.body.style.paddingRight = `${window.innerWidth - document.documentElement.clientWidth}px`;
     });
-    
-    privacyBtn.addEventListener('click', function() {
+
+    privacyBtn.addEventListener('click', function () {
+        document.body.style.overflowX = 'visible';
         privacyModal.style.display = 'block';
         document.body.style.overflow = 'hidden';
+        document.body.style.paddingRight = `${window.innerWidth - document.documentElement.clientWidth}px`;
     });
-    
+
     closeModalBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function () {
             termsModal.style.display = 'none';
             privacyModal.style.display = 'none';
             document.body.style.overflow = 'auto';
         });
     });
-    
-    window.addEventListener('click', function(event) {
+
+    window.addEventListener('click', function (event) {
         if (event.target === termsModal) {
             termsModal.style.display = 'none';
             document.body.style.overflow = 'auto';
@@ -261,45 +124,53 @@ document.querySelector('.logout-btn').addEventListener('click', async () => {
             document.body.style.overflow = 'auto';
         }
     });
-    
+
     // ------ الأحداث الإضافية ------
-    backBtn.addEventListener('click', function(e) {
+    backBtn.addEventListener('click', function (e) {
         e.preventDefault();
-        currentUser.isHomePage = true;
-        updateBackButton();
-        switchTab('home');
+        taber.activateTab('home');
     });
-    
-    
+
     // التحكم في ظهور/اختفاء الفوتر عند التمرير
     let lastScrollPosition = 0;
     const footer = document.querySelector('.site-footer');
-    
-    window.addEventListener('scroll', function() {
+
+    window.addEventListener('scroll', function () {
         const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-        
+
         if (currentScrollPosition > lastScrollPosition) {
-        // التمرير لأسفل - إخفاء الفوتر
+            // التمرير لأسفل - إخفاء الفوتر
             footer.classList.add('hidden');
         } else {
-        // التمرير لأعلى - إظهار الفوتر
+            // التمرير لأعلى - إظهار الفوتر
             footer.classList.remove('hidden');
         }
-    
-    // إذا كان المستخدم في أعلى الصفحة، تأكد من إظهار الفوتر
-    
+
+        // إذا كان المستخدم في أعلى الصفحة، تأكد من إظهار الفوتر
+
         if (currentScrollPosition <= 0) {
             footer.classList.remove('hidden');
         }
-        
+
         lastScrollPosition = currentScrollPosition;
     });
-    
+
+    // Update back button
+    window.addEventListener('load', () => {
+        const oldTab = localStorage.getItem(STORAGE_ACTIVE_TAB_KEY);
+        (oldTab && oldTab === 'home') ? backBtn.style.display = 'none' : backBtn.style.display = 'block';
+    });
     // التهيئة الأولية
-    initTheme();
-    updateUserProfile();
-    updateBackButton();
-    switchTab('home');
     
+    // 1. تهيئة المستخدم
+    um.loadUser();
+    th.initTheme();
+
+    //new main.init();
+    //main.callSwitchTab(currentTab, 'large');
+    //cm.loadCards('main').then(cards => {
+    //    cm.renderCards('main-cards-container', cards, 'large', handler);
+    //});
+
     console.log('تم تحميل النظام بنجاح وجاهز للاختبار');
 });

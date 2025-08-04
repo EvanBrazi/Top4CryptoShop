@@ -1,0 +1,229 @@
+/* apps-cards.css */
+.apps-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.search-bar {
+  width: 100%;
+  padding: 12px 20px;
+  margin-bottom: 20px;
+  border: 1px solid #ddd;
+  border-radius: 25px;
+  font-size: 16px;
+  outline: none;
+  transition: all 0.3s;
+}
+
+.search-bar:focus {
+  border-color: #6a5acd;
+  box-shadow: 0 0 5px rgba(106, 90, 205, 0.3);
+}
+
+.apps-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  padding: 10px;
+}
+
+.app-card {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.app-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
+.app-icon {
+  width: 100%;
+  height: 80px;
+  object-fit: contain;
+  padding: 15px;
+}
+
+.app-name {
+  padding: 10px;
+  text-align: center;
+  font-weight: bold;
+  font-size: 0.95rem;
+  color: #333;
+}
+
+.app-logo {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: white;
+  padding: 2px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.app-footer {
+  background: var(--theme-color, #6a5acd);
+  color: white;
+  padding: 10px;
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 30px;
+  gap: 10px;
+}
+
+.page-btn {
+  padding: 8px 15px;
+  background: #f0f0f0;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.page-btn.active {
+  background: var(--theme-color, #6a5acd);
+  color: white;
+}
+
+.page-btn:hover:not(.active) {
+  background: #e0e0e0;
+}
+
+/* أنماط مربع الحوار */
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(3px);
+}
+
+.dialog-box {
+  background: white;
+  border-radius: 12px;
+  width: 320px;
+  padding: 25px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  animation: dialogFadeIn 0.3s ease;
+}
+
+@keyframes dialogFadeIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.dialog-price {
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: var(--theme-color, #6a5acd);
+}
+
+.dialog-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #999;
+}
+
+.dialog-icon {
+  width: 90px;
+  height: 90px;
+  margin: 0 auto 20px;
+  display: block;
+  object-fit: contain;
+}
+
+.dialog-input-group {
+  margin-bottom: 18px;
+}
+
+.dialog-input-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+  color: #555;
+}
+
+.dialog-input-group input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.dialog-input-group input:focus {
+  border-color: var(--theme-color, #6a5acd);
+  outline: none;
+}
+
+.dialog-note {
+  font-size: 0.85rem;
+  color: #ff6b6b;
+  margin: 20px 0;
+  text-align: center;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.dialog-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  flex: 1;
+  transition: all 0.2s;
+}
+
+.dialog-btn-buy {
+  background: var(--theme-color, #6a5acd);
+  color: white;
+}
+
+.dialog-btn-buy:hover {
+  background: #5a4abc;
+}
+
+.dialog-btn-cancel {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.dialog-btn-cancel:hover {
+  background: #e0e0e0;
+}

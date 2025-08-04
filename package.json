@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "mongoose": "^8.16.4"
+    "mongoose": "^8.16.4",
+    "serve-favicon": "^2.5.1"
   }
 }

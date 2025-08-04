@@ -129,7 +129,7 @@ try {
 }
 
 // إعداد Favicon
-app.use(favicon(path.join(staticFilesPath, 'favicon.ico')));
+app.use(favicon(path.join(staticFilesPath, './assets/images/favicon.ico')));
 
 // تحسين معالجة الملفات الثابتة
 app.use(express.static(staticFilesPath, {

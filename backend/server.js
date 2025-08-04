@@ -48,6 +48,9 @@ app.use(helmet({
     }
   }
 }));
+app.use(helmet({
+  contentSecurityPolicy: false
+}));
 app.use(cookieParser());
 app.use(compression());
 app.use(morgan('combined'));

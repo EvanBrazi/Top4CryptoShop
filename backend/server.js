@@ -21,6 +21,8 @@ const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const compression = require('compression');
 const morgan = require('morgan');
+const crypto = require('crypto');
+const fs = require('fs');
 
 // =============================================
 //               تهيئة التطبيق
@@ -107,6 +109,19 @@ app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 //             الملفات الثابتة
 // =============================================
 const staticFilesPath = path.join(__dirname, '../frontend/public');
+
+// تحقق من وجود مجلد الملفات الثابتة (مع معالجة الأخطاء)
+try {
+  if (!fs.existsSync(staticFilesPath)) {
+    console.error('❌ مجلد الملفات الثابتة غير موجود:', staticFilesPath);
+    console.log('⚡ جاري إنشاء المجلد تلقائياً...');
+    fs.mkdirSync(staticFilesPath, { recursive: true });
+  }
+} catch (err) {
+  console.error('❌ خطأ في التحقق من مجلد الملفات:', err);
+  process.exit(1);
+}
+
 app.use(express.static(staticFilesPath, {
   maxAge: '1d',
   setHeaders: (res, filePath) => {
@@ -185,9 +200,13 @@ app.use('/api', apiRoutes);
 const serveStaticPage = (page) => (req, res) => {
   res.sendFile(path.join(staticFilesPath, `${page}.html`), (err) => {
     if (err) {
-      res.status(404).json({ error: 'الصفحة غير موجودة' });
+      console.error(`Failed to load ${page}.html`, err);
+      res.status(404).json({ 
+        error: 'الصفحة غير موجودة',
+        page: `${page}.html`
+      });
     }
-  };
+  });
 };
 
 app.get('/signup', serveStaticPage('signup'));
@@ -198,14 +217,18 @@ app.get('/homepage', serveStaticPage('homepage'));
 //              معالجة الأخطاء
 // =============================================
 app.use((err, req, res, next) => {
-  console.error(`[${new Date().toISOString()}]`, err.stack);
+  const timestamp = new Date().toISOString();
+  const errorId = crypto.randomBytes(4).toString('hex');
+  
+  console.error(`[${timestamp}] [${errorId}]`, err.stack);
   
   const errorResponse = {
     error: 'حدث خطأ في الخادم',
-    requestId: req.id,
+    errorId,
+    timestamp,
     ...(process.env.NODE_ENV === 'development' && {
       message: err.message,
-      stack: err.stack
+      stack: err.stack.split('\n')
     })
   };
 

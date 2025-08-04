@@ -1,11 +1,12 @@
 /**
  * User.js - نموذج مستخدم MongoDB
- * إصدار: 2.0.0
+ * إصدار: 2.0.1
  * وصف: يحتوي على تعريف نموذج المستخدم وجميع الوظائف المرتبطة به
  * التغييرات:
  * - إزالة الفهارس المكررة
  * - تحسين التحقق من الصحة
  * - تحسين أداء الاستعلامات
+ * - إصلاح تحذيرات الفهارس المكررة
  */
 
 const mongoose = require('mongoose');
@@ -37,7 +38,8 @@ const userSchema = new Schema({
     trim: true,
     minlength: [3, 'يجب أن يكون اسم المستخدم 3 أحرف على الأقل'],
     maxlength: [30, 'يجب ألا يتجاوز اسم المستخدم 30 حرفاً'],
-    match: [/^[a-zA-Z0-9_]+$/, 'يجب أن يحتوي اسم المستخدم على أحرف وأرقام فقط']
+    match: [/^[a-zA-Z0-9_]+$/, 'يجب أن يحتوي اسم المستخدم على أحرف وأرقام فقط'],
+    index: true // تعريف الفهرس هنا بدلاً من تكراره لاحقاً
   },
   password: {
     type: String,
@@ -52,7 +54,8 @@ const userSchema = new Schema({
     validate: {
       validator: v => validator.isMobilePhone(v, 'any', { strictMode: true }),
       message: 'رقم الهاتف غير صالح'
-    }
+    },
+    index: true // تعريف الفهرس هنا
   },
   email: {
     type: String,
@@ -62,7 +65,8 @@ const userSchema = new Schema({
     validate: {
       validator: v => validator.isEmail(v),
       message: 'البريد الإلكتروني غير صالح'
-    }
+    },
+    index: true // تعريف الفهرس هنا
   },
   theme: {
     type: Number,
@@ -89,12 +93,14 @@ const userSchema = new Schema({
   role: {
     type: String,
     enum: ['user', 'admin', 'moderator'],
-    default: 'user'
+    default: 'user',
+    index: true // تعريف الفهرس هنا
   },
   accountStatus: {
     type: String,
     enum: ['active', 'suspended', 'deactivated'],
-    default: 'active'
+    default: 'active',
+    index: true // تعريف الفهرس هنا
   },
   tokenVersion: {
     type: Number,
@@ -171,12 +177,5 @@ userSchema.methods.createPasswordResetToken = function() {
   this.resetPasswordExpires = Date.now() + 10 * 60 * 1000;
   return resetToken;
 };
-
-// تعريف الفهارس (مرة واحدة فقط)
-userSchema.index({ username: 1 });
-userSchema.index({ email: 1 }, { sparse: true });
-userSchema.index({ phone: 1 }, { sparse: true });
-userSchema.index({ role: 1 });
-userSchema.index({ accountStatus: 1 });
 
 module.exports = mongoose.model('User', userSchema);

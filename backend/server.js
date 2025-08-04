@@ -1,31 +1,42 @@
+/**
+ * server.js - ملف التشغيل الرئيسي للتطبيق
+ * يحتوي على:
+ * - إعدادات الخادم الأساسية
+ * - وسائط الأمان
+ * - إدارة الجلسات
+ * - تعريف المسارات
+ * - معالجة الأخطاء
+ */
+
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
-const fs = require('fs');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const { doubleCsrf } = require('csrf-csrf'); // بديل عن csurf
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
-const { verifyToken, checkAdmin } = require('./middlewares/authMiddleware');
+const compression = require('compression');
+const morgan = require('morgan');
 
-// التهيئة
+// 1. التهيئة الأساسية للتطبيق
 const app = express();
 
-// تحسينات الأمان الأساسية
+// 2. وسائط الأمان الأساسية
 app.use(helmet());
 app.use(cookieParser());
+app.use(compression());
+app.use(morgan('combined')); // تسجيل الطلبات
 
-// إعداد الجلسات مع MongoDB
-app.use(session({
+// 3. إعداد الجلسات مع MongoDB
+const sessionConfig = {
   secret: process.env.SESSION_SECRET || 'your-secret-key',
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({
-    mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/Top4CryptoShop',
+    mongoUrl: process.env.MONGODB_URI,
     ttl: 24 * 60 * 60 // 1 يوم
   }),
   cookie: {
@@ -34,25 +45,16 @@ app.use(session({
     sameSite: 'lax',
     maxAge: 24 * 60 * 60 * 1000
   }
-}));
+};
 
-// CSRF Protection البديل
-const { generateToken, doubleCsrfProtection } = doubleCsrf({
-  getSecret: () => process.env.CSRF_SECRET || 'your-csrf-secret',
-  cookieName: '__Host-psifi.x-csrf-token',
-  cookieOptions: {
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    httpOnly: true,
-    path: '/'
-  },
-  size: 64,
-  ignoredMethods: ['GET', 'HEAD', 'OPTIONS']
-});
+if (app.get('env') === 'production') {
+  app.set('trust proxy', 1); // الثقة في بروكسي HTTPS
+  sessionConfig.cookie.secure = true;
+}
 
-app.use(doubleCsrfProtection);
+app.use(session(sessionConfig));
 
-// الحد من معدل الطلبات
+// 4. الحد من معدل الطلبات
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 دقيقة
   max: 100,
@@ -60,20 +62,20 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// CORS Configuration
+// 5. إعداد CORS
 const corsOptions = {
-  origin: ['http://localhost:8000', 'https://top4cryptoshop.onrender.com'],
+  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:8000'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization', 'x-csrf-token']
 };
 app.use(cors(corsOptions));
 
-// Middlewares
+// 6. وسائط تحليل الطلبات
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
-// الملفات الثابتة مع تحسينات التخزين المؤقت
+// 7. الملفات الثابتة مع تحسينات التخزين المؤقت
 const staticFilesPath = path.join(__dirname, '../frontend/public');
 app.use(express.static(staticFilesPath, {
   maxAge: '1d',
@@ -84,30 +86,36 @@ app.use(express.static(staticFilesPath, {
   }
 }));
 
-// CSRF Token endpoint
-app.get('/csrf-token', (req, res) => {
-  res.json({ 
-    csrfToken: req.csrfToken(),
-    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 1 يوم
-  });
+// 8. رؤوس الأمان الإضافية
+app.use((req, res, next) => {
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  next();
 });
 
-// الصفحات الرئيسية
-app.get('/signup', (req, res) => res.sendFile(path.join(staticFilesPath, 'signup.html')));
-app.get('/login', (req, res) => res.sendFile(path.join(staticFilesPath, 'login.html')));
-app.get('/homepage', (req, res) => res.sendFile(path.join(staticFilesPath, 'homepage.html')));
+// 9. الاتصال بقاعدة البيانات
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      retryWrites: true,
+      w: 'majority',
+      poolSize: 10
+    });
+    console.log('✅ تم الاتصال بـ MongoDB بنجاح');
+  } catch (err) {
+    console.error('❌ فشل الاتصال بقاعدة البيانات:', err);
+    process.exit(1);
+  }
+};
+connectDB();
 
-// قاعدة البيانات مع تحسينات الاتصال
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/Top4CryptoShop', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 5000,
-  socketTimeoutMS: 45000
-})
-.then(() => console.log('✅ تم الاتصال بـ MongoDB بنجاح'))
-.catch(err => console.error('❌ فشل الاتصال:', err));
-
-// المسارات
+// 10. تعريف المسارات
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const apiRoutes = require('./routes/api');
@@ -116,48 +124,43 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api', apiRoutes);
 
-// معالجة الأخطاء
+// 11. الصفحات الرئيسية
+app.get('/signup', (req, res) => res.sendFile(path.join(staticFilesPath, 'signup.html')));
+app.get('/login', (req, res) => res.sendFile(path.join(staticFilesPath, 'login.html')));
+app.get('/homepage', (req, res) => res.sendFile(path.join(staticFilesPath, 'homepage.html')));
+
+// 12. معالجة الأخطاء
 app.use((err, req, res, next) => {
   console.error(err.stack);
   
-  if (err.code === 'EBADCSRFTOKEN') {
-    return res.status(403).json({ 
-      error: 'رمز CSRF غير صالح',
-      solution: 'جدد الصفحة وحاول مرة أخرى'
-    });
-  }
-  
-  res.status(500).json({ 
+  const response = {
     error: 'حدث خطأ في الخادم!',
-    details: process.env.NODE_ENV === 'development' ? err.message : undefined
-  });
+    requestId: req.id
+  };
+
+  if (process.env.NODE_ENV === 'development') {
+    response.details = err.message;
+    response.stack = err.stack;
+  }
+
+  res.status(err.status || 500).json(response);
 });
 
-// جميع الطلبات الأخرى
+// 13. جميع الطلبات الأخرى
 app.get('*', (req, res) => {
   res.sendFile(path.join(staticFilesPath, 'dashboard.html'));
 });
 
-// التشغيل مع تحسينات معالجة الأخطاء
-function startServer(port = process.env.PORT || 10000, maxAttempts = 5) {
-  const server = app.listen(port, () => {
-    console.log(`🚀 الخادم يعمل على http://localhost:${port}`);
-  });
+// 14. تشغيل الخادم
+const PORT = process.env.PORT || 10000;
+const server = app.listen(PORT, () => {
+  console.log(`🚀 الخادم يعمل على http://localhost:${PORT}`);
+});
 
-  process.on('unhandledRejection', (err) => {
-    console.error('Unhandled Rejection:', err);
-    server.close(() => process.exit(1));
-  });
+// 15. معالجة الأخطاء غير الملتقطة
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled Rejection:', err);
+  server.close(() => process.exit(1));
+});
 
-  server.on('error', (err) => {
-    if (err.code === 'EADDRINUSE' && port < port + maxAttempts) {
-      console.log(`⚠️ المنفذ ${port} مشغول، جرب ${port + 1}...`);
-      startServer(port + 1, maxAttempts);
-    } else {
-      console.error('خطأ في الخادم:', err);
-      process.exit(1);
-    }
-  });
-}
-
-startServer();
+module.exports = app;

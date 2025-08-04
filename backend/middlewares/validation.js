@@ -7,7 +7,7 @@ const { body, validationResult } = require('express-validator');
  * - كلمة المرور (6 أحرف على الأقل)
  * - رقم الجوال (اختياري ولكن إذا وجب يجب أن يكون صحيحاً)
  */
-exports.validateRegister = [
+const validateRegister = [
   body('username')
     .trim()
     .isLength({ min: 3 })
@@ -32,7 +32,7 @@ exports.validateRegister = [
  * - وجود اسم المستخدم
  * - وجود كلمة المرور
  */
-exports.validateLogin = [
+const validateLogin = [
   body('username')
     .trim()
     .notEmpty()
@@ -50,17 +50,15 @@ exports.validateLogin = [
  * @param {Object} res - استجابة HTTP
  * @param {Function} next - الوظيفة التالية في الميدل وير
  */
-exports.handleValidationErrors = (req, res, next) => {
+const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ 
-      error: 'خطأ في التحقق من البيانات',
-      details: errors.array().map(err => ({
-        field: err.param,
-        message: err.msg
-      })),
-      requestId: req.requestId
-    });
+    return res.status(400).json({ errors: errors.array() });
   }
   next();
+};
+module.exports = {
+  validateRegister,
+  validateLogin,
+  handleValidationErrors
 };

@@ -1,5 +1,3 @@
-import * as main from "./tabmanager.js";
-import * as cm from "./cardsmanager.js";
 import * as th from "./theme.js";
 import * as um from "./usermanager.js";
 import { Taber } from "./core/taber.js";

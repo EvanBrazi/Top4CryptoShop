@@ -38,6 +38,16 @@ const adminRoutes = require('./routes/admin');
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 
+// مسار الأيقونات
+app.get('/api/icon/:appName', async (req, res) => {
+  try {
+    const icon = await fetchFromGooglePlay(req.params.appName);
+    res.json({ icon });
+  } catch (err) {
+    res.status(500).json({ error: 'فشل جلب الأيقونة' });
+  }
+});
+
 // جميع الطلبات الأخرى
 app.get('*', (req, res) => {
   res.sendFile(path.join(staticFilesPath, 'dashboard.html'));

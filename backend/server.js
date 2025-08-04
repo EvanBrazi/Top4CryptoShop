@@ -1,11 +1,7 @@
 /**
  * server.js - ملف التشغيل الرئيسي للتطبيق
- * يحتوي على:
- * - إعدادات الخادم الأساسية
- * - وسائط الأمان
- * - إدارة الجلسات
- * - تعريف المسارات
- * - معالجة الأخطاء
+ * إصدار: 1.0.0
+ * وصف: يحتوي على إعدادات الخادم الأساسية، وسائط الأمان، إدارة الجلسات، تعريف المسارات ومعالجة الأخطاء
  */
 
 require('dotenv').config();
@@ -21,23 +17,27 @@ const MongoStore = require('connect-mongo');
 const compression = require('compression');
 const morgan = require('morgan');
 
-// 1. التهيئة الأساسية للتطبيق
+// تهيئة تطبيق Express
 const app = express();
 
-// 2. وسائط الأمان الأساسية
-app.use(helmet());
-app.use(cookieParser());
-app.use(compression());
+// =============================================
+//               وسائط الأمان
+// =============================================
+
+// 1. وسائط الأمان الأساسية
+app.use(helmet()); // حماية من الثغرات الشائعة
+app.use(cookieParser()); // تحليل الكوكيز
+app.use(compression()); // ضغط الردود
 app.use(morgan('combined')); // تسجيل الطلبات
 
-// 3. إعداد الجلسات مع MongoDB
+// 2. إعداد الجلسات مع MongoDB
 const sessionConfig = {
   secret: process.env.SESSION_SECRET || 'your-secret-key',
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({
     mongoUrl: process.env.MONGODB_URI,
-    ttl: 24 * 60 * 60 // 1 يوم
+    ttl: 24 * 60 * 60 // انتهاء الجلسة بعد 24 ساعة
   }),
   cookie: {
     secure: process.env.NODE_ENV === 'production',
@@ -54,15 +54,15 @@ if (app.get('env') === 'production') {
 
 app.use(session(sessionConfig));
 
-// 4. الحد من معدل الطلبات
+// 3. الحد من معدل الطلبات للحماية من هجمات Brute Force
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 دقيقة
-  max: 100,
+  max: 100, // 100 طلب لكل IP
   message: 'لقد تجاوزت الحد المسموح من الطلبات، يرجى المحاولة لاحقاً'
 });
 app.use(limiter);
 
-// 5. إعداد CORS
+// 4. إعداد CORS
 const corsOptions = {
   origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:8000'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -71,22 +71,28 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-// 6. وسائط تحليل الطلبات
+// =============================================
+//             وسائط تحليل الطلبات
+// =============================================
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
-// 7. الملفات الثابتة مع تحسينات التخزين المؤقت
+// =============================================
+//             الملفات الثابتة
+// =============================================
 const staticFilesPath = path.join(__dirname, '../frontend/public');
 app.use(express.static(staticFilesPath, {
   maxAge: '1d',
-  setHeaders: (res, path) => {
-    if (path.endsWith('.html')) {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html')) {
       res.setHeader('Cache-Control', 'no-cache');
     }
   }
 }));
 
-// 8. رؤوس الأمان الإضافية
+// =============================================
+//             رؤوس الأمان الإضافية
+// =============================================
 app.use((req, res, next) => {
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -95,7 +101,9 @@ app.use((req, res, next) => {
   next();
 });
 
-// 9. الاتصال بقاعدة البيانات
+// =============================================
+//             اتصال قاعدة البيانات
+// =============================================
 const connectDB = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URI, {
@@ -103,9 +111,9 @@ const connectDB = async () => {
       useUnifiedTopology: true,
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
+      maxPoolSize: 10, // تغيير من poolSize إلى maxPoolSize
       retryWrites: true,
-      w: 'majority',
-      poolSize: 10
+      w: 'majority'
     });
     console.log('✅ تم الاتصال بـ MongoDB بنجاح');
   } catch (err) {
@@ -113,9 +121,18 @@ const connectDB = async () => {
     process.exit(1);
   }
 };
+
+// معالجة أحداث الاتصال
+mongoose.connection.on('disconnected', () => {
+  console.log('❌ فقدان الاتصال بقاعدة البيانات، جاري إعادة الاتصال...');
+  setTimeout(connectDB, 5000);
+});
+
 connectDB();
 
-// 10. تعريف المسارات
+// =============================================
+//                تعريف المسارات
+// =============================================
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const apiRoutes = require('./routes/api');
@@ -124,12 +141,16 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api', apiRoutes);
 
-// 11. الصفحات الرئيسية
+// =============================================
+//              الصفحات الرئيسية
+// =============================================
 app.get('/signup', (req, res) => res.sendFile(path.join(staticFilesPath, 'signup.html')));
 app.get('/login', (req, res) => res.sendFile(path.join(staticFilesPath, 'login.html')));
 app.get('/homepage', (req, res) => res.sendFile(path.join(staticFilesPath, 'homepage.html')));
 
-// 12. معالجة الأخطاء
+// =============================================
+//              معالجة الأخطاء
+// =============================================
 app.use((err, req, res, next) => {
   console.error(err.stack);
   
@@ -146,18 +167,20 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).json(response);
 });
 
-// 13. جميع الطلبات الأخرى
+// جميع الطلبات الأخرى
 app.get('*', (req, res) => {
   res.sendFile(path.join(staticFilesPath, 'dashboard.html'));
 });
 
-// 14. تشغيل الخادم
+// =============================================
+//              تشغيل الخادم
+// =============================================
 const PORT = process.env.PORT || 10000;
 const server = app.listen(PORT, () => {
   console.log(`🚀 الخادم يعمل على http://localhost:${PORT}`);
 });
 
-// 15. معالجة الأخطاء غير الملتقطة
+// معالجة الأخطاء غير الملتقطة
 process.on('unhandledRejection', (err) => {
   console.error('Unhandled Rejection:', err);
   server.close(() => process.exit(1));

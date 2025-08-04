@@ -1,8 +1,18 @@
+/**
+ * User.js - نموذج مستخدم MongoDB
+ * إصدار: 1.0.0
+ * وصف: يحتوي على تعريف نموذج المستخدم وجميع الوظائف المرتبطة به
+ */
+
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 const bcrypt = require('bcryptjs');
 const validator = require('validator');
+const crypto = require('crypto');
 
+/**
+ * تعريف مخطط المستخدم
+ */
 const userSchema = new Schema({
   username: {
     type: String,
@@ -17,7 +27,7 @@ const userSchema = new Schema({
     type: String,
     required: [true, 'كلمة المرور مطلوبة'],
     minlength: [8, 'يجب أن تكون كلمة المرور 8 أحرف على الأقل'],
-    select: false // عدم إرجاع كلمة المرور تلقائياً في الاستعلامات
+    select: false
   },
   phone: {
     type: String,
@@ -62,10 +72,7 @@ const userSchema = new Schema({
   },
   role: {
     type: String,
-    enum: {
-      values: ['user', 'admin', 'moderator'], // أنواع الصلاحيات الموسعة
-      message: 'صلاحية غير صالحة'
-    },
+    enum: ['user', 'admin', 'moderator'],
     default: 'user'
   },
   accountStatus: {
@@ -76,85 +83,56 @@ const userSchema = new Schema({
   tokenVersion: {
     type: Number,
     default: 0
-  },
-  resetPasswordToken: {
-    type: String,
-    select: false
-  },
-  resetPasswordExpires: {
-    type: Date,
-    select: false
-  },
-  twoFactorEnabled: {
-    type: Boolean,
-    default: false
-  },
-  twoFactorSecret: {
-    type: String,
-    select: false
-  },
-  changeHistory: {
-    phoneUpdates: [{
-      oldPhone: String,
-      newPhone: String,
-      changedAt: { type: Date, default: Date.now },
-      ipAddress: String
-    }],
-    emailUpdates: [{
-      oldEmail: String,
-      newEmail: String,
-      changedAt: { type: Date, default: Date.now },
-      ipAddress: String
-    }],
-    passwordUpdates: [{
-      changedAt: { type: Date, default: Date.now },
-      ipAddress: String
-    }]
-  },
-  lastPasswordChange: Date,
-  lastIpAddress: String
+  }
 }, { 
   timestamps: true,
-  toJSON: { virtuals: true },
-  toObject: { virtuals: true }
+  toJSON: { 
+    virtuals: true,
+    transform: function(doc, ret) {
+      delete ret.password; // إزالة كلمة المرور من الناتج
+      delete ret.__v; // إزالة حقل الإصدار
+      return ret;
+    }
+  }
 });
 
-// Middleware قبل الحفظ
+// =============================================
+//               Middlewares
+// =============================================
+
+/**
+ * Middleware قبل الحفظ لتشفير كلمة المرور
+ */
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
 
   try {
-    // زيادة كلفة التشفير في بيئة الإنتاج
     const saltRounds = process.env.NODE_ENV === 'production' ? 12 : 10;
     const salt = await bcrypt.genSalt(saltRounds);
     this.password = await bcrypt.hash(this.password, salt);
-    
-    // تحديث تاريخ تغيير كلمة المرور
-    this.lastPasswordChange = new Date();
-    
-    // زيادة tokenVersion عند تغيير كلمة المرور
     this.tokenVersion += 1;
-    
     next();
   } catch (err) {
     next(err);
   }
 });
 
-// Middleware بعد الحفظ لتسجيل التغييرات
-userSchema.post('save', function(doc, next) {
-  if (this.isModified('phone') || this.isModified('email') || this.isModified('password')) {
-    // يمكن هنا إرسال إشعار للمستخدم عن التغييرات
-  }
-  next();
-});
+// =============================================
+//               Methods
+// =============================================
 
-// دالة لمقارنة كلمات المرور
+/**
+ * مقارنة كلمة المرور المدخلة مع المشفرة
+ * @param {String} candidatePassword - كلمة المرور المدخلة
+ * @returns {Boolean} - نتيجة المقارنة
+ */
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
-// دالة لزيادة محاولات الدخول الفاشلة
+/**
+ * زيادة محاولات الدخول الفاشلة
+ */
 userSchema.methods.incrementLoginAttempts = async function() {
   this.loginAttempts += 1;
   if (this.loginAttempts >= 5) {
@@ -163,14 +141,10 @@ userSchema.methods.incrementLoginAttempts = async function() {
   await this.save();
 };
 
-// دالة لإعادة تعيين محاولات الدخول
-userSchema.methods.resetLoginAttempts = async function() {
-  this.loginAttempts = 0;
-  this.lastLogin = new Date();
-  await this.save();
-};
-
-// دالة لإنشاء رمز إعادة تعيين كلمة المرور
+/**
+ * إنشاء رمز إعادة تعيين كلمة المرور
+ * @returns {String} - رمز إعادة التعيين
+ */
 userSchema.methods.createPasswordResetToken = function() {
   const resetToken = crypto.randomBytes(32).toString('hex');
   this.resetPasswordToken = crypto
@@ -181,7 +155,9 @@ userSchema.methods.createPasswordResetToken = function() {
   return resetToken;
 };
 
-// فهرس لتحسين أداء الاستعلامات الشائعة
+// =============================================
+//               Indexes
+// =============================================
 userSchema.index({ username: 1 });
 userSchema.index({ email: 1 }, { sparse: true });
 userSchema.index({ phone: 1 }, { sparse: true });

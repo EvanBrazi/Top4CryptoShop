@@ -122,6 +122,19 @@ const serveStaticPage = (page) => (req, res) => {
   });
 };
 
+const authRouter = require('./routes/auth');
+app.use('/api/auth', authRouter);
+
+const serveStaticPage = (page) => (req, res) => {
+  const filePath = path.join(staticFilesPath, `${page}.html`);
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      console.error(`❌ فشل تحميل ${page}.html`);
+      res.status(404).send('الصفحة غير موجودة');
+    }
+});
+});
+
 // المسارات الأساسية
 app.get('/', serveStaticPage('dashboard'));
 app.get('/dashboard', serveStaticPage('dashboard'));
@@ -132,6 +145,15 @@ app.get('/homepage', serveStaticPage('homepage'));
 // نقطة نهاية للصحة
 app.get('/health', (req, res) => {
   res.json({ status: 'UP' });
+});
+
+// معالجة الأخطاء
+app.use((err, req, res, next) => {
+  console.error('❌ خطأ في الخادم:', err.stack);
+  res.status(500).json({
+    error: 'حدث خطأ في الخادم',
+    message: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
 });
 
 // =============================================

@@ -306,26 +306,26 @@ class HomeTab {
       {
         /** @private {index[0]} Just select which tab for activate*/whitchTab: "apps",
         title: "التطبيقات",
-        icon: "./assets/images/favicon.ico",
-        logo: "./assets/images/logo.png"
+        icon: "./assets/images/logo.png",
+        logo: "./assets/images/favicon.ico"
       },
       {
         whitchTab: "smallCards",
         title: "الألعاب",
-        icon: "./assets/images/favicon.ico",
-        logo: "./assets/images/logo.png"
+        icon: "./assets/images/logo.png",
+        logo: "./assets/images/favicon.ico"
       },
       {
         whitchTab: "smallCards",
         title: "العملات الرقمية",
-        icon: "./assets/images/favicon.ico",
-        logo: "./assets/images/logo.png"
+        icon: "./assets/images/logo.png",
+        logo: "./assets/images/favicon.ico"
       },
       {
         whitchTab: "smallCards",
         title: "تعبئة رصيد",
-        icon: "./assets/images/favicon.ico",
-        logo: "./assets/images/logo.png"
+        icon: "./assets/images/logo.png",
+        logo: "./assets/images/favicon.ico"
       }
     ];
   }

@@ -264,6 +264,27 @@ app.get('/health', (req, res) => {
 // =============================================
 //              الصفحات الرئيسية (محسّنة)
 // =============================================
+app.get('/secure-check', (req, res) => {
+  res.sendFile(path.join(staticFilesPath, 'secure-check.html'));
+});
+
+// تعديل دالة serveStaticPage الأصلية لتعمل مع المسارات بدلاً من الملفات
+const serveStaticPage = (page) => (req, res) => {
+  const filePath = path.join(staticFilesPath, `${page}.html`);
+  
+  fs.access(filePath, fs.constants.F_OK, (err) => {
+    if (err) {
+      console.error(`❌ ملف غير موجود: ${filePath}`);
+      return res.status(404).json({ 
+        error: 'الصفحة غير موجودة',
+        page: `${page}.html`
+      });
+    }
+    res.sendFile(filePath);
+  });
+};
+
+
 const serveStaticPage = (page) => async (req, res) => {
   try {
     const filePath = path.join(staticFilesPath, `${page}.html`);
@@ -281,6 +302,7 @@ const serveStaticPage = (page) => async (req, res) => {
 app.get('/signup', serveStaticPage('signup'));
 app.get('/login', serveStaticPage('login'));
 app.get('/homepage', serveStaticPage('homepage'));
+app.get('/dashboard', serveStaticPage('dashboard'));
 
 // إضافة مسار /apps/icons المفقود
 app.post('/api/apps/icons', (req, res) => {

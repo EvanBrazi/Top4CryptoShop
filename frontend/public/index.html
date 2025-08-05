@@ -20,7 +20,7 @@
             margin: 0 auto;
         }
         .success { color: green; }
-        .error { color: red; margin-top: 20px; }
+        .info { color: blue; }
         #loader {
             border: 5px solid #f3f3f3;
             border-top: 5px solid #3498db;
@@ -42,7 +42,7 @@
         <div id="loader"></div>
         <div id="status-message"></div>
         <p>سيتم توجيهك تلقائياً خلال <span id="countdown">3</span> ثوانٍ</p>
-        <p>إذا لم يتم التوجيه، يرجى النقر <a href="/dashboard.html">هنا</a>.</p>
+        <p>إذا لم يتم التوجيه، يرجى النقر <a href="/dashboard">هنا</a>.</p>
     </div>
 
     <script>
@@ -50,43 +50,22 @@
         const statusMessage = document.getElementById('status-message');
         const countdownEl = document.getElementById('countdown');
         
-        // تحقق إذا كان localhost
-        const isLocalhost = window.location.hostname === 'localhost' || 
-                          window.location.hostname === '127.0.0.1';
-
         // عد تنازلي
         let seconds = 3;
         const countdown = setInterval(() => {
             seconds--;
             countdownEl.textContent = seconds;
-            if (seconds <= 0) clearInterval(countdown);
+            if (seconds <= 0) {
+                clearInterval(countdown);
+                window.location.href = '/dashboard'; // استخدام مسار Express بدلاً من الملف
+            }
         }, 1000);
 
-        // عملية التحقق من الاتصال الآمن
-        if (!isLocalhost && window.location.protocol !== 'https:') {
-            statusMessage.innerHTML = '<p class="error">❗ يتطلب الاتصال الآمن (HTTPS)</p>';
-            window.location.replace('https://' + window.location.host + window.location.pathname);
-        } else {
+        // عرض حالة الاتصال فقط
+        if (window.location.protocol === 'https:') {
             statusMessage.innerHTML = '<p class="success">✓ اتصال آمن نشط</p>';
-            
-            // تحقق من وجود الصفحة الهدف قبل التوجيه
-            fetch('/dashboard.html', { method: 'HEAD' })
-                .then(response => {
-                    if (response.ok) {
-                        setTimeout(() => {
-                            window.location.replace('/dashboard.html');
-                        }, 3000);
-                    } else {
-                        throw new Error('الصفحة غير موجودة');
-                    }
-                })
-                .catch(error => {
-                    statusMessage.innerHTML += `
-                        <div class="error">
-                            خطأ: لا يمكن العثور على الصفحة المطلوبة
-                        </div>`;
-                    document.getElementById('loader').style.display = 'none';
-                });
+        } else {
+            statusMessage.innerHTML = '<p class="info">ℹ️ يتم استخدام اتصال غير آمن</p>';
         }
     </script>
 </body>

@@ -22,6 +22,11 @@ const { doubleCsrfProtection } = require('../middlewares/csrfMiddleware');
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 دقيقة
   max: 10, // 10 محاولات لكل IP
+  keyGenerator: (req) => {
+    // استخدام IP العميل الحقيقي عند وجود proxy
+    return req.headers['x-forwarded-for'] || req.ip;
+  },
+
   handler: (req, res) => {
     return res.status(429).json({
       error: 'لقد تجاوزت الحد المسموح من المحاولات. يرجى الانتظار 15 دقيقة',

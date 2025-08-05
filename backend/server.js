@@ -44,20 +44,16 @@ app.use((req, res, next) => {
 
 // 1. وسائط الأمان الأساسية
 //يقلل الامان ويجب استبدال ["'self'", "'unsafe-inline'"] ب nonce or hash
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'unsafe-inline'", "'unsafe-eval'", "*"],
-      styleSrc: ["'unsafe-inline'", "*"],
-      imgSrc: ["*", "data:"],
-      fontSrc: ["*", "data:"],
-      connectSrc: ["*"],
-      frameSrc: ["*"],
-      objectSrc: ["*"]
-    }
-  }
-}));
+if (process.env.NODE_ENV === 'development') {
+  app.use(helmet({
+    contentSecurityPolicy: false,
+  xssFilter: false,
+  hidePoweredBy: false
+  }));
+} else {
+  // إعدادات الأمان الكاملة للإنتاج
+  app.use(helmet());
+}
 
 app.use(cookieParser());
 app.use(compression());

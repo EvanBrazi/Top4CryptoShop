@@ -49,26 +49,20 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'", "'unsafe-inline'"],
       scriptSrc: [
-        "'self'", "'unsafe-inline'",
+        "'self'", "'unsafe-inline'"
       ],
       styleSrc: [
         "'self'",
-        "'unsafe-inline'",
-        "https://fonts.googleapis.com"
+        "'unsafe-inline'"
       ],
       imgSrc: [
-        "'self'", "'unsafe-inline'",
-        "data:",
-        "https://*"
+        "'self'", "'unsafe-inline'"
       ],
       fontSrc: [
-        "'self'", "'unsafe-inline'",
-        "https://fonts.gstatic.com",
-        "data:"
+        "'self'", "'unsafe-inline'"
       ],
       connectSrc: [
-        "'self'", "'unsafe-inline'",
-        "https://*"
+        "'self'", "'unsafe-inline'"
       ],
       frameSrc: ["'self'", "'unsafe-inline'"]
     }

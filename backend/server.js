@@ -50,8 +50,6 @@ app.use(helmet({
       defaultSrc: ["'self'", "'unsafe-inline'"],
       scriptSrc: [
         "'self'", "'unsafe-inline'",
-        "'strict-dynamic'",
-        (req, res) => `'nonce-${crypto.randomBytes(16).toString('hex')}'`
       ],
       styleSrc: [
         "'self'",

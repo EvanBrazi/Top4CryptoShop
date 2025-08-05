@@ -1,9 +1,9 @@
 /**
  * auth.js - مسارات المصادقة
- * إصدار: 2.2.0
+ * إصدار: 2.3.0
  * يحتوي على:
  * - تسجيل المستخدمين
- * - تسجيل الدخول
+ * - تسجيل الدخول (يدعم JSON وHTML)
  * - تسجيل الخروج
  * - إدارة الجلسات
  */
@@ -18,7 +18,38 @@ const { validateRegister, validateLogin, handleValidationErrors } = require('../
 const rateLimit = require('express-rate-limit');
 const { doubleCsrfProtection } = require('../middlewares/csrfMiddleware');
 
-// 1. معدل الحد للحماية من هجمات Brute Force
+// =============================================
+//          دالة مساعدة للاستجابات
+// =============================================
+/**
+ * تعالج استجابات المصادقة بناءً على نوع المحتوى المطلوب
+ * @param {Object} req - طلب Express
+ * @param {Object} res - رد Express
+ * @param {Object} data - بيانات الاستجابة
+ */
+function handleAuthResponse(req, res, data) {
+  // إذا كان الطلب يتوقع HTML أو كان من متصفح
+  if (req.accepts('html') && !req.accepts('json')) {
+    if (data.success && data.redirectTo) {
+      // تحويل ناجح إلى الصفحة المطلوبة
+      return res.redirect(data.redirectTo);
+    } else {
+      // في حالة الخطأ، إعادة تحويل إلى صفحة تسجيل الدخول مع رسالة خطأ
+      const redirectUrl = `/login.html?error=${encodeURIComponent(data.error || 'حدث خطأ')}`;
+      return res.redirect(redirectUrl);
+    }
+  }
+  
+  // الافتراضي: إرجاع JSON
+  if (data.status) {
+    return res.status(data.status).json(data);
+  }
+  return res.json(data);
+}
+
+// =============================================
+//          معدل الحد للحماية من هجمات Brute Force
+// =============================================
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 دقيقة
   max: 10, // 10 محاولات لكل IP
@@ -26,24 +57,28 @@ const authLimiter = rateLimit({
     // استخدام IP العميل الحقيقي عند وجود proxy
     return req.headers['x-forwarded-for'] || req.ip;
   },
-
   handler: (req, res) => {
-    return res.status(429).json({
+    return handleAuthResponse(req, res, {
+      status: 429,
       error: 'لقد تجاوزت الحد المسموح من المحاولات. يرجى الانتظار 15 دقيقة',
       solution: 'إذا نسيت كلمة المرور، استخدم إعادة تعيين كلمة المرور'
     });
   }
 });
 
-// 2. ضبط رأس Content-Type لجميع الاستجابات لتكون JSON
+// =============================================
+//          وسائط Router العامة
+// =============================================
 router.use((req, res, next) => {
-  res.setHeader('Content-Type', 'application/json');
+  // لا نفرض نوع محتوى معين، نتركه للطلب ليحدد
   next();
 });
 
 router.use(authLimiter);
 
-// 3. تسجيل مستخدم جديد
+// =============================================
+//          تسجيل مستخدم جديد
+// =============================================
 router.post('/register', 
   validateRegister,
   handleValidationErrors,
@@ -57,7 +92,8 @@ router.post('/register',
       });
       
       if (existingUser) {
-        return res.status(409).json({ 
+        return handleAuthResponse(req, res, {
+          status: 409,
           success: false,
           error: 'اسم المستخدم مسجل مسبقاً',
           solution: 'اختر اسم مستخدم آخر'
@@ -94,7 +130,7 @@ router.post('/register',
       res.cookie('session_token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax', // تغيير من strict إلى lax لتحسين التوافق
+        sameSite: 'lax',
         maxAge: 3600000,
         path: '/'
       });
@@ -109,15 +145,17 @@ router.post('/register',
         createdAt: newUser.createdAt
       };
 
-      return res.status(201).json({
+      return handleAuthResponse(req, res, {
         success: true,
         user: userResponse,
-        token: token // إضافة التوكن في الاستجابة للاستخدام من قبل العميل
+        token: token,
+        redirectTo: '/homepage.html'
       });
 
     } catch (err) {
       console.error('Registration error:', err);
-      return res.status(500).json({ 
+      return handleAuthResponse(req, res, {
+        status: 500,
         success: false,
         error: 'حدث خطأ أثناء التسجيل',
         details: process.env.NODE_ENV === 'development' ? err.message : null,
@@ -127,7 +165,9 @@ router.post('/register',
   }
 );
 
-// 4. تسجيل الدخول (محسّن)
+// =============================================
+//          تسجيل الدخول (يدعم JSON وHTML)
+// =============================================
 router.post('/login', 
   validateLogin,
   handleValidationErrors,
@@ -140,7 +180,8 @@ router.post('/login',
         .select('+password +loginAttempts +accountStatus +lastLogin');
       
       if (!user) {
-        return res.status(401).json({ 
+        return handleAuthResponse(req, res, {
+          status: 401,
           success: false,
           error: 'بيانات الدخول غير صحيحة',
           solution: 'تحقق من اسم المستخدم وكلمة المرور',
@@ -150,7 +191,8 @@ router.post('/login',
 
       // التحقق من حالة الحساب
       if (user.accountStatus === 'suspended') {
-        return res.status(403).json({
+        return handleAuthResponse(req, res, {
+          status: 403,
           success: false,
           error: 'الحساب موقوف مؤقتاً',
           solution: 'اتصل بدعم العملاء',
@@ -162,7 +204,8 @@ router.post('/login',
       if (user.loginAttempts >= 5) {
         user.accountStatus = 'suspended';
         await user.save();
-        return res.status(429).json({
+        return handleAuthResponse(req, res, {
+          status: 429,
           success: false,
           error: 'تم تجاوز عدد المحاولات المسموحة',
           solution: 'تم تعليق الحساب مؤقتاً. اتصل بالدعم',
@@ -175,7 +218,8 @@ router.post('/login',
       if (!isMatch) {
         user.loginAttempts += 1;
         await user.save();
-        return res.status(401).json({ 
+        return handleAuthResponse(req, res, {
+          status: 401,
           success: false,
           error: 'بيانات الدخول غير صحيحة',
           remainingAttempts: 5 - user.loginAttempts,
@@ -214,15 +258,17 @@ router.post('/login',
         lastLogin: user.lastLogin
       };
 
-      return res.json({
+      return handleAuthResponse(req, res, {
         success: true,
         user: userResponse,
-        token: token
+        token: token,
+        redirectTo: '/homepage.html'
       });
 
     } catch (err) {
       console.error('Login error:', err);
-      return res.status(500).json({ 
+      return handleAuthResponse(req, res, {
+        status: 500,
         success: false,
         error: 'حدث خطأ أثناء تسجيل الدخول',
         details: process.env.NODE_ENV === 'development' ? err.message : null,
@@ -232,13 +278,16 @@ router.post('/login',
   }
 );
 
-// 5. تسجيل الخروج (محسّن)
+// =============================================
+//          تسجيل الخروج
+// =============================================
 router.post('/logout', doubleCsrfProtection, async (req, res) => {
   try {
     const token = req.cookies.session_token || req.headers.authorization?.split(' ')[1];
     
     if (!token) {
-      return res.status(400).json({ 
+      return handleAuthResponse(req, res, {
+        status: 400,
         success: false,
         error: 'لم يتم توفير رمز الجلسة',
         solution: 'قد تكون مسجلًا للخروج بالفعل'
@@ -261,14 +310,16 @@ router.post('/logout', doubleCsrfProtection, async (req, res) => {
       path: '/'
     });
 
-    return res.json({ 
+    return handleAuthResponse(req, res, { 
       success: true, 
-      message: 'تم تسجيل الخروج بنجاح' 
+      message: 'تم تسجيل الخروج بنجاح',
+      redirectTo: '/login.html'
     });
 
   } catch (err) {
     console.error('Logout error:', err);
-    return res.status(500).json({ 
+    return handleAuthResponse(req, res, {
+      status: 500,
       success: false,
       error: 'حدث خطأ أثناء تسجيل الخروج',
       details: process.env.NODE_ENV === 'development' ? err.message : null,
@@ -277,13 +328,15 @@ router.post('/logout', doubleCsrfProtection, async (req, res) => {
   }
 });
 
-// 6. نقطة نهاية جديدة للتحقق من حالة المصادقة
+// =============================================
+//          التحقق من حالة المصادقة
+// =============================================
 router.get('/check-auth', async (req, res) => {
   try {
     const token = req.cookies.session_token || req.headers.authorization?.split(' ')[1];
     
     if (!token) {
-      return res.status(200).json({ 
+      return handleAuthResponse(req, res, {
         success: false,
         isAuthenticated: false,
         message: 'لم يتم توفير رمز الجلسة'
@@ -294,14 +347,14 @@ router.get('/check-auth', async (req, res) => {
     const user = await User.findById(decoded.userId).select('-password');
 
     if (!user) {
-      return res.status(200).json({ 
+      return handleAuthResponse(req, res, {
         success: false,
         isAuthenticated: false,
         message: 'المستخدم غير موجود'
       });
     }
 
-    return res.json({
+    return handleAuthResponse(req, res, {
       success: true,
       isAuthenticated: true,
       user: {
@@ -314,7 +367,7 @@ router.get('/check-auth', async (req, res) => {
     });
 
   } catch (err) {
-    return res.status(200).json({ 
+    return handleAuthResponse(req, res, {
       success: false,
       isAuthenticated: false,
       message: 'جلسة غير صالحة'

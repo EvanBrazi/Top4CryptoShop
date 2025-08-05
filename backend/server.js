@@ -27,12 +27,7 @@ const authRoutes = require('./routes/auth'); // <-- إضافة استيراد م
 const app = express();
 
 // أضف هذا الجزء بعد تعريف app وقبل تعريف المسارات
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 5000,
-  socketTimeoutMS: 45000
-})
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/Top4CryptoShop')
 .then(() => console.log('✅ تم الاتصال بقاعدة البيانات بنجاح'))
 .catch(err => {
   console.error('❌ فشل الاتصال بقاعدة البيانات:', err);

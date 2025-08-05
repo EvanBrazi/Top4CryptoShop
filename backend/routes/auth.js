@@ -1,5 +1,6 @@
 /**
  * auth.js - مسارات المصادقة
+ * إصدار: 2.2.0
  * يحتوي على:
  * - تسجيل المستخدمين
  * - تسجيل الدخول
@@ -29,9 +30,15 @@ const authLimiter = rateLimit({
   }
 });
 
+// 2. ضبط رأس Content-Type لجميع الاستجابات لتكون JSON
+router.use((req, res, next) => {
+  res.setHeader('Content-Type', 'application/json');
+  next();
+});
+
 router.use(authLimiter);
 
-// 2. تسجيل مستخدم جديد
+// 3. تسجيل مستخدم جديد
 router.post('/register', 
   validateRegister,
   handleValidationErrors,
@@ -46,6 +53,7 @@ router.post('/register',
       
       if (existingUser) {
         return res.status(409).json({ 
+          success: false,
           error: 'اسم المستخدم مسجل مسبقاً',
           solution: 'اختر اسم مستخدم آخر'
         });
@@ -81,7 +89,7 @@ router.post('/register',
       res.cookie('session_token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        sameSite: 'lax', // تغيير من strict إلى lax لتحسين التوافق
         maxAge: 3600000,
         path: '/'
       });
@@ -98,12 +106,14 @@ router.post('/register',
 
       return res.status(201).json({
         success: true,
-        user: userResponse
+        user: userResponse,
+        token: token // إضافة التوكن في الاستجابة للاستخدام من قبل العميل
       });
 
     } catch (err) {
       console.error('Registration error:', err);
       return res.status(500).json({ 
+        success: false,
         error: 'حدث خطأ أثناء التسجيل',
         details: process.env.NODE_ENV === 'development' ? err.message : null,
         requestId: req.id
@@ -112,7 +122,7 @@ router.post('/register',
   }
 );
 
-// 3. تسجيل الدخول
+// 4. تسجيل الدخول (محسّن)
 router.post('/login', 
   validateLogin,
   handleValidationErrors,
@@ -126,16 +136,20 @@ router.post('/login',
       
       if (!user) {
         return res.status(401).json({ 
+          success: false,
           error: 'بيانات الدخول غير صحيحة',
-          solution: 'تحقق من اسم المستخدم وكلمة المرور'
+          solution: 'تحقق من اسم المستخدم وكلمة المرور',
+          type: 'invalid_credentials'
         });
       }
 
       // التحقق من حالة الحساب
       if (user.accountStatus === 'suspended') {
         return res.status(403).json({
+          success: false,
           error: 'الحساب موقوف مؤقتاً',
-          solution: 'اتصل بدعم العملاء'
+          solution: 'اتصل بدعم العملاء',
+          type: 'account_suspended'
         });
       }
 
@@ -144,8 +158,10 @@ router.post('/login',
         user.accountStatus = 'suspended';
         await user.save();
         return res.status(429).json({
+          success: false,
           error: 'تم تجاوز عدد المحاولات المسموحة',
-          solution: 'تم تعليق الحساب مؤقتاً. اتصل بالدعم'
+          solution: 'تم تعليق الحساب مؤقتاً. اتصل بالدعم',
+          type: 'too_many_attempts'
         });
       }
 
@@ -155,8 +171,10 @@ router.post('/login',
         user.loginAttempts += 1;
         await user.save();
         return res.status(401).json({ 
+          success: false,
           error: 'بيانات الدخول غير صحيحة',
-          remainingAttempts: 5 - user.loginAttempts
+          remainingAttempts: 5 - user.loginAttempts,
+          type: 'invalid_password'
         });
       }
 
@@ -176,7 +194,7 @@ router.post('/login',
       res.cookie('session_token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        sameSite: 'lax',
         maxAge: 3600000,
         path: '/'
       });
@@ -193,27 +211,30 @@ router.post('/login',
 
       return res.json({
         success: true,
-        user: userResponse
+        user: userResponse,
+        token: token
       });
 
     } catch (err) {
       console.error('Login error:', err);
       return res.status(500).json({ 
+        success: false,
         error: 'حدث خطأ أثناء تسجيل الدخول',
         details: process.env.NODE_ENV === 'development' ? err.message : null,
-        requestId: req.id
+        type: 'server_error'
       });
     }
   }
 );
 
-// 4. تسجيل الخروج
+// 5. تسجيل الخروج (محسّن)
 router.post('/logout', doubleCsrfProtection, async (req, res) => {
   try {
     const token = req.cookies.session_token || req.headers.authorization?.split(' ')[1];
     
     if (!token) {
       return res.status(400).json({ 
+        success: false,
         error: 'لم يتم توفير رمز الجلسة',
         solution: 'قد تكون مسجلًا للخروج بالفعل'
       });
@@ -231,7 +252,7 @@ router.post('/logout', doubleCsrfProtection, async (req, res) => {
     res.clearCookie('session_token', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax',
       path: '/'
     });
 
@@ -243,9 +264,55 @@ router.post('/logout', doubleCsrfProtection, async (req, res) => {
   } catch (err) {
     console.error('Logout error:', err);
     return res.status(500).json({ 
+      success: false,
       error: 'حدث خطأ أثناء تسجيل الخروج',
       details: process.env.NODE_ENV === 'development' ? err.message : null,
-      requestId: req.id
+      type: 'server_error'
+    });
+  }
+});
+
+// 6. نقطة نهاية جديدة للتحقق من حالة المصادقة
+router.get('/check-auth', async (req, res) => {
+  try {
+    const token = req.cookies.session_token || req.headers.authorization?.split(' ')[1];
+    
+    if (!token) {
+      return res.status(200).json({ 
+        success: false,
+        isAuthenticated: false,
+        message: 'لم يتم توفير رمز الجلسة'
+      });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.userId).select('-password');
+
+    if (!user) {
+      return res.status(200).json({ 
+        success: false,
+        isAuthenticated: false,
+        message: 'المستخدم غير موجود'
+      });
+    }
+
+    return res.json({
+      success: true,
+      isAuthenticated: true,
+      user: {
+        id: user._id,
+        username: user.username,
+        phone: user.phone,
+        theme: user.theme,
+        balance: user.balance
+      }
+    });
+
+  } catch (err) {
+    return res.status(200).json({ 
+      success: false,
+      isAuthenticated: false,
+      message: 'جلسة غير صالحة'
     });
   }
 });

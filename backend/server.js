@@ -1,6 +1,6 @@
 /**
  * server.js - ملف التشغيل الرئيسي للتطبيق
- * إصدار: 2.1.0
+ * إصدار: 2.1.1
  * وصف: يحتوي على إعدادات الخادم الأساسية، وسائط الأمان، إدارة الجلسات، تعريف المسارات ومعالجة الأخطاء
  */
 
@@ -19,6 +19,7 @@ const morgan = require('morgan');
 const crypto = require('crypto');
 const fs = require('fs');
 const favicon = require('serve-favicon');
+const authRoutes = require('./routes/auth'); // <-- إضافة استيراد مسارات المصادقة
 
 // =============================================
 //               تهيئة التطبيق
@@ -112,6 +113,10 @@ app.use(express.static(staticFilesPath, {
 // =============================================
 //                تعريف المسارات
 // =============================================
+
+// مسارات API (يجب أن تأتي قبل المسارات الثابتة)
+app.use('/api/auth', authRoutes); // <-- إضافة مسارات المصادقة هنا
+
 const serveStaticPage = (page) => (req, res) => {
   const filePath = path.join(staticFilesPath, `${page}.html`);
   res.sendFile(filePath, (err) => {

@@ -2,13 +2,6 @@
  * server.js - ملف التشغيل الرئيسي للتطبيق
  * إصدار: 2.1.0
  * وصف: يحتوي على إعدادات الخادم الأساسية، وسائط الأمان، إدارة الجلسات، تعريف المسارات ومعالجة الأخطاء
- * التغييرات:
- * - إزالة الخيارات deprecated لـ MongoDB
- * - تحسين إدارة اتصال MongoDB
- * - تحسين إعادة التوجيه HTTPS
- * - تحسين معالجة الأخطاء
- * - إضافة تحسينات للأداء والمرونة
- * - إصلاح مشاكل المسارات المفقودة
  */
 
 require('dotenv').config();
@@ -37,11 +30,10 @@ const app = express();
 // =============================================
 const staticFilesPath = path.join(__dirname, '../frontend/public');
 
-// تحقق من وجود مجلد الملفات الثابتة (مع معالجة الأخطاء)
+// تحقق من وجود مجلد الملفات الثابتة
 try {
   if (!fs.existsSync(staticFilesPath)) {
     console.error('❌ مجلد الملفات الثابتة غير موجود:', staticFilesPath);
-    console.log('⚡ جاري إنشاء المجلد تلقائياً...');
     fs.mkdirSync(staticFilesPath, { recursive: true });
   }
 } catch (err) {
@@ -49,306 +41,104 @@ try {
   process.exit(1);
 }
 
-// Middleware لتسجيل الطلبات
+// =============================================
+//               وسائط الأمان (معطلة)
+// =============================================
+
+// 1. تعطيل جميع وسائط الأمان
+console.warn('⚠️  تحذير: جميع إعدادات الأمان معطلة');
 app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-  console.log(`📁 مسار الملفات الثابتة: ${staticFilesPath}`);
+  // تعطيل جميع رؤوس الأمان
+  res.removeHeader('X-Powered-By');
+  res.removeHeader('X-XSS-Protection');
+  res.removeHeader('X-Content-Type-Options');
+  res.removeHeader('X-Frame-Options');
+  res.removeHeader('Strict-Transport-Security');
+  res.removeHeader('Content-Security-Policy');
+  res.removeHeader('Referrer-Policy');
   next();
 });
 
-// =============================================
-//               وسائط الأمان
-// =============================================
-
-// 1. وسائط الأمان الأساسية
-if (process.env.NODE_ENV === 'development') {
-  app.use(helmet({
-    contentSecurityPolicy: false,
-    xssFilter: false,
-    hidePoweredBy: false,
-    frameguard: false,
-    hsts: false,
-    ieNoOpen: false,
-    noSniff: false,
-    referrerPolicy: false,
-    dnsPrefetchControl: false
-  }));
-} else {
-  app.use(helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'strict-dynamic'"],
-        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-        imgSrc: ["'self'", "data:", "https://*"],
-        fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
-        connectSrc: ["'self'", "https://*"],
-        frameSrc: ["'self'"]
-      }
-    }
-  }));
-}
-
-app.use(cookieParser());
-app.use(compression());
-app.use(morgan('combined'));
-
-// 2. إعداد الجلسات مع MongoDB
+// 2. إعداد الجلسات بدون قيود
 const sessionConfig = {
-  secret: process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex'),
-  resave: false,
-  saveUninitialized: false,
+  secret: process.env.SESSION_SECRET || 'dev-secret',
+  resave: true,
+  saveUninitialized: true,
   store: MongoStore.create({
     mongoUrl: process.env.MONGODB_URI,
-    ttl: 24 * 60 * 60,
-    touchAfter: 3600, // تحديث الجلسة كل ساعة
-    crypto: {
-      secret: process.env.SESSION_CRYPTO_SECRET || crypto.randomBytes(32).toString('hex')
-    }
+    ttl: 24 * 60 * 60
   }),
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: true,
-    sameSite: 'strict',
-    maxAge: 24 * 60 * 60 * 1000,
-    domain: process.env.COOKIE_DOMAIN || undefined
+    secure: false,
+    httpOnly: false,
+    sameSite: false,
+    maxAge: 24 * 60 * 60 * 1000
   }
 };
-
-if (app.get('env') === 'production') {
-  app.set('trust proxy', 1);
-  sessionConfig.cookie.secure = true;
-}
-
 app.use(session(sessionConfig));
 
-// 3. الحد من معدل الطلبات (محسّن)
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 دقيقة
-  max: 300, // 300 طلب لكل IP
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    error: 'لقد تجاوزت الحد المسموح من الطلبات',
-    retryAfter: '15 دقيقة'
-  }
-});
+// 3. تعطيل rate limiting
+console.log('⏱️  تم تعطيل معدل الطلبات');
 
-// تطبيق معدل الطلبات على مسارات API فقط
-app.use('/api/', apiLimiter);
-
-// 4. إعداد CORS المحسن
-const corsOptions = {
-  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:8000'],
+// 4. إعداد CORS مفتوح بالكامل
+app.use(cors({
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-csrf-token'],
-  exposedHeaders: ['x-csrf-token']
-};
-app.use(cors(corsOptions));
+  allowedHeaders: '*',
+  exposedHeaders: '*',
+  credentials: true
+}));
 
 // =============================================
 //             وسائط تحليل الطلبات
 // =============================================
-app.use(express.json({ limit: '10kb' }));
-app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cookieParser());
+app.use(compression());
+app.use(morgan('dev'));
 
-// إعداد Favicon
+// =============================================
+//             الملفات الثابتة
+// =============================================
 app.use(favicon(path.join(staticFilesPath, './assets/images/favicon.ico')));
-
-// تحسين معالجة الملفات الثابتة
 app.use(express.static(staticFilesPath, {
   maxAge: '1d',
-  etag: true,
-  lastModified: true,
-  setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.html')) {
-      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
-    } else {
-      res.setHeader('Cache-Control', 'public, max-age=86400');
-    }
+  setHeaders: (res) => {
+    res.set('Access-Control-Allow-Origin', '*');
   }
 }));
 
 // =============================================
-//             رؤوس الأمان الإضافية
-// =============================================
-app.use((req, res, next) => {
-  req.startTime = Date.now();
-  
-  res.on('finish', () => {
-    const duration = Date.now() - req.startTime;
-    console.log(`⏱️  ${req.method} ${req.url} - ${res.statusCode} [${duration}ms]`);
-  });
-
-  res.setHeader('X-XSS-Protection', '1; mode=block');
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
-  res.setHeader('Referrer-Policy', 'same-origin');
-  next();
-});
-
-// =============================================
-//             اتصال قاعدة البيانات (محسّن)
-// =============================================
-const connectDB = async () => {
-  try {
-    await mongoose.connect(process.env.MONGODB_URI, {
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 30000,
-      maxPoolSize: 50,
-      retryWrites: true,
-      w: 'majority',
-      retryReads: true
-    });
-    console.log('✅ تم الاتصال بـ MongoDB بنجاح');
-  } catch (err) {
-    console.error('❌ فشل الاتصال بقاعدة البيانات:', err.message);
-    
-    if (err.message.includes('Invalid scheme')) {
-      console.error('الرجاء التأكد أن رابط الاتصال يبدأ بـ mongodb:// أو mongodb+srv://');
-    } else if (err.message.includes('bad auth')) {
-      console.error('خطأ في اسم المستخدم/كلمة المرور');
-    } else if (err.message.includes('ETIMEOUT')) {
-      console.error('مهلة الاتصال انتهت - تأكد من اتصال الإنترنت');
-    }
-    
-    process.exit(1);
-  }
-};
-
-mongoose.connection.on('disconnected', () => {
-  console.log('❌ فقدان الاتصال بقاعدة البيانات، جاري إعادة الاتصال...');
-  setTimeout(connectDB, 5000);
-});
-
-mongoose.connection.on('connected', () => {
-  console.log('✔ اتصال مستقر بقاعدة البيانات');
-});
-
-connectDB();
-
-// =============================================
-//             إعادة توجيه HTTPS
-// =============================================
-app.use((req, res, next) => {
-  if (process.env.NODE_ENV === 'production' && 
-      !req.secure && 
-      req.get('x-forwarded-proto') !== 'https') {
-    return res.redirect(301, `https://${req.get('host')}${req.url}`);
-  }
-  next();
-});
-
-// =============================================
 //                تعريف المسارات
 // =============================================
-const authRoutes = require('./routes/auth');
-const adminRoutes = require('./routes/admin');
-const apiRoutes = require('./routes/api');
-
-app.use('/api/auth', authRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api', apiRoutes);
-
-// نقطة نهاية للصحة
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'UP',
-    db: mongoose.connection.readyState === 1 ? 'CONNECTED' : 'DISCONNECTED',
-    memoryUsage: process.memoryUsage()
+const serveStaticPage = (page) => (req, res) => {
+  const filePath = path.join(staticFilesPath, `${page}.html`);
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      console.error(`❌ فشل تحميل ${page}.html`);
+      res.status(404).send('الصفحة غير موجودة');
+    }
   });
-});
-
-// =============================================
-//              الصفحات الرئيسية (محسّنة)
-// =============================================
-app.get('/secure-check', (req, res) => {
-  res.sendFile(path.join(staticFilesPath, 'secure-check.html'));
-});
-
-const serveStaticPage = (page) => async (req, res) => {
-  try {
-    const filePath = path.join(staticFilesPath, `${page}.html`);
-    await fs.promises.access(filePath, fs.constants.F_OK);
-    res.sendFile(filePath);
-  } catch (err) {
-    console.error(`❌ فشل تحميل ${page}.html`, err);
-    res.status(404).json({ 
-      error: 'الصفحة غير موجودة',
-      page: `${page}.html`
-    });
-  }
 };
 
+// المسارات الأساسية
+app.get('/', serveStaticPage('dashboard'));
+app.get('/dashboard', serveStaticPage('dashboard'));
 app.get('/signup', serveStaticPage('signup'));
 app.get('/login', serveStaticPage('login'));
 app.get('/homepage', serveStaticPage('homepage'));
-app.get('/dashboard', serveStaticPage('dashboard'));
 
-// إضافة مسار /apps/icons المفقود
-app.post('/api/apps/icons', (req, res) => {
-  try {
-    res.status(200).json({ 
-      success: true,
-      message: 'API under development' 
-    });
-  } catch (err) {
-    res.status(500).json({ 
-      error: err.message 
-    });
-  }
-});
-
-// =============================================
-//              جميع الطلبات الأخرى
-// =============================================
-app.get('*', serveStaticPage('dashboard'));
-
-// =============================================
-//              معالجة الأخطاء (محسّنة)
-// =============================================
-app.use((err, req, res, next) => {
-  const timestamp = new Date().toISOString();
-  const errorId = crypto.randomBytes(4).toString('hex');
-  
-  console.error(`[${timestamp}] [${errorId}]`, err.stack);
-  
-  const statusCode = err.status || 500;
-  const errorResponse = {
-    error: statusCode >= 500 ? 'حدث خطأ في الخادم' : err.message,
-    errorId,
-    timestamp,
-    ...(process.env.NODE_ENV === 'development' && {
-      stack: err.stack.split('\n')
-    })
-  };
-
-  res.status(statusCode).json(errorResponse);
+// نقطة نهاية للصحة
+app.get('/health', (req, res) => {
+  res.json({ status: 'UP' });
 });
 
 // =============================================
 //              تشغيل الخادم
 // =============================================
 const PORT = process.env.PORT || 10000;
-const server = app.listen(PORT, () => {
+app.listen(PORT, () => {
   console.log(`🚀 الخادم يعمل على http://localhost:${PORT}`);
+  console.log('🔓 تحذير: جميع إعدادات الأمان معطلة');
 });
-
-// معالجة الأخطاء غير الملتقطة (محسّنة)
-process.on('unhandledRejection', (err) => {
-  console.error('Unhandled Rejection:', err);
-  
-  server.close(() => {
-    console.log('Server closed due to unhandled rejection');
-    process.exit(1);
-  });
-  
-  setTimeout(() => {
-    console.error('Forcing shutdown due to timeout');
-    process.exit(1);
-  }, 5000);
-});
-
-module.exports = app;

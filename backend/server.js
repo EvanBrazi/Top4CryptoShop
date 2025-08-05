@@ -43,12 +43,13 @@ app.use((req, res, next) => {
 // =============================================
 
 // 1. وسائط الأمان الأساسية
+//يقلل الامان ويجب استبدال ["'self'", "'unsafe-inline'"] ب nonce or hash
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
-      defaultSrc: ["'self'"],
+      defaultSrc: ["'self'", "'unsafe-inline'"],
       scriptSrc: [
-        "'self'",
+        "'self'", "'unsafe-inline'",
         "'strict-dynamic'",
         (req, res) => `'nonce-${crypto.randomBytes(16).toString('hex')}'`
       ],
@@ -58,20 +59,20 @@ app.use(helmet({
         "https://fonts.googleapis.com"
       ],
       imgSrc: [
-        "'self'",
+        "'self'", "'unsafe-inline'",
         "data:",
         "https://*"
       ],
       fontSrc: [
-        "'self'",
+        "'self'", "'unsafe-inline'",
         "https://fonts.gstatic.com",
         "data:"
       ],
       connectSrc: [
-        "'self'",
+        "'self'", "'unsafe-inline'",
         "https://*"
       ],
-      frameSrc: ["'self'"]
+      frameSrc: ["'self'", "'unsafe-inline'"]
     }
   }
 }));

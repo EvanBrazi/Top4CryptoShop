@@ -268,23 +268,6 @@ app.get('/secure-check', (req, res) => {
   res.sendFile(path.join(staticFilesPath, 'secure-check.html'));
 });
 
-// تعديل دالة serveStaticPage الأصلية لتعمل مع المسارات بدلاً من الملفات
-const serveStaticPage = (page) => (req, res) => {
-  const filePath = path.join(staticFilesPath, `${page}.html`);
-  
-  fs.access(filePath, fs.constants.F_OK, (err) => {
-    if (err) {
-      console.error(`❌ ملف غير موجود: ${filePath}`);
-      return res.status(404).json({ 
-        error: 'الصفحة غير موجودة',
-        page: `${page}.html`
-      });
-    }
-    res.sendFile(filePath);
-  });
-};
-
-
 const serveStaticPage = (page) => async (req, res) => {
   try {
     const filePath = path.join(staticFilesPath, `${page}.html`);

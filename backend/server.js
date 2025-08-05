@@ -33,10 +33,10 @@ const favicon = require('serve-favicon');
 const app = express();
 
 // إنشاء nonce فريد لكل طلب
-app.use((req, res, next) => {
-  res.locals.nonce = crypto.randomBytes(16).toString('hex');
-  next();
-});
+//app.use((req, res, next) => {
+//  res.locals.nonce = crypto.randomBytes(16).toString('hex');
+//  next();
+//});
 
 // =============================================
 //               وسائط الأمان

@@ -44,31 +44,6 @@ app.use((req, res, next) => {
 
 // 1. وسائط الأمان الأساسية
 //يقلل الامان ويجب استبدال ["'self'", "'unsafe-inline'"] ب nonce or hash
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: [
-        "'self'", "'unsafe-inline'"
-      ],
-      styleSrc: [
-        "'self'",
-        "'unsafe-inline'"
-      ],
-      imgSrc: [
-        "'self'", "'unsafe-inline'"
-      ],
-      fontSrc: [
-        "'self'", "'unsafe-inline'"
-      ],
-      connectSrc: [
-        "'self'", "'unsafe-inline'"
-      ],
-      frameSrc: ["'self'", "'unsafe-inline'"]
-    }
-  }
-}));
-
 
 app.use(cookieParser());
 app.use(compression());

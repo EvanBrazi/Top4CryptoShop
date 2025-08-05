@@ -32,27 +32,61 @@ const favicon = require('serve-favicon');
 // =============================================
 const app = express();
 
-// إنشاء nonce فريد لكل طلب
-//app.use((req, res, next) => {
-//  res.locals.nonce = crypto.randomBytes(16).toString('hex');
-//  next();
-//});
+// =============================================
+//             الملفات الثابتة
+// =============================================
+const staticFilesPath = path.join(__dirname, '../frontend/public');
+
+// تحقق من وجود مجلد الملفات الثابتة (مع معالجة الأخطاء)
+try {
+  if (!fs.existsSync(staticFilesPath)) {
+    console.error('❌ مجلد الملفات الثابتة غير موجود:', staticFilesPath);
+    console.log('⚡ جاري إنشاء المجلد تلقائياً...');
+    fs.mkdirSync(staticFilesPath, { recursive: true });
+  }
+} catch (err) {
+  console.error('❌ خطأ في التحقق من مجلد الملفات:', err);
+  process.exit(1);
+}
+
+// Middleware لتسجيل الطلبات
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  console.log(`📁 مسار الملفات الثابتة: ${staticFilesPath}`);
+  next();
+});
 
 // =============================================
 //               وسائط الأمان
 // =============================================
 
 // 1. وسائط الأمان الأساسية
-//يقلل الامان ويجب استبدال ["'self'", "'unsafe-inline'"] ب nonce or hash
 if (process.env.NODE_ENV === 'development') {
   app.use(helmet({
     contentSecurityPolicy: false,
-  xssFilter: false,
-  hidePoweredBy: false
+    xssFilter: false,
+    hidePoweredBy: false,
+    frameguard: false,
+    hsts: false,
+    ieNoOpen: false,
+    noSniff: false,
+    referrerPolicy: false,
+    dnsPrefetchControl: false
   }));
 } else {
-  // إعدادات الأمان الكاملة للإنتاج
-  app.use(helmet());
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'strict-dynamic'"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        imgSrc: ["'self'", "data:", "https://*"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+        connectSrc: ["'self'", "https://*"],
+        frameSrc: ["'self'"]
+      }
+    }
+  }));
 }
 
 app.use(cookieParser());
@@ -67,6 +101,7 @@ const sessionConfig = {
   store: MongoStore.create({
     mongoUrl: process.env.MONGODB_URI,
     ttl: 24 * 60 * 60,
+    touchAfter: 3600, // تحديث الجلسة كل ساعة
     crypto: {
       secret: process.env.SESSION_CRYPTO_SECRET || crypto.randomBytes(32).toString('hex')
     }
@@ -74,7 +109,7 @@ const sessionConfig = {
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    sameSite: 'lax',
+    sameSite: 'strict',
     maxAge: 24 * 60 * 60 * 1000,
     domain: process.env.COOKIE_DOMAIN || undefined
   }
@@ -118,36 +153,19 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
-// =============================================
-//             الملفات الثابتة
-// =============================================
-const staticFilesPath = path.join(__dirname, '../frontend/public');
-
-// تحقق من وجود مجلد الملفات الثابتة (مع معالجة الأخطاء)
-try {
-  if (!fs.existsSync(staticFilesPath)) {
-    console.error('❌ مجلد الملفات الثابتة غير موجود:', staticFilesPath);
-    console.log('⚡ جاري إنشاء المجلد تلقائياً...');
-    fs.mkdirSync(staticFilesPath, { recursive: true });
-  }
-} catch (err) {
-  console.error('❌ خطأ في التحقق من مجلد الملفات:', err);
-  process.exit(1);
-}
-
 // إعداد Favicon
 app.use(favicon(path.join(staticFilesPath, './assets/images/favicon.ico')));
 
 // تحسين معالجة الملفات الثابتة
 app.use(express.static(staticFilesPath, {
-  maxAge: '7d', // زيادة مدة التخزين المؤقت
-  etag: true, // تمكين ETag
-  lastModified: true, // تمكين Last-Modified
+  maxAge: '1d',
+  etag: true,
+  lastModified: true,
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.html')) {
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
     } else {
-      res.setHeader('Cache-Control', 'public, max-age=604800'); // أسبوع واحد
+      res.setHeader('Cache-Control', 'public, max-age=86400');
     }
   }
 }));
@@ -156,12 +174,11 @@ app.use(express.static(staticFilesPath, {
 //             رؤوس الأمان الإضافية
 // =============================================
 app.use((req, res, next) => {
-  // تسجيل وقت بدء الطلب
   req.startTime = Date.now();
   
   res.on('finish', () => {
     const duration = Date.now() - req.startTime;
-    console.log(`${req.method} ${req.url} - ${res.statusCode} [${duration}ms]`);
+    console.log(`⏱️  ${req.method} ${req.url} - ${res.statusCode} [${duration}ms]`);
   });
 
   res.setHeader('X-XSS-Protection', '1; mode=block');
@@ -189,7 +206,6 @@ const connectDB = async () => {
   } catch (err) {
     console.error('❌ فشل الاتصال بقاعدة البيانات:', err.message);
     
-    // رسائل خطأ موضحة
     if (err.message.includes('Invalid scheme')) {
       console.error('الرجاء التأكد أن رابط الاتصال يبدأ بـ mongodb:// أو mongodb+srv://');
     } else if (err.message.includes('bad auth')) {
@@ -217,7 +233,9 @@ connectDB();
 //             إعادة توجيه HTTPS
 // =============================================
 app.use((req, res, next) => {
-  if (!req.secure && req.get('x-forwarded-proto') !== 'https' && process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === 'production' && 
+      !req.secure && 
+      req.get('x-forwarded-proto') !== 'https') {
     return res.redirect(301, `https://${req.get('host')}${req.url}`);
   }
   next();
@@ -246,16 +264,18 @@ app.get('/health', (req, res) => {
 // =============================================
 //              الصفحات الرئيسية (محسّنة)
 // =============================================
-const serveStaticPage = (page) => (req, res) => {
-  res.sendFile(path.join(staticFilesPath, `${page}.html`), (err) => {
-    if (err) {
-      console.error(`Failed to load ${page}.html`, err);
-      res.status(404).json({ 
-        error: 'الصفحة غير موجودة',
-        page: `${page}.html`
-      });
-    }
-  });
+const serveStaticPage = (page) => async (req, res) => {
+  try {
+    const filePath = path.join(staticFilesPath, `${page}.html`);
+    await fs.promises.access(filePath, fs.constants.F_OK);
+    res.sendFile(filePath);
+  } catch (err) {
+    console.error(`❌ فشل تحميل ${page}.html`, err);
+    res.status(404).json({ 
+      error: 'الصفحة غير موجودة',
+      page: `${page}.html`
+    });
+  }
 };
 
 app.get('/signup', serveStaticPage('signup'));
@@ -265,7 +285,6 @@ app.get('/homepage', serveStaticPage('homepage'));
 // إضافة مسار /apps/icons المفقود
 app.post('/api/apps/icons', (req, res) => {
   try {
-    // منطق معالجة الطلب هنا
     res.status(200).json({ 
       success: true,
       message: 'API under development' 
@@ -278,6 +297,11 @@ app.post('/api/apps/icons', (req, res) => {
 });
 
 // =============================================
+//              جميع الطلبات الأخرى
+// =============================================
+app.get('*', serveStaticPage('dashboard'));
+
+// =============================================
 //              معالجة الأخطاء (محسّنة)
 // =============================================
 app.use((err, req, res, next) => {
@@ -286,25 +310,18 @@ app.use((err, req, res, next) => {
   
   console.error(`[${timestamp}] [${errorId}]`, err.stack);
   
+  const statusCode = err.status || 500;
   const errorResponse = {
-    error: 'حدث خطأ في الخادم',
+    error: statusCode >= 500 ? 'حدث خطأ في الخادم' : err.message,
     errorId,
     timestamp,
-    path: req.path,
-    method: req.method,
     ...(process.env.NODE_ENV === 'development' && {
-      message: err.message,
       stack: err.stack.split('\n')
     })
   };
 
-  res.status(err.status || 500).json(errorResponse);
+  res.status(statusCode).json(errorResponse);
 });
-
-// =============================================
-//              جميع الطلبات الأخرى
-// =============================================
-app.get('*', serveStaticPage('dashboard'));
 
 // =============================================
 //              تشغيل الخادم
@@ -318,13 +335,11 @@ const server = app.listen(PORT, () => {
 process.on('unhandledRejection', (err) => {
   console.error('Unhandled Rejection:', err);
   
-  // إعطاء وقت للإغلاق بشكل أنيق
   server.close(() => {
     console.log('Server closed due to unhandled rejection');
     process.exit(1);
   });
   
-  // إغلاق قسري بعد 5 ثواني إذا لم يتم الإغلاق
   setTimeout(() => {
     console.error('Forcing shutdown due to timeout');
     process.exit(1);

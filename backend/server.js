@@ -32,6 +32,12 @@ const favicon = require('serve-favicon');
 // =============================================
 const app = express();
 
+// إنشاء nonce فريد لكل طلب
+app.use((req, res, next) => {
+  res.locals.nonce = crypto.randomBytes(16).toString('hex');
+  next();
+});
+
 // =============================================
 //               وسائط الأمان
 // =============================================
@@ -41,16 +47,36 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:"],
-      connectSrc: ["'self'"]
+      scriptSrc: [
+        "'self'",
+        "'strict-dynamic'",
+        (req, res) => `'nonce-${crypto.randomBytes(16).toString('hex')}'`
+      ],
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        "https://fonts.googleapis.com"
+      ],
+      imgSrc: [
+        "'self'",
+        "data:",
+        "https://*"
+      ],
+      fontSrc: [
+        "'self'",
+        "https://fonts.gstatic.com",
+        "data:"
+      ],
+      connectSrc: [
+        "'self'",
+        "https://*"
+      ],
+      frameSrc: ["'self'"]
     }
   }
 }));
-app.use(helmet({
-  contentSecurityPolicy: false
-}));
+
+
 app.use(cookieParser());
 app.use(compression());
 app.use(morgan('combined'));

@@ -26,6 +26,19 @@ const authRoutes = require('./routes/auth'); // <-- إضافة استيراد م
 // =============================================
 const app = express();
 
+// أضف هذا الجزء بعد تعريف app وقبل تعريف المسارات
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000
+})
+.then(() => console.log('✅ تم الاتصال بقاعدة البيانات بنجاح'))
+.catch(err => {
+  console.error('❌ فشل الاتصال بقاعدة البيانات:', err);
+  process.exit(1);
+});
+
 // =============================================
 //             الملفات الثابتة
 // =============================================
@@ -59,6 +72,8 @@ app.use((req, res, next) => {
   res.removeHeader('Referrer-Policy');
   next();
 });
+
+app.set('trust proxy', 1); // Trust first proxy
 
 // 2. إعداد الجلسات بدون قيود
 const sessionConfig = {

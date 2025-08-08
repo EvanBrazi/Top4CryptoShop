@@ -126,6 +126,27 @@
             margin-top: 5px;
             display: none;
         }
+/* التوثيق */
+        .docs-section {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        
+        .docs-section h3 {
+            color: var(--dark-chocolate);
+            margin-top: 0;
+        }
+        
+        .docs-section ul {
+            padding-right: 20px;
+        }
+        
+        .docs-section li {
+            margin-bottom: 8px;
+        }
     </style>
     <!-- تعريف تسجيل الدخول عبر Google -->
     <meta name="google-signin-client_id" content="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com">
@@ -152,11 +173,11 @@
         <!-- نموذج التسجيل التقليدي -->
         <form id="signupForm">
             <div class="form-group">
-                <input type="text" id="username" placeholder="اسم المستخدم" required>
+                <input type="text" id="username" placeholder="اسم المستخدم" required autocomplete="username">
                 <div id="usernameError" class="error-message"></div>
             </div>
             <div class="form-group">
-                <input type="password" id="password" placeholder="كلمة المرور" required minlength="6">
+                <input type="password" id="password" placeholder="كلمة المرور" required minlength="6" autocomplete="new-password">
                 <div id="passwordError" class="error-message"></div>
             </div>
             <div class="form-group">
@@ -165,7 +186,7 @@
             </div>
             <div class="form-group">
                 <div class="phone-input-group">
-                    <select id="countryCode" class="country-code" required>
+                    <select id="countryCode" class="country-code" required title="رمز الدولة">
                         <option value="" disabled selected>رمز الدولة</option>
                         <option value="+966">🇸🇦 +966 (السعودية)</option>
                         <option value="+971">🇦🇪 +971 (الإمارات)</option>
@@ -193,6 +214,19 @@
             </div>
             <button type="submit" class="btn-primary">تسجيل</button>
         </form>
+        <!-- قسم التوثيق -->
+        <div class="docs-section">
+            <h3>توثيق التسجيل</h3>
+            <ul>
+<li><strong>الأمان:</strong> جميع كلمات المرور مشفرة باستخدام bcrypt</li>
+                <li><strong>التحقق:</strong> يتم التحقق من صحة البيانات قبل التسجيل</li>
+            </ul>
+        </div>
+                <li><strong>التسجيل التقليدي:</strong> املأ النموذج بالبيانات المطلوبة</li>
+                <li><strong>التسجيل عبر Google:</strong> انقر على زر "التسجيل عبر Google"</li>
+                <li><strong>التسجيل عبر Apple:</strong> انقر على زر "التسجيل عبر Apple"</li>
+                <li><strong>الأمان:</strong> جميع كلمات المرور مشفرة باستخدام bcrypt</li>
+                <li><strong>
     </div>
 
     <script>

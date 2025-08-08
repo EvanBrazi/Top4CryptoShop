@@ -53,10 +53,6 @@ function handleAuthResponse(req, res, data) {
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 دقيقة
   max: 10, // 10 محاولات لكل IP
-  keyGenerator: (req) => {
-    // استخدام IP العميل الحقيقي عند وجود proxy
-    return req.headers['x-forwarded-for'] || req.ip;
-  },
   handler: (req, res) => {
     return handleAuthResponse(req, res, {
       status: 429,

@@ -1,49 +1,175 @@
 /**
  * @file appstab.js
  * @class AppsTab
- * @description كلاس متكامل لإنشاء وإدارة تبويب تطبيقات الدردشة مع دعم الأيقونات الحقيقية والتحديث التلقائي
- * @version 2.0
+ * @description كلاس متكامل لإدارة تبويب تطبيقات الدردشة مع دعم متقدم للأيقونات والتخزين المؤقت والتأثيرات ثلاثية الأبعاد
+ * @version 3.5
+ * @feature_cache نظام تخزين مؤقت للأيقونات
+ * @feature_loading مؤشر تحميل أثناء جلب البيانات
+ * @feature_3d تأثيرات ثلاثية الأبعاد للبطاقات
+ * @feature_logo إدارة شعار التطبيق في الزاوية
  */
 
 class AppsTab {
   /**
    * @constructor
    * @param {Object} config - كائن التهيئة
-   * @param {Object} config.taber - Instance من Taber
+   * @param {Object} config.taber - Instance من Taber (اختياري)
    * @param {string} config.containerId - ID العنصر الحاوي
    * @param {Object} config.options - خيارات إضافية
    * @param {string} [config.options.themeColor='#6a5acd'] - لون الثيم الرئيسي
    * @param {string} [config.options.dialogBgColor='#ffffff'] - لون خلفية مربع الحوار
    * @param {Array} [config.options.appsData] - بيانات التطبيقات (اختياري)
    * @param {number} [config.options.iconRefreshInterval=3600000] - فترة تحديث الأيقونات (ميلي ثانية)
+   * @param {string} [config.options.logoUrl] - رابط شعار التطبيق (اختياري)
    */
   constructor({ taber, containerId, options = {} }) {
-    this.taber = taber;
+    this.taber = taber || {};
     this.container = document.getElementById(containerId);
-    this.currentPage = 1;
-    this.appsPerPage = 20;
-    this.filteredApps = [];
-    this.iconRefreshInterval = options.iconRefreshInterval || 3600000; // ساعة واحدة افتراضياً
     
+    if (!this.container) {
+      console.error("عنصر الحاوية غير موجود بالـ ID المحدد:", containerId);
+      alert('خطأ: عنصر الحاوية غير موجود');
+      return;
+    }
+    
+    // إعدادات التخزين المؤقت
+    this.iconCache = {};
+    this.cacheExpiry = 24 * 60 * 60 * 1000; // 24 ساعة
+    
+    // إعدادات العرض
+    this.appsPerPage = 1000; // عرض جميع التطبيقات دون ترقيم
+    this.currentPage = 1;
     this.options = {
       themeColor: options.themeColor || '#6a5acd',
       dialogBgColor: options.dialogBgColor || '#ffffff',
-      appsData: options.appsData || this._defaultAppsData()
+      appsData: options.appsData || this._defaultAppsData(),
+      logoUrl: options.logoUrl || 'logo.png',
+      iconRefreshInterval: options.iconRefreshInterval || 3600000
     };
     
+    this.filteredApps = [...this.options.appsData];
     this._init();
   }
 
   /**
    * @method _init
-   * @description تهيئة المكون
+   * @description تهيئة المكون الرئيسي
    * @private
    */
   async _init() {
+    this._showLoading();
     this._loadCSS();
     await this._loadIcons();
     this.render();
     this._setupIconRefresh();
+    this._hideLoading();
+  }
+
+  /**
+   * @method _showLoading
+   * @description عرض مؤشر التحميل
+   * @private
+   */
+  _showLoading() {
+    this.loadingElement = document.createElement('div');
+    this.loadingElement.className = 'loading-overlay';
+    this.loadingElement.innerHTML = `
+      <div class="loading-spinner"></div>
+      <div class="loading-text">جاري تحميل التطبيقات...</div>
+    `;
+    document.body.appendChild(this.loadingElement);
+  }
+
+  /**
+   * @method _hideLoading
+   * @description إخفاء مؤشر التحميل
+   * @private
+   */
+  _hideLoading() {
+    if (this.loadingElement && document.body.contains(this.loadingElement)) {
+      document.body.removeChild(this.loadingElement);
+    }
+  }
+
+  /**
+   * @method _loadCSS
+   * @description تحميل ملفات الأنماط
+   * @private
+   */
+  _loadCSS() {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'apps-cards.css';
+    document.head.appendChild(link);
+    
+    const style = document.createElement('style');
+    style.textContent = `
+      :root { 
+        --theme-color: ${this.options.themeColor};
+        --dialog-bg-color: ${this.options.dialogBgColor};
+      }
+      
+      .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255,255,255,0.9);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      }
+      
+      .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid var(--theme-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      .loading-text {
+        margin-top: 15px;
+        font-size: 1.2rem;
+        color: #333;
+      }
+      
+      .app-logo {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 20px;
+  height: 20px;
+  border-radius: 100%;
+  background: none;
+  padding: 2px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 3;
+  background-image: url("./assets/images/logo.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.app-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+    `;
+    document.head.appendChild(style);
   }
 
   /**
@@ -52,26 +178,145 @@ class AppsTab {
    * @private
    */
   _setupIconRefresh() {
+    if (this.iconRefreshTimer) {
+      clearInterval(this.iconRefreshTimer);
+    }
     this.iconRefreshTimer = setInterval(async () => {
-      await this._loadIcons(true); // تحديث بدون إعادة تحميل الصفحة
+      await this._loadIcons(true);
       this.renderAppsGrid();
-    }, this.iconRefreshInterval);
+    }, this.options.iconRefreshInterval);
   }
 
   /**
-   * @method _loadCSS
-   * @description تحميل ملف الأنماط الرئيسي
+   * @method _loadIcons
+   * @description جلب الأيقونات مع دعم التخزين المؤقت
+   * @param {boolean} [silent=false] - منع عرض رسائل الخطأ
+   * @returns {Promise<void>}
    * @private
    */
-  _loadCSS() {
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'apps-card.css';
-    document.head.appendChild(link);
-    
-    const style = document.createElement('style');
-    style.textContent = `:root { --theme-color: ${this.options.themeColor} }`;
-    document.head.appendChild(style);
+  async _loadIcons(silent = false) {
+    try {
+      // محاولة جلب الأيقونات من الكاش أولاً
+      const cachedIcons = this._getCachedIcons();
+      if (cachedIcons) {
+        this._applyIcons(cachedIcons);
+        if (!silent) console.log('تم تحميل الأيقونات من الذاكرة المؤقتة');
+        return;
+      }
+
+      // جلب الأيقونات من السيرفر
+      const response = await fetch('/api/apps/icons', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
+        },
+        body: JSON.stringify({
+          apps: this.options.appsData.map(app => ({
+            id: app.id,
+            packageName: app.packageName,
+            name: app.name
+          })),
+          timestamp: Date.now()
+        })
+      });
+      
+      if (!response.ok) throw new Error('فشل جلب الأيقونات');
+      
+      const iconsData = await response.json();
+      
+      // حفظ الأيقونات في الكاش
+      this._cacheIcons(iconsData);
+      
+      // تطبيق الأيقونات
+      this._applyIcons(iconsData);
+      
+    } catch (error) {
+      if (!silent) console.error('فشل جلب الأيقونات:', error);
+      this._applyFallbackIcons();
+    }
+  }
+
+  /**
+   * @method _getCachedIcons
+   * @description جلب الأيقونات من التخزين المؤقت المحلي
+   * @returns {Array|null} مصفوفة بيانات الأيقونات أو null إذا لم توجد
+   * @private
+   */
+  _getCachedIcons() {
+    try {
+      const cached = localStorage.getItem('appsIconsCache');
+      if (!cached) return null;
+      
+      const { timestamp, data } = JSON.parse(cached);
+      if (Date.now() - timestamp > this.cacheExpiry) return null;
+      
+      return data;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /**
+   * @method _cacheIcons
+   * @description حفظ الأيقونات في التخزين المؤقت المحلي
+   * @param {Array} iconsData - مصفوفة بيانات الأيقونات
+   * @private
+   */
+  _cacheIcons(iconsData) {
+    try {
+      const cacheData = {
+        timestamp: Date.now(),
+        data: iconsData
+      };
+      localStorage.setItem('appsIconsCache', JSON.stringify(cacheData));
+    } catch (e) {
+      console.error('فشل حفظ الأيقونات في الكاش:', e);
+    }
+  }
+
+  /**
+   * @method _applyIcons
+   * @description تطبيق الأيقونات على بيانات التطبيقات
+   * @param {Array} iconsData - مصفوفة بيانات الأيقونات
+   * @private
+   */
+  _applyIcons(iconsData) {
+    this.options.appsData.forEach(app => {
+      const iconInfo = iconsData.find(i => i.appId === app.id);
+      if (iconInfo?.url && this._isValidUrl(iconInfo.url)) {
+        app.icon = iconInfo.url;
+      } else {
+        app.icon = this._getFallbackIcon(app.name);
+      }
+    });
+  }
+
+  /**
+   * @method _applyFallbackIcons
+   * @description تطبيق الأيقونات الافتراضية عند فشل الجلب
+   * @private
+   */
+  _applyFallbackIcons() {
+    this.options.appsData.forEach(app => {
+      app.icon = this._getFallbackIcon(app.name);
+    });
+  }
+
+  /**
+   * @method _isValidUrl
+   * @description التحقق من صحة رابط الصورة
+   * @param {string} url - رابط الصورة
+   * @returns {boolean}
+   * @private
+   */
+  _isValidUrl(url) {
+    try {
+      new URL(url);
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
   /**
@@ -94,6 +339,140 @@ class AppsTab {
       (G < 0 ? 0 : G) * 0x100 +
       (B < 0 ? 0 : B)
     ).toString(16).slice(1)}`;
+  }
+
+  /**
+   * @method _getFallbackIcon
+   * @description الحصول على أيقونة افتراضية للتطبيق
+   * @param {string} appName - اسم التطبيق
+   * @returns {string} رابط الأيقونة الافتراضية
+   * @private
+   */
+  _getFallbackIcon(appName) {
+    const fallbackIcons = {
+      "متجر الارقام": "https://cdn-icons-png.flaticon.com/512/3046/3046127.png",
+      "اهلا شات": "https://cdn-icons-png.flaticon.com/512/3046/3046128.png",
+      "سول شيل": "https://cdn-icons-png.flaticon.com/512/3046/3046129.png",
+      "يوهو شات": "https://cdn-icons-png.flaticon.com/512/3046/3046130.png",
+      "لايكي": "https://cdn-icons-png.flaticon.com/512/3046/3046131.png",
+      "تالك تالك": "https://cdn-icons-png.flaticon.com/512/3046/3046132.png",
+      "بيغو لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046133.png",
+      "بارتي ستار": "https://cdn-icons-png.flaticon.com/512/3046/3046134.png",
+      "هيا سات": "https://cdn-icons-png.flaticon.com/512/3046/3046135.png",
+      "بوبوو لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046136.png",
+      "فورفان": "https://cdn-icons-png.flaticon.com/512/3046/3046137.png",
+      "زينا لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046138.png",
+      "سوغو شات": "https://cdn-icons-png.flaticon.com/512/3046/3046139.png",
+      "ياهلا شات": "https://cdn-icons-png.flaticon.com/512/3046/3046140.png",
+      "ميجو لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046141.png",
+      "كوكو لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046142.png",
+      "هابي": "https://cdn-icons-png.flaticon.com/512/3046/3046143.png",
+      "هوني جار": "https://cdn-icons-png.flaticon.com/512/3046/3046144.png",
+      "هاي يو": "https://cdn-icons-png.flaticon.com/512/3046/3046145.png",
+      "ديمو شات": "https://cdn-icons-png.flaticon.com/512/3046/3046146.png",
+      "ليلى شات": "https://cdn-icons-png.flaticon.com/512/3046/3046147.png",
+      "تامي شات": "https://cdn-icons-png.flaticon.com/512/3046/3046148.png",
+      "واهو شات": "https://cdn-icons-png.flaticon.com/512/3046/3046149.png",
+      "ايومي شات": "https://cdn-icons-png.flaticon.com/512/3046/3046150.png",
+      "حكي شات": "https://cdn-icons-png.flaticon.com/512/3046/3046151.png",
+      "يويو شات": "https://cdn-icons-png.flaticon.com/512/3046/3046152.png",
+      "اوهلا شات": "https://cdn-icons-png.flaticon.com/512/3046/3046153.png",
+      "ليغو لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046154.png",
+      "لاما شات": "https://cdn-icons-png.flaticon.com/512/3046/3046155.png",
+      "ازال لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046156.png",
+      "بيلا شات": "https://cdn-icons-png.flaticon.com/512/3046/3046157.png",
+      "بينمو شات": "https://cdn-icons-png.flaticon.com/512/3046/3046158.png",
+      "لامي شات": "https://cdn-icons-png.flaticon.com/512/3046/3046159.png",
+      "لايت شات": "https://cdn-icons-png.flaticon.com/512/3046/3046160.png",
+      "هابي شات": "https://cdn-icons-png.flaticon.com/512/3046/3046161.png",
+      "تاكا شات": "https://cdn-icons-png.flaticon.com/512/3046/3046162.png",
+      "واوو": "https://cdn-icons-png.flaticon.com/512/3046/3046163.png",
+      "هيغو شات": "https://cdn-icons-png.flaticon.com/512/3046/3046164.png",
+      "وياك شات": "https://cdn-icons-png.flaticon.com/512/3046/3046165.png",
+      "كيو لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046166.png",
+      "لييت شات": "https://cdn-icons-png.flaticon.com/512/3046/3046167.png",
+      "هوبي شات": "https://cdn-icons-png.flaticon.com/512/3046/3046168.png",
+      "جيمي لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046169.png",
+      "اولاميت شات": "https://cdn-icons-png.flaticon.com/512/3046/3046170.png",
+      "سعادة شات": "https://cdn-icons-png.flaticon.com/512/3046/3046171.png",
+      "عمار شات": "https://cdn-icons-png.flaticon.com/512/3046/3046172.png",
+      "واكي ستار": "https://cdn-icons-png.flaticon.com/512/3046/3046173.png",
+      "سو ماتش": "https://cdn-icons-png.flaticon.com/512/3046/3046174.png",
+      "يووي شات": "https://cdn-icons-png.flaticon.com/512/3046/3046175.png",
+      "سول شات": "https://cdn-icons-png.flaticon.com/512/3046/3046176.png",
+      "تانغو تادا شات": "https://cdn-icons-png.flaticon.com/512/3046/3046177.png",
+      "لاكي شات": "https://cdn-icons-png.flaticon.com/512/3046/3046178.png",
+      "اب فن": "https://cdn-icons-png.flaticon.com/512/3046/3046179.png",
+      "توب توب": "https://cdn-icons-png.flaticon.com/512/3046/3046180.png",
+      "توب فويس": "https://cdn-icons-png.flaticon.com/512/3046/3046181.png",
+      "آمو شات": "https://cdn-icons-png.flaticon.com/512/3046/3046182.png",
+      "بارتي هيرو": "https://cdn-icons-png.flaticon.com/512/3046/3046183.png",
+      "مجلس": "https://cdn-icons-png.flaticon.com/512/3046/3046184.png",
+      "اشا لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046185.png",
+      "شاميت لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046186.png",
+      "هوكا شات": "https://cdn-icons-png.flaticon.com/512/3046/3046187.png",
+      "هلا مي": "https://cdn-icons-png.flaticon.com/512/3046/3046188.png",
+      "صدفة شات": "https://cdn-icons-png.flaticon.com/512/3046/3046189.png",
+      "نبض شات": "https://cdn-icons-png.flaticon.com/512/3046/3046190.png",
+      "سول ستار": "https://cdn-icons-png.flaticon.com/512/3046/3046191.png",
+      "مولي ستار": "https://cdn-icons-png.flaticon.com/512/3046/3046192.png",
+      "ويغو بارتي": "https://cdn-icons-png.flaticon.com/512/3046/3046193.png",
+      "يامي ستار": "https://cdn-icons-png.flaticon.com/512/3046/3046194.png",
+      "فوفو شات": "https://cdn-icons-png.flaticon.com/512/3046/3046195.png",
+      "بوتا لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046196.png",
+      "كواي شات": "https://cdn-icons-png.flaticon.com/512/3046/3046197.png",
+      "ميكو لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046198.png",
+      "ديتو شات": "https://cdn-icons-png.flaticon.com/512/3046/3046199.png",
+      "سويو شات": "https://cdn-icons-png.flaticon.com/512/3046/3046200.png",
+      "ايمو": "https://cdn-icons-png.flaticon.com/512/3046/3046201.png",
+      "سهرة شات": "https://cdn-icons-png.flaticon.com/512/3046/3046202.png",
+      "باوا لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046203.png",
+      "جانكو": "https://cdn-icons-png.flaticon.com/512/3046/3046204.png",
+      "كيسميت شات": "https://cdn-icons-png.flaticon.com/512/3046/3046205.png",
+      "سايا لايكي": "https://cdn-icons-png.flaticon.com/512/3046/3046206.png",
+      "دانا": "https://cdn-icons-png.flaticon.com/512/3046/3046207.png",
+      "ناوا لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046208.png",
+      "فوفا شات": "https://cdn-icons-png.flaticon.com/512/3046/3046209.png",
+      "سما شات": "https://cdn-icons-png.flaticon.com/512/3046/3046210.png",
+      "هالو ستار": "https://cdn-icons-png.flaticon.com/512/3046/3046211.png",
+      "مي يو": "https://cdn-icons-png.flaticon.com/512/3046/3046212.png",
+      "لايكي سايا": "https://cdn-icons-png.flaticon.com/512/3046/3046213.png",
+      "هايوكي شات": "https://cdn-icons-png.flaticon.com/512/3046/3046214.png",
+      "فن اب": "https://cdn-icons-png.flaticon.com/512/3046/3046215.png",
+      "جويو لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046216.png",
+      "كيتي لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046217.png",
+      "سالا لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046218.png",
+      "هامي بارتي": "https://cdn-icons-png.flaticon.com/512/3046/3046219.png",
+      "روستار": "https://cdn-icons-png.flaticon.com/512/3046/3046220.png",
+      "سوبر لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046221.png",
+      "مرحبا شات": "https://cdn-icons-png.flaticon.com/512/3046/3046222.png",
+      "فانسي لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046223.png",
+      "هاي بارتي": "https://cdn-icons-png.flaticon.com/512/3046/3046224.png",
+      "ماذا شات": "https://cdn-icons-png.flaticon.com/512/3046/3046225.png",
+      "ستار ميكر": "https://cdn-icons-png.flaticon.com/512/3046/3046226.png",
+      "كروان شات": "https://cdn-icons-png.flaticon.com/512/3046/3046227.png",
+      "لايام": "https://cdn-icons-png.flaticon.com/512/3046/3046228.png",
+      "مانغو لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046229.png",
+      "يالا لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046230.png",
+      "7 ستار": "https://cdn-icons-png.flaticon.com/512/3046/3046231.png",
+      "شيرب شات": "https://cdn-icons-png.flaticon.com/512/3046/3046232.png",
+      "اوبا لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046233.png",
+      "بوبو شات": "https://cdn-icons-png.flaticon.com/512/3046/3046234.png",
+      "صبا شات": "https://cdn-icons-png.flaticon.com/512/3046/3046235.png",
+      "تاميل": "https://cdn-icons-png.flaticon.com/512/3046/3046236.png",
+      "لايف يو": "https://cdn-icons-png.flaticon.com/512/3046/3046237.png",
+      "ميكس يو": "https://cdn-icons-png.flaticon.com/512/3046/3046238.png",
+      "شيلا شات": "https://cdn-icons-png.flaticon.com/512/3046/3046239.png",
+      "الووو شات": "https://cdn-icons-png.flaticon.com/512/3046/3046240.png",
+      "سلام شات": "https://cdn-icons-png.flaticon.com/512/3046/3046241.png",
+      "سبارتي شات": "https://cdn-icons-png.flaticon.com/512/3046/3046242.png",
+      "هوا شات": "https://cdn-icons-png.flaticon.com/512/3046/3046243.png",
+      "اب لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046244.png",
+      "ليونس شات": "https://cdn-icons-png.flaticon.com/512/3046/3046245.png",
+      "ايبي تي في": "https://cdn-icons-png.flaticon.com/512/3046/3046246.png"
+    };
+    
+    return fallbackIcons[appName] || "https://cdn-icons-png.flaticon.com/512/3046/3046127.png";
   }
 
   /**
@@ -268,210 +647,10 @@ class AppsTab {
   }
 
   /**
-   * @method _loadIcons
-   * @description جلب الأيقونات من API السيرفر
-   * @param {boolean} [silent=false] - إذا كان true لا يعرض رسائل الخطأ
-   * @returns {Promise<void>}
-   * @private
-   */
-  async _loadIcons(silent = false) {
-    try {
-      const response = await fetch('/api/apps/icons', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache'
-        },
-        body: JSON.stringify({
-          apps: this.options.appsData.map(app => ({
-            id: app.id,
-            packageName: app.packageName,
-            name: app.name
-          })),
-          timestamp: Date.now() // إضافة طابع زمني لتجنب التخزين المؤقت
-        })
-      });
-      
-      if (!response.ok) throw new Error('فشل جلب الأيقونات');
-      
-      const iconsData = await response.json();
-      
-      // تعبئة حقل icon في بيانات التطبيقات مع التحقق من وجود الرابط
-      this.options.appsData.forEach(app => {
-        const iconInfo = iconsData.find(i => i.appId === app.id);
-        if (iconInfo?.url && this._isValidUrl(iconInfo.url)) {
-          app.icon = iconInfo.url;
-        } else {
-          app.icon = this._getFallbackIcon(app.name);
-        }
-      });
-      
-    } catch (error) {
-      if (!silent) {
-        console.error('فشل جلب الأيقونات:', error);
-      }
-      // استخدام أيقونات افتراضية في حالة الخطأ
-      this.options.appsData.forEach(app => {
-        app.icon = this._getFallbackIcon(app.name);
-      });
-    }
-  }
-
-  /**
-   * @method _isValidUrl
-   * @description التحقق من صحة رابط الصورة
-   * @param {string} url
-   * @returns {boolean}
-   * @private
-   */
-  _isValidUrl(url) {
-    try {
-      new URL(url);
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  /**
-   * @method _getFallbackIcon
-   * @description أيقونة افتراضية عند فشل الجلب
-   * @param {string} appName
-   * @returns {string}
-   * @private
-   */
-  _getFallbackIcon(appName) {
-    const fallbackIcons = {
-      "متجر الارقام": "https://cdn-icons-png.flaticon.com/512/3046/3046127.png",
-      "اهلا شات": "https://cdn-icons-png.flaticon.com/512/3046/3046128.png",
-      "سول شيل": "https://cdn-icons-png.flaticon.com/512/3046/3046129.png",
-      "يوهو شات": "https://cdn-icons-png.flaticon.com/512/3046/3046130.png",
-      "لايكي": "https://cdn-icons-png.flaticon.com/512/3046/3046131.png",
-      "تالك تالك": "https://cdn-icons-png.flaticon.com/512/3046/3046132.png",
-      "بيغو لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046133.png",
-      "بارتي ستار": "https://cdn-icons-png.flaticon.com/512/3046/3046134.png",
-      "هيا سات": "https://cdn-icons-png.flaticon.com/512/3046/3046135.png",
-      "بوبوو لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046136.png",
-      "فورفان": "https://cdn-icons-png.flaticon.com/512/3046/3046137.png",
-      "زينا لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046138.png",
-      "سوغو شات": "https://cdn-icons-png.flaticon.com/512/3046/3046139.png",
-      "ياهلا شات": "https://cdn-icons-png.flaticon.com/512/3046/3046140.png",
-      "ميجو لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046141.png",
-      "كوكو لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046142.png",
-      "هابي": "https://cdn-icons-png.flaticon.com/512/3046/3046143.png",
-      "هوني جار": "https://cdn-icons-png.flaticon.com/512/3046/3046144.png",
-      "هاي يو": "https://cdn-icons-png.flaticon.com/512/3046/3046145.png",
-      "ديمو شات": "https://cdn-icons-png.flaticon.com/512/3046/3046146.png",
-      "ليلى شات": "https://cdn-icons-png.flaticon.com/512/3046/3046147.png",
-      "تامي شات": "https://cdn-icons-png.flaticon.com/512/3046/3046148.png",
-      "واهو شات": "https://cdn-icons-png.flaticon.com/512/3046/3046149.png",
-      "ايومي شات": "https://cdn-icons-png.flaticon.com/512/3046/3046150.png",
-      "حكي شات": "https://cdn-icons-png.flaticon.com/512/3046/3046151.png",
-      "يويو شات": "https://cdn-icons-png.flaticon.com/512/3046/3046152.png",
-      "اوهلا شات": "https://cdn-icons-png.flaticon.com/512/3046/3046153.png",
-      "ليغو لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046154.png",
-      "لاما شات": "https://cdn-icons-png.flaticon.com/512/3046/3046155.png",
-      "ازال لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046156.png",
-      "بيلا شات": "https://cdn-icons-png.flaticon.com/512/3046/3046157.png",
-      "بينمو شات": "https://cdn-icons-png.flaticon.com/512/3046/3046158.png",
-      "لامي شات": "https://cdn-icons-png.flaticon.com/512/3046/3046159.png",
-      "لايت شات": "https://cdn-icons-png.flaticon.com/512/3046/3046160.png",
-      "هابي شات": "https://cdn-icons-png.flaticon.com/512/3046/3046161.png",
-      "تاكا شات": "https://cdn-icons-png.flaticon.com/512/3046/3046162.png",
-      "واوو": "https://cdn-icons-png.flaticon.com/512/3046/3046163.png",
-      "هيغو شات": "https://cdn-icons-png.flaticon.com/512/3046/3046164.png",
-      "وياك شات": "https://cdn-icons-png.flaticon.com/512/3046/3046165.png",
-      "كيو لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046166.png",
-      "لييت شات": "https://cdn-icons-png.flaticon.com/512/3046/3046167.png",
-      "هوبي شات": "https://cdn-icons-png.flaticon.com/512/3046/3046168.png",
-      "جيمي لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046169.png",
-      "اولاميت شات": "https://cdn-icons-png.flaticon.com/512/3046/3046170.png",
-      "سعادة شات": "https://cdn-icons-png.flaticon.com/512/3046/3046171.png",
-      "عمار شات": "https://cdn-icons-png.flaticon.com/512/3046/3046172.png",
-      "واكي ستار": "https://cdn-icons-png.flaticon.com/512/3046/3046173.png",
-      "سو ماتش": "https://cdn-icons-png.flaticon.com/512/3046/3046174.png",
-      "يووي شات": "https://cdn-icons-png.flaticon.com/512/3046/3046175.png",
-      "سول شات": "https://cdn-icons-png.flaticon.com/512/3046/3046176.png",
-      "تانغو تادا شات": "https://cdn-icons-png.flaticon.com/512/3046/3046177.png",
-      "لاكي شات": "https://cdn-icons-png.flaticon.com/512/3046/3046178.png",
-      "اب فن": "https://cdn-icons-png.flaticon.com/512/3046/3046179.png",
-      "توب توب": "https://cdn-icons-png.flaticon.com/512/3046/3046180.png",
-      "توب فويس": "https://cdn-icons-png.flaticon.com/512/3046/3046181.png",
-      "آمو شات": "https://cdn-icons-png.flaticon.com/512/3046/3046182.png",
-      "بارتي هيرو": "https://cdn-icons-png.flaticon.com/512/3046/3046183.png",
-      "مجلس": "https://cdn-icons-png.flaticon.com/512/3046/3046184.png",
-      "اشا لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046185.png",
-      "شاميت لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046186.png",
-      "هوكا شات": "https://cdn-icons-png.flaticon.com/512/3046/3046187.png",
-      "هلا مي": "https://cdn-icons-png.flaticon.com/512/3046/3046188.png",
-      "صدفة شات": "https://cdn-icons-png.flaticon.com/512/3046/3046189.png",
-      "نبض شات": "https://cdn-icons-png.flaticon.com/512/3046/3046190.png",
-      "سول ستار": "https://cdn-icons-png.flaticon.com/512/3046/3046191.png",
-      "مولي ستار": "https://cdn-icons-png.flaticon.com/512/3046/3046192.png",
-      "ويغو بارتي": "https://cdn-icons-png.flaticon.com/512/3046/3046193.png",
-      "يامي ستار": "https://cdn-icons-png.flaticon.com/512/3046/3046194.png",
-      "فوفو شات": "https://cdn-icons-png.flaticon.com/512/3046/3046195.png",
-      "بوتا لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046196.png",
-      "كواي شات": "https://cdn-icons-png.flaticon.com/512/3046/3046197.png",
-      "ميكو لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046198.png",
-      "ديتو شات": "https://cdn-icons-png.flaticon.com/512/3046/3046199.png",
-      "سويو شات": "https://cdn-icons-png.flaticon.com/512/3046/3046200.png",
-      "ايمو": "https://cdn-icons-png.flaticon.com/512/3046/3046201.png",
-      "سهرة شات": "https://cdn-icons-png.flaticon.com/512/3046/3046202.png",
-      "باوا لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046203.png",
-      "جانكو": "https://cdn-icons-png.flaticon.com/512/3046/3046204.png",
-      "كيسميت شات": "https://cdn-icons-png.flaticon.com/512/3046/3046205.png",
-      "سايا لايكي": "https://cdn-icons-png.flaticon.com/512/3046/3046206.png",
-      "دانا": "https://cdn-icons-png.flaticon.com/512/3046/3046207.png",
-      "ناوا لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046208.png",
-      "فوفا شات": "https://cdn-icons-png.flaticon.com/512/3046/3046209.png",
-      "سما شات": "https://cdn-icons-png.flaticon.com/512/3046/3046210.png",
-      "هالو ستار": "https://cdn-icons-png.flaticon.com/512/3046/3046211.png",
-      "مي يو": "https://cdn-icons-png.flaticon.com/512/3046/3046212.png",
-      "لايكي سايا": "https://cdn-icons-png.flaticon.com/512/3046/3046213.png",
-      "هايوكي شات": "https://cdn-icons-png.flaticon.com/512/3046/3046214.png",
-      "فن اب": "https://cdn-icons-png.flaticon.com/512/3046/3046215.png",
-      "جويو لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046216.png",
-      "كيتي لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046217.png",
-      "سالا لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046218.png",
-      "هامي بارتي": "https://cdn-icons-png.flaticon.com/512/3046/3046219.png",
-      "روستار": "https://cdn-icons-png.flaticon.com/512/3046/3046220.png",
-      "سوبر لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046221.png",
-      "مرحبا شات": "https://cdn-icons-png.flaticon.com/512/3046/3046222.png",
-      "فانسي لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046223.png",
-      "هاي بارتي": "https://cdn-icons-png.flaticon.com/512/3046/3046224.png",
-      "ماذا شات": "https://cdn-icons-png.flaticon.com/512/3046/3046225.png",
-      "ستار ميكر": "https://cdn-icons-png.flaticon.com/512/3046/3046226.png",
-      "كروان شات": "https://cdn-icons-png.flaticon.com/512/3046/3046227.png",
-      "لايام": "https://cdn-icons-png.flaticon.com/512/3046/3046228.png",
-      "مانغو لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046229.png",
-      "يالا لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046230.png",
-      "7 ستار": "https://cdn-icons-png.flaticon.com/512/3046/3046231.png",
-      "شيرب شات": "https://cdn-icons-png.flaticon.com/512/3046/3046232.png",
-      "اوبا لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046233.png",
-      "بوبو شات": "https://cdn-icons-png.flaticon.com/512/3046/3046234.png",
-      "صبا شات": "https://cdn-icons-png.flaticon.com/512/3046/3046235.png",
-      "تاميل": "https://cdn-icons-png.flaticon.com/512/3046/3046236.png",
-      "لايف يو": "https://cdn-icons-png.flaticon.com/512/3046/3046237.png",
-      "ميكس يو": "https://cdn-icons-png.flaticon.com/512/3046/3046238.png",
-      "شيلا شات": "https://cdn-icons-png.flaticon.com/512/3046/3046239.png",
-      "الووو شات": "https://cdn-icons-png.flaticon.com/512/3046/3046240.png",
-      "سلام شات": "https://cdn-icons-png.flaticon.com/512/3046/3046241.png",
-      "سبارتي شات": "https://cdn-icons-png.flaticon.com/512/3046/3046242.png",
-      "هوا شات": "https://cdn-icons-png.flaticon.com/512/3046/3046243.png",
-      "اب لايف": "https://cdn-icons-png.flaticon.com/512/3046/3046244.png",
-      "ليونس شات": "https://cdn-icons-png.flaticon.com/512/3046/3046245.png",
-      "ايبي تي في": "https://cdn-icons-png.flaticon.com/512/3046/3046246.png"
-    };
-    
-    return fallbackIcons[appName] || "https://cdn-icons-png.flaticon.com/512/3046/3046127.png";
-  }
-
-  /**
    * @method _createAppCard
-   * @description إنشاء بطاقة تطبيق مع دعم الأيقونات الديناميكية
-   * @param {Object} app
-   * @returns {HTMLElement}
+   * @description إنشاء بطاقة تطبيق بتأثيرات 3D
+   * @param {Object} app - بيانات التطبيق
+   * @returns {HTMLElement} عنصر بطاقة التطبيق
    * @private
    */
   _createAppCard(app) {
@@ -479,14 +658,15 @@ class AppsTab {
     card.className = 'app-card';
     card.dataset.appId = app.id;
     card.title = app.name;
-
-    // استخدام عنصر صورة مؤقت للتحقق من صحة الرابط
-    const img = new Image();
-    img.src = app.icon;
+    
+    // إعداد تأثيرات 3D
+    card.style.transformStyle = 'preserve-3d';
+    card.style.transition = 'transform 0.5s ease, box-shadow 0.3s ease';
+    card.style.boxShadow = '0 10px 20px rgba(0,0,0,0.2)';
     
     card.innerHTML = `
       <div class="app-icon-container">
-        <img src="${img.src}" 
+        <img src="${app.icon}" 
              class="app-icon" 
              alt="${app.name}"
              loading="lazy"
@@ -494,10 +674,42 @@ class AppsTab {
       </div>
       <div class="app-name">${app.name}</div>
       <div class="app-footer">$${app.price}</div>
+      <div class="app-logo">
+        <img src="${this.options.logoUrl}" alt="Logo" onerror="this.style.display='none'">
+      </div>
     `;
 
+    // إضافة تأثيرات التحويم 3D
+    this._setup3DHoverEffects(card);
     card.addEventListener('click', () => this._showDialog(app));
     return card;
+  }
+
+  /**
+   * @method _setup3DHoverEffects
+   * @description إعداد تأثيرات التحويم ثلاثية الأبعاد
+   * @param {HTMLElement} card - عنصر بطاقة التطبيق
+   * @private
+   */
+  _setup3DHoverEffects(card) {
+    card.addEventListener('mousemove', (e) => {
+      const rect = card.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      
+      const angleX = (y - centerY) / 20;
+      const angleY = (centerX - x) / 20;
+      
+      card.style.transform = `perspective(1000px) rotateX(${angleX}deg) rotateY(${angleY}deg) scale(1.05)`;
+      card.style.boxShadow = '0 15px 30px rgba(0,0,0,0.3)';
+    });
+    
+    card.addEventListener('mouseleave', () => {
+      card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale(1)';
+      card.style.boxShadow = '0 10px 20px rgba(0,0,0,0.2)';
+    });
   }
 
   /**
@@ -512,6 +724,7 @@ class AppsTab {
     
     const dialog = document.createElement('div');
     dialog.className = 'dialog-content';
+    dialog.style.backgroundColor = this.options.dialogBgColor;
     
     dialog.innerHTML = `
       <div class="dialog-header">
@@ -529,7 +742,7 @@ class AppsTab {
       </div>
       <div class="dialog-footer">
         <button class="dialog-btn dialog-btn-secondary">إلغاء</button>
-        <button class="dialog-btn dialog-btn-primary">شراء</button>
+        <button class="dialog-btn dialog-btn-primary" style="background-color: ${this.options.themeColor}">شراء</button>
       </div>
     `;
     
@@ -584,55 +797,8 @@ class AppsTab {
   }
 
   /**
-   * @method _createPagination
-   * @description إنشاء عناصر ترقيم الصفحات
-   * @returns {HTMLElement}
-   * @private
-   */
-  _createPagination() {
-    const totalPages = Math.ceil(this.filteredApps.length / this.appsPerPage);
-    if (totalPages <= 1) return document.createElement('div');
-    
-    const pagination = document.createElement('div');
-    pagination.className = 'pagination';
-    
-    const prevBtn = document.createElement('button');
-    prevBtn.className = 'page-btn';
-    prevBtn.textContent = 'السابق';
-    prevBtn.disabled = this.currentPage === 1;
-    prevBtn.addEventListener('click', () => {
-      if (this.currentPage > 1) {
-        this.currentPage--;
-        this.renderAppsGrid();
-      }
-    });
-    
-    const nextBtn = document.createElement('button');
-    nextBtn.className = 'page-btn';
-    nextBtn.textContent = 'التالي';
-    nextBtn.disabled = this.currentPage === totalPages;
-    nextBtn.addEventListener('click', () => {
-      if (this.currentPage < totalPages) {
-        this.currentPage++;
-        this.renderAppsGrid();
-      }
-    });
-    
-    const pageInfo = document.createElement('span');
-    pageInfo.textContent = `الصفحة ${this.currentPage} من ${totalPages}`;
-    pageInfo.style.margin = '0 10px';
-    pageInfo.style.alignSelf = 'center';
-    
-    pagination.appendChild(prevBtn);
-    pagination.appendChild(pageInfo);
-    pagination.appendChild(nextBtn);
-    
-    return pagination;
-  }
-
-  /**
    * @method renderAppsGrid
-   * @description تصيير شبكة التطبيقات مع الترقيم
+   * @description تصيير شبكة التطبيقات
    * @private
    */
   renderAppsGrid() {
@@ -653,16 +819,6 @@ class AppsTab {
       this.container.replaceChild(appsGrid, existingGrid);
     } else {
       this.container.appendChild(appsGrid);
-    }
-    
-    // تحديث الترقيم
-    const existingPagination = this.container.querySelector('.pagination');
-    const newPagination = this._createPagination();
-    
-    if (existingPagination) {
-      this.container.replaceChild(newPagination, existingPagination);
-    } else {
-      this.container.appendChild(newPagination);
     }
   }
 
@@ -685,9 +841,14 @@ class AppsTab {
    * @public
    */
   destroy() {
-    clearInterval(this.iconRefreshTimer);
+    if (this.iconRefreshTimer) {
+      clearInterval(this.iconRefreshTimer);
+    }
+    this._hideLoading();
     this.container.innerHTML = '';
   }
 }
 
-export { AppsTab };
+if (typeof window !== 'undefined') {
+  window.AppsTab = AppsTab;
+}

@@ -1,6 +1,19 @@
 {
+  "name": "top4cryptoshop",
+  "version": "1.0.0",
+  "description": "A cryptocurrency shop application",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "cd backend && node server.js",
+    "dev": "cd backend && nodemon server.js",
+    "backend-install": "cd backend && npm install",
+    "frontend-install": "cd frontend && npm install",
+    "install-all": "npm run backend-install && npm run frontend-install"
+  },
   "dependencies": {
-    "mongoose": "^8.16.4",
-    "serve-favicon": "^2.5.1"
-  }
+    "concurrently": "^7.6.0"
+  },
+  "keywords": ["cryptocurrency", "shop", "nodejs", "express"],
+  "author": "Top4CryptoShop Team",
+  "license": "MIT"
 }

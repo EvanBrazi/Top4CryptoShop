@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل الخروج - متجر العملات الرقمية</title>
+    <style>
+        :root {
+            --beige: #F5F5DC;
+            --chocolate: #D2691E;
+            --dark-chocolate: #8B4513;
+        }
+
+        body {
+            font-family: 'Tahoma', sans-serif;
+            background: var(--beige);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 400px;
+            padding: 2rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(139, 69, 19, 0.1);
+            border: 1px solid var(--chocolate);
+            text-align: center;
+        }
+
+        h2 {
+            color: var(--dark-chocolate);
+            margin-bottom: 1.5rem;
+        }
+
+        p {
+            color: var(--dark-chocolate);
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        .btn-primary {
+            background-color: var(--chocolate);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 20px;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--dark-chocolate);
+            transform: translateY(-2px);
+        }
+
+        /* التوثيق */
+        .docs-section {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+
+        .docs-section h3 {
+            color: var(--dark-chocolate);
+            margin-top: 0;
+        }
+
+        .docs-section ul {
+            padding-right: 20px;
+            text-align: right;
+        }
+
+        .docs-section li {
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>تسجيل الخروج</h2>
+        <p>لقد تم تسجيل خروجك بنجاح من حسابك.</p>
+        <p>شكراً لاستخدامك متجر العملات الرقمية.</p>
+        
+        <a href="login.html" class="btn-primary">تسجيل الدخول مرة أخرى</a>
+        
+        <!-- قسم التوثيق -->
+        <div class="docs-section">
+            <h3>توثيق تسجيل الخروج</h3>
+            <ul>
+                <li><strong>الأمان:</strong> تم إبطال التوكن الخاص بك وحذف الكوكيز</li>
+                <li><strong>الحماية:</strong> لا يمكن استخدام التوكن القديم للوصول إلى الحساب</li>
+                <li><strong>الجلسة:</strong> تم إنهاء الجلسة بشكل آمن</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

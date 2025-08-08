@@ -1,0 +1,17 @@
+{
+  "name": "top4cryptoshop-frontend",
+  "version": "1.0.0",
+  "description": "Frontend for Top4CryptoShop application",
+  "main": "index.js",
+  "scripts": {
+    "start": "npm run dev",
+    "dev": "live-server --port=10001 --host=localhost",
+    "build": "echo 'No build step required for static files'"
+  },
+  "keywords": ["cryptocurrency", "shop", "frontend"],
+  "author": "Top4CryptoShop Team",
+  "license": "MIT",
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  }
+}

@@ -51,52 +51,71 @@ try {
 }
 
 // =============================================
-//               وسائط الأمان (معطلة)
+//               وسائط الأمان (مفعلة الآن)
 // =============================================
 
-// 1. تعطيل جميع وسائط الأمان
-console.warn('⚠️  تحذير: جميع إعدادات الأمان معطلة');
-app.use((req, res, next) => {
-  // تعطيل جميع رؤوس الأمان
-  res.removeHeader('X-Powered-By');
-  res.removeHeader('X-XSS-Protection');
-  res.removeHeader('X-Content-Type-Options');
-  res.removeHeader('X-Frame-Options');
-  res.removeHeader('Strict-Transport-Security');
-  res.removeHeader('Content-Security-Policy');
-  res.removeHeader('Referrer-Policy');
-  next();
-});
+// 1. تفعيل وسائط الأمان
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://fonts.googleapis.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
+      imgSrc: ["'self'", "data:", "https://cdn-icons-png.flaticon.com", "https://www.gravatar.com", "https://ui-avatars.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      connectSrc: ["'self'", "https://api.ipify.org"],
+      frameSrc: ["'self'"]
+    }
+  },
+  dnsPrefetchControl: { allow: true },
+  frameguard: { action: 'deny' },
+  hidePoweredBy: true,
+  hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+  ieNoOpen: true,
+  noSniff: true,
+  referrerPolicy: { policy: 'no-referrer' },
+  xssFilter: true
+}));
 
 app.set('trust proxy', 1); // Trust first proxy
 
-// 2. إعداد الجلسات بدون قيود
+// 2. إعداد الجلسات مع قيود الأمان
 const sessionConfig = {
-  secret: process.env.SESSION_SECRET || 'dev-secret',
-  resave: true,
-  saveUninitialized: true,
+  secret: process.env.SESSION_SECRET || 'fallback-secret-key-change-in-production',
+  resave: false,
+  saveUninitialized: false,
   store: MongoStore.create({
     mongoUrl: process.env.MONGODB_URI,
-    ttl: 24 * 60 * 60
+    ttl: 24 * 60 * 60,
+    autoRemove: 'native'
   }),
   cookie: {
-    secure: false,
-    httpOnly: false,
-    sameSite: false,
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    sameSite: 'strict',
     maxAge: 24 * 60 * 60 * 1000
-  }
+  },
+  name: 'sessionId'
 };
 app.use(session(sessionConfig));
 
-// 3. تعطيل rate limiting
-console.log('⏱️  تم تعطيل معدل الطلبات');
+// 3. تفعيل rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 دقيقة
+  max: 100, // حد الطلبات لكل IP
+  message: {
+    error: 'لقد تجاوزت الحد المسموح من الطلبات، يرجى المحاولة لاحقاً'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use(limiter);
 
-// 4. إعداد CORS مفتوح بالكامل
+// 4. إعداد CORS بشكل آمن
 app.use(cors({
-  origin: '*',
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: '*',
-  exposedHeaders: '*',
+  allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
 
@@ -107,7 +126,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 app.use(compression());
-app.use(morgan('dev'));
+app.use(morgan('combined'));
 
 // =============================================
 //             الملفات الثابتة
@@ -126,6 +145,10 @@ app.use(express.static(staticFilesPath, {
 
 // مسارات API (يجب أن تأتي قبل المسارات الثابتة)
 app.use('/api/auth', authRoutes); // <-- إضافة مسارات المصادقة هنا
+
+// مسارات الأيقونات
+const iconsRouter = require('./routes/icons');
+app.use('/api/icons', iconsRouter);
 
 const serveStaticPage = (page) => (req, res) => {
   const filePath = path.join(staticFilesPath, `${page}.html`);
@@ -164,5 +187,5 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`🚀 الخادم يعمل على http://localhost:${PORT}`);
-  console.log('🔓 تحذير: جميع إعدادات الأمان معطلة');
+  console.log('🔒 إعدادات الأمان مفعلة');
 });

@@ -18,13 +18,13 @@
     <!-- الشريط العلوي -->
     <header class="top-bar">
         <div class="top-bar-content">
-            <button class="toggle-sidebar">
+            <button class="toggle-sidebar" type="button" title="تبديل الشريط الجانبي">
                 <i class="fas fa-bars"></i>
             </button>
 
             <div class="balance-container">
                 <span class="balance-amount" id="top-balance-display">0.00</span>
-                <button class="add-balance-btn" id="add-balance-btn">
+                <button class="add-balance-btn" id="add-balance-btn" type="button" title="إضافة رصيد">
                     <i class="fas fa-plus"></i>
                 </button>
             </div>
@@ -33,7 +33,7 @@
                 <div class="site-logo">
                     <img src="./assets/images/logo.png" loading="lazy" alt="شعار الموقع" class="logo-img">
                 </div>
-                <a href="#" class="back-btn" id="back-btn" style="display: none;">
+                <a href="#" class="back-btn hidden" id="back-btn">
                     <i class="fas fa-arrow-left"></i>
                 </a>
             </div>
@@ -57,13 +57,13 @@
                     </div>
                 </div>
                 <div class="profile-actions">
-                    <button class="profile-btn favorite-btn" title="المفضلة">
+                    <button class="profile-btn favorite-btn" title="المفضلة" type="button">
                         <i class="fas fa-star"></i>
                     </button>
-                    <button class="profile-btn edit-btn" title="تعديل البروفايل">
+                    <button class="profile-btn edit-btn" title="تعديل البروفايل" type="button">
                         <i class="fas fa-user-edit"></i>
                     </button>
-                    <button class="profile-btn logout-btn" title="تسجيل الخروج" id="logoutBtn">
+                    <button class="profile-btn logout-btn" title="تسجيل الخروج" id="logoutBtn" type="button">
                         <i class="fas fa-sign-out-alt"></i>
                     </button>
                 </div>
@@ -92,7 +92,7 @@
 
         <div class="sidebar-footer">
             <div class="theme-container">
-                <button id="theme-toggle-btn" class="theme-toggle">
+                <button id="theme-toggle-btn" class="theme-toggle" type="button" title="تبديل الثيم">
                     <i class="fas fa-moon"></i> تبديل الثيم
                 </button>
             </div>
@@ -130,7 +130,7 @@
                             <div class="balance-card">
                                 <h3>رصيدك الحالي</h3>
                                 <div class="balance-amount">0.00 <span>ر.س</span></div>
-                                <button class="add-funds-btn">إضافة رصيد</button>
+                                <button class="add-funds-btn" type="button">إضافة رصيد</button>
                             </div>
                             <div class="payment-methods">
                                 <h3>طرق الدفع</h3>
@@ -212,8 +212,8 @@
     <!-- الفوتر الجديد -->
     <footer class="site-footer">
         <div class="footer-links">
-            <button class="footer-link" id="terms-btn">شروط الخدمة</button>
-            <button class="footer-link" id="privacy-btn">سياسة الخصوصية</button>
+            <button class="footer-link" id="terms-btn" type="button">شروط الخدمة</button>
+            <button class="footer-link" id="privacy-btn" type="button">سياسة الخصوصية</button>
         </div>
         <div class="footer-copyright">
             <span>TOP4CRYPTOSHOP <span class="copyright-icon">©</span> 2024</span>
@@ -225,7 +225,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2>شروط الخدمة</h2>
-                <button class="close-modal">&times;</button>
+                <button class="close-modal" type="button" title="إغلاق">&times;</button>
             </div>
             <div class="modal-body">
                 <p>- يمنع المراجعة بطلب بعد مدة تتجاوز ( 24 ) ساعة على ان يقدم الزبون فيديو يوضح فيه عدم وصول الألماس
@@ -272,7 +272,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2>سياسة الخصوصية</h2>
-                <button class="close-modal">&times;</button>
+                <button class="close-modal" type="button" title="إغلاق">&times;</button>
             </div>
             <div class="modal-body">
                 <p>أنت مسؤول عن الحفاظ على سرية بيانات حسابك وكلمة المرور وتحديد من يصل إلى جهاز الكمبيوتر الخاص بك أو

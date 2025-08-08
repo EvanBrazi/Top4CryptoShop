@@ -238,6 +238,10 @@ html {
   display: none;
 }
 
+.back-btn.hidden {
+  display: none;
+}
+
 .back-btn.visible {
   display: block;
 }

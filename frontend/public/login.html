@@ -6,52 +6,140 @@
     <title>تسجيل الدخول - متجر العملات الرقمية</title>
     <style>
         :root {
-            --beige: #F5F5DC;
-            --chocolate: #D2691E;
-            --dark-chocolate: #8B4513;
-            --google-red: #DB4437;
-            --apple-black: #000000;
-            --error-red: #FF3333;
+            /* ألوان الثيم النهاري */
+            --day-bg: #f5f5f5;
+            --day-text: #333;
+            --day-primary: #d4a76a;
+            --day-primary-hover: #c29555;
+            --day-secondary: #e8d5b5;
+            --day-card: #fff9f0;
+            --day-border: #d8c8a8;
+            --day-navbar: #5d4a36;
+            --day-sidebar: #f1e8de;
+            --day-shadow: rgba(93, 74, 54, 0.15);
+            --day-accent: #e6b422;
+            --day-footer: #8B4513;
+            --day-navbar-text: #f5f5f5;
+            --day-sidebar-header: #d4a76a;
+            --day-sidebar-footer: #8B4513;
+            --day-sidebar-content: #f8f8f8;
+            --day-border-menu-link: 1px solid rgba(0, 0, 0, 0.1);
+            --day-background-menu-l: rgba(255, 255, 255, 0.7);
+            --day-border-left: 1px solid rgba(0, 0, 0, 0.1);
+            
+            /* ألوان الثيم الليلي */
+            --night-bg: #1a1a2e;
+            --night-text: #f0f0f0;
+            --night-primary: #4a90e2;
+            --night-primary-hover: #3a7bc8;
+            --night-secondary: #5c6bc0;
+            --night-card: #1e1e2a;
+            --night-border: #333344;
+            --night-navbar: #12121a;
+            --night-sidebar: #1a1a22;
+            --night-shadow: rgba(0, 0, 0, 0.4);
+            --night-accent: #8a7cff;
+            --night-footer: #0f3460;
+            --night-navbar-text: #e0e0e0;
+            --night-sidebar-header: #4a90e2;
+            --night-sidebar-footer: #0f3460;
+            --night-sidebar-content: #1e2a4a;
+            --night-border-menu-link: 1px solid rgba(255, 255, 255, 0.1);
+            --night-background-menu-l: rgba(0, 0, 0, 0.2);
+            --night-border-left: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* الثيمات */
+        .day-theme {
+            --bg-color: var(--day-bg);
+            --text-color: var(--day-text);
+            --primary-color: var(--day-primary);
+            --primary-hover: var(--day-primary-hover);
+            --secondary-color: var(--day-secondary);
+            --card-color: var(--day-card);
+            --border-color: var(--day-border);
+            --navbar-color: var(--day-navbar);
+            --sidebar-color: var(--day-sidebar);
+            --sidebar-header-color: var(--day-sidebar-header);
+            --sidebar-content-color: var(--day-sidebar-content);
+            --sidebar-footer-color: var(--day-sidebar-footer);
+            --shadow-color: var(--day-shadow);
+            --accent-color: var(--day-accent);
+            --bar-footer-color: var(--day-footer);
+            --navbar-text: var(--day-navbar-text);
+            --divider-color: rgba(0, 0, 0, 0.1);
+            --social-icon-color: white;
+            --border-menu-link: var(--day-border-menu-link);
+            --background-menu-link: var(--day-background-menu-l);
+            --sidebar-border-left: var(--day-border-left);
+        }
+
+        .night-theme {
+            --bg-color: var(--night-bg);
+            --text-color: var(--night-text);
+            --primary-color: var(--night-primary);
+            --primary-hover: var(--night-primary-hover);
+            --secondary-color: var(--night-secondary);
+            --card-color: var(--night-card);
+            --border-color: var(--night-border);
+            --navbar-color: var(--night-navbar);
+            --sidebar-color: var(--night-sidebar);
+            --sidebar-header-color: var(--night-sidebar-header);
+            --sidebar-content-color: var(--night-sidebar-content);
+            --sidebar-footer-color: var(--night-sidebar-footer);
+            --shadow-color: var(--night-shadow);
+            --accent-color: var(--night-accent);
+            --bar-footer-color: var(--night-footer);
+            --navbar-text: var(--night-navbar-text);
+            --divider-color: rgba(255, 255, 255, 0.1);
+            --social-icon-color: white;
+            --border-menu-link: var(--night-border-menu-link);
+            --background-menu-link: var(--night-background-menu-l);
+            --sidebar-border-left: var(--night-border-left);
         }
 
         body {
             font-family: 'Tahoma', sans-serif;
-            background: var(--beige);
+            background: var(--bg-color);
+            color: var(--text-color);
             height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             margin: 0;
+            transition: background-color 0.4s ease, color 0.4s ease;
         }
 
         .container {
             width: 90%;
             max-width: 400px;
             padding: 2rem;
-            background: white;
+            background: var(--card-color);
             border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(139, 69, 19, 0.1);
-            border: 1px solid var(--chocolate);
+            box-shadow: 0 4px 15px var(--shadow-color);
+            border: 1px solid var(--border-color);
+            position: relative;
         }
 
         h2 {
-            color: var(--dark-chocolate);
+            color: var(--text-color);
             text-align: center;
             margin-bottom: 1.5rem;
         }
 
         .form-group {
             margin-bottom: 1.2rem;
-            position: relative;
+            width: 100%;
         }
 
         input {
             width: 100%;
             padding: 12px;
-            border: 1px solid var(--chocolate);
+            border: 1px solid var(--border-color);
             border-radius: 6px;
             font-size: 1rem;
-            background: rgba(210, 105, 30, 0.05);
+            background: var(--card-color);
+            color: var(--text-color);
         }
 
         button {
@@ -70,23 +158,18 @@
         }
 
         .btn-primary {
-            background-color: var(--chocolate);
+            background-color: var(--primary-color);
             color: white;
         }
 
-        .btn-primary:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
-        }
-
         .btn-google {
-            background-color: var(--google-red);
+            background-color: #DB4437;
             color: white;
             margin-top: 15px;
         }
 
         .btn-apple {
-            background-color: var(--apple-black);
+            background-color: #000000;
             color: white;
             margin-top: 10px;
         }
@@ -95,14 +178,14 @@
             display: flex;
             align-items: center;
             margin: 20px 0;
-            color: var(--dark-chocolate);
+            color: var(--text-color);
         }
 
         .divider::before,
         .divider::after {
             content: "";
             flex: 1;
-            border-bottom: 1px solid var(--chocolate);
+            border-bottom: 1px solid var(--border-color);
         }
 
         .divider::before {
@@ -114,61 +197,69 @@
         }
 
         .links {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 1rem;
-            padding: 0 10px;
+            text-align: center;
+            margin-top: 15px;
         }
 
         .links a {
-            color: var(--dark-chocolate);
+            color: var(--primary-color);
             text-decoration: none;
-            font-size: 0.9rem;
         }
 
         .links a:hover {
             text-decoration: underline;
         }
-
+        
+        /* تنسيق رسالة الخطأ */
         .error-message {
-            color: var(--error-red);
-            font-size: 0.8rem;
+            color: #ff0000;
+            font-size: 0.85rem;
             margin-top: 5px;
+            padding: 8px;
+            border-radius: 4px;
+            background-color: rgba(255, 0, 0, 0.1);
             display: none;
         }
-
-        .password-container {
-            position: relative;
+        
+        .error-message.show {
+            display: block;
         }
-
-        .toggle-password {
-            position: absolute;
-            top: 50%;
-            left: 10px;
-            transform: translateY(-50%);
-            cursor: pointer;
-            color: var(--dark-chocolate);
-            font-size: 0.9rem;
+        
+        /* تنسيق رسالة الخطأ العامة */
+        .general-error {
+            color: #ff0000;
+            background-color: rgba(255, 0, 0, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        
+        .general-error.show {
+            display: block;
         }
     </style>
     <!-- تعريف تسجيل الدخول عبر Google -->
     <meta name="google-signin-client_id" content="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
-<body>
+<body class="day-theme">
     <div class="container">
         <h2>تسجيل الدخول</h2>
+        
+        <!-- رسالة خطأ عامة -->
+        <div id="generalError" class="general-error"></div>
 
         <!-- زر تسجيل الدخول عبر Google -->
         <button class="btn-google" id="googleSignIn">
             <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="20" alt="Google">
-            الدخول عبر Google
+            تسجيل الدخول عبر Google
         </button>
 
         <!-- زر تسجيل الدخول عبر Apple -->
         <button class="btn-apple" id="appleSignIn">
             <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" width="20" alt="Apple">
-            الدخول عبر Apple
+            تسجيل الدخول عبر Apple
         </button>
 
         <div class="divider">أو</div>
@@ -179,47 +270,30 @@
                 <input type="text" id="username" placeholder="اسم المستخدم" required autocomplete="username">
                 <div id="usernameError" class="error-message"></div>
             </div>
-            <div class="form-group password-container">
-                <input type="password" id="password" placeholder="كلمة المرور" required autocomplete="current-password">
-                <span class="toggle-password" id="togglePassword">👁️</span>
+            <div class="form-group">
+                <input type="password" id="password" placeholder="كلمة المرور" required minlength="8" autocomplete="current-password">
                 <div id="passwordError" class="error-message"></div>
             </div>
-            <button type="submit" class="btn-primary" id="loginBtn">تسجيل الدخول</button>
+            <button type="submit" class="btn-primary">تسجيل الدخول</button>
         </form>
 
         <div class="links">
-            <a href="forgot-password.html">نسيت كلمة المرور؟</a>
+            <a href="forget-password.html">نسيت كلمة المرور؟</a> | 
             <a href="signup.html">إنشاء حساب جديد</a>
-        </div>
-<!-- قسم التوثيق -->
-        <div class="docs-section">
-            <h3>توثيق تسجيل الدخول</h3>
-            <ul>
-                <li><strong>تسجيل الدخول التقليدي:</strong> استخدم اسم المستخدم وكلمة المرور</li>
-                <li><strong>تسجيل الدخول عبر Google:</strong> انقر على زر "الدخول عبر Google"</li>
-                <li><strong>تسجيل الدخول عبر Apple:</strong> انقر على زر "الدخول عبر Apple"</li>
-                <li><strong>الأمان:</strong> جميع كلمات المرور مشفرة باستخدام bcrypt</li>
-                <li><strong>التوكن:</strong> يتم إنشاء JWT Token بعد تسجيل الدخول الناجح</li>
-            </ul>
         </div>
     </div>
 
     <script>
-        // عناصر DOM
-        const loginForm = document.getElementById('loginForm');
-        const loginBtn = document.getElementById('loginBtn');
-        const togglePassword = document.getElementById('togglePassword');
-        const passwordInput = document.getElementById('password');
-
-        // 1. إظهار/إخفاء كلمة المرور
-        togglePassword.addEventListener('click', () => {
-            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-            passwordInput.setAttribute('type', type);
-            togglePassword.textContent = type === 'password' ? '👁️' : '👁️‍🗨️';
+        // تطبيق الثيم المحفوظ في localStorage
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme') || 'day';
+            document.body.classList.remove('day-theme', 'night-theme');
+            document.body.classList.add(`${savedTheme}-theme`);
         });
 
-        // 2. تسجيل الدخول عبر Google
+        // 1. تسجيل الدخول عبر Google
         document.getElementById('googleSignIn').addEventListener('click', () => {
+            // سيتم استبدال هذا بالتنفيذ الفعلي بعد إعداد مشروع Google
             window.location.href = 'https://accounts.google.com/o/oauth2/auth?' +
                 'response_type=code&' +
                 'client_id=YOUR_GOOGLE_CLIENT_ID&' +
@@ -228,8 +302,9 @@
                 'state=random_state_string';
         });
 
-        // 3. تسجيل الدخول عبر Apple
+        // 2. تسجيل الدخول عبر Apple
         document.getElementById('appleSignIn').addEventListener('click', () => {
+            // سيتم استبدال هذا بالتنفيذ الفعلي بعد إعداد Apple Developer Account
             window.location.href = 'https://appleid.apple.com/auth/authorize?' +
                 'client_id=YOUR_APPLE_SERVICE_ID&' +
                 'redirect_uri=https://top4cryptoshop.onrender.com/api/auth/apple/callback&' +
@@ -238,19 +313,23 @@
                 'response_mode=form_post';
         });
 
-        // 4. تسجيل الدخول التقليدي
-        loginForm.addEventListener('submit', async (e) => {
+        // 3. تسجيل الدخول التقليدي
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             // إخفاء رسائل الخطأ السابقة
             document.querySelectorAll('.error-message').forEach(el => {
-                el.style.display = 'none';
+                el.classList.remove('show');
                 el.textContent = '';
             });
+            
+            // إخفاء رسالة الخطأ العامة
+            const generalError = document.getElementById('generalError');
+            generalError.classList.remove('show');
+            generalError.textContent = '';
 
-            // تعطيل الزر أثناء المعالجة
-            loginBtn.disabled = true;
-            loginBtn.textContent = 'جاري تسجيل الدخول...';
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
 
             try {
                 const response = await fetch('/api/auth/login', {
@@ -259,64 +338,42 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        username: document.getElementById('username').value,
-                        password: document.getElementById('password').value
+                        username,
+                        password
                     })
                 });
 
                 const result = await response.json();
 
                 if (!response.ok) {
-                    throw new Error(result.error || 'بيانات الدخول غير صحيحة');
+                    throw new Error(result.error || 'حدث خطأ أثناء تسجيل الدخول');
                 }
 
-                // حفظ التوكن في localStorage و sessionStorage
-                localStorage.setItem('token', result.token);
-                sessionStorage.setItem('user', JSON.stringify(result.user));
-                
-                // توجيه المستخدم إلى لوحة التحكم
-                window.location.href = 'homepage.html';
+                // إذا نجح تسجيل الدخول
+                alert('تم تسجيل الدخول بنجاح!');
+                window.location.href = '/homepage.html';
 
-            } catch (error) {
-                console.error('Error during login:', error);
+            } catch (err) {
+                console.error('Error:', err);
                 
-                // عرض رسالة الخطأ المناسبة
-                if (error.message.includes('اسم المستخدم') || error.message.includes('بيانات الدخول')) {
-                    showError('usernameError', error.message);
-                    showError('passwordError', error.message);
+                // عرض رسائل الخطأ المناسبة
+                if (err.message.includes('اسم المستخدم')) {
+                    showError('usernameError', err.message);
+                } else if (err.message.includes('كلمة المرور')) {
+                    showError('passwordError', err.message);
                 } else {
-                    showError('usernameError', 'حدث خطأ أثناء تسجيل الدخول. الرجاء المحاولة لاحقاً.');
+                    // عرض رسالة خطأ عامة
+                    generalError.textContent = err.message;
+                    generalError.classList.add('show');
                 }
-                
-                // إعادة تمكين زر التسجيل
-                loginBtn.disabled = false;
-                loginBtn.textContent = 'تسجيل الدخول';
             }
         });
 
         function showError(elementId, message) {
             const element = document.getElementById(elementId);
             element.textContent = message;
-            element.style.display = 'block';
+            element.classList.add('show');
         }
-
-        // 5. التحقق من وجود توكن مسجل مسبقاً
-        window.addEventListener('DOMContentLoaded', () => {
-            if (localStorage.getItem('token')) {
-                fetch('/api/auth/user', {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                })
-                .then(response => {
-                    if (response.ok) {
-                        window.location.href = 'homepage.html';
-                    } else {
-                        localStorage.removeItem('token');
-                    }
-                });
-            }
-        });
     </script>
 </body>
 </html>

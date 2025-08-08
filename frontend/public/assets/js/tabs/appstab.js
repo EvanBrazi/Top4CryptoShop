@@ -852,3 +852,5 @@ class AppsTab {
 if (typeof window !== 'undefined') {
   window.AppsTab = AppsTab;
 }
+
+export { AppsTab };

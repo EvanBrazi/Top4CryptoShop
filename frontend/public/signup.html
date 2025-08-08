@@ -6,50 +6,140 @@
     <title>تسجيل حساب جديد - متجر العملات الرقمية</title>
     <style>
         :root {
-            --beige: #F5F5DC;
-            --chocolate: #D2691E;
-            --dark-chocolate: #8B4513;
-            --google-red: #DB4437;
-            --apple-black: #000000;
+            /* ألوان الثيم النهاري */
+            --day-bg: #f5f5f5;
+            --day-text: #333;
+            --day-primary: #d4a76a;
+            --day-primary-hover: #c29555;
+            --day-secondary: #e8d5b5;
+            --day-card: #fff9f0;
+            --day-border: #d8c8a8;
+            --day-navbar: #5d4a36;
+            --day-sidebar: #f1e8de;
+            --day-shadow: rgba(93, 74, 54, 0.15);
+            --day-accent: #e6b422;
+            --day-footer: #8B4513;
+            --day-navbar-text: #f5f5f5;
+            --day-sidebar-header: #d4a76a;
+            --day-sidebar-footer: #8B4513;
+            --day-sidebar-content: #f8f8f8;
+            --day-border-menu-link: 1px solid rgba(0, 0, 0, 0.1);
+            --day-background-menu-l: rgba(255, 255, 255, 0.7);
+            --day-border-left: 1px solid rgba(0, 0, 0, 0.1);
+            
+            /* ألوان الثيم الليلي */
+            --night-bg: #1a1a2e;
+            --night-text: #f0f0f0;
+            --night-primary: #4a90e2;
+            --night-primary-hover: #3a7bc8;
+            --night-secondary: #5c6bc0;
+            --night-card: #1e1e2a;
+            --night-border: #333344;
+            --night-navbar: #12121a;
+            --night-sidebar: #1a1a22;
+            --night-shadow: rgba(0, 0, 0, 0.4);
+            --night-accent: #8a7cff;
+            --night-footer: #0f3460;
+            --night-navbar-text: #e0e0e0;
+            --night-sidebar-header: #4a90e2;
+            --night-sidebar-footer: #0f3460;
+            --night-sidebar-content: #1e2a4a;
+            --night-border-menu-link: 1px solid rgba(255, 255, 255, 0.1);
+            --night-background-menu-l: rgba(0, 0, 0, 0.2);
+            --night-border-left: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* الثيمات */
+        .day-theme {
+            --bg-color: var(--day-bg);
+            --text-color: var(--day-text);
+            --primary-color: var(--day-primary);
+            --primary-hover: var(--day-primary-hover);
+            --secondary-color: var(--day-secondary);
+            --card-color: var(--day-card);
+            --border-color: var(--day-border);
+            --navbar-color: var(--day-navbar);
+            --sidebar-color: var(--day-sidebar);
+            --sidebar-header-color: var(--day-sidebar-header);
+            --sidebar-content-color: var(--day-sidebar-content);
+            --sidebar-footer-color: var(--day-sidebar-footer);
+            --shadow-color: var(--day-shadow);
+            --accent-color: var(--day-accent);
+            --bar-footer-color: var(--day-footer);
+            --navbar-text: var(--day-navbar-text);
+            --divider-color: rgba(0, 0, 0, 0.1);
+            --social-icon-color: white;
+            --border-menu-link: var(--day-border-menu-link);
+            --background-menu-link: var(--day-background-menu-l);
+            --sidebar-border-left: var(--day-border-left);
+        }
+
+        .night-theme {
+            --bg-color: var(--night-bg);
+            --text-color: var(--night-text);
+            --primary-color: var(--night-primary);
+            --primary-hover: var(--night-primary-hover);
+            --secondary-color: var(--night-secondary);
+            --card-color: var(--night-card);
+            --border-color: var(--night-border);
+            --navbar-color: var(--night-navbar);
+            --sidebar-color: var(--night-sidebar);
+            --sidebar-header-color: var(--night-sidebar-header);
+            --sidebar-content-color: var(--night-sidebar-content);
+            --sidebar-footer-color: var(--night-sidebar-footer);
+            --shadow-color: var(--night-shadow);
+            --accent-color: var(--night-accent);
+            --bar-footer-color: var(--night-footer);
+            --navbar-text: var(--night-navbar-text);
+            --divider-color: rgba(255, 255, 255, 0.1);
+            --social-icon-color: white;
+            --border-menu-link: var(--night-border-menu-link);
+            --background-menu-link: var(--night-background-menu-l);
+            --sidebar-border-left: var(--night-border-left);
         }
 
         body {
             font-family: 'Tahoma', sans-serif;
-            background: var(--beige);
+            background: var(--bg-color);
+            color: var(--text-color);
             height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             margin: 0;
+            transition: background-color 0.4s ease, color 0.4s ease;
         }
 
         .container {
             width: 90%;
             max-width: 400px;
             padding: 2rem;
-            background: white;
+            background: var(--card-color);
             border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(139, 69, 19, 0.1);
-            border: 1px solid var(--chocolate);
+            box-shadow: 0 4px 15px var(--shadow-color);
+            border: 1px solid var(--border-color);
+            position: relative;
         }
 
         h2 {
-            color: var(--dark-chocolate);
+            color: var(--text-color);
             text-align: center;
             margin-bottom: 1.5rem;
         }
 
         .form-group {
             margin-bottom: 1.2rem;
+            width: 100%;
         }
 
-        input {
+        input, select {
             width: 100%;
             padding: 12px;
-            border: 1px solid var(--chocolate);
+            border: 1px solid var(--border-color);
             border-radius: 6px;
             font-size: 1rem;
-            background: rgba(210, 105, 30, 0.05);
+            background: var(--card-color);
+            color: var(--text-color);
         }
 
         .phone-input-group {
@@ -82,18 +172,18 @@
         }
 
         .btn-primary {
-            background-color: var(--chocolate);
+            background-color: var(--primary-color);
             color: white;
         }
 
         .btn-google {
-            background-color: var(--google-red);
+            background-color: #DB4437;
             color: white;
             margin-top: 15px;
         }
 
         .btn-apple {
-            background-color: var(--apple-black);
+            background-color: #000000;
             color: white;
             margin-top: 10px;
         }
@@ -102,14 +192,14 @@
             display: flex;
             align-items: center;
             margin: 20px 0;
-            color: var(--dark-chocolate);
+            color: var(--text-color);
         }
 
         .divider::before,
         .divider::after {
             content: "";
             flex: 1;
-            border-bottom: 1px solid var(--chocolate);
+            border-bottom: 1px solid var(--border-color);
         }
 
         .divider::before {
@@ -121,40 +211,43 @@
         }
 
         .error-message {
-            color: red;
-            font-size: 0.9rem;
+            color: #ff0000;
+            font-size: 0.85rem;
             margin-top: 5px;
+            padding: 8px;
+            border-radius: 4px;
+            background-color: rgba(255, 0, 0, 0.1);
             display: none;
         }
-/* التوثيق */
-        .docs-section {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: #f9f9f9;
-            border-radius: 8px;
-            border: 1px solid #ddd;
+        
+        .error-message.show {
+            display: block;
         }
         
-        .docs-section h3 {
-            color: var(--dark-chocolate);
-            margin-top: 0;
+        /* تنسيق رسالة الخطأ العامة */
+        .general-error {
+            color: #ff0000;
+            background-color: rgba(255, 0, 0, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: none;
         }
         
-        .docs-section ul {
-            padding-right: 20px;
-        }
-        
-        .docs-section li {
-            margin-bottom: 8px;
+        .general-error.show {
+            display: block;
         }
     </style>
     <!-- تعريف تسجيل الدخول عبر Google -->
     <meta name="google-signin-client_id" content="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
-<body>
+<body class="day-theme">
     <div class="container">
         <h2>إنشاء حساب جديد</h2>
+        
+        <!-- رسالة خطأ عامة -->
+        <div id="generalError" class="general-error"></div>
 
         <!-- زر تسجيل الدخول عبر Google -->
         <button class="btn-google" id="googleSignIn">
@@ -177,11 +270,11 @@
                 <div id="usernameError" class="error-message"></div>
             </div>
             <div class="form-group">
-                <input type="password" id="password" placeholder="كلمة المرور" required minlength="6" autocomplete="new-password">
+                <input type="password" id="password" placeholder="كلمة المرور" required minlength="8" autocomplete="new-password">
                 <div id="passwordError" class="error-message"></div>
             </div>
             <div class="form-group">
-                <input type="email" id="email" placeholder="البريد الإلكتروني (اختياري)">
+                <input type="email" id="email" placeholder="البريد الإلكتروني" required>
                 <div id="emailError" class="error-message"></div>
             </div>
             <div class="form-group">
@@ -214,22 +307,16 @@
             </div>
             <button type="submit" class="btn-primary">تسجيل</button>
         </form>
-        <!-- قسم التوثيق -->
-        <div class="docs-section">
-            <h3>توثيق التسجيل</h3>
-            <ul>
-<li><strong>الأمان:</strong> جميع كلمات المرور مشفرة باستخدام bcrypt</li>
-                <li><strong>التحقق:</strong> يتم التحقق من صحة البيانات قبل التسجيل</li>
-            </ul>
-        </div>
-                <li><strong>التسجيل التقليدي:</strong> املأ النموذج بالبيانات المطلوبة</li>
-                <li><strong>التسجيل عبر Google:</strong> انقر على زر "التسجيل عبر Google"</li>
-                <li><strong>التسجيل عبر Apple:</strong> انقر على زر "التسجيل عبر Apple"</li>
-                <li><strong>الأمان:</strong> جميع كلمات المرور مشفرة باستخدام bcrypt</li>
-                <li><strong>
     </div>
 
     <script>
+        // تطبيق الثيم المحفوظ في localStorage
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme') || 'day';
+            document.body.classList.remove('day-theme', 'night-theme');
+            document.body.classList.add(`${savedTheme}-theme`);
+        });
+
         // 1. تسجيل الدخول عبر Google
         document.getElementById('googleSignIn').addEventListener('click', () => {
             // سيتم استبدال هذا بالتنفيذ الفعلي بعد إعداد مشروع Google
@@ -258,9 +345,14 @@
             
             // إخفاء رسائل الخطأ السابقة
             document.querySelectorAll('.error-message').forEach(el => {
-                el.style.display = 'none';
+                el.classList.remove('show');
                 el.textContent = '';
             });
+            
+            // إخفاء رسالة الخطأ العامة
+            const generalError = document.getElementById('generalError');
+            generalError.classList.remove('show');
+            generalError.textContent = '';
 
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
@@ -291,7 +383,7 @@
 
                 // إذا نجح التسجيل
                 alert('تم تسجيل الحساب بنجاح!');
-                window.location.href = '/dashboard.html';
+                window.location.href = '/homepage.html';
 
             } catch (err) {
                 console.error('Error:', err);
@@ -306,7 +398,9 @@
                 } else if (err.message.includes('البريد')) {
                     showError('emailError', err.message);
                 } else {
-                    showError('usernameError', 'حدث خطأ أثناء التسجيل. يرجى المحاولة لاحقاً');
+                    // عرض رسالة خطأ عامة
+                    generalError.textContent = err.message;
+                    generalError.classList.add('show');
                 }
             }
         });
@@ -314,7 +408,7 @@
         function showError(elementId, message) {
             const element = document.getElementById(elementId);
             element.textContent = message;
-            element.style.display = 'block';
+            element.classList.add('show');
         }
     </script>
 </body>

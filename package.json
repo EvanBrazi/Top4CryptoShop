@@ -11,9 +11,17 @@
     "install-all": "npm run backend-install && npm run frontend-install"
   },
   "dependencies": {
-    "concurrently": "^7.6.0"
+    "axios": "^1.11.0",
+    "cheerio": "^1.1.2",
+    "concurrently": "^7.6.0",
+    "sharp": "^0.34.3"
   },
-  "keywords": ["cryptocurrency", "shop", "nodejs", "express"],
+  "keywords": [
+    "cryptocurrency",
+    "shop",
+    "nodejs",
+    "express"
+  ],
   "author": "Top4CryptoShop Team",
   "license": "MIT"
 }

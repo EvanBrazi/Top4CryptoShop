@@ -53,10 +53,43 @@ const validateLogin = [
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+    const extractedErrors = errors.array().map(err => {
+      let suggestion = '';
+
+      switch (err.param) {
+        case 'username':
+          suggestion = 'اختر اسم مستخدم يتكون من أحرف وأرقام فقط، بدون رموز أو فراغات.';
+          break;
+        case 'password':
+          suggestion = 'استخدم كلمة مرور قوية تحتوي على أحرف كبيرة وصغيرة وأرقام، مثل: Pass1234.';
+          break;
+        case 'phone':
+          suggestion = 'اكتب رقم الجوال بصيغة دولية مثل: +963912345678.';
+          break;
+        case 'email':
+          suggestion = 'تأكد من كتابة البريد الإلكتروني بشكل صحيح مثل: example@domain.com.';
+          break;
+        default:
+          suggestion = 'يرجى مراجعة هذا الحقل والتأكد من صحته.';
+      }
+
+      return {
+        field: err.param,
+        message: err.msg,
+        suggestion
+      };
+    });
+
+    return res.status(422).json({
+      success: false,
+      error: 'فشل التحقق من البيانات',
+      details: extractedErrors
+    });
   }
+
   next();
 };
+
 module.exports = {
   validateRegister,
   validateLogin,

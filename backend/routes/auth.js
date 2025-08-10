@@ -17,6 +17,7 @@ const RevokedToken = require('../models/RevokedToken');
 const { validateRegister, validateLogin, handleValidationErrors } = require('../middlewares/validation');
 const rateLimit = require('express-rate-limit');
 const { doubleCsrfProtection } = require('../middlewares/csrfMiddleware');
+const { registerUser } = require('../controllers/authController');
 
 // =============================================
 //          دالة مساعدة للاستجابات
@@ -78,91 +79,7 @@ router.use(authLimiter);
 router.post('/register',
   validateRegister,
   handleValidationErrors,
-  async (req, res) => {
-    try {
-      const { username, password, phone, theme, email } = req.body;
-
-      // التحقق من عدم تكرار اسم المستخدم
-      const existingUser = await User.findOne({
-        username: { $regex: new RegExp(`^${username}$`, 'i') }
-      });
-
-      if (existingUser) {
-        return handleAuthResponse(req, res, {
-          status: 409,
-          success: false,
-          error: 'اسم المستخدم مسجل مسبقاً',
-          solution: 'اختر اسم مستخدم آخر'
-        });
-      }
-
-      // تشفير كلمة المرور
-      const salt = await bcrypt.genSalt(12);
-      const hashedPassword = await bcrypt.hash(password, salt);
-
-      // إنشاء مستخدم جديد
-      const newUser = new User({
-        username,
-        email: email?.trim().toLowerCase(),
-        password: hashedPassword,
-        phone: phone,
-        theme: theme || 0,
-        balance: 0,
-        createdAt: new Date(),
-        lastLogin: null,
-        loginAttempts: 0,
-        accountStatus: 'active'
-      });
-
-
-      await newUser.save();
-
-      // إنشاء JWT token
-      const token = jwt.sign(
-        { userId: newUser._id, role: 'user' },
-        process.env.JWT_SECRET,
-        { expiresIn: '1h', issuer: 'your-app-api', algorithm: 'HS256' }
-      );
-
-      // إعداد HTTP-only cookie
-      res.cookie('session_token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 3600000,
-        path: '/'
-      });
-
-      // إرجاع بيانات المستخدم (بدون معلومات حساسة)
-      const userResponse = {
-        id: newUser._id,
-        username: newUser.username,
-        email: newUser.email,
-        phone: newUser.phone,
-        theme: newUser.theme,
-        balance: newUser.balance,
-        createdAt: newUser.createdAt
-      };
-
-
-      return handleAuthResponse(req, res, {
-        success: true,
-        user: userResponse,
-        token: token,
-        redirectTo: '/homepage.html'
-      });
-
-    } catch (err) {
-      console.error('Registration error:', err);
-      return handleAuthResponse(req, res, {
-        status: 500,
-        success: false,
-        error: 'حدث خطأ أثناء التسجيل',
-        details: process.env.NODE_ENV === 'development' ? err.message : null,
-        requestId: req.id
-      });
-    }
-  }
+  registerUser
 );
 
 // =============================================

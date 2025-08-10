@@ -1,12 +1,12 @@
 /**
  * User.js - نموذج مستخدم MongoDB
- * إصدار: 2.0.1
- * وصف: يحتوي على تعريف نموذج المستخدم وجميع الوظائف المرتبطة به
- * التغييرات:
- * - إزالة الفهارس المكررة
- * - تحسين التحقق من الصحة
- * - تحسين أداء الاستعلامات
- * - إصلاح تحذيرات الفهارس المكررة
+ * الإصدار: 2.1.0
+ * الوصف: يحتوي على تعريف نموذج المستخدم وجميع الوظائف المرتبطة به
+ * التحسينات:
+ * - تحسين تحقق كلمة المرور لتشمل رمز خاص
+ * - عرض تفاصيل الخطأ بدقة
+ * - توثيق شامل لكل خاصية
+ * - تحسين أداء الفهارس والتحقق
  */
 
 const mongoose = require('mongoose');
@@ -18,14 +18,14 @@ const crypto = require('crypto');
 /**
  * @typedef {Object} User
  * @property {string} username - اسم المستخدم الفريد
- * @property {string} password - كلمة المرور المشفرة
- * @property {string} [phone] - رقم الهاتف (اختياري)
- * @property {string} [email] - البريد الإلكتروني (اختياري)
- * @property {number} [theme=0] - إعدادات الثيم
+ * @property {string} password - كلمة المرور (يتم تشفيرها تلقائياً)
+ * @property {string} [phone] - رقم الهاتف بصيغة دولية
+ * @property {string} email - البريد الإلكتروني
+ * @property {number} [theme=0] - إعدادات الثيم (0: افتراضي، 1: داكن)
  * @property {number} [balance=0] - رصيد المستخدم
  * @property {number} [loginAttempts=0] - عدد محاولات الدخول الفاشلة
  * @property {Date} [lastLogin] - تاريخ آخر دخول
- * @property {string} [role='user'] - دور المستخدم (user/admin/moderator)
+ * @property {string} [role='user'] - دور المستخدم
  * @property {string} [accountStatus='active'] - حالة الحساب
  * @property {number} [tokenVersion=0] - إصدار التوكن
  */
@@ -36,21 +36,22 @@ const userSchema = new Schema({
     required: [true, 'اسم المستخدم مطلوب'],
     unique: true,
     trim: true,
-    minlength: [3, 'يجب أن يكون اسم المستخدم 3 أحرف على الأقل'],
-    maxlength: [30, 'يجب ألا يتجاوز اسم المستخدم 30 حرفاً'],
-    match: [/^[a-zA-Z0-9_]+$/, 'يجب أن يحتوي اسم المستخدم على أحرف وأرقام فقط'],
-    index: true // تعريف الفهرس هنا بدلاً من تكراره لاحقاً
+    minlength: [3, 'اسم المستخدم يجب أن يحتوي على 3 أحرف على الأقل'],
+    maxlength: [30, 'اسم المستخدم يجب ألا يتجاوز 30 حرفاً'],
+    match: [/^[a-zA-Z0-9_]+$/, 'اسم المستخدم يجب أن يحتوي على أحرف وأرقام فقط'],
+    index: true
   },
   password: {
     type: String,
     required: [true, 'كلمة المرور مطلوبة'],
-    minlength: [8, 'يجب أن تكون كلمة المرور 8 أحرف على الأقل'],
+    minlength: [8, 'كلمة المرور يجب أن تكون 8 أحرف على الأقل'],
     select: false,
     validate: {
       validator: function (v) {
-        return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/.test(v);
+        // تحقق من وجود حرف كبير، صغير، رقم، ورمز خاص
+        return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/.test(v);
       },
-      message: 'يجب أن تحتوي كلمة المرور على أحرف كبيرة وصغيرة وأرقام'
+      message: 'كلمة المرور يجب أن تحتوي على حرف كبير، حرف صغير، رقم، ورمز خاص'
     }
   },
   phone: {
@@ -59,36 +60,36 @@ const userSchema = new Schema({
     sparse: true,
     validate: {
       validator: v => validator.isMobilePhone(v, 'any', { strictMode: true }),
-      message: 'رقم الهاتف غير صالح'
+      message: 'رقم الهاتف غير صالح. يرجى إدخاله بصيغة دولية مثل: +9639xxxxxxx'
     },
-    index: true // تعريف الفهرس هنا
+    index: true
   },
   email: {
     type: String,
     unique: true,
     sparse: true,
-    required: true,
+    required: [true, 'البريد الإلكتروني مطلوب'],
     lowercase: true,
     trim: true,
-    match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+    match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'صيغة البريد الإلكتروني غير صحيحة'],
     validate: {
       validator: v => validator.isEmail(v),
       message: 'البريد الإلكتروني غير صالح'
     },
-    index: true // تعريف الفهرس هنا
+    index: true
   },
   theme: {
     type: Number,
     default: 0,
     enum: {
       values: [0, 1],
-      message: 'الثيم يجب أن يكون 0 أو 1'
+      message: 'الثيم يجب أن يكون 0 أو 1 فقط'
     }
   },
   balance: {
     type: Number,
     default: 0,
-    min: [0, 'لا يمكن أن يكون الرصيد سالباً']
+    min: [0, 'الرصيد لا يمكن أن يكون سالباً']
   },
   loginAttempts: {
     type: Number,
@@ -103,13 +104,13 @@ const userSchema = new Schema({
     type: String,
     enum: ['user', 'admin', 'moderator'],
     default: 'user',
-    index: true // تعريف الفهرس هنا
+    index: true
   },
   accountStatus: {
     type: String,
     enum: ['active', 'suspended', 'deactivated'],
     default: 'active',
-    index: true // تعريف الفهرس هنا
+    index: true
   },
   tokenVersion: {
     type: Number,
@@ -123,16 +124,6 @@ const userSchema = new Schema({
       delete ret.password;
       delete ret.__v;
       return ret;
-    }
-  },
-  statics: {
-    /**
-     * البحث عن مستخدم باسم مستخدم معين
-     * @param {string} username - اسم المستخدم للبحث
-     * @returns {Promise<User>} - وثيقة المستخدم
-     */
-    findByUsername(username) {
-      return this.findOne({ username }).select('+password +loginAttempts');
     }
   }
 });
@@ -155,8 +146,8 @@ userSchema.pre('save', async function (next) {
 
 /**
  * مقارنة كلمة المرور المدخلة مع المشفرة
- * @param {string} candidatePassword - كلمة المرور المدخلة
- * @returns {Promise<boolean>} - نتيجة المقارنة
+ * @param {string} candidatePassword
+ * @returns {Promise<boolean>}
  */
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
@@ -174,10 +165,9 @@ userSchema.methods.incrementLoginAttempts = async function () {
   await this.save();
 };
 
-
 /**
  * إنشاء رمز إعادة تعيين كلمة المرور
- * @returns {string} - رمز إعادة التعيين
+ * @returns {string}
  */
 userSchema.methods.createPasswordResetToken = function () {
   const resetToken = crypto.randomBytes(32).toString('hex');
@@ -187,6 +177,15 @@ userSchema.methods.createPasswordResetToken = function () {
     .digest('hex');
   this.resetPasswordExpires = Date.now() + 10 * 60 * 1000;
   return resetToken;
+};
+
+/**
+ * البحث عن مستخدم حسب اسم المستخدم
+ * @param {string} username
+ * @returns {Promise<User>}
+ */
+userSchema.statics.findByUsername = function (username) {
+  return this.findOne({ username }).select('+password +loginAttempts');
 };
 
 module.exports = mongoose.model('User', userSchema);

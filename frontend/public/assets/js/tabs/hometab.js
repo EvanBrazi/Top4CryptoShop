@@ -28,7 +28,7 @@ class HomeTab {
     if (!this.container) {
       throw new Error(`Container element with ID "${containerId}" not found`);
     }
-    
+
     if (typeof whichCardClick === 'function') this.whichCardClick = whichCardClick;
     //Get card listener
     //if (typeof _whichCardClickedListener === 'function') this._whichCardClickedListener = _whichCardClickedListener;
@@ -38,7 +38,9 @@ class HomeTab {
       CSSLink: options.CSSLink || "card-grid.css",
       useCookies: options.useCookies || false,
       enableAnimations: options.enableAnimations !== false, // true by default
-      apiEndpoint: options.apiEndpoint || null
+      apiEndpoint: options.apiEndpoint || null,
+      logoBasePath: options.logoBasePath || '/assets/images/',
+      iconBasePath: options.iconBasePath || '/icons/apps/'
     };
     // Initialize
     this._initializeComponent();
@@ -49,17 +51,31 @@ class HomeTab {
    * @private
    */
   _initializeComponent() {
-  this.loadCSS()
-    .then(() => this._loadCardsDataFromAPI())
-    .catch(error => {
-      console.warn('Initialization warning:', error);
-      // يمكنك إضافة رسالة للمستخدم هنا إذا أردت
-    })
-    .finally(() => {
-      this.render();
-      this.setupEventListeners();
-    });
-}
+    this.loadCSS()
+      .then(() => this._loadCardsDataFromAPI())
+      .catch(error => {
+        console.warn('Initialization warning:', error);
+        // يمكنك إضافة رسالة للمستخدم هنا إذا أردت
+      })
+      .finally(() => {
+        this.render();
+        this.setupEventListeners();
+      });
+  }
+
+  /**
+   * يبني المسار الكامل للصور بناءً على قاعدة المجلد
+   * @private
+   */
+  _resolveAsset(src, basePath) {
+    if (!src) return null;
+    const isAbsolute = /^(https?:)?\/\//i.test(src) || src.startsWith('/') || src.startsWith('data:') || src.startsWith('./') || src.startsWith('../');
+    if (isAbsolute) return src;
+    const base = basePath?.endsWith('/') ? basePath : `${basePath}/`;
+    return `${base}${src}`;
+  }
+
+
 
   /**
    * Load required CSS file
@@ -88,24 +104,30 @@ class HomeTab {
    * @returns {Promise} Promise that resolves when data is loaded
    */
   _loadCardsDataFromAPI() {
-  if (!this.options.apiEndpoint) {
-        return Promise.resolve();
-  }
+    if (!this.options.apiEndpoint) return Promise.resolve();
+
     return fetch(this.options.apiEndpoint)
       .then(response => {
-        if (!response.ok) {
-          console.warn('API request failed, using default cards');
-          return Promise.resolve();
-          }
+        if (!response.ok) throw new Error(`API not ok: ${response.status}`);
         return response.json();
       })
       .then(data => {
-        this.options.cardsData = data || this.options.cardsData;
-      }).catch(error => {
-            console.warn('Failed to load cards from API:', error);
-            return Promise.resolve();
+        if (!Array.isArray(data)) {
+          console.warn('API لم يرجع مصفوفة، سيتم تجاهله');
+          return;
+        }
+        this.options.cardsData = data.map(item => {
+          const whichTab = item.whichTab ?? item.whitchTab;
+          const icon = this._resolveAsset(item.icon, this.options.iconBasePath);
+          const logo = this._resolveAsset(item.logo, this.options.logoBasePath);
+          return { ...item, whichTab, icon, logo };
+        });
       })
+      .catch(error => {
+        console.warn('تعذر تحميل بيانات البطاقات من API:', error);
+      });
   }
+
 
   /**
    * Show error state in the UI
@@ -173,9 +195,9 @@ class HomeTab {
     if (card.icon) {
       const icon = document.createElement('img');
       icon.className = 'card-icon';
-      icon.src = card.icon;
+      icon.src = this._resolveAsset(card.icon, this.options.iconBasePath);
       icon.alt = card.title || 'Card Icon';
-      icon.loading = 'lazy'; // Lazy loading for better performance
+      icon.loading = 'lazy';
       cardElement.appendChild(icon);
     }
 
@@ -183,7 +205,7 @@ class HomeTab {
     if (card.logo) {
       const logo = document.createElement('img');
       logo.className = 'card-logo';
-      logo.src = card.logo;
+      logo.src = this._resolveAsset(card.logo, this.options.logoBasePath);
       logo.alt = 'Site Logo';
       logo.loading = 'lazy';
       cardElement.appendChild(logo);
@@ -237,18 +259,18 @@ class HomeTab {
    * @param {Object} card - Card data
    */
   _handleCardClick(index, card) {
-    if (this.taber) this.taber.activateTab(card.whitchTab);
+    if (this.taber) this.taber.activateTab(card.whichTab);
     // Trigger card click callback if exists
     this.whichCardClick(index, card);
   }
-  
-    /**
-   * ضبط أحجام البطاقات بناءً على حجم الشاشة
-   */
+
+  /**
+ * ضبط أحجام البطاقات بناءً على حجم الشاشة
+ */
   _adjustCardsToScreenSize() {
     const cardWidth = window.innerWidth * 0.4;
     const cardHeight = window.innerHeight * 0.3;
-    
+
     this.container.querySelectorAll('.card').forEach(card => {
       card.style.width = `${cardWidth}px`;
       card.style.height = `${cardHeight}px`;
@@ -304,25 +326,25 @@ class HomeTab {
   _defaultCards() {
     return [
       {
-        /** @private {index[0]} Just select which tab for activate*/whitchTab: "apps",
+        /** @private {index[0]} Just select which tab for activate*/whichTab: "apps",
         title: "التطبيقات",
-        icon: "./assets/images/logo.png",
-        logo: "./assets/images/favicon.ico"
+        icon: "./assets/images/favicon.ico",
+        logo: "./assets/images/logo.png"
       },
       {
-        whitchTab: "smallCards",
+        whichTab: "smallCards",
         title: "الألعاب",
         icon: "./assets/images/logo.png",
         logo: "./assets/images/favicon.ico"
       },
       {
-        whitchTab: "smallCards",
+        whichTab: "smallCards",
         title: "العملات الرقمية",
         icon: "./assets/images/logo.png",
         logo: "./assets/images/favicon.ico"
       },
       {
-        whitchTab: "smallCards",
+        whichTab: "smallCards",
         title: "تعبئة رصيد",
         icon: "./assets/images/logo.png",
         logo: "./assets/images/favicon.ico"

@@ -11,31 +11,33 @@ class AppManager {
     this.taber = taberInstance;
     // تهيئة التابات
     this.tabs = {
-    /**تمرير المرجع */ // في AppManager أو مكان إنشاء التابات
-home: new HomeTab({
-  taber: this.taber,
-  containerId: 'home-tab-cards-container',
-  whichCardClick: this.whichCardClick,
-  options: {
-    useCookies: true,
-    enableAnimations: true,
-    apiEndpoint: '/api/cards' // اختياري - لجلب البيانات من الخادم
-  }
-}),
+      /**تمرير المرجع */ // في AppManager أو مكان إنشاء التابات
+      home: new HomeTab({
+        taber: this.taber,
+        containerId: 'home-tab-cards-container',
+        whichCardClick: this.whichCardClick,
+        options: {
+          useCookies: true,
+          enableAnimations: true,
+          apiEndpoint: '/api/cards', // رابط JSON فقط
+          iconBasePath: '/icons/apps/', // مجلد الأيقونات
+          logoBasePath: '/assets/images/' // مجلد الشعارات (اختياري)
+        }
+      }),
       apps: new AppsTab({
-      taber: this.taber,
-      containerId: 'apps-tab-container',
-      options: {
-        themeColor: '#6a5acd',
-        dialogBgColor: '#ffffff'
-      }
-    })
-    }
-      /**smallCards: new SmallCardsTab({
-        containerId: 'smallCards-tab',
-        taber: this.taber
+        taber: this.taber,
+        containerId: 'apps-tab-container',
+        options: {
+          themeColor: '#6a5acd',
+          dialogBgColor: '#ffffff'
+        }
       })
-    };*/
+    }
+    /**smallCards: new SmallCardsTab({
+      containerId: 'smallCards-tab',
+      taber: this.taber
+    })
+  };*/
     this.setupBackButton();
   }
 
@@ -48,10 +50,10 @@ home: new HomeTab({
       (tabId === 'home' && pane.id === 'home-tab') ? backBtn.style.display = 'none' : backBtn.style.display = 'block';
     });
   };
-  
+
   whichCardClick(index, card) {
     console.log('Which card click: ' + index + '\n' + card.title + ' : I am clicked!');
-    
+
   }
 }
 export { AppManager };

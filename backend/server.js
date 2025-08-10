@@ -19,7 +19,9 @@ const morgan = require('morgan');
 const crypto = require('crypto');
 const fs = require('fs');
 const favicon = require('serve-favicon');
+const mime = require('mime');
 const authRoutes = require('./routes/auth'); // <-- إضافة استيراد مسارات المصادقة
+const hpp = require('hpp');
 
 // =============================================
 //               تهيئة التطبيق
@@ -58,13 +60,13 @@ try {
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
-      defaultSrc: ["'self'"],
+      defaultSrc: ["'self'", "'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://fonts.googleapis.com"],
       scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net"],
       imgSrc: ["'self'", "data:", "https://cdn-icons-png.flaticon.com", "https://www.gravatar.com", "https://ui-avatars.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
       connectSrc: ["'self'", "'unsafe-inline'", "https://api.ipify.org"],
-      frameSrc: ["'self'"]
+      frameSrc: ["'self'", "'unsafe-inline'"]
     }
   },
   dnsPrefetchControl: { allow: true },
@@ -119,6 +121,8 @@ app.use(cors({
   credentials: true
 }));
 
+app.use(hpp());
+
 // =============================================
 //             وسائط تحليل الطلبات
 // =============================================
@@ -132,12 +136,20 @@ app.use(morgan('combined'));
 //             الملفات الثابتة
 // =============================================
 app.use(favicon(path.join(staticFilesPath, './assets/images/favicon.ico')));
+
 app.use(express.static(staticFilesPath, {
   maxAge: '1d',
   setHeaders: (res) => {
     res.set('Access-Control-Allow-Origin', '*');
   }
 }));
+
+app.use('/icons', express.static(path.join(__dirname, 'public/icons'), {
+  setHeaders: (res, filePath) => {
+    res.set('Content-Type', mime.getType(filePath));
+  }
+}));
+
 
 // =============================================
 //                تعريف المسارات

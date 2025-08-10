@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // 1. تهيئة المستخدم
     um.loadUser();
-    th.initTheme();
+    //th.initTheme();
 
     console.log('تم تحميل النظام بنجاح وجاهز للاختبار');
 });

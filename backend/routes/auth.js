@@ -80,7 +80,7 @@ router.post('/register',
   handleValidationErrors,
   async (req, res) => {
     try {
-      const { username, password, phone, theme } = req.body;
+      const { username, password, phone, theme, email } = req.body;
 
       // التحقق من عدم تكرار اسم المستخدم
       const existingUser = await User.findOne({
@@ -103,8 +103,9 @@ router.post('/register',
       // إنشاء مستخدم جديد
       const newUser = new User({
         username,
+        email: email?.trim().toLowerCase(),
         password: hashedPassword,
-        phone: phone || null,
+        phone: phone,
         theme: theme || 0,
         balance: 0,
         createdAt: new Date(),
@@ -112,6 +113,7 @@ router.post('/register',
         loginAttempts: 0,
         accountStatus: 'active'
       });
+
 
       await newUser.save();
 
@@ -135,11 +137,13 @@ router.post('/register',
       const userResponse = {
         id: newUser._id,
         username: newUser.username,
+        email: newUser.email,
         phone: newUser.phone,
         theme: newUser.theme,
         balance: newUser.balance,
         createdAt: newUser.createdAt
       };
+
 
       return handleAuthResponse(req, res, {
         success: true,
@@ -171,8 +175,19 @@ router.post('/login',
     try {
       const { username, password } = req.body;
 
-      // البحث عن المستخدم
-      const user = await User.findOne({ username })
+      const query = username.includes('@')
+        ? { email: username.trim().toLowerCase() }
+        : { username: { $regex: new RegExp(`^${username}$`, 'i') } };
+
+      console.log('passwore: ' + password);
+      
+      if (!password) {
+        console.error('كلمة المرور غير موجودة في السجل');
+        return res.status(500).json({ message: 'حدث خطأ في بيانات المستخدم' });
+      }
+
+
+      const user = await User.findOne(query)
         .select('+password +loginAttempts +accountStatus +lastLogin');
 
       if (!user) {
@@ -180,12 +195,11 @@ router.post('/login',
           status: 401,
           success: false,
           error: 'بيانات الدخول غير صحيحة',
-          solution: 'تحقق من اسم المستخدم وكلمة المرور',
+          solution: 'تحقق من اسم المستخدم أو البريد وكلمة المرور',
           type: 'invalid_credentials'
         });
       }
 
-      // التحقق من حالة الحساب
       if (user.accountStatus === 'suspended') {
         return handleAuthResponse(req, res, {
           status: 403,
@@ -196,17 +210,18 @@ router.post('/login',
         });
       }
 
-      // التحقق من عدد المحاولات الفاشلة
       if (user.loginAttempts >= 5) {
         user.accountStatus = 'suspended';
         await user.save();
         return handleAuthResponse(req, res, {
+          status: 429,
           success: false,
-          redirectTo: `/verify.html?username=${encodeURIComponent(username)}`
+          error: 'تم تجاوز عدد المحاولات المسموحة',
+          solution: 'تم تعليق الحساب مؤقتاً. اتصل بالدعم',
+          type: 'too_many_attempts'
         });
       }
 
-      // التحقق من كلمة المرور
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) {
         user.loginAttempts += 1;
@@ -220,19 +235,16 @@ router.post('/login',
         });
       }
 
-      // إعادة تعيين المحاولات الفاشلة
       user.loginAttempts = 0;
       user.lastLogin = new Date();
       await user.save();
 
-      // إنشاء JWT token جديد
       const token = jwt.sign(
         { userId: user._id, role: user.role || 'user' },
         process.env.JWT_SECRET,
         { expiresIn: '1h', issuer: 'your-app-api', algorithm: 'HS256' }
       );
 
-      // إعداد الكوكيز
       res.cookie('session_token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
@@ -241,10 +253,10 @@ router.post('/login',
         path: '/'
       });
 
-      // إرجاع بيانات المستخدم
       const userResponse = {
         id: user._id,
         username: user.username,
+        email: user.email,
         phone: user.phone,
         theme: user.theme,
         balance: user.balance,
@@ -367,27 +379,5 @@ router.get('/check-auth', async (req, res) => {
     });
   }
 });
-
-router.post('/request-activation', async (req, res) => {
-  const { username } = req.body;
-
-  const user = await User.findOne({ username });
-  if (!user) {
-    return res.status(404).json({ success: false, error: 'المستخدم غير موجود' });
-  }
-
-  if (user.accountStatus !== 'suspended') {
-    return res.json({ success: true, message: 'الحساب غير موقوف حالياً' });
-  }
-
-  // مثال: إرسال طلب إلى الدعم أو إنشاء سجل داخل قاعدة البيانات
-  // أو تفعيل تلقائي إذا تجاوز وقت التعليق مثلاً
-  user.accountStatus = 'active';
-  user.loginAttempts = 0;
-  await user.save();
-
-  return res.json({ success: true, message: 'تم تفعيل الحساب بنجاح 🎉' });
-});
-
 
 module.exports = router;

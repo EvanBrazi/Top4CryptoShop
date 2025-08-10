@@ -147,7 +147,7 @@ app.use(express.static(staticFilesPath, {
 
 app.use('/icons', express.static(path.join(__dirname, 'public/icons'), {
   setHeaders: (res, filePath) => {
-    res.set('Content-Type', mime.getType(filePath));
+    res.type(filePath);
   }
 }));
 

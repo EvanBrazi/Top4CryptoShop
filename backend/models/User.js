@@ -61,7 +61,10 @@ const userSchema = new Schema({
     type: String,
     unique: true,
     sparse: true,
+    required: true,
     lowercase: true,
+    trim: true,
+    match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
     validate: {
       validator: v => validator.isEmail(v),
       message: 'البريد الإلكتروني غير صالح'
@@ -157,12 +160,14 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
  * زيادة محاولات الدخول الفاشلة
  */
 userSchema.methods.incrementLoginAttempts = async function() {
-  this.loginAttempts += 1;
-  if (this.loginAttempts >= 5) {
+  const nextAttempts = Math.min((this.loginAttempts || 0) + 1, 5);
+  this.loginAttempts = nextAttempts;
+  if (nextAttempts >= 5) {
     this.accountStatus = 'suspended';
   }
   await this.save();
 };
+
 
 /**
  * إنشاء رمز إعادة تعيين كلمة المرور

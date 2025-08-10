@@ -174,13 +174,15 @@ router.post('/login',
   async (req, res) => {
     try {
       const { username, password } = req.body;
+      // إضافة تسجيل الأحداث المهمة
+      console.log(`User login attempt: ${username}`);
 
       const query = username.includes('@')
         ? { email: username.trim().toLowerCase() }
         : { username: { $regex: new RegExp(`^${username}$`, 'i') } };
 
       console.log('passwore: ' + password);
-      
+
       if (!password) {
         console.error('كلمة المرور غير موجودة في السجل');
         return res.status(500).json({ message: 'حدث خطأ في بيانات المستخدم' });

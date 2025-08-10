@@ -45,7 +45,13 @@ const userSchema = new Schema({
     type: String,
     required: [true, 'كلمة المرور مطلوبة'],
     minlength: [8, 'يجب أن تكون كلمة المرور 8 أحرف على الأقل'],
-    select: false
+    select: false,
+    validate: {
+      validator: function (v) {
+        return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/.test(v);
+      },
+      message: 'يجب أن تحتوي كلمة المرور على أحرف كبيرة وصغيرة وأرقام'
+    }
   },
   phone: {
     type: String,
@@ -109,11 +115,11 @@ const userSchema = new Schema({
     type: Number,
     default: 0
   }
-}, { 
+}, {
   timestamps: true,
-  toJSON: { 
+  toJSON: {
     virtuals: true,
-    transform: function(doc, ret) {
+    transform: function (doc, ret) {
       delete ret.password;
       delete ret.__v;
       return ret;
@@ -134,7 +140,7 @@ const userSchema = new Schema({
 /**
  * تشفير كلمة المرور قبل الحفظ
  */
-userSchema.pre('save', async function(next) {
+userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
 
   try {
@@ -152,14 +158,14 @@ userSchema.pre('save', async function(next) {
  * @param {string} candidatePassword - كلمة المرور المدخلة
  * @returns {Promise<boolean>} - نتيجة المقارنة
  */
-userSchema.methods.comparePassword = async function(candidatePassword) {
+userSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
 /**
  * زيادة محاولات الدخول الفاشلة
  */
-userSchema.methods.incrementLoginAttempts = async function() {
+userSchema.methods.incrementLoginAttempts = async function () {
   const nextAttempts = Math.min((this.loginAttempts || 0) + 1, 5);
   this.loginAttempts = nextAttempts;
   if (nextAttempts >= 5) {
@@ -173,7 +179,7 @@ userSchema.methods.incrementLoginAttempts = async function() {
  * إنشاء رمز إعادة تعيين كلمة المرور
  * @returns {string} - رمز إعادة التعيين
  */
-userSchema.methods.createPasswordResetToken = function() {
+userSchema.methods.createPasswordResetToken = function () {
   const resetToken = crypto.randomBytes(32).toString('hex');
   this.resetPasswordToken = crypto
     .createHash('sha256')

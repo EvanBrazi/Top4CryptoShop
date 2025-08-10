@@ -278,7 +278,11 @@
                     autocomplete="current-password">
                 <div id="passwordError" class="error-message"></div>
             </div>
-            <button type="submit" class="btn-primary">تسجيل الدخول</button>
+            <!-- إضافة مؤشر تحميل -->
+            <button type="submit" class="btn-primary" id="submitBtn">
+                <span id="btnText">تسجيل الدخول</span>
+                <div id="spinner" class="spinner" style="display:none;"></div>
+            </button>
         </form>
 
         <div class="links">
@@ -319,7 +323,10 @@
 
         // 3. تسجيل الدخول التقليدي
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+            if (!this.checkValidity()) {
+                e.preventDefault();
+                // عرض رسائل الخطأ
+            }
 
             // إخفاء رسائل الخطأ السابقة
             document.querySelectorAll('.error-message').forEach(el => {

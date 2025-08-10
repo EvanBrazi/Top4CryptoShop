@@ -60,13 +60,13 @@ try {
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
-      defaultSrc: ["'self'", "'unsafe-inline'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://fonts.googleapis.com"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net"],
-      imgSrc: ["'self'", "data:", "https://cdn-icons-png.flaticon.com", "https://www.gravatar.com", "https://ui-avatars.com"],
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net", "https://accounts.google.com", "https://apis.google.com"],
+      scriptSrcElem: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net", "https://accounts.google.com", "https://apis.google.com"],
+      imgSrc: ["'self'", "data:", "https://cdn-icons-png.flaticon.com", "https://www.gravatar.com", "https://ui-avatars.com", "https://lh3.googleusercontent.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
-      connectSrc: ["'self'", "'unsafe-inline'", "https://api.ipify.org"],
-      frameSrc: ["'self'", "'unsafe-inline'"]
+      connectSrc: ["'self'", "'unsafe-inline'", "https://api.ipify.org", "https://accounts.google.com", "https://www.googleapis.com"],
+      frameSrc: ["'self'", "'unsafe-inline'", "https://accounts.google.com"]
     }
   },
   dnsPrefetchControl: { allow: true },
@@ -99,6 +99,7 @@ const sessionConfig = {
   },
   name: 'sessionId'
 };
+
 app.use(session(sessionConfig));
 
 // 3. تفعيل rate limiting
@@ -113,7 +114,7 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// 4. إعداد CORS بشكل آمن
+// 4. إعداniد CORS بشكل آمن
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -161,6 +162,9 @@ app.use('/api/auth', authRoutes); // <-- إضافة مسارات المصادق�
 // مسارات الأيقونات
 const iconsRouter = require('./routes/icons');
 app.use('/api/icons', iconsRouter);
+
+const cardsRouter = require('./routes/cards');
+app.use('/api/cards', cardsRouter);
 
 const serveStaticPage = (page) => (req, res) => {
   const filePath = path.join(staticFilesPath, `${page}.html`);

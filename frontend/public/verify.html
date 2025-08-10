@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تفعيل الحساب</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <h2>🔐 الحساب موقوف مؤقتاً</h2>
+  <p>لقد تم تعليق حسابك بسبب عدد كبير من المحاولات الفاشلة.</p>
+  <p>يمكنك طلب إعادة التفعيل أو الاتصال بالدعم.</p>
+
+  <form action="/api/auth/request-activation" method="POST">
+    <input type="hidden" name="username" value="[[USERNAME_HERE]]">
+    <button type="submit">طلب إعادة التفعيل</button>
+  </form>
+
+  <a href="/support.html">📞 اتصل بالدعم</a>
+</body>
+</html>

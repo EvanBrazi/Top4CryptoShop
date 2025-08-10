@@ -39,7 +39,7 @@ function handleAuthResponse(req, res, data) {
       return res.redirect(redirectUrl);
     }
   }
-  
+
   // الافتراضي: إرجاع JSON
   if (data.status) {
     return res.status(data.status).json(data);
@@ -75,7 +75,7 @@ router.use(authLimiter);
 // =============================================
 //          تسجيل مستخدم جديد
 // =============================================
-router.post('/register', 
+router.post('/register',
   validateRegister,
   handleValidationErrors,
   async (req, res) => {
@@ -83,10 +83,10 @@ router.post('/register',
       const { username, password, phone, theme } = req.body;
 
       // التحقق من عدم تكرار اسم المستخدم
-      const existingUser = await User.findOne({ 
-        username: { $regex: new RegExp(`^${username}$`, 'i') } 
+      const existingUser = await User.findOne({
+        username: { $regex: new RegExp(`^${username}$`, 'i') }
       });
-      
+
       if (existingUser) {
         return handleAuthResponse(req, res, {
           status: 409,
@@ -164,17 +164,17 @@ router.post('/register',
 // =============================================
 //          تسجيل الدخول (يدعم JSON وHTML)
 // =============================================
-router.post('/login', 
+router.post('/login',
   validateLogin,
   handleValidationErrors,
   async (req, res) => {
     try {
       const { username, password } = req.body;
-      
+
       // البحث عن المستخدم
       const user = await User.findOne({ username })
         .select('+password +loginAttempts +accountStatus +lastLogin');
-      
+
       if (!user) {
         return handleAuthResponse(req, res, {
           status: 401,
@@ -201,11 +201,8 @@ router.post('/login',
         user.accountStatus = 'suspended';
         await user.save();
         return handleAuthResponse(req, res, {
-          status: 429,
           success: false,
-          error: 'تم تجاوز عدد المحاولات المسموحة',
-          solution: 'تم تعليق الحساب مؤقتاً. اتصل بالدعم',
-          type: 'too_many_attempts'
+          redirectTo: `/verify.html?username=${encodeURIComponent(username)}`
         });
       }
 
@@ -280,7 +277,7 @@ router.post('/login',
 router.post('/logout', doubleCsrfProtection, async (req, res) => {
   try {
     const token = req.cookies.session_token || req.headers.authorization?.split(' ')[1];
-    
+
     if (!token) {
       return handleAuthResponse(req, res, {
         status: 400,
@@ -291,7 +288,7 @@ router.post('/logout', doubleCsrfProtection, async (req, res) => {
     }
 
     // إضافة التوكن إلى القائمة السوداء
-    await RevokedToken.create({ 
+    await RevokedToken.create({
       token,
       revokedAt: new Date(),
       reason: 'user_logout',
@@ -306,8 +303,8 @@ router.post('/logout', doubleCsrfProtection, async (req, res) => {
       path: '/'
     });
 
-    return handleAuthResponse(req, res, { 
-      success: true, 
+    return handleAuthResponse(req, res, {
+      success: true,
       message: 'تم تسجيل الخروج بنجاح',
       redirectTo: '/login.html'
     });
@@ -330,7 +327,7 @@ router.post('/logout', doubleCsrfProtection, async (req, res) => {
 router.get('/check-auth', async (req, res) => {
   try {
     const token = req.cookies.session_token || req.headers.authorization?.split(' ')[1];
-    
+
     if (!token) {
       return handleAuthResponse(req, res, {
         success: false,
@@ -370,5 +367,27 @@ router.get('/check-auth', async (req, res) => {
     });
   }
 });
+
+router.post('/request-activation', async (req, res) => {
+  const { username } = req.body;
+
+  const user = await User.findOne({ username });
+  if (!user) {
+    return res.status(404).json({ success: false, error: 'المستخدم غير موجود' });
+  }
+
+  if (user.accountStatus !== 'suspended') {
+    return res.json({ success: true, message: 'الحساب غير موقوف حالياً' });
+  }
+
+  // مثال: إرسال طلب إلى الدعم أو إنشاء سجل داخل قاعدة البيانات
+  // أو تفعيل تلقائي إذا تجاوز وقت التعليق مثلاً
+  user.accountStatus = 'active';
+  user.loginAttempts = 0;
+  await user.save();
+
+  return res.json({ success: true, message: 'تم تفعيل الحساب بنجاح 🎉' });
+});
+
 
 module.exports = router;

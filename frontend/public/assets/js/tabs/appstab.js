@@ -198,23 +198,12 @@ class AppsTab {
 
   /**
    * @method _checkIconsStatus
-   * @description التحقق مما إذا كانت الأيقونات تم تحميلها بالكامل
+   * @description التحقق مما إذا كانت الأيقونات متوفرة محلياً
    * @returns {Promise<boolean>}
    * @private
    */
   async _checkIconsStatus() {
-    try {
-      const response = await fetch('/api/icons/apps/icons/status');
-      if (response.ok) {
-        const result = await response.json();
-        this.iconsDownloaded = result.downloaded;
-        return result.downloaded;
-      }
-      return false;
-    } catch (error) {
-      console.error('خطأ في التحقق من حالة تحميل الأيقونات:', error);
-      return false;
-    }
+    return true;
   }
 
   /**
@@ -224,27 +213,8 @@ class AppsTab {
    * @private
    */
   async _downloadAllIcons() {
-    try {
-      const response = await fetch('/api/icons/apps/icons/download-all', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          apps: this.options.appsData
-        })
-      });
-      
-      if (response.ok) {
-        const result = await response.json();
-        console.log(result.message);
-        this.iconsDownloaded = true;
-      } else {
-        console.error('فشل في بدء تحميل الأيقونات');
-      }
-    } catch (error) {
-      console.error('خطأ في تحميل جميع الأيقونات:', error);
-    }
+    console.log('تم تعطيل التحميل التلقائي للأيقونات، يتم استخدام الأيقونات المحلية');
+    this.iconsDownloaded = true;
   }
 
   /**
@@ -256,41 +226,13 @@ class AppsTab {
    */
   async _loadIcons(silent = false) {
     try {
-      // محاولة جلب الأيقونات من الكاش أولاً
-      const cachedIcons = this._getCachedIcons();
-      if (cachedIcons) {
-        this._applyIcons(cachedIcons);
-        if (!silent) console.log('تم تحميل الأيقونات من الذاكرة المؤقتة');
-        return;
-      }
-
-      // جلب الأيقونات من السيرفر
-      const response = await fetch('/api/icons/apps/icons', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache'
-        },
-        body: JSON.stringify({
-          apps: this.options.appsData.map(app => ({
-            id: app.id,
-            packageName: app.packageName,
-            name: app.name
-          })),
-          timestamp: Date.now()
-        })
-      });
+      const localIcons = this.options.appsData.map(app => ({
+        appId: app.id,
+        icon: app.packageName ? this._getLocalIcon(app.packageName) : null
+      }));
       
-      if (!response.ok) throw new Error('فشل جلب الأيقونات');
-      
-      const iconsData = await response.json();
-      
-      // حفظ الأيقونات في الكاش
-      this._cacheIcons(iconsData);
-      
-      // تطبيق الأيقونات
-      this._applyIcons(iconsData);
-      
+      this._applyIcons(localIcons);
+      if (!silent) console.log('تم تحميل الأيقونات من المجلد المحلي');
     } catch (error) {
       if (!silent) console.error('فشل جلب الأيقونات:', error);
       this._applyFallbackIcons();
@@ -336,6 +278,24 @@ class AppsTab {
   }
 
   /**
+   * @method _getLocalIcon
+   * @description جلب أيقونة التطبيق من المجلد المحلي
+   * @param {string} packageName - اسم الحزمة للتطبيق
+   * @returns {string|null} مسار الأيقونة أو null إذا لم توجد
+   * @private
+   */
+  _getLocalIcon(packageName) {
+    try {
+      const iconFileName = `${packageName.replace(/\./g, '_')}.png`;
+      const iconPath = `/icons/apps/${iconFileName}`;
+      return iconPath;
+    } catch (error) {
+      console.error('Error getting local icon:', error);
+      return null;
+    }
+  }
+
+  /**
    * @method _applyIcons
    * @description تطبيق الأيقونات على بيانات التطبيقات
    * @param {Array} iconsData - مصفوفة بيانات الأيقونات
@@ -343,6 +303,14 @@ class AppsTab {
    */
   _applyIcons(iconsData) {
     this.options.appsData.forEach(app => {
+      if (app.packageName) {
+        const localIcon = this._getLocalIcon(app.packageName);
+        if (localIcon) {
+          app.icon = localIcon;
+          return;
+        }
+      }
+      
       const iconInfo = iconsData.find(i => i.appId === app.id);
       if (iconInfo?.icon) {
         app.icon = iconInfo.icon;

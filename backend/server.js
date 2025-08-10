@@ -29,7 +29,7 @@ const hpp = require('hpp');
 const app = express();
 
 // أضف هذا الجزء بعد تعريف app وقبل تعريف المسارات
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/Top4CryptoShop')
+mongoose.connect(process.env.MONGO_URI || process.env.MONGODB_URI)
 .then(() => console.log('✅ تم الاتصال بقاعدة البيانات بنجاح'))
 .catch(err => {
   console.error('❌ فشل الاتصال بقاعدة البيانات:', err);

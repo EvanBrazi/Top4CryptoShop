@@ -1,0 +1,205 @@
+[01;34m.[0m
+├── [01;34m.vscode[0m
+│   └── [00msettings.json[0m
+├── [01;34mbackend[0m
+│   ├── [01;34mconfig[0m
+│   │   └── [00mdb.js[0m
+│   ├── [01;34mcontrollers[0m
+│   │   └── [00mdepositController.js[0m
+│   ├── [01;34mmiddlewares[0m
+│   │   ├── [00madminAuth.js[0m
+│   │   ├── [00mauthMiddleware.js[0m
+│   │   ├── [00mcsrfMiddleware.js[0m
+│   │   └── [00mvalidation.js[0m
+│   ├── [01;34mmodels[0m
+│   │   ├── [00mProduct.js[0m
+│   │   ├── [00mRevokedToken.js[0m
+│   │   └── [00mUser.js[0m
+│   ├── [01;34mpublic[0m
+│   │   └── [01;34micons[0m
+│   │       ├── [01;34mapps[0m
+│   │       │   ├── [01;32m7.star.png[0m
+│   │       │   ├── [01;32mMoli.star.chat.png[0m
+│   │       │   ├── [01;32mNabd.live.png[0m
+│   │       │   ├── [01;32mSOYO-Live-Chat.png[0m
+│   │       │   ├── [01;32mchat.laki.android.png[0m
+│   │       │   ├── [01;32mchat.saya.png[0m
+│   │       │   ├── [01;32mchirp-chat.png[0m
+│   │       │   ├── [00mcom.arqam.store.png[0m
+│   │       │   ├── [01;32mcom.ayome.sg.png[0m
+│   │       │   ├── [01;32mcom.baitu.qingshu.png[0m
+│   │       │   ├── [01;32mcom.baori.hiparty.png[0m
+│   │       │   ├── [01;32mcom.binmolive.lite.png[0m
+│   │       │   ├── [01;32mcom.bofu.chat.layam.png[0m
+│   │       │   ├── [01;32mcom.bufallobill.pikatburungributmerdu.png[0m
+│   │       │   ├── [01;32mcom.chatchill.app.png[0m
+│   │       │   ├── [01;32mcom.chatie.cn.png[0m
+│   │       │   ├── [01;32mcom.ditto.mobile.png[0m
+│   │       │   ├── [01;32mcom.dobai.kis.png[0m
+│   │       │   ├── [01;32mcom.duiud.bobo.png[0m
+│   │       │   ├── [01;32mcom.fun.share.png[0m
+│   │       │   ├── [01;32mcom.funni.hooka.png[0m
+│   │       │   ├── [01;32mcom.funup.app.png[0m
+│   │       │   ├── [01;32mcom.game.friends.android.png[0m
+│   │       │   ├── [01;32mcom.gimme.mobile.png[0m
+│   │       │   ├── [01;32mcom.global.habi.png[0m
+│   │       │   ├── [01;32mcom.global.hiyapro.png[0m
+│   │       │   ├── [01;32mcom.global.live.png[0m
+│   │       │   ├── [01;32mcom.global.saada.png[0m
+│   │       │   ├── [01;32mcom.grad.def.png[0m
+│   │       │   ├── [01;32mcom.habby.mobile.png[0m
+│   │       │   ├── [01;32mcom.haki.mobile.png[0m
+│   │       │   ├── [01;32mcom.halamate.app.png[0m
+│   │       │   ├── [01;32mcom.halo.mobile.png[0m
+│   │       │   ├── [01;32mcom.happymeet.amo.png[0m
+│   │       │   ├── [01;32mcom.hawatalk.live.png[0m
+│   │       │   ├── [01;32mcom.hayoparty.chat.png[0m
+│   │       │   ├── [01;32mcom.helmsmanintl.migao.png[0m
+│   │       │   ├── [01;32mcom.higolive.mobile.png[0m
+│   │       │   ├── [01;32mcom.hk.azal.live.png[0m
+│   │       │   ├── [01;32mcom.hkfuliao.chamet.png[0m
+│   │       │   ├── [01;32mcom.immomo.biz.ddoversea.png[0m
+│   │       │   ├── [01;32mcom.immomo.biz.yaahlan.png[0m
+│   │       │   ├── [01;32mcom.imo.android.imous.png[0m
+│   │       │   ├── [01;32mcom.inhobichat.hobichat.png[0m
+│   │       │   ├── [01;32mcom.jibjoy.app.png[0m
+│   │       │   ├── [01;32mcom.joyolive666.stream.png[0m
+│   │       │   ├── [01;32mcom.kiti.chat.android.png[0m
+│   │       │   ├── [01;32mcom.kiyo.mobile.png[0m
+│   │       │   ├── [01;32mcom.kwai.video.png[0m
+│   │       │   ├── [01;32mcom.layla.chat.png[0m
+│   │       │   ├── [01;32mcom.linkedaudio.channel.png[0m
+│   │       │   ├── [01;32mcom.lions.mobile.png[0m
+│   │       │   ├── [01;32mcom.live.honey.png[0m
+│   │       │   ├── [01;32mcom.live.soulchill.png[0m
+│   │       │   ├── [01;32mcom.maidocha.png[0m
+│   │       │   ├── [01;32mcom.mejoy.hapi.png[0m
+│   │       │   ├── [01;32mcom.mico.png[0m
+│   │       │   ├── [01;32mcom.migo.mobile.png[0m
+│   │       │   ├── [01;32mcom.mole.talktalk.png[0m
+│   │       │   ├── [01;32mcom.nebula.mamu.lite.png[0m
+│   │       │   ├── [01;32mcom.nw.nawa.voice.png[0m
+│   │       │   ├── [01;32mcom.ohla.socialapps.png[0m
+│   │       │   ├── [01;32mcom.olamet.mobile.png[0m
+│   │       │   ├── [01;32mcom.ollalive.mobile.png[0m
+│   │       │   ├── [01;32mcom.party.go.android.png[0m
+│   │       │   ├── [01;32mcom.pita.oyem.png[0m
+│   │       │   ├── [01;32mcom.polaris.sala.png[0m
+│   │       │   ├── [01;32mcom.safehappy.safechat.png[0m
+│   │       │   ├── [01;32mcom.sahrachat.club.png[0m
+│   │       │   ├── [01;32mcom.sgiggle.production.png[0m
+│   │       │   ├── [01;32mcom.shujiu.litchat2.png[0m
+│   │       │   ├── [01;32mcom.smileparty.pawalive.png[0m
+│   │       │   ├── [01;32mcom.somatch.android.png[0m
+│   │       │   ├── [01;32mcom.starmakerinteractive.starmaker.png[0m
+│   │       │   ├── [01;32mcom.superlive.liveapp.png[0m
+│   │       │   ├── [01;32mcom.sync.partynow.company.png[0m
+│   │       │   ├── [01;32mcom.taka.vhgyk.png[0m
+│   │       │   ├── [01;32mcom.upfun.mobile.png[0m
+│   │       │   ├── [01;32mcom.voicechat.live.group.png[0m
+│   │       │   ├── [01;32mcom.voicemaker.android.png[0m
+│   │       │   ├── [01;32mcom.vova.app.png[0m
+│   │       │   ├── [01;32mcom.vpb.popo.png[0m
+│   │       │   ├── [01;32mcom.waho.live.png[0m
+│   │       │   ├── [01;32mcom.wegolive.android.png[0m
+│   │       │   ├── [01;32mcom.weieyu.yalla.png[0m
+│   │       │   ├── [01;32mcom.wenext.lama.png[0m
+│   │       │   ├── [01;32mcom.wenext.wayak.png[0m
+│   │       │   ├── [01;32mcom.wheat.mango.png[0m
+│   │       │   ├── [01;32mcom.wooya.mobile.png[0m
+│   │       │   ├── [01;32mcom.wooyee.hlah.png[0m
+│   │       │   ├── [01;32mcom.xfaceline.wagas.png[0m
+│   │       │   ├── [01;32mcom.xiaoyu.amo.png[0m
+│   │       │   ├── [01;32mcom.xparty.androidapp.png[0m
+│   │       │   ├── [01;32mcom.yanan.voicegame.png[0m
+│   │       │   ├── [01;32mcom.yinyuan.mobile.png[0m
+│   │       │   ├── [01;32mcom.ylhl.soulchat.png[0m
+│   │       │   ├── [01;32mcom.yooy.live.png[0m
+│   │       │   ├── [01;32mcom.ysl.talk.png[0m
+│   │       │   ├── [01;32mcom.yuhuankj.tmxq.png[0m
+│   │       │   ├── [01;32mjuo.nko.lio.png[0m
+│   │       │   ├── [01;32mkessmet live.video.png[0m
+│   │       │   ├── [01;32mkessmet.live.png[0m
+│   │       │   ├── [01;32mlive.dimo.iDimo.png[0m
+│   │       │   ├── [01;32mlivestream.inslive.live.png[0m
+│   │       │   ├── [01;32mopa.live.png[0m
+│   │       │   ├── [01;32morg.nown.ciefq.png[0m
+│   │       │   ├── [01;32mpotaa.zzz.world.png[0m
+│   │       │   ├── [01;32mrostar.chat.png[0m
+│   │       │   ├── [01;32msai.gac.hat.png[0m
+│   │       │   ├── [01;32msg.bigo.live.png[0m
+│   │       │   ├── [01;32msg.partying.lcb.android.png[0m
+│   │       │   ├── [01;32msod.faa.vocca.png[0m
+│   │       │   ├── [01;32mvideo.like.lite.png[0m
+│   │       │   ├── [01;32mvideo.like.png[0m
+│   │       │   └── [01;32mwyc.sta.hrd.png[0m
+│   │       └── [01;32m.gitkeep[0m
+│   ├── [01;34mroutes[0m
+│   │   ├── [00madmin.js[0m
+│   │   ├── [00mapi.js[0m
+│   │   ├── [00mauth.js[0m
+│   │   ├── [00mcards.js[0m
+│   │   ├── [00mdeposit.js[0m
+│   │   └── [00micons.js[0m
+│   ├── [01;34mscripts[0m
+│   │   ├── [00mcreateAdmin.js[0m
+│   │   └── [00mupdateUsers.js[0m
+│   ├── [00m.gitignore[0m
+│   ├── [00m.npmrc[0m
+│   ├── [00maddProduct.js[0m
+│   ├── [00mdb.js[0m
+│   ├── [00mpackage.json[0m
+│   ├── [00mseed.js[0m
+│   ├── [00mserver.js[0m
+│   └── [00mtest.js[0m
+├── [01;34mfrontend[0m
+│   ├── [01;34mpublic[0m
+│   │   ├── [01;34massets[0m
+│   │   │   ├── [01;34mcss[0m
+│   │   │   │   ├── [00mapps-cards.css[0m
+│   │   │   │   ├── [00mcard-grid.css[0m
+│   │   │   │   ├── [00mhomepage.css[0m
+│   │   │   │   ├── [00mstyle.css[0m
+│   │   │   │   └── [00mthemes.css[0m
+│   │   │   ├── [01;34micons[0m
+│   │   │   ├── [01;34mimages[0m
+│   │   │   │   ├── [00mfavicon.ico[0m
+│   │   │   │   └── [00mlogo.png[0m
+│   │   │   └── [01;34mjs[0m
+│   │   │       ├── [01;34mcore[0m
+│   │   │       │   └── [00mtaber.js[0m
+│   │   │       ├── [01;34mtabs[0m
+│   │   │       │   ├── [00mappstab.js[0m
+│   │   │       │   ├── [00mgamestab.js[0m
+│   │   │       │   ├── [00mhometab.js[0m
+│   │   │       │   ├── [00morderstab.js[0m
+│   │   │       │   ├── [00mpaymentstab.js[0m
+│   │   │       │   ├── [00mportfoliotab.js[0m
+│   │   │       │   └── [00mwallettab.js[0m
+│   │   │       ├── [00mapp.js[0m
+│   │   │       ├── [00mappmanager.js[0m
+│   │   │       ├── [00mhomepage.js[0m
+│   │   │       ├── [00msw.js[0m
+│   │   │       ├── [00mtheme.js[0m
+│   │   │       └── [00musermanager.js[0m
+│   │   ├── [00madmin.html[0m
+│   │   ├── [00mdashboard.html[0m
+│   │   ├── [00mdeposit.html[0m
+│   │   ├── [00mforget-password.html[0m
+│   │   ├── [00mhomepage.html[0m
+│   │   ├── [00mindex.html[0m
+│   │   ├── [00mlogin.html[0m
+│   │   ├── [00mlogout.html[0m
+│   │   ├── [00mreset-password.html[0m
+│   │   ├── [00msignup.html[0m
+│   │   └── [00mverify.html[0m
+│   └── [00mpackage.json[0m
+├── [00m.gitignore[0m
+├── [00m.hintrc[0m
+├── [00mREADME.md[0m
+├── [00mcb[0m
+├── [00mpackage.json[0m
+├── [01;32msetup-ssh-git[0m
+└── [01;32msetup-ssh-git.bat[0m
+
+21 directories, 182 files

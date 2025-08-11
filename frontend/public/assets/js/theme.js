@@ -14,7 +14,10 @@ function toggleTheme() {
 }
 
 // تهيئة الثيم عند تحميل الصفحة
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('theme-toggle-btn').addEventListener('click', function () {
+        toggleTheme();
+    });
     initTheme();
 });
 

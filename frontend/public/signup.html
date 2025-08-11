@@ -353,11 +353,9 @@
 
         // 3) التسجيل التقليدي
         byId('signupForm').addEventListener('submit', async (e) => {
-            if (!this.checkValidity()) {
-                e.preventDefault();
-                // عرض رسائل الخطأ
-            }
-
+            e.preventDefault();
+            // عرض رسائل الخطأ
+            console.log('Error: ' + e);
             // إخفاء رسائل الخطأ السابقة
             document.querySelectorAll('.error-message').forEach((el) => {
                 el.classList.remove('show');

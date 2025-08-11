@@ -29,7 +29,10 @@ class AppManager {
         containerId: 'apps-tab-container',
         options: {
           themeColor: '#6a5acd',
-          dialogBgColor: '#ffffff'
+          dialogBgColor: '#ffffff',
+          enableServiceWorker: true,
+          enableWebWorker: true,
+          lazyLoadThreshold: 50
         }
       })
     }

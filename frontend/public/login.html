@@ -323,10 +323,8 @@
 
         // 3. تسجيل الدخول التقليدي
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            if (!this.checkValidity()) {
-                e.preventDefault();
-                // عرض رسائل الخطأ
-            }
+            e.preventDefault();
+            // عرض رسائل الخطأ
 
             // إخفاء رسائل الخطأ السابقة
             document.querySelectorAll('.error-message').forEach(el => {

@@ -115,7 +115,7 @@ class AppsTab {
   _initWorkerSystem() {
     if (!this.options.enableWebWorker) return;
 
-    this._worker = new Worker('/js/apps-worker.js');
+    this._worker = new Worker('/assets/js/apps-worker.js');
     this._worker.onmessage = (e) => {
       const { type, data } = e.data;
       if (type === 'icon-loaded') {

@@ -136,6 +136,28 @@ app.use(morgan('combined'));
 // =============================================
 //             الملفات الثابتة
 // =============================================
+app.use(express.static(path.join(__dirname, 'public')));
+
+// API: إرجاع قائمة الأيقونات
+app.get('/api/icons-list', (req, res) => {
+  const iconsPath = path.join(__dirname, 'public', 'icons-list.json');
+
+  fs.readFile(iconsPath, 'utf8', (err, data) => {
+    if (err) {
+      console.error('❌ فشل قراءة icons-list.json:', err);
+      return res.status(500).json({ error: 'حدث خطأ داخلي' });
+    }
+
+    try {
+      const icons = JSON.parse(data);
+      res.json({ icons });
+    } catch (parseErr) {
+      console.error('❌ خطأ في تنسيق JSON:', parseErr);
+      res.status(500).json({ error: 'ملف JSON غير صالح' });
+    }
+  });
+});
+
 app.use(favicon(path.join(staticFilesPath, './assets/images/favicon.ico')));
 
 app.use(express.static(staticFilesPath, {

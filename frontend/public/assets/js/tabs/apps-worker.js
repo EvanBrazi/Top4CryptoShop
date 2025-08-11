@@ -1,12 +1,19 @@
+/**
+ * Service Worker - Icon Processor via Message
+ * يستقبل اسم الحزمة من الصفحة ويعيد مسار الأيقونة المناسب
+ */
+
 self.addEventListener('message', async (e) => {
   const { type, data } = e.data;
-  
-  if (type === 'process-icon') {
+
+  if (type === 'process-icon' && data?.packageName && data?.appId) {
+    const iconPath = getLocalIconPath(data.packageName);
+
     try {
-      const iconPath = getLocalIconPath(data.packageName);
       const exists = await checkIconExists(iconPath);
-      
-      self.postMessage({
+
+      // إرسال النتيجة إلى الصفحة التي أرسلت الرسالة
+      e.source?.postMessage({
         type: 'icon-loaded',
         data: {
           appId: data.appId,
@@ -14,7 +21,9 @@ self.addEventListener('message', async (e) => {
         }
       });
     } catch (error) {
-      self.postMessage({
+      console.warn(`❌ فشل التحقق من الأيقونة: ${iconPath}`, error);
+
+      e.source?.postMessage({
         type: 'icon-loaded',
         data: {
           appId: data.appId,
@@ -25,24 +34,37 @@ self.addEventListener('message', async (e) => {
   }
 });
 
+/**
+ * تحويل اسم الحزمة إلى اسم ملف أيقونة صالح
+ * @param {string} packageName
+ * @returns {string} icon path
+ */
 function getLocalIconPath(packageName) {
-  if (!packageName) return '/icons/apps/default.png';
-
   let iconName = packageName
     .toLowerCase()
-    .replace(/\./g, '_')
-    .replace(/[^a-z0-9_]/g, '')
-    .replace(/_+/g, '_');
+    .replace(/\./g, '_')              // استبدال النقاط بشرطة سفلية
+    .replace(/[^a-z0-9_]/g, '')       // إزالة الرموز غير المسموح بها
+    .replace(/_+/g, '_')              // دمج الشرطات المتكررة
+    .replace(/(\d)\.(\w)/g, '$1_$2'); // استبدال الأرقام التي تسبق نقطة
 
-  iconName = iconName.replace(/(\d)\.(\w)/g, '$1_$2');
   return `/icons/apps/${iconName}.png`;
 }
 
+/**
+ * التحقق من وجود الأيقونة باستخدام طلب HEAD لتقليل حجم البيانات
+ * @param {string} url
+ * @returns {Promise<boolean>}
+ */
 async function checkIconExists(url) {
   try {
-    const response = await fetch(url, { method: 'HEAD' });
+    const response = await fetch(url, {
+      method: 'HEAD',
+      cache: 'no-store' // تجنب الكاش لتحديث الأيقونات فوراً
+    });
+
     return response.ok;
-  } catch {
+  } catch (err) {
+    console.error(`❌ فشل تحميل الأيقونة: ${url}`, err);
     return false;
   }
 }

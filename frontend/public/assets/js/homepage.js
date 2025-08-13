@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', function () {
             toggleSidebar();
         }
     });
-    
+
     // فتح/إغلاق الدرج
     toggleBtn.addEventListener('click', toggleSidebar);
     overlay.addEventListener('click', toggleSidebar);
@@ -155,6 +155,13 @@ document.addEventListener('DOMContentLoaded', function () {
     // 1. تهيئة المستخدم
     um.loadUser();
     //th.initTheme();
+
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/assets/js/sw.js')
+            .then(() => console.log('✅ Service Worker مسجل بنجاح'))
+            .catch(err => console.error('❌ فشل تسجيل Service Worker:', err));
+    }
+
 
     console.log('تم تحميل النظام بنجاح وجاهز للاختبار');
 });

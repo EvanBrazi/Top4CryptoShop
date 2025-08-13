@@ -1,1202 +1,770 @@
 /**
  * @file appstab.js
  * @class AppsTab
- * @description كلاس متكامل لإدارة تبويب تطبيقات الدردشة مع دعم متقدم للأيقونات والتأثيرات ثلاثية الأبعاد
- * @version 5.0.0
- * @author Top Al-9mh
- * @feature_loading مؤشر تحميل أثناء جلب البيانات
- * @feature_3d تأثيرات ثلاثية الأبعاد للبطاقات
- * @feature_logo إدارة شعار التطبيق في الزاوية
- * @feature_security تحسينات الأمان وإدارة الأخطاء
- * @feature_performance تحسينات الأداء
- * @feature_accessibility تحسينات الوصول والإتاحة
+ * @description إدارة تبويب التطبيقات مع تحميل الأيقونات وتحسين الأداء
+ * @version 5.2.0
+ * @license MIT
  */
 
-class AppsTab {
+import ApiService from '../services/apiService.js';
+
+/**
+ * @typedef {Object} AppData
+ * @property {string} name - اسم التطبيق
+ * @property {string} icon - اسم ملف الأيقونة
+ * @property {number} [price] - سعر التطبيق (اختياري)
+ * @property {string} [description] - وصف التطبيق (اختياري)
+ * @property {string} [packageName] - اسم الحزمة (اختياري)
+ */
+
+/**
+ * @typedef {Object} AppsTabOptions
+ * @property {AppData[]} [appsData=[]] - مصفوفة بيانات التطبيقات
+ * @property {string} [iconsBasePath='/icons/apps/'] - المسار الأساسي للأيقونات
+ * @property {string} [logoUrl='./assets/images/logo.png'] - رابط الشعار
+ * @property {number} [lazyLoadThreshold=100] - حد التحميل البطيء
+ * @property {string} [themeColor='#6a5acd'] - لون السمة الرئيسي
+ * @property {string} [dialogBgColor='#ffffff'] - لون خلفية النافذة المنبثقة
+ * @property {number} [maxQuantity=10] - الحد الأقصى للكمية
+ * @property {function} [cacheIcon=fetch] - دالة مخصصة لتخزين الأيقونات
+ */
+
+export class AppsTab {
   /**
    * @constructor
-   * @param {Object} config - كائن التهيئة
-   * @param {Object} [config.taber] - Instance من Taber (اختياري)
-   * @param {string} config.containerId - ID العنصر الحاوي
-   * @param {Object} [config.options={}] - خيارات إضافية
-   * @param {string} [config.options.themeColor='#6a5acd'] - لون الثيم الرئيسي
-   * @param {string} [config.options.dialogBgColor='#ffffff'] - لون خلفية مربع الحوار
-   * @param {Array} [config.options.appsData] - بيانات التطبيقات (اختياري)
-   * @param {string} [config.options.logoUrl] - رابط شعار التطبيق (اختياري)
-   * @param {string} [config.options.iconsBasePath='/icons/apps/'] - المسار الأساسي للأيقونات
+   * @param {Object} config - إعدادات التهيئة
+   * @param {string} config.containerId - معرف العنصر الحاوي
+   * @param {AppsTabOptions} [options={}] - خيارات إضافية
    * @throws {Error} إذا كان عنصر الحاوية غير موجود
    */
-  constructor({ taber, containerId, options = {} }) {
-    // [غير معدل] البنية الأساسية للكونستركتور
-    this.taber = taber || {};
+  constructor({ containerId, options = {} }) {
     this.container = document.getElementById(containerId);
-
     if (!this.container) {
-      const errorMsg = `عنصر الحاوية غير موجود بالـ ID المحدد: ${containerId}`;
-      console.error(errorMsg);
-      throw new Error(errorMsg);
+      throw new Error(`❌ عنصر الحاوية غير موجود: ${containerId}`);
     }
-    // إعدادات النظام الأساسية
-    this.appsPerPage = 1000;
-    this.currentPage = 1;
+
+    /** @type {AppsTabOptions} */
     this.options = {
+      appsData: options.appsData || [],
+      iconsBasePath: options.iconsBasePath || '/icons/apps/',
+      logoUrl: options.logoUrl || './assets/images/logo.png',
+      lazyLoadThreshold: options.lazyLoadThreshold || 100,
       themeColor: options.themeColor || '#6a5acd',
       dialogBgColor: options.dialogBgColor || '#ffffff',
-      appsData: options.appsData || this._defaultAppsData(),
-      logoUrl: options.logoUrl || './assets/images/logo.png',
-      iconsBasePath: options.iconsBasePath || '/icons/apps/',
       maxQuantity: options.maxQuantity || 10,
-      enableServiceWorker: options.enableServiceWorker !== false,
-      enableWebWorker: options.enableWebWorker !== false,
-      lazyLoadThreshold: options.lazyLoadThreshold || 100
+      cacheIcon: options.cacheIcon || fetch
     };
 
-    // أنظمة التحسين
-    this._initPerformanceMonitor();
-    this._initCacheSystem();
-    this._initWorkerSystem();
-    this._initLazyLoading();
-
+    /** @type {AppData[]} */
     this.filteredApps = [...this.options.appsData];
+
+    /** @type {Object.<string, string>} */
+    this._iconCache = {};
+
+    /** @type {IntersectionObserver|null} */
+    this._observer = null;
+
+    /** @type {boolean} */
+    this._isFetching = false;
+
+    /** @type {boolean} */
+    this._iconsLoaded = false;
+
+    /** @type {string} */
+    this._cachedFallbackIcon = '';
+
     this._init();
   }
 
-  /* ------------------------------------------ */
-  /* -------------- الأنظمة الأساسية ----------- */
-  /* ------------------------------------------ */
-
   /**
-   * @method _init
-   * @description تهيئة المكون الرئيسي
    * @private
+   * تهيئة الكلاس وتحميل الأيقونات
+   * @returns {Promise<void>}
    */
   async _init() {
-    this._showLoading();
-    this._loadCSS();
-    await this._registerServiceWorker();
-    await this._initWorkerSystem();
-    this._initLazyLoading();
-    await this._loadIcons();
-    this.render();
-    this._hideLoading();
-  }
-
-  /* ----------------------------------------- */
-  /* ----------- نظام Service Worker --------- */
-  /* ----------------------------------------- */
-
-  /**
-   * @method _registerServiceWorker
-   * @description تسجيل Service Worker للتخزين المؤقت
-   * @private
-   */
-  async _registerServiceWorker() {
-    if (!this.options.enableServiceWorker) return;
-
     try {
-      if ('serviceWorker' in navigator) {
-        const registration = await navigator.serviceWorker.register('/sw-apps.js');
-        console.log('ServiceWorker registration successful:', registration.scope);
-      }
+      this._injectStyles();
+      await this._loadIcons();
+      this._renderSearchBar();
+      this._renderAppsGrid();
+      this._setupIntersectionObserver();
     } catch (error) {
-      console.error('ServiceWorker registration failed:', error);
+      console.error('❌ فشل تهيئة AppsTab:', error);
+      this._showErrorMessage('حدث خطأ أثناء تحميل التطبيقات. يرجى تحديث الصفحة.');
     }
   }
 
-  /* ----------------------------------------- */
-  /* ----------- نظام Web Worker ------------- */
-  /* ----------------------------------------- */
-
   /**
-   * @method _initWorkerSystem
-   * @description تهيئة نظام Web Workers
    * @private
-   */
-  _initWorkerSystem() {
-    if (!this.options.enableWebWorker) return;
-
-    this._worker = new Worker('/assets/js/apps-worker.js');
-    this._worker.onmessage = (e) => {
-      const { type, data } = e.data;
-      if (type === 'icon-loaded') {
-        this._handleIconLoaded(data);
-      }
-    };
-  }
-
-  /**
-   * @method _processInWorker
-   * @description معالجة المهمة في Web Worker
-   * @param {Object} task 
-   * @private
-   */
-  _processInWorker(task) {
-    if (!this.options.enableWebWorker) {
-      return this._processLocally(task);
-    }
-
-    this._worker.postMessage({
-      type: 'process-icon',
-      data: task
-    });
-  }
-
-  /* ----------------------------------------- */
-  /* ----------- نظام التحميل التدريجي -------- */
-  /* ----------------------------------------- */
-
-  /**
-   * @method _initLazyLoading
-   * @description تهيئة نظام التحميل عند الظهور
-   * @private
-   */
-  _initLazyLoading() {
-    this._observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const card = entry.target;
-          this._loadCardIcon(card);
-          this._observer.unobserve(card);
-        }
-      });
-    }, {
-      threshold: 0.1,
-      rootMargin: '100px'
-    });
-  }
-
-  /**
-   * @method _loadCardIcon
-   * @description تحميل أيقونة البطاقة عند الحاجة
-   * @param {HTMLElement} card 
-   * @private
-   */
-  async _loadCardIcon(card) {
-    const appId = card.dataset.appId;
-    const app = this.options.appsData.find(a => a.id == appId);
-    if (!app) return;
-
-    const iconImg = card.querySelector('.app-icon');
-    if (!iconImg) return;
-
-    try {
-      const iconPath = this._getLocalIconPath(app.packageName);
-      iconImg.src = iconPath;
-    } catch (error) {
-      console.error('Error lazy loading icon:', error);
-    }
-  }
-
-  /* ----------------------------------------- */
-  /* ----------- نظام الذاكرة المؤقتة --------- */
-  /* ----------------------------------------- */
-
-  /**
-   * @method _initCacheSystem
-   * @description تهيئة نظام الذاكرة المؤقتة
-   * @private
-   */
-  _initCacheSystem() {
-    this._iconCache = JSON.parse(localStorage.getItem('appsIconCache')) || {};
-    this._requestQueue = [];
-    this._activeRequests = 0;
-    this._maxConcurrentRequests = 3;
-  }
-
-  /**
-   * @method _saveToCache
-   * @description حفظ البيانات في الذاكرة المؤقتة
-   * @param {string} key 
-   * @param {any} value 
-   * @private
-   */
-  _saveToCache(key, value) {
-    this._iconCache[key] = value;
-    localStorage.setItem('appsIconCache', JSON.stringify(this._iconCache));
-  }
-
-  /* ----------------------------------------- */
-  /* ----------- نظام مراقبة الأداء ---------- */
-  /* ----------------------------------------- */
-
-  /**
-   * @method _initPerformanceMonitor
-   * @description تهيئة نظام مراقبة الأداء
-   * @private
-   */
-  _initPerformanceMonitor() {
-    this._performance = {
-      timers: {},
-      marks: {},
-      measures: {}
-    };
-  }
-
-  /**
-   * @method _startTimer
-   * @description بدء مؤقت أداء
-   * @param {string} name 
-   * @private
-   */
-  _startTimer(name) {
-    this._performance.timers[name] = performance.now();
-  }
-
-  /**
-   * @method _endTimer
-   * @description إنهاء مؤقت أداء وتسجيل النتيجة
-   * @param {string} name 
-   * @private
-   */
-  _endTimer(name) {
-    if (this._performance.timers[name]) {
-      const duration = performance.now() - this._performance.timers[name];
-      console.log(`[Performance] ${name}: ${duration.toFixed(2)}ms`);
-      return duration;
-    }
-    return 0;
-  }
-
-  /* ----------------------------------------- */
-  /* ----------- معالجة الأيقونات ------------ */
-  /* ----------------------------------------- */
-
-  /**
-   * @method _getLocalIconPath
-   * @description الحصول على مسار الأيقونة مع معالجة خاصة للأسماء
-   * @param {string} packageName 
-   * @returns {string}
-   * @private
-   */
-  _getLocalIconPath(packageName) {
-    if (!packageName) return this._getFallbackIcon();
-
-    // معالجة خاصة لأسماء الملفات
-    let iconName = packageName
-      .toLowerCase()
-      .replace(/\./g, '_')
-      .replace(/[^a-z0-9_]/g, '')
-      .replace(/_+/g, '_');
-
-    // تحويل أسماء مثل "7.star" إلى "7_star"
-    iconName = iconName.replace(/(\d)\.(\w)/g, '$1_$2');
-
-    return `${this.options.iconsBasePath}${iconName}.png`;
-  }
-
-  /**
-   * @method _loadIcons
-   * @description تحميل الأيقونات مع جميع التحسينات
-   * @private
+   * تحميل الأيقونات بشكل مجمّع مع إدارة الذاكرة
+   * @returns {Promise<void>}
    */
   async _loadIcons() {
-    this._startTimer('icons-loading');
+    if (this._iconsLoaded) return;
+    this._iconsLoaded = true;
 
-    const fallbackIcon = this._getFallbackIcon();
-    this.options.appsData.forEach(app => {
-      app.icon = fallbackIcon; // القيمة الافتراضية أولاً
-    });
+    const batchSize = 5;
+    const cacheIconFn = this.options.cacheIcon;
 
-    // تحميل الأيقونات على دفعات
-    const batchSize = 10;
-    for (let i = 0; i < this.options.appsData.length; i += batchSize) {
-      const batch = this.options.appsData.slice(i, i + batchSize);
-      await Promise.all(batch.map(app => this._loadAppIcon(app)));
-
-      // إضافة تأخير بين الدفعات
-      if (i + batchSize < this.options.appsData.length) {
-        await new Promise(r => setTimeout(r, 50));
+    // تحميل الأيقونة الافتراضية مرة واحدة فقط
+    if (!this._cachedFallbackIcon) {
+      try {
+        const fallbackResponse = await cacheIconFn('/icons/apps/default.png');
+        if (!fallbackResponse.ok) throw new Error('Fallback icon not found');
+        const fallbackBlob = await fallbackResponse.blob();
+        this._cachedFallbackIcon = URL.createObjectURL(fallbackBlob);
+      } catch (error) {
+        console.warn('❌ فشل تحميل الأيقونة الافتراضية:', error);
+        this._cachedFallbackIcon = ''; // منع الحلقة
       }
     }
 
-    this._endTimer('icons-loading');
+    // تقسيم التطبيقات إلى دفعات للتحميل
+    for (let i = 0; i < this.options.appsData.length; i += batchSize) {
+      const batch = this.options.appsData.slice(i, i + batchSize);
+      await this._loadIconBatch(batch, cacheIconFn);
+      await new Promise(resolve => setTimeout(resolve, 300)); // تجنب حظر UI
+    }
   }
 
   /**
-   * @method _loadAppIcon
-   * @description تحميل أيقونة تطبيق معين
-   * @param {Object} app 
    * @private
+   * تحميل دفعة من الأيقونات
+   * @param {AppData[]} batch - دفعة التطبيقات
+   * @param {Function} cacheIconFn - دالة التخزين
+   * @returns {Promise<void>}
    */
-  async _loadAppIcon(app) {
-    if (!app.packageName) return;
-
-    try {
-      const iconPath = this._getLocalIconPath(app.packageName);
-
-      // التحقق من الذاكرة المؤقتة أولاً
-      if (this._iconCache[app.packageName]) {
-        app.icon = this._iconCache[app.packageName];
+  async _loadIconBatch(batch, cacheIconFn) {
+    await Promise.all(batch.map(async (app) => {
+      const fileName = app.icon;
+      if (!fileName) {
+        app.icon = this._cachedFallbackIcon || '/icons/apps/default.png';
         return;
       }
 
-      if (await this._checkIconExists(iconPath)) {
-        app.icon = iconPath;
-        this._saveToCache(app.packageName, iconPath);
+      if (this._iconCache[fileName]) {
+        app.icon = this._iconCache[fileName];
+        return;
       }
-    } catch (error) {
-      console.error(`Error loading icon for ${app.name}:`, error);
+
+      try {
+        const iconUrl = this._getIconUrl(fileName);
+        const cachedBlob = await this.options.iconCache.get(iconUrl);
+        let blob = cachedBlob;
+
+        if (!cachedBlob) {
+          const response = await fetch(iconUrl);
+          if (!response.ok) throw new Error(`لم يتم العثور على الأيقونة ${fileName}`);
+          blob = await response.blob();
+          await this.options.iconCache.set(iconUrl, blob); // التخزين في ذاكرة التخزين المؤقت
+        }
+
+
+        const objectUrl = URL.createObjectURL(blob);
+        app.icon = objectUrl;
+        this._iconCache[fileName] = objectUrl;
+      } catch (error) {
+        console.warn(`❌ فشل تحميل أيقونة ${app.name}:`, error);
+        app.icon = this._cachedFallbackIcon || '/icons/apps/default.png';
+      }
+    }));
+  }
+
+  /**
+   * @private
+   * توليد رابط الأيقونة بناءً على اسم الملف
+   * @param {string} fileName - اسم ملف الأيقونة
+   * @returns {string} - رابط كامل للأيقونة
+   */
+  _getIconUrl(fileName) {
+    if (!fileName || typeof fileName !== 'string') {
+      console.warn('⚠️ اسم الأيقونة غير صالح:', fileName);
+      return '/icons/apps/default.png';
     }
+
+    const basePath = this.options.iconsBasePath.endsWith('/')
+      ? this.options.iconsBasePath
+      : this.options.iconsBasePath + '/';
+
+    return `${basePath}${encodeURIComponent(fileName.trim())}`;
   }
 
   /**
-   * @method _showLoading
-   * @description عرض مؤشر التحميل
    * @private
+   * إعداد IntersectionObserver للتحميل البطيء
    */
-  _showLoading() {
-    const loadingHTML = `
-      <div class="loading-overlay">
-        <div class="loading-spinner"></div>
-        <div class="loading-text">جاري تحميل التطبيقات...</div>
-      </div>
-    `;
-    this.loadingElement = this._createElementFromHTML(loadingHTML);
-    document.body.appendChild(this.loadingElement);
-  }
-
-  /**
-   * @method _hideLoading
-   * @description إخفاء مؤشر التحميل
-   * @private
-   */
-  _hideLoading() {
-    if (this.loadingElement && document.body.contains(this.loadingElement)) {
-      document.body.removeChild(this.loadingElement);
+  _setupIntersectionObserver() {
+    if (this._observer) {
+      this._observer.disconnect();
     }
+
+    this._observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const img = entry.target;
+          img.src = img.dataset.src;
+          this._observer?.unobserve(img);
+        }
+      });
+    }, {
+      rootMargin: '200px',
+      threshold: 0.01
+    });
+
+    document.querySelectorAll('.app-icon[data-src]').forEach(img => {
+      this._observer?.observe(img);
+    });
   }
 
   /**
-   * @method _loadCSS
-   * @description تحميل ملفات الأنماط مع تحسينات الأداء
    * @private
+   * حقن الأنماط الخاصة بالتبويب
    */
-  _loadCSS() {
-    // [معدل] تحسين تحميل CSS
-    const existingStyles = document.querySelector('link[href*="apps-cards.css"]');
-    if (existingStyles) return;
+  _injectStyles() {
+    const styleId = 'apps-tab-styles';
+    let style = document.getElementById(styleId);
 
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = './assets/css/apps-cards.css';
-    document.head.appendChild(link);
+    if (!style) {
+      style = document.createElement('style');
+      style.id = styleId;
+      document.head.appendChild(style);
+    }
 
-    const style = document.createElement('style');
     style.textContent = `
-      :root { 
+      :root {
         --theme-color: ${this.options.themeColor};
         --dialog-bg-color: ${this.options.dialogBgColor};
       }
-      
-      .loading-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(255,255,255,0.9);
+      .apps-tab-container {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      }
+      .search-container {
+        margin: 20px 0;
+        padding: 0 15px;
+      }
+      .search-bar {
+        width: 100%;
+        padding: 12px 20px;
+        border: 2px solid var(--theme-color);
+        border-radius: 25px;
+        font-size: 16px;
+        outline: none;
+        transition: all 0.3s;
+      }
+      .search-bar:focus {
+        box-shadow: 0 0 8px var(--theme-color);
+      }
+      .apps-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 20px;
+        padding: 15px;
+      }
+      .app-card {
+        background: white;
+        border-radius: 10px;
+        padding: 15px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        cursor: pointer;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
         display: flex;
         flex-direction: column;
-        justify-content: center;
         align-items: center;
-        z-index: 1000;
+        text-align: center;
       }
-      
-      .loading-spinner {
-        width: 50px;
-        height: 50px;
-        border: 5px solid #f3f3f3;
-        border-top: 5px solid var(--theme-color);
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
+      .app-card:hover {
+        transform: scale(1.05);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
       }
-      
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+      .app-icon {
+        width: 64px;
+        height: 64px;
+        object-fit: contain;
+        margin-bottom: 10px;
+        border-radius: 12px;
       }
-      
-      .loading-text {
-        margin-top: 15px;
-        font-size: 1.2rem;
+      .app-name {
+        font-weight: bold;
+        margin-bottom: 5px;
         color: #333;
       }
-      
-      .app-logo {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        width: 20px;
-        height: 20px;
-        border-radius: 100%;
-        background: none;
-        padding: 2px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 3;
-        background-image: url("./assets/images/logo.png");
-        background-size: contain;
-        background-repeat: no-repeat;
-        background-position: center;
+      .app-price {
+        color: var(--theme-color);
+        font-size: 14px;
       }
-
-      .dialog-overlay {
+      .app-dialog {
         position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0,0,0,0.5);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
-      }
-
-      .dialog-content {
-        background-color: var(--dialog-bg-color);
-        border-radius: 10px;
-        width: 400px;
-        max-width: 90%;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        overflow: hidden;
-      }
-
-      .dialog-header {
-        padding: 20px;
-        display: flex;
-        align-items: center;
-        border-bottom: 1px solid #eee;
-      }
-
-      .dialog-icon {
-        width: 60px;
-        height: 60px;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 90%;
+        max-width: 500px;
+        background: var(--dialog-bg-color);
         border-radius: 15px;
-        margin-left: 15px;
-      }
-
-      .dialog-title {
-        font-size: 1.3rem;
-        font-weight: bold;
-      }
-
-      .dialog-body {
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        z-index: 1000;
         padding: 20px;
       }
-
-      .quantity-selector {
+      .dialog-header {
         display: flex;
+        justify-content: space-between;
         align-items: center;
-        margin: 20px 0;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
       }
-
-      .quantity-btn {
-        width: 40px;
-        height: 40px;
-        border: 1px solid #ddd;
-        background: #f5f5f5;
-        font-size: 1.2rem;
+      .dialog-header h2 {
+        margin: 0;
+        color: var(--theme-color);
+      }
+      .close-btn {
+        background: none;
+        border: none;
+        font-size: 24px;
         cursor: pointer;
+        color: #777;
       }
-
-      .quantity-input {
-        width: 60px;
-        height: 40px;
-        text-align: center;
-        border: 1px solid #ddd;
-        margin: 0 5px;
-      }
-
-      .dialog-footer {
+      .dialog-body {
         display: flex;
-        justify-content: flex-end;
-        padding: 15px;
-        border-top: 1px solid #eee;
+        flex-direction: column;
+        align-items: center;
       }
-
-      .dialog-btn {
+      .dialog-icon {
+        width: 100px;
+        height: 100px;
+        object-fit: contain;
+        margin-bottom: 20px;
+        border-radius: 20px;
+      }
+      .buy-btn {
+        background: var(--theme-color);
+        color: white;
+        border: none;
         padding: 10px 20px;
         border-radius: 5px;
-        margin-left: 10px;
+        margin-top: 20px;
         cursor: pointer;
-        border: none;
-        font-weight: bold;
+        font-size: 16px;
+        transition: opacity 0.3s;
       }
-
-      .dialog-btn-secondary {
-        background: #f5f5f5;
-        color: #333;
+      .buy-btn:hover {
+        opacity: 0.9;
       }
-
-      .dialog-btn-primary {
-        background-color: var(--theme-color);
+      .toast-message {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #333;
         color: white;
+        padding: 12px 24px;
+        border-radius: 4px;
+        z-index: 1001;
+        animation: fadeInOut 3s ease-in-out;
+      }
+      @keyframes fadeInOut {
+        0% { opacity: 0; }
+        10% { opacity: 1; }
+        90% { opacity: 1; }
+        100% { opacity: 0; }
+      }
+      .error-message {
+        padding: 20px;
+        background: #ffebee;
+        color: #c62828;
+        border-radius: 5px;
+        text-align: center;
+        margin: 20px;
       }
     `;
-    document.head.appendChild(style);
   }
 
   /**
-   * @method _createElementFromHTML
-   * @description إنشاء عنصر DOM من سلسلة HTML
-   * @param {string} htmlString - سلسلة HTML
-   * @returns {HTMLElement}
    * @private
+   * إنشاء شريط البحث وإضافته للحاوية
    */
-  _createElementFromHTML(htmlString) {
-    const div = document.createElement('div');
-    div.innerHTML = htmlString.trim();
-    return div.firstChild;
-  }
-
-  /**
-   * @method _loadPersistentCache
-   * @description تحميل الذاكرة المؤقتة من localStorage
-   * @param {string} key - مفتاح التخزين
-   * @returns {Object}
-   * @private
-   */
-  _loadPersistentCache(key) {
-    try {
-      return JSON.parse(localStorage.getItem(key)) || {};
-    } catch (e) {
-      console.error('Failed to load cache:', e);
-      return {};
-    }
-  }
-
-  /**
-   * @method _savePersistentCache
-   * @description حفظ الذاكرة المؤقتة في localStorage
-   * @param {string} key - مفتاح التخزين
-   * @param {Object} data - البيانات للحفظ
-   * @private
-   */
-  _savePersistentCache(key, data) {
-    try {
-      localStorage.setItem(key, JSON.stringify(data));
-    } catch (e) {
-      console.error('Failed to save cache:', e);
-    }
-  }
-
-  /**
-   * @method _checkIconExists
-   * @description التحقق من وجود الأيقونة مع نظام متقدم لإدارة الطلبات
-   * @param {string} url - مسار الأيقونة
-   * @returns {Promise<boolean>}
-   * @private
-   */
-  async _checkIconExists(url) {
-    // تخطي التحقق للمسارات المحلية
-    if (!url.startsWith('http')) {
-      return true;
-    }
-
-    return new Promise((resolve) => {
-      const processRequest = async () => {
-        this._startPerformanceTimer('icon-check');
-        this._activeRequests++;
-
-        try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 3000);
-
-          const response = await fetch(url, {
-            method: 'HEAD',
-            cache: 'force-cache',
-            signal: controller.signal
-          });
-
-          clearTimeout(timeoutId);
-          resolve(response.ok);
-        } catch (error) {
-          if (error.name !== 'AbortError') {
-            console.warn(`Request failed for ${url}:`, error);
-          }
-          resolve(false);
-        } finally {
-          this._activeRequests--;
-          this._logPerformance('icon-check');
-          this._processQueue();
-        }
-      };
-
-      if (this._activeRequests < this._maxConcurrentRequests) {
-        processRequest();
-      } else {
-        this._requestQueue.push(processRequest);
-      }
-    });
-  }
-
-  /**
-   * @method _startPerformanceTimer
-   * @description بدء قياس أداء عملية معينة
-   * @param {string} timerName - اسم المؤقت
-   * @private
-   */
-  _startPerformanceTimer(timerName) {
-    if (this._enablePerformanceLogging) {
-      this._performanceTimers[timerName] = performance.now();
-    }
-  }
-
-  /**
-   * @method _logPerformance
-   * @description تسجيل وقت أداء عملية
-   * @param {string} timerName - اسم المؤقت
-   * @private
-   */
-  _logPerformance(timerName) {
-    if (this._enablePerformanceLogging && this._performanceTimers[timerName]) {
-      const duration = performance.now() - this._performanceTimers[timerName];
-      console.log(`[Performance] ${timerName}: ${duration.toFixed(2)}ms`);
-    }
-  }
-
-  /**
-   * @method _getFallbackIcon
-   * @description الحصول على أيقونة افتراضية
-   * @param {string} [appName] - اسم التطبيق (اختياري)
-   * @returns {string} رابط الأيقونة الافتراضية
-   * @private
-   */
-  _getFallbackIcon(appName = '') {
-    return '/icons/apps/default.png';
-  }
-
-  /**
-   * @method _createSearchBar
-   * @description إنشاء شريط البحث مع تحسينات الوصول
-   * @returns {HTMLElement}
-   * @private
-   */
-  _createSearchBar() {
-    // [معدل] مع تحسينات الوصول
+  _renderSearchBar() {
     const searchContainer = document.createElement('div');
     searchContainer.className = 'search-container';
 
-    const searchBar = document.createElement('input');
-    searchBar.type = 'text';
-    searchBar.placeholder = 'ابحث عن تطبيق...';
-    searchBar.className = 'search-bar';
-    searchBar.setAttribute('aria-label', 'بحث عن التطبيقات');
-    searchBar.addEventListener('input', (e) => this._filterApps(e.target.value));
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = '🔍 ابحث عن تطبيق...';
+    input.className = 'search-bar';
+    input.setAttribute('aria-label', 'بحث عن التطبيقات');
+    input.addEventListener('input', (e) => this._filterApps(e.target.value));
 
-    searchContainer.appendChild(searchBar);
-    return searchContainer;
+    searchContainer.appendChild(input);
+    this.container.appendChild(searchContainer);
   }
 
   /**
-   * @method _filterApps
-   * @description تصفية التطبيقات حسب نص البحث مع تحسينات الأداء
-   * @param {string} searchTerm
    * @private
+   * تصفية التطبيقات حسب الاسم أو الوصف
+   * @param {string} term - مصطلح البحث
    */
-  _filterApps(searchTerm) {
-    // [معدل] مع تحسينات الأداء
-    const term = searchTerm.toLowerCase().trim();
+  _filterApps(term) {
+    const keyword = term.toLowerCase().trim();
+    this.filteredApps = !keyword
+      ? [...this.options.appsData]
+      : this.options.appsData.filter(app =>
+        app.name.toLowerCase().includes(keyword) ||
+        (app.description && app.description.toLowerCase().includes(keyword)) ||
+        (app.packageName && app.packageName.toLowerCase().includes(keyword))
+      );
 
-    if (!term) {
-      this.filteredApps = [...this.options.appsData];
+    this._renderAppsGrid();
+  }
+
+  /**
+   * @private
+   * عرض شبكة التطبيقات بعد التصفية
+   */
+  _renderAppsGrid() {
+    // إزالة الشبكة القديمة إذا كانت موجودة
+    const oldGrid = this.container.querySelector('.apps-grid');
+    if (oldGrid) oldGrid.remove();
+
+    const grid = document.createElement('div');
+    grid.className = 'apps-grid';
+
+    if (this.filteredApps.length === 0) {
+      grid.innerHTML = '<div class="no-results">لا توجد تطبيقات مطابقة للبحث</div>';
     } else {
-      this.filteredApps = this.options.appsData.filter(app => {
-        const appName = app.name.toLowerCase();
-        const packageName = app.packageName?.toLowerCase() || '';
-        return appName.includes(term) || packageName.includes(term);
+      this.filteredApps.forEach(app => {
+        const card = this._createAppCard(app);
+        grid.appendChild(card);
       });
     }
 
-    this.currentPage = 1;
-    this.renderAppsGrid();
+    this.container.appendChild(grid);
+    this._setupIntersectionObserver();
   }
 
   /**
-   * @method _defaultAppsData
-   * @description إنشاء بيانات افتراضية للتطبيقات
-   * @returns {Array}
    * @private
-   */
-  _defaultAppsData() {
-    return [
-      { id: 1, name: "متجر الارقام", packageName: "com.arqam.store", icon: null, price: "4.99" },
-      { id: 2, name: "Bigo Live", packageName: "sg.bigo.live", icon: null, price: "3.99" },
-      { id: 3, name: "Likee", packageName: "video.like", icon: null, price: "5.99" },
-      { id: 4, name: "MICO", packageName: "com.mico", icon: null, price: "4.49" },
-      { id: 5, name: "Yoho", packageName: "com.voicechat.live.group", icon: null, price: "3.99" },
-      { id: 6, name: "LIKE", packageName: "com.like.like", icon: null, price: "4.99" },
-      { id: 7, name: "TalkTalk", packageName: "com.mole.talktalk", icon: null, price: "5.99" },
-      { id: 8, name: "PartyStar", packageName: "sg.partying.lcb.android", icon: null, price: "6.99" },
-      { id: 9, name: "Hiya", packageName: "com.global.live", icon: null, price: "4.49" },
-      { id: 10, name: "Poppo", packageName: "com.baitu.qingshu", icon: null, price: "5.49" },
-      { id: 11, name: "4Fun", packageName: "com.nebula.mamu.lite", icon: null, price: "3.99" },
-      { id: 12, name: "Xena Live", packageName: "xena.live.app", icon: null, price: "5.99" },
-      { id: 13, name: "Sugo Chat", packageName: "com.voicemaker.android", icon: null, price: "4.49" },
-      { id: 14, name: "Yaahlan Chat", packageName: "com.immomo.biz.yaahlan", icon: null, price: "3.99" },
-      { id: 15, name: "Migo Live", packageName: "com.migo.mobile", icon: null, price: "4.99" },
-      { id: 16, name: "Coco Live", packageName: "com.ollalive.mobile", icon: null, price: "5.99" },
-      { id: 17, name: "Habby Chat", packageName: "com.habby.mobile", icon: null, price: "4.99" },
-      { id: 18, name: "Honey Jar", packageName: "com.live.honey", icon: null, price: "3.99" },
-      { id: 19, name: "HiYo Chat", packageName: "com.chatchill.app", icon: null, price: "4.49" },
-      { id: 20, name: "Dimo Live", packageName: "live.dimo.iDimo", icon: null, price: "3.99" },
-      { id: 21, name: "Layla Chat", packageName: "com.layla.chat", icon: null, price: "5.49" },
-      { id: 22, name: "Tami Chat", packageName: "com.ysl.talk", icon: null, price: "3.99" },
-      { id: 23, name: "Waho Live", packageName: "com.waho.live", icon: null, price: "4.99" },
-      { id: 24, name: "Ayome Chat", packageName: "com.ayome.sg", icon: null, price: "5.99" },
-      { id: 25, name: "Haki Chat", packageName: "com.haki.mobile", icon: null, price: "3.49" },
-      { id: 26, name: "Yoyo Chat", packageName: "com.fun.share", icon: null, price: "4.99" },
-      { id: 27, name: "Oohla Chat", packageName: "com.yuhuankj.tmxq", icon: null, price: "5.49" },
-      { id: 28, name: "Ligo Live", packageName: "com.wooya.mobile", icon: null, price: "6.99" },
-      { id: 29, name: "Lama Chat", packageName: "com.wenext.lama", icon: null, price: "4.49" },
-      { id: 30, name: "Azal Live", packageName: "com.hk.azal.live", icon: null, price: "5.99" },
-      { id: 31, name: "Beela Chat", packageName: "com.safehappy.safechat", icon: null, price: "3.99" },
-      { id: 32, name: "Binmo Live", packageName: "com.binmolive.lite", icon: null, price: "4.99" },
-      { id: 33, name: "Lami Chat", packageName: "com.yinyuan.mobile", icon: null, price: "5.49" },
-      { id: 34, name: "Light Chat", packageName: "com.halo.mobile", icon: null, price: "3.99" },
-      { id: 35, name: "Habi Chat", packageName: "com.global.habi", icon: null, price: "4.99" },
-      { id: 36, name: "Taka Chat", packageName: "com.taka.vhgyk", icon: null, price: "5.99" },
-      { id: 37, name: "Waaw Chat", packageName: "com.bufallobill.pikatburungributmerdu", icon: null, price: "3.49" },
-      { id: 38, name: "Higo Chat", packageName: "com.global.hiyapro", icon: null, price: "4.99" },
-      { id: 39, name: "Wayak Chat", packageName: "com.wenext.wayak", icon: null, price: "5.49" },
-      { id: 40, name: "Kiyo Live", packageName: "com.kiyo.mobile", icon: null, price: "6.99" },
-      { id: 41, name: "Lit Chat", packageName: "com.shujiu.litchat2", icon: null, price: "4.49" },
-      { id: 42, name: "Hoby Chat", packageName: "com.chatie.cn", icon: null, price: "3.99" },
-      { id: 43, name: "Gimmy Live", packageName: "com.gimme.mobile", icon: null, price: "5.99" },
-      { id: 44, name: "Olamet Chat", packageName: "com.olamet.mobile", icon: null, price: "4.99" },
-      { id: 45, name: "Saada Chat", packageName: "com.global.saada", icon: null, price: "3.99" },
-      { id: 46, name: "Amar Chat", packageName: "com.immomo.biz.ddoversea", icon: null, price: "4.49" },
-      { id: 47, name: "Waki Star", packageName: "wyc.sta.hrd", icon: null, price: "5.99" },
-      { id: 48, name: "So Match!", packageName: "com.somatch.android", icon: null, price: "3.99" },
-      { id: 49, name: "Yooy Live", packageName: "com.yooy.live", icon: null, price: "4.99" },
-      { id: 50, name: "Soul Chill", packageName: "com.live.soulchill", icon: null, price: "5.49" },
-      { id: 50, name: "Soul Chat", packageName: "com.ylhl.soulchat", icon: null, price: "5.49" },
-      { id: 51, name: "Tango Live", packageName: "com.sgiggle.production", icon: null, price: "6.99" },
-      { id: 51, name: "Tada Chat", packageName: "com.vpb.popo", icon: null, price: "6.99" },
-      { id: 52, name: "Laki Chat", packageName: "chat.laki.android", icon: null, price: "4.49" },
-      { id: 53, name: "Up Fun", packageName: "com.upfun.mobile", icon: null, price: "3.99" },
-      { id: 54, name: "Top Top", packageName: "com.game.friends.android", icon: null, price: "4.99" },
-      { id: 55, name: "Top Voice", packageName: "com.linkedaudio.channel", icon: null, price: "5.99" },
-      { id: 56, name: "Amo Chat", packageName: "com.xiaoyu.amo", icon: null, price: "3.99" },
-      { id: 57, name: "Party Hero", packageName: "livestream.inslive.live", icon: null, price: "6.49" },
-      { id: 58, name: "Majlis", packageName: "com.party.go.android", icon: null, price: "4.99" },
-      { id: 59, name: "Asha Live", packageName: "com.helmsmanintl.migao", icon: null, price: "5.99" },
-      { id: 60, name: "Chamet Live", packageName: "com.hkfuliao.chamet", icon: null, price: "4.49" },
-      { id: 61, name: "Hooka Chat", packageName: "com.funni.hooka", icon: null, price: "3.99" },
-      { id: 62, name: "HalaMe Chat", packageName: "com.halamate.app", icon: null, price: "4.99" },
-      { id: 63, name: "Sodfa Chat", packageName: "sod.faa.vocca", icon: null, price: "5.49" },
-      { id: 64, name: "Nabd Live", packageName: "Nabd.live", icon: null, price: "3.99" },
-      { id: 65, name: "Soul Star", packageName: "com_maidocha", icon: null, price: "6.99" },
-      { id: 66, name: "Moli Star", packageName: "Moli.star.chat", icon: null, price: "4.49" },
-      { id: 67, name: "Wego Party", packageName: "com.wegolive.android", icon: null, price: "5.99" },
-      { id: 68, name: "Yami Star", packageName: "com.grad.def", icon: null, price: "4.99" },
-      { id: 69, name: "Fofo Chat", packageName: "com.inhobichat.hobichat", icon: null, price: "3.99" },
-      { id: 70, name: "Pota Live", packageName: "potaa.zzz.world", icon: null, price: "5.49" },
-      { id: 71, name: "Kwai Live", packageName: "com.kwai.video", icon: null, price: "4.99" },
-      { id: 72, name: "Mico Live", packageName: "com.mico.live", icon: null, price: "6.99" },
-      { id: 73, name: "Ditto Live", packageName: "com.ditto.mobile", icon: null, price: "3.99" },
-      { id: 74, name: "Soyo Chat", packageName: "SOYO.Live.Chat", icon: null, price: "4.49" },
-      { id: 75, name: "imo Live", packageName: "com.imo.android.imous", icon: null, price: "5.99" },
-      { id: 76, name: "Sahra Chat", packageName: "com.sahrachat.club", icon: null, price: "3.99" },
-      { id: 77, name: "Pawa Live", packageName: "com.smileparty.pawalive", icon: null, price: "4.99" },
-      { id: 78, name: "Junko Chat", packageName: "juo.nko.lio", icon: null, price: "5.49" },
-      { id: 79, name: "Kessmet Live", packageName: "kessmet.live.video", icon: null, price: "6.99" },
-      { id: 80, name: "Saya Chat", packageName: "chat.saya", icon: null, price: "4.49" },
-      { id: 81, name: "Dana Chat", packageName: "com.sync.partynow.company", icon: null, price: "3.99" },
-      { id: 82, name: "Nawa Live", packageName: "com.nw.nawa.voice", icon: null, price: "5.99" },
-      { id: 83, name: "Vova Chat", packageName: "com.vova.app", icon: null, price: "4.99" },
-      { id: 84, name: "Sama Chat", packageName: "com.jibjoy.app", icon: null, price: "3.99" },
-      { id: 85, name: "Kessmet Chat", packageName: "com.halo.star", icon: null, price: "5.49" },
-      { id: 85, name: "Halo Star", packageName: "sai.gac.hat", icon: null, price: "5.49" },
-      { id: 86, name: "MeYo", packageName: "com.pita.oyem", icon: null, price: "6.99" },
-      { id: 87, name: "Likee Saya", packageName: "video.like.lite", icon: null, price: "4.49" },
-      { id: 88, name: "Hayuki Chat", packageName: "com.hayoparty.chat", icon: null, price: "3.99" },
-      { id: 89, name: "Fun Up", packageName: "com.funup.app", icon: null, price: "5.99" },
-      { id: 90, name: "Joyo Live", packageName: "com.joyolive666.stream", icon: null, price: "4.99" },
-      { id: 91, name: "Kiti Live", packageName: "com.kiti.chat.android", icon: null, price: "3.99" },
-      { id: 92, name: "Sala Live", packageName: "com.polaris.sala", icon: null, price: "5.49" },
-      { id: 93, name: "Hami Party", packageName: "org.nown.ciefq", icon: null, price: "6.99" },
-      { id: 94, name: "RoStar", packageName: "rostar_chat", icon: null, price: "4.49" },
-      { id: 95, name: "Super Live", packageName: "com.superlive.liveapp", icon: null, price: "5.99" },
-      { id: 96, name: "MR7BA Chat", packageName: "com.yanan.voicegame", icon: null, price: "3.99" },
-      { id: 97, name: "Fancy Live", packageName: "com.higolive.mobile", icon: null, price: "4.99" },
-      { id: 98, name: "Hi Party", packageName: "com.baori.hiparty", icon: null, price: "5.49" },
-      { id: 99, name: "Maza Chat", packageName: "com.happymeet.amo", icon: null, price: "6.99" },
-      { id: 100, name: "Star Maker", packageName: "com.starmakerinteractive.starmaker", icon: null, price: "4.49" },
-      { id: 101, name: "Karawan Chat", packageName: "com.ohla.socialapps", icon: null, price: "3.99" },
-      { id: 102, name: "LaYam Chat", packageName: "com.bofu.chat.layam", icon: null, price: "5.99" },
-      { id: 103, name: "Mango Live", packageName: "com.wheat.mango", icon: null, price: "4.99" },
-      { id: 104, name: "Yalla Live", packageName: "com.weieyu.yalla", icon: null, price: "3.99" },
-      { id: 105, name: "7 Star", packageName: "com.seven.star", icon: null, price: "5.49" },
-      { id: 106, name: "Chirp Chat", packageName: "chirp.chat", icon: null, price: "6.99" },
-      { id: 107, name: "OPA Live", packageName: "opa.live", icon: null, price: "4.49" },
-      { id: 108, name: "Bobo Chat", packageName: "com_duiud_bobo", icon: null, price: "3.99" },
-      { id: 109, name: "Saba Chat", packageName: "com.wooyee.hlah", icon: null, price: "5.99" },
-      { id: 110, name: "Tamil", packageName: "com.tamil.app", icon: null, price: "4.99" },
-      { id: 111, name: "Live You", packageName: "com.live.you", icon: null, price: "3.99" },
-      { id: 112, name: "Mix You", packageName: "com.mix.you", icon: null, price: "5.49" },
-      { id: 113, name: "Sheila Chat", packageName: "com.sheila.chat", icon: null, price: "6.99" },
-      { id: 114, name: "Alo Chat", packageName: "com.alo.chat", icon: null, price: "4.49" },
-      { id: 115, name: "Salam Chat", packageName: "com.xfaceline.wagas", icon: null, price: "3.99" },
-      { id: 116, name: "Sparty Chat", packageName: "com.sparty.chat", icon: null, price: "5.99" },
-      { id: 117, name: "Hawa Chat", packageName: "com.hawatalk.live", icon: null, price: "4.99" },
-      { id: 118, name: "Ab Live", packageName: "com.ab.live", icon: null, price: "3.99" },
-      { id: 119, name: "Lions Chat", packageName: "com.lions.mobile", icon: null, price: "5.49" },
-      { id: 120, name: "IPTV", packageName: "com.iptv.app", icon: null, price: "6.99" }
-    ];
-  }
-
-  /**
-   * @method _createAppCard
-   * @description إنشاء بطاقة تطبيق بتأثيرات 3D مع تحسينات كاملة
-   * @param {Object} app - بيانات التطبيق
-   * @returns {HTMLElement} عنصر بطاقة التطبيق
-   * @private
+   * إنشاء بطاقة تطبيق واحدة لعرضها في الشبكة
+   * @param {AppData} app - بيانات التطبيق
+   * @returns {HTMLElement} - عنصر البطاقة الجاهز للإدراج
    */
   _createAppCard(app) {
-    // [معدل] مع تحسينات كاملة
     const card = document.createElement('div');
     card.className = 'app-card';
-    card.dataset.appId = app.id;
-
-    const iconImg = document.createElement('img');
-    iconImg.className = 'app-icon';
-    iconImg.alt = `${app.name} icon`;
-    iconImg.loading = 'lazy';
-    iconImg.decoding = 'async';
-
-    // إذا كان التحميل التدريجي معطلاً، تحميل الأيقونة مباشرة
-    if (!this.options.lazyLoadThreshold ||
-      this.filteredApps.length <= this.options.lazyLoadThreshold) {
-      iconImg.src = app.icon;
-    } else {
-      // وضع صورة فارغة أولاً
-      iconImg.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48L3N2Zz4=';
-    }
-    card.setAttribute('aria-label', `تطبيق ${app.name}`);
-    card.setAttribute('role', 'button');
     card.tabIndex = 0;
+    card.setAttribute('role', 'button');
+    card.setAttribute('aria-label', `فتح تفاصيل تطبيق ${app.name}`);
 
-    // تأثيرات 3D
-    card.style.transformStyle = 'preserve-3d';
-    card.style.transition = 'transform 0.5s ease, box-shadow 0.3s ease';
+    // أيقونة التطبيق مع التحميل البطيء
+    const icon = document.createElement('img');
+    icon.className = 'app-icon';
+    icon.alt = `${app.name} icon`;
+    icon.loading = 'lazy';
+    icon.dataset.src = app.icon || '/icons/apps/default.png';
+    icon.src = ''; // سيتم تحميله عبر IntersectionObserver
 
-    // إنشاء المحتوى
-    const iconContainer = document.createElement('div');
-    iconContainer.className = 'app-icon-container';
+    // fallback في حال فشل تحميل الأيقونة
+    icon.onerror = () => {
+      icon.src = this._cachedFallbackIcon || '/icons/apps/default.png';
+    };
 
-    iconImg.onerror = () => {
-      // حل مشكلة: منع التحميل اللانهائي بواسطة إيقاف المحاولات بعد الخطأ
-      iconImg.src = this._getFallbackIcon();
-      // إزالة معالج الأخطاء بعد الأستخدام
-      iconImg.onerror = null;
-    }
+    // اسم التطبيق
+    const name = document.createElement('div');
+    name.className = 'app-name';
+    name.textContent = app.name || 'بدون اسم';
 
-    iconContainer.appendChild(iconImg);
+    // السعر
+    const price = document.createElement('div');
+    price.className = 'app-price';
+    price.textContent = app.price ? `$${app.price.toFixed(2)}` : 'مجاني';
 
-    const nameElement = document.createElement('div');
-    nameElement.className = 'app-name';
-    nameElement.textContent = app.name;
-
-    const footerElement = document.createElement('div');
-    footerElement.className = 'app-footer';
-    footerElement.textContent = `$${app.price}`;
-
-    const logoElement = document.createElement('div');
-    logoElement.className = 'app-logo';
-    logoElement.style.backgroundImage = `url(${this.options.logoUrl})`;
-    logoElement.setAttribute('aria-hidden', 'true');
-
-    // تجميع العناصر
-    card.append(iconContainer, nameElement, footerElement, logoElement);
-
-    // إضافة تأثيرات التحويم 3D
-    this._setup3DHoverEffects(card);
-
-    // أحداث النقر والضغط بالزر
-    card.addEventListener('click', () => this._showDialog(app));
+    // التفاعل عند النقر
+    card.addEventListener('click', () => this._openAppDialog(app));
     card.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
-        this._showDialog(app);
+        this._openAppDialog(app);
       }
     });
 
+    // تجميع العناصر
+    card.append(icon, name, price);
     return card;
   }
 
   /**
-   * @method _setup3DHoverEffects
-   * @description إعداد تأثيرات التحويم ثلاثية الأبعاد مع تحسينات الأداء
-   * @param {HTMLElement} card - عنصر بطاقة التطبيق
    * @private
+   * عرض نافذة تفاصيل التطبيق عند النقر
+   * @param {AppData} app - بيانات التطبيق
    */
-  _setup3DHoverEffects(card) {
-    // [معدل] مع تحسينات الأداء
-    let animationFrame;
-
-    const handleMouseMove = (e) => {
-      cancelAnimationFrame(animationFrame);
-
-      animationFrame = requestAnimationFrame(() => {
-        const rect = card.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        const centerX = rect.width / 2;
-        const centerY = rect.height / 2;
-
-        const angleX = (y - centerY) / 20;
-        const angleY = (centerX - x) / 20;
-
-        card.style.transform = `perspective(1000px) rotateX(${angleX}deg) rotateY(${angleY}deg) scale(1.05)`;
-        card.style.boxShadow = '0 15px 30px rgba(0,0,0,0.3)';
-      });
-    };
-
-    const handleMouseLeave = () => {
-      cancelAnimationFrame(animationFrame);
-      card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale(1)';
-      card.style.boxShadow = '0 10px 20px rgba(0,0,0,0.2)';
-    };
-
-    card.addEventListener('mousemove', handleMouseMove);
-    card.addEventListener('mouseleave', handleMouseLeave);
-
-    // تنظيف المعالج عند التدمير
-    card._cleanup3DEffects = () => {
-      card.removeEventListener('mousemove', handleMouseMove);
-      card.removeEventListener('mouseleave', handleMouseLeave);
-      cancelAnimationFrame(animationFrame);
-    };
-  }
-
-  /**
-   * @method _showDialog
-   * @description عرض مربع حوار تفاصيل التطبيق مع تحسينات كاملة
-   * @param {Object} app
-   * @private
-   */
-  _showDialog(app) {
-    // [معدل] مع تحسينات كاملة
-    const overlay = document.createElement('div');
-    overlay.className = 'dialog-overlay';
-    overlay.setAttribute('role', 'dialog');
-    overlay.setAttribute('aria-modal', 'true');
-    overlay.setAttribute('aria-labelledby', 'dialog-title');
+  async _openAppDialog(app) {
+    // إغلاق أي نافذة مفتوحة حالياً
+    const existingDialog = document.querySelector('.app-dialog');
+    if (existingDialog) existingDialog.remove();
 
     const dialog = document.createElement('div');
-    dialog.className = 'dialog-content';
+    dialog.className = 'app-dialog';
+    dialog.style.backgroundColor = this.options.dialogBgColor || '#fff';
+    dialog.setAttribute('role', 'dialog');
+    dialog.setAttribute('aria-modal', 'true');
+    dialog.setAttribute('aria-labelledby', 'dialog-title');
 
-    // إنشاء محتوى مربع الحوار بشكل آمن
-    const header = document.createElement('div');
-    header.className = 'dialog-header';
+    // إضافة طبقة شفافة خلف النافذة
+    const overlay = document.createElement('div');
+    overlay.className = 'dialog-overlay';
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.right = '0';
+    overlay.style.bottom = '0';
+    overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
+    overlay.style.zIndex = '999';
+    overlay.addEventListener('click', () => {
+      dialog.remove();
+      overlay.remove();
+    });
 
-    const iconImg = document.createElement('img');
-    iconImg.src = app.icon;
-    iconImg.className = 'dialog-icon';
-    iconImg.alt = app.name;
-    iconImg.onerror = () => {
-      iconImg.src = this._getFallbackIcon(app.name);
+    // تحميل الأيقونة fallback إذا كانت مفقودة
+    let iconSrc = app.icon;
+    if (!iconSrc || iconSrc === '/icons/apps/default.png') {
+      iconSrc = this._cachedFallbackIcon || '/icons/apps/default.png';
+    }
+
+    dialog.innerHTML = `
+      <div class="dialog-header">
+        <h2 id="dialog-title">${app.name || 'تطبيق غير معروف'}</h2>
+        <button class="close-btn" aria-label="إغلاق">✖</button>
+      </div>
+      <div class="dialog-body">
+        <img src="${iconSrc}" alt="${app.name}" class="dialog-icon" />
+        <p><strong>السعر:</strong> ${app.price ? `$${app.price.toFixed(2)}` : 'مجاني'}</p>
+        ${app.description ? `<p><strong>الوصف:</strong> ${app.description}</p>` : ''}
+        ${app.packageName ? `<p><strong>اسم الحزمة:</strong> ${app.packageName}</p>` : ''}
+        <button class="buy-btn">شراء الآن</button>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+    document.body.appendChild(dialog);
+
+    // التركيز على النافذة المنبثقة للأكسيسيبيلتي
+    dialog.focus();
+
+    // إغلاق النافذة
+    const closeBtn = dialog.querySelector('.close-btn');
+    closeBtn.onclick = () => {
+      dialog.remove();
+      overlay.remove();
     };
 
-    const titleElement = document.createElement('div');
-    titleElement.className = 'dialog-title';
-    titleElement.textContent = app.name;
-
-    header.appendChild(iconImg);
-    header.appendChild(titleElement);
-
-    const body = document.createElement('div');
-    body.className = 'dialog-body';
-
-    const priceElement = document.createElement('p');
-    priceElement.textContent = `سعر التطبيق: $${app.price}`;
-
-    const quantityContainer = document.createElement('div');
-    quantityContainer.className = 'quantity-selector';
-
-    const minusBtn = document.createElement('button');
-    minusBtn.className = 'quantity-btn minus';
-    minusBtn.textContent = '-';
-
-    const quantityInput = document.createElement('input');
-    quantityInput.type = 'number';
-    quantityInput.className = 'quantity-input';
-    quantityInput.value = '1';
-    quantityInput.min = '1';
-    quantityInput.max = '10';
-
-    const plusBtn = document.createElement('button');
-    plusBtn.className = 'quantity-btn plus';
-    plusBtn.textContent = '+';
-
-    quantityContainer.appendChild(minusBtn);
-    quantityContainer.appendChild(quantityInput);
-    quantityContainer.appendChild(plusBtn);
-
-    body.appendChild(priceElement);
-    body.appendChild(quantityContainer);
-
-    const footer = document.createElement('div');
-    footer.className = 'dialog-footer';
-
-    const cancelBtn = document.createElement('button');
-    cancelBtn.className = 'dialog-btn dialog-btn-secondary';
-    cancelBtn.textContent = 'إلغاء';
-
-    const buyBtn = document.createElement('button');
-    buyBtn.className = 'dialog-btn dialog-btn-primary';
-    buyBtn.style.backgroundColor = this.options.themeColor;
-    buyBtn.textContent = 'شراء';
-
-    footer.appendChild(cancelBtn);
-    footer.appendChild(buyBtn);
-
-    // تجميع العناصر
-    dialog.appendChild(header);
-    dialog.appendChild(body);
-    dialog.appendChild(footer);
-    overlay.appendChild(dialog);
-    document.body.appendChild(overlay);
-
-    // إضافة معالجات الأحداث
-    minusBtn.addEventListener('click', () => {
-      const value = parseInt(quantityInput.value);
-      if (value > 1) quantityInput.value = value - 1;
-    });
-
-    plusBtn.addEventListener('click', () => {
-      const value = parseInt(quantityInput.value);
-      if (value < 10) quantityInput.value = value + 1;
-    });
-
-    cancelBtn.addEventListener('click', () => {
-      document.body.removeChild(overlay);
-    });
-
-    buyBtn.addEventListener('click', () => {
-      const quantity = parseInt(quantityInput.value);
-      this._processOrder(app, quantity);
-      document.body.removeChild(overlay);
-    });
-
-    // إغلاق النافذة عند النقر خارجها
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) {
-        document.body.removeChild(overlay);
+    // إغلاق بالضغط على ESC
+    dialog.onkeydown = (e) => {
+      if (e.key === 'Escape') {
+        dialog.remove();
+        overlay.remove();
       }
-    });
-    requestAnimationFrame(() => {
-      buyBtn.focus();
-    });
+    };
+
+    // تنفيذ عملية الشراء
+    dialog.querySelector('.buy-btn').onclick = () => {
+      this._handlePurchase(app);
+      dialog.remove();
+      overlay.remove();
+    };
   }
 
   /**
-   * @method _processOrder
-   * @description معالجة طلب الشراء مع تحسينات الأمان
-   * @param {Object} app
-   * @param {number} quantity
    * @private
+   * عرض إشعار مؤقت للمستخدم
+   * @param {string} message - نص الإشعار
    */
-  _processOrder(app, quantity) {
-    // [معدل] مع تحسينات الأمان
-    if (!app || !quantity || quantity < 1 || quantity > this.options.maxQuantity) {
-      console.error('بيانات الطلب غير صالحة');
+  _showToast(message) {
+    // إزالة أي إشعارات سابقة
+    const existingToasts = document.querySelectorAll('.toast-message');
+    existingToasts.forEach(toast => toast.remove());
+
+    const toast = document.createElement('div');
+    toast.className = 'toast-message';
+    toast.textContent = message;
+    toast.setAttribute('aria-live', 'polite');
+
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+  }
+
+  /**
+   * @private
+   * التعامل مع عملية الشراء
+   * @param {AppData} app - بيانات التطبيق
+   */
+  _handlePurchase(app) {
+    if (!app || typeof app !== 'object') {
+      console.warn('⚠️ بيانات التطبيق غير صالحة للشراء.');
+      this._showToast('تعذر تنفيذ العملية: بيانات التطبيق غير صالحة.');
       return;
     }
 
-    const totalPrice = (parseFloat(app.price) * quantity).toFixed(2);
-    console.log(`تم طلب ${quantity} من تطبيق ${app.name} بسعر إجمالي $${totalPrice}`);
-    // يمكن إضافة منطق إرسال الطلب إلى السيرفر هنا
-  }
+    if (window.AppManager && typeof window.AppManager.purchaseApp === 'function') {
+      try {
+        window.AppManager.purchaseApp(app);
+        this._showToast(`✅ تم تنفيذ عملية شراء ${app.name}`);
 
-  /**
-   * @method renderAppsGrid
-   * @description تصيير شبكة التطبيقات مع تحسينات الأداء
-   * @private
-   */
-  renderAppsGrid() {
-    // [معدل] مع تحسينات الأداء
-    const appsGrid = document.createElement('div');
-    appsGrid.className = 'apps-grid';
-
-    const fragment = document.createDocumentFragment();
-    this.filteredApps.forEach(app => {
-      fragment.appendChild(this._createAppCard(app));
-    });
-
-    appsGrid.appendChild(fragment);
-
-    const existingGrid = this.container.querySelector('.apps-grid');
-    if (existingGrid) {
-      this.container.replaceChild(appsGrid, existingGrid);
+        // تسجيل الحدث للتحليلات
+        if (typeof gtag === 'function') {
+          gtag('event', 'purchase', {
+            'app_name': app.name,
+            'app_price': app.price || 0
+          });
+        }
+      } catch (error) {
+        console.error(`❌ فشل تنفيذ الشراء لـ ${app.name}:`, error);
+        this._showToast('حدث خطأ أثناء تنفيذ عملية الشراء.');
+      }
     } else {
-      this.container.appendChild(appsGrid);
+      console.warn('⚠️ AppManager غير متوفر أو غير متوافق.');
+      this._showToast('نظام الشراء غير متاح حالياً.');
     }
   }
 
-  /* ----------------------------------------- */
-  /* ----------- الوظائف الأساسية ------------ */
-  /* ----------------------------------------- */
-
-  // ... (بقية الدوال الأساسية كما هي مع التحسينات)
-
   /**
-   * @method render
-   * @description تصيير المكون الرئيسي مع دعم التحميل التدريجي
    * @public
+   * تحميل التطبيقات من API خارجي
+   * @param {string} endpoint - رابط الخدمة
+   * @returns {Promise<void>}
    */
-  render() {
-    this.container.innerHTML = '';
-    this.container.className = 'apps-tab-container';
+  async fetchAppsFromApi(endpoint) {
+    if (this._isFetching) {
+      console.warn('⚠️ عملية تحميل التطبيقات جارية بالفعل.');
+      return;
+    }
 
-    this.container.appendChild(this._createSearchBar());
+    this._isFetching = true;
+    this._showToast('جاري تحميل التطبيقات...');
 
-    const appsGrid = document.createElement('div');
-    appsGrid.className = 'apps-grid';
+    try {
+      const response = await ApiService.get(endpoint);
 
-    this.filteredApps.forEach(app => {
-      const card = this._createAppCard(app);
-      if (this.options.lazyLoadThreshold &&
-        this.filteredApps.length > this.options.lazyLoadThreshold) {
-        this._observer.observe(card);
+      if (!Array.isArray(response)) {
+        throw new Error('البيانات المستلمة غير صالحة.');
       }
-      appsGrid.appendChild(card);
-    });
 
-    this.container.appendChild(appsGrid);
+      // التحقق من صحة البيانات الأساسية
+      const validApps = response.filter(app =>
+        app && typeof app === 'object' && app.name && app.icon
+      );
+
+      if (validApps.length !== response.length) {
+        console.warn('⚠️ بعض بيانات التطبيقات غير صالحة وتم تصفيتها.');
+      }
+
+      // تحديث البيانات
+      this.options.appsData = validApps;
+      this.filteredApps = [...validApps];
+
+      // إعادة تحميل الأيقونات
+      this._iconsLoaded = false;
+      await this._loadIcons();
+
+      // إعادة عرض الشبكة
+      this._renderAppsGrid();
+
+      this._showToast(`تم تحميل ${validApps.length} تطبيق بنجاح`);
+    } catch (error) {
+      console.error('❌ فشل تحميل التطبيقات من API:', error);
+      this._showErrorMessage('حدث خطأ أثناء تحميل التطبيقات. يرجى المحاولة لاحقًا.');
+
+      // إعادة تعيين حالة التحميل الفاشل
+      this._iconsLoaded = false;
+    } finally {
+      this._isFetching = false;
+    }
   }
 
   /**
-   * @method destroy
-   * @description تنظيف الموارد والمؤقتات
+   * @private
+   * عرض رسالة خطأ داخل التاب
+   * @param {string} message - نص الرسالة
+   */
+  _showErrorMessage(message) {
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'error-message';
+    errorDiv.innerHTML = `
+      <svg width="24" height="24" viewBox="0 0 24 24" style="vertical-align: middle; margin-left: 5px;">
+        <path fill="#c62828" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+      </svg>
+      <span>${message}</span>
+      <button id="retry-btn" style="margin-left: 10px; background: #c62828; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">
+        إعادة المحاولة
+      </button>
+    `;
+
+    // إزالة المحتوى الحالي
+    this.container.innerHTML = '';
+    this.container.appendChild(errorDiv);
+
+    // إضافة حدث إعادة المحاولة
+    document.getElementById('retry-btn')?.addEventListener('click', () => {
+      this._init();
+    });
+  }
+
+  /**
    * @public
+   * إعادة تحميل التطبيقات يدويًا
+   * @param {AppData[]} [newData=[]] - بيانات جديدة للتطبيقات
+   * @returns {Promise<void>}
+   */
+  async reloadApps(newData = []) {
+    if (!Array.isArray(newData)) {
+      console.warn('⚠️ بيانات التطبيقات الجديدة يجب أن تكون مصفوفة');
+      return;
+    }
+
+    this.options.appsData = newData;
+    this.filteredApps = [...newData];
+
+    try {
+      await this._loadIcons();
+      this._renderAppsGrid();
+    } catch (error) {
+      console.error('❌ فشل إعادة تحميل التطبيقات:', error);
+      this._showErrorMessage('حدث خطأ أثناء إعادة تحميل التطبيقات.');
+    }
+  }
+
+  /**
+   * @public
+   * تفعيل الوضع التجريبي أو تخصيص الإعدادات
+   * @param {AppsTabOptions} newOptions - إعدادات جديدة
+   */
+  updateOptions(newOptions = {}) {
+    this.options = { ...this.options, ...newOptions };
+    this._injectStyles();
+    this._renderAppsGrid();
+  }
+
+  /**
+   * @public
+   * تنظيف الموارد عند التدمير
    */
   destroy() {
-    this._hideLoading();
-    
-    if (this._worker) {
-      this._worker.terminate();
+    // تحرير عناوين URL للأيقونات المخزنة
+    Object.values(this._iconCache).forEach(URL.revokeObjectURL);
+
+    if (this._cachedFallbackIcon) {
+      URL.revokeObjectURL(this._cachedFallbackIcon);
     }
-    
+
     if (this._observer) {
       this._observer.disconnect();
+      this._observer = null;
     }
-    
-    const cards = this.container.querySelectorAll('.app-card');
-    cards.forEach(card => {
-      card.removeEventListener('click', this._handleCardClick);
-      card.removeEventListener('keydown', this._handleCardKeydown);
-    });
-    
+
+    // إزالة الأنماط المحقونة
+    const style = document.getElementById('apps-tab-styles');
+    if (style) style.remove();
+
+    // إزالة المحتوى من الحاوية
     this.container.innerHTML = '';
+
+    console.log('✅ تم تنظيف موارد AppsTab بنجاح');
   }
 }
-
-if (typeof window !== 'undefined') {
-  window.AppsTab = AppsTab;
-}
-
-export { AppsTab };

@@ -119,8 +119,10 @@ app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
+  credentials: true,
+  maxAge: 86400
 }));
+
 
 app.use(hpp());
 
@@ -132,6 +134,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 app.use(compression());
 app.use(morgan('combined'));
+app.use(compression({ level: 6 }));
 
 // =============================================
 //             الملفات الثابتة
@@ -199,6 +202,9 @@ const iconsRouter = require('./routes/icons');
 app.use('/api/icons', iconsRouter);
 
 const cardsRouter = require('./routes/cards');
+const { uptime } = require('process');
+const csrfMiddleware = require('./middlewares/csrfMiddleware');
+const { cookie } = require('express-validator');
 app.use('/api/cards', cardsRouter);
 
 const serveStaticPage = (page) => (req, res) => {
@@ -229,6 +235,15 @@ app.use((err, req, res, next) => {
   res.status(500).json({
     error: 'حدث خطأ في الخادم',
     message: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
+
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'UP',
+    db: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    memory: process.memoryUsage(),
+    uptime: process.uptime()
   });
 });
 

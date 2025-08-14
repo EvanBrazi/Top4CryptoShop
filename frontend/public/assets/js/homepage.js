@@ -162,6 +162,11 @@ document.addEventListener('DOMContentLoaded', function () {
             .catch(err => console.error('❌ فشل تسجيل Service Worker:', err));
     }
 
+    const loadTab = async (tabName) => {
+        const module = await import(`./tabs/${tabName}.js`);
+        module.init();
+    }
+
 
     console.log('تم تحميل النظام بنجاح وجاهز للاختبار');
 });

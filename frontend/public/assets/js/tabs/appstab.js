@@ -47,6 +47,7 @@ export class AppsTab {
     this.options = {
       appsData: options.appsData || [],
       iconsBasePath: options.iconsBasePath || '/icons/apps/',
+      iconsList: options.iconsList || [],
       logoUrl: options.logoUrl || './assets/images/logo.png',
       lazyLoadThreshold: options.lazyLoadThreshold || 100,
       themeColor: options.themeColor || '#6a5acd',
@@ -73,6 +74,9 @@ export class AppsTab {
     /** @type {string} */
     this._cachedFallbackIcon = '';
 
+    /** @type {Map} */
+    this._iconExistenceCache = new Map();
+
     this._init();
   }
 
@@ -94,17 +98,23 @@ export class AppsTab {
     }
   }
 
+
+
   /**
-   * @private
-   * تحميل الأيقونات بشكل مجمّع مع إدارة الذاكرة
-   * @returns {Promise<void>}
-   */
+ * @private
+ * تحميل الأيقونات بشكل مجمّع مع إدارة الذاكرة
+ * @returns {Promise<void>}
+ */
   async _loadIcons() {
     if (this._iconsLoaded) return;
     this._iconsLoaded = true;
 
-    const batchSize = 5;
+    const batchSize = 3;
+    const delayMs = 300;
     const cacheIconFn = this.options.cacheIcon;
+    const apps = this.options.appsData;
+    this._iconCache = this._iconCache || {};
+    this._failedIcons = this._failedIcons || new Set();
 
     // تحميل الأيقونة الافتراضية مرة واحدة فقط
     if (!this._cachedFallbackIcon) {
@@ -113,81 +123,107 @@ export class AppsTab {
         if (!fallbackResponse.ok) throw new Error('Fallback icon not found');
         const fallbackBlob = await fallbackResponse.blob();
         this._cachedFallbackIcon = URL.createObjectURL(fallbackBlob);
+        this._iconCache['default'] = this._cachedFallbackIcon;
       } catch (error) {
         console.warn('❌ فشل تحميل الأيقونة الافتراضية:', error);
-        this._cachedFallbackIcon = ''; // منع الحلقة
+        this._cachedFallbackIcon = '/icons/apps/default.png';
       }
     }
 
-    // تقسيم التطبيقات إلى دفعات للتحميل
-    for (let i = 0; i < this.options.appsData.length; i += batchSize) {
-      const batch = this.options.appsData.slice(i, i + batchSize);
-      await this._loadIconBatch(batch, cacheIconFn);
-      await new Promise(resolve => setTimeout(resolve, 300)); // تجنب حظر UI
+    // تقسيم التطبيقات إلى دفعات وتحميلها بتأخير
+    for (let i = 0; i < apps.length; i += batchSize) {
+      const batch = apps.slice(i, i + batchSize);
+      const hadErrors = await this._loadIconBatch(batch, cacheIconFn);
+
+      // إذا ظهرت أخطاء، زد التأخير لتخفيف الضغط
+      if (hadErrors) delayMs += 300;
+      await new Promise(resolve => setTimeout(resolve, delayMs));
     }
   }
 
+
   /**
-   * @private
-   * تحميل دفعة من الأيقونات
-   * @param {AppData[]} batch - دفعة التطبيقات
-   * @param {Function} cacheIconFn - دالة التخزين
-   * @returns {Promise<void>}
-   */
+ * @private
+ * تحميل دفعة من الأيقونات
+ * @param {AppData[]} batch - دفعة التطبيقات
+ * @param {Function} cacheIconFn - دالة التخزين
+ * @returns {Promise<void>}
+ */
   async _loadIconBatch(batch, cacheIconFn) {
-    await Promise.all(batch.map(async (app) => {
-      const fileName = app.icon;
-      if (!fileName) {
-        app.icon = this._cachedFallbackIcon || '/icons/apps/default.png';
-        return;
+    const iconCache = this.options?.iconCache;
+    const fallbackIcon = this._cachedFallbackIcon || '/icons/apps/default.png';
+
+    for (const app of batch) {
+      const fileName = app?.icon;
+      if (!fileName || typeof fileName !== 'string') {
+        app.icon = fallbackIcon;
+        continue;
+      }
+
+      if (this._failedIcons.has(fileName)) {
+        app.icon = fallbackIcon;
+        continue;
       }
 
       if (this._iconCache[fileName]) {
         app.icon = this._iconCache[fileName];
-        return;
+        continue;
       }
 
       try {
         const iconUrl = this._getIconUrl(fileName);
-        const cachedBlob = await this.options.iconCache.get(iconUrl);
-        let blob = cachedBlob;
+        console.log('Icon url : ' + iconUrl);
 
-        if (!cachedBlob) {
-          const response = await fetch(iconUrl);
-          if (!response.ok) throw new Error(`لم يتم العثور على الأيقونة ${fileName}`);
-          blob = await response.blob();
-          await this.options.iconCache.set(iconUrl, blob); // التخزين في ذاكرة التخزين المؤقت
+        let blob = null;
+        if (iconCache?.get instanceof Function) {
+          blob = await iconCache.get(iconUrl);
         }
 
+        if (!blob) {
+          const response = await fetch(iconUrl);
+          if (!response.ok) throw new Error(`❌ لم يتم العثور على الأيقونة: ${fileName}`);
+          blob = await response.blob();
+
+          if (iconCache?.set instanceof Function) {
+            await iconCache.set(iconUrl, blob);
+          }
+        }
 
         const objectUrl = URL.createObjectURL(blob);
         app.icon = objectUrl;
         this._iconCache[fileName] = objectUrl;
       } catch (error) {
-        console.warn(`❌ فشل تحميل أيقونة ${app.name}:`, error);
-        app.icon = this._cachedFallbackIcon || '/icons/apps/default.png';
+        console.warn(`⚠️ فشل تحميل أيقونة ${app.name || fileName}:`, error);
+        this._failedIcons.add(fileName);
+        app.icon = this._getIconUrl(fileName);
       }
-    }));
+    }
   }
+
 
   /**
-   * @private
-   * توليد رابط الأيقونة بناءً على اسم الملف
-   * @param {string} fileName - اسم ملف الأيقونة
-   * @returns {string} - رابط كامل للأيقونة
-   */
+ * @private
+ * توليد رابط الأيقونة بناءً على اسم الملف
+ * @param {string} fileName
+ * @returns {string}
+ */
   _getIconUrl(fileName) {
-    if (!fileName || typeof fileName !== 'string') {
-      console.warn('⚠️ اسم الأيقونة غير صالح:', fileName);
-      return '/icons/apps/default.png';
+    if (this._iconExistenceCache.has(fileName)) {
+      return this._iconExistenceCache.get(fileName);
     }
 
-    const basePath = this.options.iconsBasePath.endsWith('/')
-      ? this.options.iconsBasePath
-      : this.options.iconsBasePath + '/';
+    console.log('File name in _getIconUrl: ' + fileName + ", iconsBasePath : " + this.options.iconsBasePath);
 
-    return `${basePath}${encodeURIComponent(fileName.trim())}`;
+    const exists = this.options.iconsList.includes(fileName);
+    const url = exists
+      ? `${this.options.iconsBasePath}${fileName}`
+      : `${this.options.iconsBasePath}default.png`;
+
+    this._iconExistenceCache.set(fileName, url);
+    return url;
   }
+
+
 
   /**
    * @private
@@ -475,7 +511,9 @@ export class AppsTab {
     // السعر
     const price = document.createElement('div');
     price.className = 'app-price';
-    price.textContent = app.price ? `$${app.price.toFixed(2)}` : 'مجاني';
+    price.textContent = app.price !== null
+      ? app.price.toFixed(2) + ' 💵'
+      : 'غير متوفر';
 
     // التفاعل عند النقر
     card.addEventListener('click', () => this._openAppDialog(app));

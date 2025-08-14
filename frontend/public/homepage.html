@@ -107,104 +107,108 @@
         </div>
     </div>
 
+    <div id="loading-screen">
+        <div class="loader-text">جاري التحميل...</div>
+    </div>
+
     <!-- المحتوى الرئيسي -->
     <div class="main-content">
         <div class="content">
             <div class="tabs-container">
                 <div class="tab-pane active" id="home-tab">
-                      <div class="cards-container">
-                            <div id="home-tab-cards-container" class="cards-grid-container">
-                                  <svg class="card-shadow" viewBox="0 0 100 100" preserveAspectRatio="none">
-    <path d="M0,0 L100,0 L100,100 L0,100 Z" fill="transparent"/>
-                    </svg>
-                            </div>
-                       </div>
-                    </div>
-                    <div class="tab-pane" id="apps-tab">
-                        <div class="apps-container" id="apps-tab-container">
-                            
+                    <div class="cards-container">
+                        <div id="home-tab-cards-container" class="cards-grid-container">
+                            <svg class="card-shadow" viewBox="0 0 100 100" preserveAspectRatio="none">
+                                <path d="M0,0 L100,0 L100,100 L0,100 Z" fill="transparent" />
+                            </svg>
                         </div>
                     </div>
-                    <div class="tab-pane" id="wallet-tab">
-                        <h2>إضافة رصيد</h2>
-                        <div class="wallet-content">
-                            <div class="balance-card">
-                                <h3>رصيدك الحالي</h3>
-                                <div class="balance-amount">0.00 <span>ر.س</span></div>
-                                <button class="add-funds-btn" type="button">إضافة رصيد</button>
-                            </div>
-                            <div class="payment-methods">
-                                <h3>طرق الدفع</h3>
-                                <!-- محتوى طرق الدفع -->
-                            </div>
+                </div>
+                <div class="tab-pane" id="apps-tab">
+                    <div class="apps-container" id="apps-tab-container">
+
+                    </div>
+                </div>
+                <div class="tab-pane" id="wallet-tab">
+                    <h2>إضافة رصيد</h2>
+                    <div class="wallet-content">
+                        <div class="balance-card">
+                            <h3>رصيدك الحالي</h3>
+                            <div class="balance-amount">0.00 <span>ر.س</span></div>
+                            <button class="add-funds-btn" type="button">إضافة رصيد</button>
+                        </div>
+                        <div class="payment-methods">
+                            <h3>طرق الدفع</h3>
+                            <!-- محتوى طرق الدفع -->
                         </div>
                     </div>
+                </div>
 
-                    <div class="tab-pane" id="payments-tab">
-                        <h2>دفعاتي</h2>
-                        <div class="payments-list">
-                            <div class="empty-state">
-                                <i class="fas fa-money-bill-wave"></i>
-                                <p>لا توجد دفعات سابقة</p>
-                            </div>
+                <div class="tab-pane" id="payments-tab">
+                    <h2>دفعاتي</h2>
+                    <div class="payments-list">
+                        <div class="empty-state">
+                            <i class="fas fa-money-bill-wave"></i>
+                            <p>لا توجد دفعات سابقة</p>
                         </div>
                     </div>
+                </div>
 
-                    <div class="tab-pane" id="portfolio-tab">
-                        <h2>محفظتي</h2>
-                        <div class="portfolio-stats">
-                            <div class="stat-card">
-                                <h3>القيمة الإجمالية</h3>
-                                <div class="stat-value">0.00 <span>ر.س</span></div>
-                            </div>
-                            <!-- المزيد من البطاقات الإحصائية -->
+                <div class="tab-pane" id="portfolio-tab">
+                    <h2>محفظتي</h2>
+                    <div class="portfolio-stats">
+                        <div class="stat-card">
+                            <h3>القيمة الإجمالية</h3>
+                            <div class="stat-value">0.00 <span>ر.س</span></div>
                         </div>
+                        <!-- المزيد من البطاقات الإحصائية -->
                     </div>
+                </div>
 
-                    <div class="tab-pane" id="orders-tab">
-                        <h2>طلباتي</h2>
-                        <div class="orders-table">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>رقم الطلب</th>
-                                        <th>التاريخ</th>
-                                        <th>الحالة</th>
-                                        <th>المبلغ</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr class="empty-row">
-                                        <td colspan="4">لا توجد طلبات سابقة</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                <div class="tab-pane" id="orders-tab">
+                    <h2>طلباتي</h2>
+                    <div class="orders-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>رقم الطلب</th>
+                                    <th>التاريخ</th>
+                                    <th>الحالة</th>
+                                    <th>المبلغ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="empty-row">
+                                    <td colspan="4">لا توجد طلبات سابقة</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane" id="security-tab">
+                    <h2>الحماية</h2>
+                    <div class="security-settings">
+                        <div class="setting-item">
+
                         </div>
+                        <!-- المزيد من إعدادات الحماية -->
                     </div>
+                </div>
 
-                    <div class="tab-pane" id="security-tab">
-                        <h2>الحماية</h2>
-                        <div class="security-settings">
-                            <div class="setting-item">
-
-                            </div>
-                            <!-- المزيد من إعدادات الحماية -->
-                        </div>
-                    </div>
-
-                    <div class="tab-pane" id="about-tab">
-                        <h2>من نحن</h2>
-                        <div class="about-content">
-                            <p>نحن شركة رائدة في مجال التكنولوجيا نقدم حلولاً متكاملة لعملائنا.</p>
-                            <div class="contact-info">
-                                <h3>معلومات التواصل</h3>
-                                <!-- معلومات التواصل -->
-                            </div>
+                <div class="tab-pane" id="about-tab">
+                    <h2>من نحن</h2>
+                    <div class="about-content">
+                        <p>نحن شركة رائدة في مجال التكنولوجيا نقدم حلولاً متكاملة لعملائنا.</p>
+                        <div class="contact-info">
+                            <h3>معلومات التواصل</h3>
+                            <!-- معلومات التواصل -->
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
     </div>
 
     <!-- طبقة التعتيم -->
@@ -279,13 +283,17 @@
                 <p>أنت مسؤول عن الحفاظ على سرية بيانات حسابك وكلمة المرور وتحديد من يصل إلى جهاز الكمبيوتر الخاص بك أو
                     التطبيق الخاص بنا, كما أنك توافق على قبول المسؤولية عن جميع الأنشطة التي تتم من خلال حسابك أو كلمة
                     المرور الخاصة بك.<br><br>
-                    إن جميع المعلومات التي يحصل عليها متجر Top4CryptoShop سرية للغاية ولا يطلع عليها إلا القائمين على المتجر بغرض
+                    إن جميع المعلومات التي يحصل عليها متجر Top4CryptoShop سرية للغاية ولا يطلع عليها إلا القائمين على
+                    المتجر بغرض
                     تنفيذ المعاملات ولن يقوم بنشرها أو بثها للغير ولن يقوم بمشاركة، أو بيع بياناتك الشخصية لأي طرف كان.
                     ( إن موظفينا مؤهلون ومدربون على احترام سرية المعلومات الشخصية لعملائنا. )<br><br>
-                    قد يستخدم متجر Top4CryptoShop هذه المعلومات من أجل تزويدك بالعروض أو المنتجات التي قد تكون مهتماً بها أو
-                    من أجل تحسين خدمات المتجر وتطويره لتقديم أفضل خدمة ممكنة أو لأي سبب آخر يراه متجر Top4CryptoShop مناسباً
+                    قد يستخدم متجر Top4CryptoShop هذه المعلومات من أجل تزويدك بالعروض أو المنتجات التي قد تكون مهتماً
+                    بها أو
+                    من أجل تحسين خدمات المتجر وتطويره لتقديم أفضل خدمة ممكنة أو لأي سبب آخر يراه متجر Top4CryptoShop
+                    مناسباً
                     لتعزيز تجربة استخدام المتجر.<br><br>
-                    تنويه: لا يقوم متجر Top4CryptoShop بجمع معلومات شخصية عن المستخدمين الزائرين أو متصفحي الموقع إلا إذا
+                    تنويه: لا يقوم متجر Top4CryptoShop بجمع معلومات شخصية عن المستخدمين الزائرين أو متصفحي الموقع إلا
+                    إذا
                     اختاروا تحديدًا وبمعرفتهم تقديم هذه المعلومات من خلال إنشائهم حساب في الموقع ويعتبر إنشاء الحساب في
                     الموقع موافقة من المستخدم على الخضوع لأحكام الخصوصية هذه وشروط الاستخدام.</p>
             </div>

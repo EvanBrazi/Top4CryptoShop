@@ -1,3 +1,8 @@
+/**
+ * @file appmanager.js
+ * @description نقطة البداية لتحميل بيانات التطبيقات وقائمة الأيقونات وربطها بكلاس AppsTab
+ * @author Top-Al9mh
+ */
 import { HomeTab } from "./tabs/hometab.js";
 import { AppsTab } from "./tabs/appstab.js";
 import ApiService from './services/apiService.js';
@@ -23,6 +28,8 @@ const localStorageIconCache = {
     const cachedData = localStorage.getItem(url);
     if (!cachedData) return null;
 
+    console.log('LocalStorageIconCache: ' + url);
+    
     // تحويل base64 مرة أخرى إلى Blob
     const byteString = atob(cachedData.split(',')[1]);
     const mimeString = cachedData.split(',')[0].split(':')[1].split(';')[0];
@@ -46,6 +53,50 @@ const localStorageIconCache = {
   }
 };
 
+/**
+ * @function transformAppsData
+ * @description تنظف وتحول بيانات التطبيقات دفعة واحدة
+ * @param {Array} rawData - مصفوفة التطبيقات الخام من JSON
+ * @returns {Array} - مصفوفة التطبيقات بعد التنظيف
+ */
+export function transformAppsData(rawData) {
+  return Array.isArray(rawData) ? rawData.map(app => {
+    const price = parseFloat(app.price);
+    const safeName = typeof app.name === 'string' ? app.name.trim() : 'بدون اسم';
+    const safeIcon = isValidImage(app.icon) ? app.icon.trim() : null;
+    const safeCategory = typeof app.category === 'string' ? app.category.trim() : 'غير مصنف';
+    const safeAvailable = Boolean(app.available);
+
+    return {
+      id: Number.isInteger(app.id) ? app.id : null,
+      name: safeName || 'بدون اسم',
+      icon: safeIcon || '/icons/apps/default.png',
+      category: safeCategory,
+      price: isNaN(price) ? null : price,
+      available: safeAvailable
+    };
+  }) : [];
+}
+
+/**
+ * @function isValidImage
+ * @description تتحقق من صلاحية اسم الصورة
+ * @param {string} filename - اسم ملف الصورة
+ * @returns {boolean}
+ */
+function isValidImage(filename) {
+  if (typeof filename !== 'string') return false;
+  const allowedExtensions = /\.(png|jpg|jpeg|svg|webp)$/i;
+  const isSafePath = !/^https?:\/\//i.test(filename);
+  return allowedExtensions.test(filename) && isSafePath;
+}
+
+
+/**
+ * @class AppManager
+ * @description تهيئة تطبيق عرض التطبيقات بتحميل البيانات وربطها بالكلاس
+ * @returns {new appmanager}
+ */
 export class AppManager {
   constructor(taberInstance) {
     // حفظ المرجع إلى taber
@@ -59,9 +110,6 @@ export class AppManager {
   }
 
   async initTabs() {
-    // تحميل بيانات التطبيقات
-    const appsData = await this.api.fetchData('/api/apps', 'appsData');
-
     this.tabs.home = new HomeTab({
       taber: this.taber/**تمرير المرجع */,
       containerId: 'home-tab-cards-container',
@@ -75,20 +123,42 @@ export class AppManager {
       }
     });
 
-    this.tabs.apps = new AppsTab({
-      taber: this.taber,
-      containerId: 'apps-tab-container',
-      options: {
-        appsData,
-        cacheIcon, // تمرير الدالة هنا
-        iconCache: localStorageIconCache,
-        themeColor: '#6a5acd',
-        dialogBgColor: '#ffffff',
-        enableServiceWorker: true,
-        enableWebWorker: true,
-        lazyLoadThreshold: 50
+    (async () => {
+      try {
+        // 🧠 إنشاء خدمة API
+        const api = new ApiService();
+
+        // 📦 تحميل بيانات التطبيقات من السيرفر
+        const rawAppsData = await api.fetchData('/api/apps', 'appsData');
+        const appsData = transformAppsData(rawAppsData);
+
+        // 📦 تحميل قائمة الأيقونات من السيرفر
+        const iconsListResponse = await api.fetchData('/api/icons-list', 'iconsList');
+        const iconsList = Array.isArray(iconsListResponse.icons) ? iconsListResponse.icons : [];
+
+
+        // 🎯 إنشاء كائن AppsTab وربط البيانات
+        new AppsTab({
+          containerId: 'apps-tab-container',
+          options: {
+            appsData,
+            iconsBasePath: '/icons/apps/',
+            iconsList,
+            cacheIcon: fetch,
+            iconCache: localStorageIconCache,
+            themeColor: '#6a5acd',
+            dialogBgColor: '#ffffff'
+          }
+        });
+      } catch (error) {
+        console.error('❌ فشل تهيئة مدير التطبيقات:', error);
+        const container = document.getElementById('apps-tab-container');
+        if (container) {
+          container.innerHTML = `<div class="apps-error">حدث خطأ أثناء تحميل التطبيقات. يرجى تحديث الصفحة.</div>`;
+        }
       }
-    });
+    })();
+
 
 
     /**

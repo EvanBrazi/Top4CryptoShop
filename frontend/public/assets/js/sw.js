@@ -21,10 +21,18 @@ self.addEventListener('install', event => {
 
 // 🔄 عند الطلب: أعد الملفات من الكاش إن وجدت
 self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request).then(response => {
-      // إذا وُجد الملف في الكاش، أعده، وإلا حمّله من الشبكة
-      return response || fetch(event.request);
-    })
-  );
+  if (event.request.url.includes('/icons') || event.request.url.includes('/assets')) {
+    event.respondWith(
+      caches.match(event.request).then(cached =>
+        cached || fetch(event.request).then(res => {
+          const cacheCopy = res.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, cacheCopy));
+          // إذا وُجد الملف في الكاش، أعده، وإلا حمّله من الشبكة
+          return res;
+        })
+      )
+    );
+  } else {
+    event.respondWith(fetch(event.request));
+  }
 });

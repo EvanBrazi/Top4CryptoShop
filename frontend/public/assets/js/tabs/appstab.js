@@ -151,7 +151,7 @@ export class AppsTab {
         position: relative;
         width: 100%;
         aspect-ratio: 1/1;
-        border-radius: 12px;
+        border-radius: auto;
         overflow: hidden;
         cursor: pointer;
         transition: all 0.3s ease;
@@ -170,6 +170,7 @@ export class AppsTab {
         display: flex;
         justify-content: center;
         align-items: center;
+        border-radius: 12px;
         background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
       }
 

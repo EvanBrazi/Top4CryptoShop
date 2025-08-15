@@ -19,7 +19,9 @@ export class AppsTab {
       maxConcurrentLoads: options.maxConcurrentLoads || 3,
       cacheStrategy: options.cacheStrategy || 'lazy',
       maxCachedIcons: options.maxCachedIcons || 30,
-      iconTTL: options.iconTTL || 24 * 60 * 60 * 1000 // 24 ساعة
+      iconTTL: options.iconTTL || 24 * 60 * 60 * 1000, // 24 ساعة
+      onCardClick: options.onCardClick || (() => {}),
+      onError: options.onError || (() => {})
     };
 
     // حالة التبويب
@@ -39,7 +41,9 @@ export class AppsTab {
       lastCleanup: Date.now() // آخر عملية تنظيف
     };
 
-    this._init();
+    this._init().catch(error => {
+      this.onError(error);
+    });
   }
 
   /* ---------------------------------- */
@@ -347,7 +351,7 @@ export class AppsTab {
 
     iconContainer.appendChild(icon);
     card.append(iconContainer, name);
-    card.addEventListener('click', () => this._openPurchaseDialog(app));
+    card.addEventListener('click', () => this.onCardClick(app));
 
     return card;
   }

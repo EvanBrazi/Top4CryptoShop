@@ -110,6 +110,5 @@
   { "id": 111, "name": "Bobo Chat", "icon": "com_duiud_bobo.png", "category": "دردشة", "price": "3.99", "available": true },
   { "id": 112, "name": "Saba Chat", "icon": "com_wooyee_hlah.png", "category": "دردشة", "price": "5.99", "available": true },
   { "id": 113, "name": "Hawa Chat", "icon": "com_hawatalk_live.png", "category": "دردشة", "price": "4.99", "available": true },
-  { "id": 114, "name": "Ab Live", "icon": "com_ab_live.png", "category": "دردشة", "price": "3.99", "available": true },
-  { "id": 115, "name": "Salam Chat", "icon": "com_xfaceline_wagas.png", "category": "دردشة", "price": "3.99", "available": true }
+  { "id": 114, "name": "Salam Chat", "icon": "com_xfaceline_wagas.png", "category": "دردشة", "price": "3.99", "available": true }
 ]

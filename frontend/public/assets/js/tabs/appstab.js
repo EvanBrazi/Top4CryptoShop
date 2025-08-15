@@ -2,13 +2,26 @@
  * @file appstab.js
  * @class AppsTab
  * @description تبويب التطبيقات مع نظام تحميل ذكي للأيقونات باستخدام IconManager
- * @version 9.0.0
+ * @version 10.0.0
  * @license MIT
  */
 
 import { IconManager } from '../core/iconmanager.js';
 
 export class AppsTab {
+  /**
+   * @constructor
+   * @param {Object} params - معاملات التهيئة
+   * @param {string} params.containerId - معرف عنصر الحاوية
+   * @param {Object} params.options - خيارات التهيئة
+   * @param {Array} params.options.appsData - بيانات التطبيقات
+   * @param {string} params.options.iconsBasePath - المسار الأساسي للأيقونات
+   * @param {string} params.options.themeColor - لون الثيم
+   * @param {number} params.options.maxConcurrentLoads - الحد الأقصى للتحميلات المتزامنة
+   * @param {string} params.options.cacheStrategy - استراتيجية الكاش (lazy/eager)
+   * @param {Function} params.options.onCardClick - دالة معالجة النقر على البطاقة
+   * @param {Function} params.options.onError - دالة معالجة الأخطاء
+   */
   constructor({ containerId, options = {} }) {
     this.container = document.getElementById(containerId);
     if (!this.container) throw new Error(`❌ عنصر الحاوية غير موجود: ${containerId}`);
@@ -27,8 +40,9 @@ export class AppsTab {
     // تهيئة IconManager
     this.iconManager = new IconManager({
       maxConcurrent: this.options.maxConcurrentLoads,
-      cacheSize: options.maxCachedIcons || 123,
-      ttl: options.iconTTL || 24 * 60 * 60 * 1000 // 24hour
+      maxItems: options.maxCachedIcons || 123,
+      ttl: options.iconTTL || 24 * 60 * 60 * 1000, // 24 ساعة
+      defaultIconUrl: this._getIconPath('default.png')
     });
 
     // حالة التبويب
@@ -42,7 +56,8 @@ export class AppsTab {
     // موارد النظام
     this.resources = {
       observer: null,
-      cleanupInterval: null
+      cleanupInterval: null,
+      resizeObserver: null
     };
 
     this._init().catch(error => {
@@ -54,13 +69,21 @@ export class AppsTab {
   /* --------- Core Functions --------- */
   /* ---------------------------------- */
 
+  /**
+   * تهيئة تبويب التطبيقات
+   * @private
+   * @returns {Promise<void>}
+   */
   async _init() {
     try {
+      this.state.loading = true;
       this._injectStyles();
-      this._renderSearchBar();
-      this._renderAppsGrid();
+      this._renderSkeletonLoading();
+      await this._renderSearchBar();
+      await this._renderAppsGrid();
       this._setupIntersectionObserver();
       this._setupMemoryManagement();
+      this._setupResponsiveBehavior();
 
       if (this.options.cacheStrategy === 'eager') {
         await this._preloadVisibleIcons();
@@ -69,9 +92,15 @@ export class AppsTab {
       this.state.error = error;
       console.error('فشل تهيئة تبويب التطبيقات:', error);
       this._showErrorState(error);
+    } finally {
+      this.state.loading = false;
     }
   }
 
+  /**
+   * حقن أنماط CSS المخصصة
+   * @private
+   */
   _injectStyles() {
     const styleId = 'apps-tab-styles';
     if (document.getElementById(styleId)) return;
@@ -81,13 +110,40 @@ export class AppsTab {
     style.textContent = `
       .apps-tab-container {
         --theme-color: ${this.options.themeColor};
+        --card-size: 120px;
+        position: relative;
+        min-height: 60vh;
+      }
+
+      .search-container {
+        padding: 15px;
+        position: sticky;
+        top: 0;
+        background: white;
+        z-index: 10;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      }
+
+      .search-bar {
+        width: 100%;
+        padding: 10px 15px;
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        font-size: 1rem;
+        outline: none;
+        transition: all 0.3s ease;
+      }
+
+      .search-bar:focus {
+        border-color: ${this.options.themeColor};
+        box-shadow: 0 0 0 2px rgba(106, 90, 205, 0.2);
       }
 
       .apps-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(var(--card-size), 1fr));
         gap: 15px;
-        padding: 10px;
+        padding: 15px;
         direction: rtl;
       }
 
@@ -142,12 +198,57 @@ export class AppsTab {
 
       /* أنماط الثيمات */
       .night-theme .app-card {
-        background: var(--night-card);
+        --card-bg: #2c3e50;
       }
       
       .night-theme .app-name {
-        background: var(--night-card);
-        color: var(--night-text);
+        color: #ecf0f1;
+      }
+
+      .night-theme .search-container {
+        background: #34495e;
+      }
+
+      .night-theme .search-bar {
+        background: #2c3e50;
+        color: #ecf0f1;
+        border-color: #7f8c8d;
+      }
+
+      /* حالة التحميل */
+      .skeleton-loading {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 5;
+      }
+
+      .skeleton-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(var(--card-size), 1fr));
+        gap: 15px;
+        padding: 15px;
+        width: 100%;
+      }
+
+      .skeleton-card {
+        width: 100%;
+        aspect-ratio: 1/1;
+        border-radius: 12px;
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+      }
+
+      @keyframes shimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
       }
 
       /* حالة الخطأ */
@@ -165,6 +266,32 @@ export class AppsTab {
         border-radius: 4px;
         margin-top: 10px;
         cursor: pointer;
+        transition: opacity 0.3s;
+      }
+
+      .retry-btn:hover {
+        opacity: 0.9;
+      }
+
+      /* حالة عدم وجود نتائج */
+      .empty-state {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 40px 20px;
+        color: #7f8c8d;
+      }
+
+      /* التكيف مع أحجام الشاشات */
+      @media (max-width: 768px) {
+        .apps-tab-container {
+          --card-size: 100px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .apps-tab-container {
+          --card-size: 80px;
+        }
       }
     `;
     document.head.appendChild(style);
@@ -174,7 +301,15 @@ export class AppsTab {
   /* -------- Icon Loading System ------- */
   /* ------------------------------------ */
 
+  /**
+   * إعداد مراقبة تقاطع العناصر (Intersection Observer)
+   * @private
+   */
   _setupIntersectionObserver() {
+    if (this.resources.observer) {
+      this.resources.observer.disconnect();
+    }
+
     this.resources.observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         const appId = entry.target.dataset.appId;
@@ -196,6 +331,12 @@ export class AppsTab {
     });
   }
 
+  /**
+   * تحميل أيقونة التطبيق
+   * @private
+   * @param {HTMLElement} cardElement - عنصر بطاقة التطبيق
+   * @returns {Promise<void>}
+   */
   async _loadAppIcon(cardElement) {
     const imgElement = cardElement.querySelector('.app-icon');
     const iconUrl = imgElement.dataset.src;
@@ -204,14 +345,22 @@ export class AppsTab {
     if (imgElement.src && imgElement.src !== '') return;
 
     try {
-      const objectUrl = await this.iconManager.load(iconUrl);
+      const objectUrl = await this.iconManager.getIcon(iconUrl);
       imgElement.src = objectUrl;
+      imgElement.onerror = () => {
+        imgElement.src = this._getIconPath('default.png');
+      };
     } catch (error) {
       console.warn(`فشل تحميل الأيقونة: ${iconUrl}`, error);
       imgElement.src = this._getIconPath('default.png');
     }
   }
 
+  /**
+   * تحميل مسبق للأيقونات المرئية
+   * @private
+   * @returns {Promise<void>}
+   */
   async _preloadVisibleIcons() {
     const visibleIcons = Array.from(document.querySelectorAll('.app-card'))
       .filter(card => {
@@ -225,68 +374,149 @@ export class AppsTab {
       })
       .map(card => card.querySelector('.app-icon').dataset.src);
 
-    await Promise.all(
-      visibleIcons.map(iconUrl => this.iconManager.load(iconUrl))
-    );
+    await this.iconManager.preloadIcons(visibleIcons);
   }
 
   /* ------------------------------------ */
   /* -------- Memory Management --------- */
   /* ------------------------------------ */
 
+  /**
+   * إدارة الذاكرة والتنظيف التلقائي
+   * @private
+   */
   _setupMemoryManagement() {
     // تنظيف الذاكرة كل 10 دقائق
+    if (this.resources.cleanupInterval) {
+      clearInterval(this.resources.cleanupInterval);
+    }
+
     this.resources.cleanupInterval = setInterval(() => {
       this.iconManager.clearCache();
     }, 10 * 60 * 1000);
 
     // تنظيف الذاكرة عند إخفاء الصفحة
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) {
-        this.iconManager.clearCache();
-      }
+    document.addEventListener('visibilitychange', this._handleVisibilityChange);
+  }
+
+  /**
+   * معالجة تغيير حالة رؤية الصفحة
+   * @private
+   */
+  _handleVisibilityChange = () => {
+    if (document.hidden) {
+      this.iconManager.clearCache();
+    }
+  }
+
+  /**
+   * إعداد سلوك التكيف مع أحجام الشاشات
+   * @private
+   */
+  _setupResponsiveBehavior() {
+    if (this.resources.resizeObserver) {
+      this.resources.resizeObserver.disconnect();
+    }
+
+    this.resources.resizeObserver = new ResizeObserver(() => {
+      this._adjustGridLayout();
     });
+
+    this.resources.resizeObserver.observe(this.container);
+  }
+
+  /**
+   * ضبط تخطيط الشبكة حسب حجم الشاشة
+   * @private
+   */
+  _adjustGridLayout() {
+    const containerWidth = this.container.clientWidth;
+    const cardSize = Math.max(80, Math.min(120, containerWidth / 4 - 20));
+    this.container.style.setProperty('--card-size', `${cardSize}px`);
   }
 
   /* ------------------------------------ */
   /* ---------- Rendering Methods ------- */
   /* ------------------------------------ */
 
-  _renderSearchBar() {
-    const searchContainer = document.createElement('div');
-    searchContainer.className = 'search-container';
+  /**
+   * عرض حالة التحميل المؤقت
+   * @private
+   */
+  _renderSkeletonLoading() {
+    const skeleton = document.createElement('div');
+    skeleton.className = 'skeleton-loading';
+    skeleton.innerHTML = `
+      <div class="skeleton-grid">
+        ${Array(12).fill('<div class="skeleton-card"></div>').join('')}
+      </div>
+    `;
+    this.container.appendChild(skeleton);
 
-    const searchInput = document.createElement('input');
-    searchInput.type = 'text';
-    searchInput.placeholder = '🔍 ابحث عن تطبيق...';
-    searchInput.className = 'search-bar';
-    searchInput.addEventListener('input', (e) => this._handleSearch(e.target.value));
-
-    searchContainer.appendChild(searchInput);
-    this.container.prepend(searchContainer);
+    // إزالة الهيكل بعد التحميل
+    setTimeout(() => {
+      skeleton.remove();
+    }, 500);
   }
 
-  _renderAppsGrid() {
-    this.container.querySelector('.apps-grid')?.remove();
+  /**
+   * عرض شريط البحث
+   * @private
+   * @returns {Promise<void>}
+   */
+  async _renderSearchBar() {
+    return new Promise((resolve) => {
+      const searchContainer = document.createElement('div');
+      searchContainer.className = 'search-container';
 
-    const grid = document.createElement('div');
-    grid.className = 'apps-grid';
+      const searchInput = document.createElement('input');
+      searchInput.type = 'text';
+      searchInput.placeholder = '🔍 ابحث عن تطبيق...';
+      searchInput.className = 'search-bar';
+      searchInput.addEventListener('input', (e) => this._handleSearch(e.target.value));
 
-    if (this.state.filteredApps.length === 0) {
-      grid.innerHTML = this._createEmptyState();
-    } else {
-      this.state.filteredApps.forEach(app => {
-        grid.appendChild(this._createAppCard(app));
-      });
-    }
-
-    this.container.appendChild(grid);
+      searchContainer.appendChild(searchInput);
+      this.container.appendChild(searchContainer);
+      resolve();
+    });
   }
 
+  /**
+   * عرض شبكة التطبيقات
+   * @private
+   * @returns {Promise<void>}
+   */
+  async _renderAppsGrid() {
+    return new Promise((resolve) => {
+      this.container.querySelector('.apps-grid')?.remove();
+
+      const grid = document.createElement('div');
+      grid.className = 'apps-grid';
+
+      if (this.state.filteredApps.length === 0) {
+        grid.innerHTML = this._createEmptyState();
+      } else {
+        this.state.filteredApps.forEach(app => {
+          grid.appendChild(this._createAppCard(app));
+        });
+      }
+
+      this.container.appendChild(grid);
+      resolve();
+    });
+  }
+
+  /**
+   * إنشاء بطاقة تطبيق
+   * @private
+   * @param {Object} app - بيانات التطبيق
+   * @returns {HTMLElement} عنصر بطاقة التطبيق
+   */
   _createAppCard(app) {
     const card = document.createElement('div');
     card.className = 'app-card';
     card.dataset.appId = app.id;
+    card.title = app.name;
 
     const iconContainer = document.createElement('div');
     iconContainer.className = 'app-icon-container';
@@ -296,6 +526,9 @@ export class AppsTab {
     icon.alt = `${app.name} icon`;
     icon.dataset.src = this._getIconPath(app.icon);
     icon.loading = 'lazy';
+    icon.onerror = () => {
+      icon.src = this._getIconPath('default.png');
+    };
 
     const name = document.createElement('div');
     name.className = 'app-name';
@@ -308,6 +541,11 @@ export class AppsTab {
     return card;
   }
 
+  /**
+   * عرض حالة الخطأ
+   * @private
+   * @param {Error} error - كائن الخطأ
+   */
   _showErrorState(error) {
     this.container.innerHTML = `
       <div class="tab-error-state">
@@ -322,6 +560,11 @@ export class AppsTab {
     });
   }
 
+  /**
+   * إنشاء حالة عدم وجود تطبيقات
+   * @private
+   * @returns {string} HTML لعرض الحالة الفارغة
+   */
   _createEmptyState() {
     return `
       <div class="empty-state">
@@ -334,23 +577,80 @@ export class AppsTab {
   }
 
   /* ------------------------------------ */
+  /* --------- Event Handlers ----------- */
+  /* ------------------------------------ */
+
+  /**
+   * معالجة البحث عن التطبيقات
+   * @private
+   * @param {string} query - نص البحث
+   */
+  _handleSearch(query) {
+    const searchTerm = query.trim().toLowerCase();
+    
+    if (!searchTerm) {
+      this.state.filteredApps = [...this.options.appsData];
+    } else {
+      this.state.filteredApps = this.options.appsData.filter(app => 
+        app.name.toLowerCase().includes(searchTerm) ||
+        (app.tags && app.tags.some(tag => tag.toLowerCase().includes(searchTerm)))
+      );
+    }
+
+    this._renderAppsGrid().then(() => {
+      this._setupIntersectionObserver();
+    });
+  }
+
+  /* ------------------------------------ */
   /* ---------- Helper Methods ---------- */
   /* ------------------------------------ */
 
+  /**
+   * الحصول على المسار الكامل للأيقونة
+   * @private
+   * @param {string} iconName - اسم ملف الأيقونة
+   * @returns {string} المسار الكامل للأيقونة
+   */
   _getIconPath(iconName) {
     return `${this.options.iconsBasePath}${iconName || 'default.png'}`;
   }
 
+  /**
+   * تحديث بيانات التطبيقات
+   * @param {Array} appsData - بيانات التطبيقات الجديدة
+   */
+  updateAppsData(appsData) {
+    if (Array.isArray(appsData)) {
+      this.options.appsData = appsData;
+      this.state.filteredApps = [...appsData];
+      this._renderAppsGrid().then(() => {
+        this._setupIntersectionObserver();
+      });
+    }
+  }
+
+  /**
+   * تدمير المكون وتنظيف الموارد
+   */
   destroy() {
     // تنظيف المراقبة
     if (this.resources.observer) {
       this.resources.observer.disconnect();
     }
 
-    // إيقاف定时器 التنظيف
+    // إيقاف الموقتات
     if (this.resources.cleanupInterval) {
       clearInterval(this.resources.cleanupInterval);
     }
+
+    // إيقاف مراقبة تغيير الحجم
+    if (this.resources.resizeObserver) {
+      this.resources.resizeObserver.disconnect();
+    }
+
+    // إزالة مستمع الأحداث
+    document.removeEventListener('visibilitychange', this._handleVisibilityChange);
 
     // تنظيف IconManager
     this.iconManager.clearCache();

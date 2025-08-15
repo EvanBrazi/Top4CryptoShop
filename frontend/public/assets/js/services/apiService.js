@@ -1,200 +1,206 @@
 /**
  * @file apiService.js
  * @class ApiService
- * @description خدمة متكاملة لإدارة طلبات API مع نظام تخزين مؤقت متقدم
- * @version 2.0.0
+ * @description خدمة متقدمة لإدارة طلبات API مع نظام كاش متطور
+ * @version 3.0.0
  * @license MIT
  */
 
 export default class ApiService {
-  /**
-   * @constructor
-   * @param {string} [baseURL=''] - الرابط الأساسي لجميع طلبات API
-   * @param {Object} [options={}] - خيارات إضافية
-   * @param {number} [options.cacheDuration=7] - مدة صلاحية الكاش بالأيام
-   * @param {number} [options.maxConcurrentRequests=5] - الحد الأقصى للطلبات المتزامنة
-   */
   constructor(baseURL = '', options = {}) {
     this.baseURL = baseURL;
     this.options = {
-      cacheDuration: options.cacheDuration || 7,
-      maxConcurrentRequests: options.maxConcurrentRequests || 5
+      cacheDuration: options.cacheDuration || 1, // يوم واحد افتراضيًا
+      maxConcurrentRequests: options.maxConcurrentRequests || 5,
+      retryCount: options.retryCount || 2,
+      timeout: options.timeout || 10000, // 10 ثواني افتراضيًا
+      cachePrefix: options.cachePrefix || 'api_cache_v3_'
     };
+    
     this.requestQueue = [];
     this.activeRequests = 0;
-    this.cachePrefix = 'api_cache_';
+    this.cache = this._initCache();
   }
 
-  /**
-   * @private
-   * @method _processQueue
-   * @description معالجة طابور الطلبات المتعثرة
-   */
-  _processQueue() {
-    while (this.requestQueue.length > 0 && this.activeRequests < this.options.maxConcurrentRequests) {
-      const { resolve, reject, endpoint, cacheKey, key } = this.requestQueue.shift();
-      this.activeRequests++;
-      this._fetchWithCache(endpoint, cacheKey, key)
-        .then(resolve)
-        .catch(reject)
-        .finally(() => {
-          this.activeRequests--;
-          this._processQueue();
-        });
-    }
-  }
-
-  /**
-   * @private
-   * @method _fetchWithCache
-   * @description تنفيذ الطلب مع إدارة الكاش
-   * @param {string} endpoint - مسار API
-   * @param {string} cacheKey - مفتاح التخزين
-   * @param {string|null} key - مفتاح بيانات فرعي
-   * @returns {Promise<any>}
-   */
-  async _fetchWithCache(endpoint, cacheKey, key = null) {
-    const fullCacheKey = `${this.cachePrefix}${cacheKey}`;
-    const cachedData = this._getCache(fullCacheKey);
-    
-    if (cachedData) {
-      return key ? cachedData[key] : cachedData;
-    }
-
-    try {
-      const response = await fetch(`${this.baseURL}${endpoint}`);
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  _initCache() {
+    return {
+      get: (key) => {
+        try {
+          const item = localStorage.getItem(this.options.cachePrefix + key);
+          if (!item) return null;
+          
+          const { data, timestamp, etag } = JSON.parse(item);
+          const age = Date.now() - timestamp;
+          
+          if (age > this.options.cacheDuration * 24 * 60 * 60 * 1000) {
+            this.clearCache(key);
+            return null;
+          }
+          
+          return { data, etag };
+        } catch (e) {
+          this.clearCache(key);
+          return null;
+        }
+      },
       
-      const data = await response.json();
-      this._setCache(fullCacheKey, data);
-      return key ? data[key] : data;
-    } catch (error) {
-      console.error('فشل في جلب البيانات:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * @private
-   * @method _getCache
-   * @description استرجاع البيانات من الكاش المحلي
-   * @param {string} key - مفتاح التخزين
-   * @returns {any|null}
-   */
-  _getCache(key) {
-    const item = localStorage.getItem(key);
-    if (!item) return null;
-
-    try {
-      const { data, timestamp } = JSON.parse(item);
-      const cacheAgeDays = (Date.now() - timestamp) / (1000 * 60 * 60 * 24);
+      set: (key, value, etag) => {
+        try {
+          const item = JSON.stringify({
+            data: value,
+            timestamp: Date.now(),
+            etag
+          });
+          localStorage.setItem(this.options.cachePrefix + key, item);
+        } catch (e) {
+          console.error('Failed to save to cache:', e);
+          this._clearOldestCacheItems();
+        }
+      },
       
-      if (cacheAgeDays > this.options.cacheDuration) {
-        localStorage.removeItem(key);
-        return null;
+      clear: (key) => {
+        localStorage.removeItem(this.options.cachePrefix + key);
       }
-      return data;
-    } catch (e) {
-      localStorage.removeItem(key);
-      return null;
-    }
-  }
-
-  /**
-   * @private
-   * @method _setCache
-   * @description تخزين البيانات في الكاش المحلي
-   * @param {string} key - مفتاح التخزين
-   * @param {any} data - البيانات للتخزين
-   */
-  _setCache(key, data) {
-    const cacheObject = {
-      data,
-      timestamp: Date.now()
     };
-    localStorage.setItem(key, JSON.stringify(cacheObject));
   }
 
-  /**
-   * @method fetchData
-   * @description جلب بيانات من API مع إدارة الطلبات المتزامنة والتخزين المؤقت
-   * @param {string} endpoint - مسار API
-   * @param {string} cacheKey - مفتاح التخزين (بدون البادئة)
-   * @param {string|null} [key=null] - مفتاح بيانات فرعي
-   * @returns {Promise<any>}
-   */
-  async fetchData(endpoint, cacheKey, key = null) {
+  async fetchData(endpoint, cacheKey, { key = null, forceRefresh = false } = {}) {
     return new Promise((resolve, reject) => {
-      this.requestQueue.push({ resolve, reject, endpoint, cacheKey, key });
+      this.requestQueue.push({ resolve, reject, endpoint, cacheKey, key, forceRefresh });
       this._processQueue();
     });
   }
 
-  /**
-   * @method clearCache
-   * @description حذف الكاش المحدد أو جميع الكاشات
-   * @param {string|null} [key=null] - مفتاح محدد للحذف (اختياري)
-   */
+  async _processQueue() {
+    while (this.requestQueue.length > 0 && 
+           this.activeRequests < this.options.maxConcurrentRequests) {
+      const { resolve, reject, endpoint, cacheKey, key, forceRefresh } = this.requestQueue.shift();
+      this.activeRequests++;
+      
+      try {
+        const data = await this._fetchWithCache(endpoint, cacheKey, forceRefresh);
+        resolve(key ? data[key] : data);
+      } catch (error) {
+        reject(error);
+      } finally {
+        this.activeRequests--;
+        this._processQueue();
+      }
+    }
+  }
+
+  async _fetchWithCache(endpoint, cacheKey, forceRefresh = false) {
+    // التحقق من الكاش إذا لم يكن هناك إجبار على التحديث
+    if (!forceRefresh) {
+      const cached = this.cache.get(cacheKey);
+      if (cached) return cached.data;
+    }
+
+    let attempt = 0;
+    let lastError;
+    
+    while (attempt <= this.options.retryCount) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), this.options.timeout);
+        
+        const headers = {};
+        const cached = this.cache.get(cacheKey);
+        if (cached?.etag) {
+          headers['If-None-Match'] = cached.etag;
+        }
+
+        const response = await fetch(`${this.baseURL}${endpoint}`, {
+          signal: controller.signal,
+          headers
+        });
+
+        clearTimeout(timeoutId);
+
+        if (response.status === 304) { // Not Modified
+          return cached.data;
+        }
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const etag = response.headers.get('ETag');
+        
+        if (response.status !== 304) {
+          this.cache.set(cacheKey, data, etag);
+        }
+
+        return data;
+      } catch (error) {
+        lastError = error;
+        attempt++;
+        if (attempt <= this.options.retryCount) {
+          await new Promise(r => setTimeout(r, 1000 * attempt));
+        }
+      }
+    }
+
+    // إذا فشلت جميع المحاولات، نعود للكاش إذا كان موجودًا
+    const cached = this.cache.get(cacheKey);
+    if (cached) {
+      console.warn('Using cached data after failed requests');
+      return cached.data;
+    }
+
+    throw lastError || new Error('Failed to fetch data');
+  }
+
   clearCache(key = null) {
     if (key) {
-      localStorage.removeItem(`${this.cachePrefix}${key}`);
+      this.cache.clear(key);
     } else {
       Object.keys(localStorage).forEach(k => {
-        if (k.startsWith(this.cachePrefix)) {
+        if (k.startsWith(this.options.cachePrefix)) {
           localStorage.removeItem(k);
         }
       });
     }
   }
 
-  /**
-   * @method refreshData
-   * @description إعادة جلب البيانات وتحديث الكاش
-   * @param {string} endpoint - مسار API
-   * @param {string} cacheKey - مفتاح التخزين
-   * @param {string|null} [key=null] - مفتاح بيانات فرعي
-   * @returns {Promise<any>}
-   */
   async refreshData(endpoint, cacheKey, key = null) {
-    this.clearCache(cacheKey);
-    return this.fetchData(endpoint, cacheKey, key);
+    return this.fetchData(endpoint, cacheKey, { key, forceRefresh: true });
   }
 
-  /**
-   * @method getCacheInfo
-   * @description الحصول على معلومات عن حالة الكاش
-   * @returns {Object}
-   */
+  _clearOldestCacheItems() {
+    try {
+      const items = Object.keys(localStorage)
+        .filter(k => k.startsWith(this.options.cachePrefix))
+        .map(k => ({
+          key: k,
+          item: JSON.parse(localStorage.getItem(k))
+        }))
+        .sort((a, b) => a.item.timestamp - b.item.timestamp);
+
+      // حذف 10% من أقدم العناصر
+      const toRemove = Math.ceil(items.length * 0.1);
+      for (let i = 0; i < toRemove; i++) {
+        localStorage.removeItem(items[i].key);
+      }
+    } catch (e) {
+      console.error('Failed to clear oldest cache items:', e);
+    }
+  }
+
   getCacheInfo() {
-    return {
-      size: this._getCacheSize(),
-      items: this._getCacheKeys(),
-      options: { ...this.options }
-    };
-  }
+    const keys = Object.keys(localStorage)
+      .filter(k => k.startsWith(this.options.cachePrefix));
 
-  /**
-   * @private
-   * @method _getCacheKeys
-   * @description الحصول على مفاتيح الكاش الحالية
-   * @returns {Array<string>}
-   */
-  _getCacheKeys() {
-    return Object.keys(localStorage)
-      .filter(k => k.startsWith(this.cachePrefix))
-      .map(k => k.replace(this.cachePrefix, ''));
-  }
-
-  /**
-   * @private
-   * @method _getCacheSize
-   * @description حساب حجم الكاش بالبايت
-   * @returns {number}
-   */
-  _getCacheSize() {
-    return this._getCacheKeys().reduce((total, key) => {
-      const item = localStorage.getItem(`${this.cachePrefix}${key}`);
-      return total + (item ? item.length * 2 : 0); // تقريب بحجم UTF-16
+    const size = keys.reduce((total, key) => {
+      return total + (localStorage.getItem(key)?.length || 0);
     }, 0);
+
+    return {
+      count: keys.length,
+      size: `${(size / 1024).toFixed(2)} KB`,
+      maxConcurrent: this.options.maxConcurrentRequests,
+      cacheDuration: `${this.options.cacheDuration} days`
+    };
   }
 }

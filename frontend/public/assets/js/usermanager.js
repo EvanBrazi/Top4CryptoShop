@@ -1,143 +1,271 @@
-// نظام إدارة المستخدم المعدل
-var currentUser = {
-        name: 'زائر',
-        email: null,
-        balance: 0.00,
-        theme: 'day'
+/**
+ * @file usermanager.js
+ * @description نظام متقدم لإدارة بيانات المستخدم مع التحقق من الصحة والتخزين الآمن
+ * @version 2.0.0
+ * @license MIT
+ */
+
+// ثوابت التطبيق
+const USER_DEFAULTS = {
+    name: 'زائر',
+    email: null,
+    balance: 0.00,
+    theme: 'day',
+    avatar: null
+};
+
+const STORAGE_KEYS = {
+    USER_DATA: 'user',
+    USER_SESSION: 'userSession'
+};
+
+// حالة المستخدم الحالية
+let currentUser = { ...USER_DEFAULTS };
+
+/**
+ * تهيئة المستخدم الافتراضي
+ * @returns {Object} بيانات المستخدم الافتراضية
+ */
+function initializeDefaultUser() {
+    return {
+        ...USER_DEFAULTS,
+        name: 'Evan Barzi',
+        email: 'leporejamesw0@gmail.com',
+        balance: 99999.99
     };
-
-function setUserName() {
-
 }
 
-function setUserEmail() {
-
-}
-
-function setUserBalance(balance) {
-    currentUser.balance = balance;
-}
-
-function getUserBalance() {
-    return currentUser.balance;
-}
-
-function loadUser() {
+/**
+ * تعيين بيانات المستخدم مع التحقق من الصحة
+ * @param {Object} userData - بيانات المستخدم
+ * @returns {boolean} true إذا كانت البيانات صالحة
+ */
+function setUserData(userData) {
     try {
-    console.log('userData loadUser')
-        const userData = localStorage.getItem('user');
-
-        if (!userData) {
-            setDefaultUser();
-            return;
+        const validated = validateUser(userData);
+        if (validated) {
+            currentUser = validated;
+            return true;
         }
-
-        const parsedUser = JSON.parse(userData);
-
-        if (validateUser(parsedUser)) {
-            currentUser = {
-                ...currentUser,
-                ...parsedUser
-            };
-        } else {
-            console.warn('بيانات المستخدم غير صالحة، يتم استخدام البيانات الافتراضية');
-            setDefaultUser();
-        }
-
-        updateUserProfile();
+        return false;
     } catch (error) {
-        console.error('خطأ في تحميل بيانات المستخدم:', error);
-        setDefaultUser();
-        updateUserProfile();
-    }
-}
-
-function validateUser(user) {
-    try {
-        if (!user || typeof user !== 'object') return false;
-
-        const validatedUser = {
-            name: typeof user.name === 'string' ? user.name : 'زائر',
-            email: user.email && typeof user.email === 'string' ? user.email : null,
-            balance: typeof user.balance === 'number' ? user.balance : 0,
-            theme: ['day', 'night'].includes(user.theme) ? user.theme : 'day'
-        };
-
-        currentUser = validatedUser;
-        return true;
-    } catch (e) {
-        console.error('خطأ في التحقق من صحة المستخدم:', e);
+        console.error('Error setting user data:', error);
         return false;
     }
 }
 
-function setDefaultUser() {
-currentUser.name = 'Evan Barzi';
-currentUser.email = 'leporejamesw0@gmail.com';
-currentUser.balance = 99999.99;
-currentUser.theme = 'day';
-localStorage.setItem('user', JSON.stringify(currentUser));
+/**
+ * التحقق من صحة بيانات المستخدم
+ * @param {Object} user - بيانات المستخدم
+ * @returns {Object|boolean} بيانات المستخدم الصالحة أو false
+ */
+function validateUser(user) {
+    if (!user || typeof user !== 'object') return false;
+
+    // التحقق من الحقول الأساسية
+    const validated = {
+        name: typeof user.name === 'string' ? user.name.trim() : USER_DEFAULTS.name,
+        email: (user.email && typeof user.email === 'string' && isValidEmail(user.email)) 
+               ? user.email.trim().toLowerCase() 
+               : null,
+        balance: typeof user.balance === 'number' && user.balance >= 0 
+                ? parseFloat(user.balance.toFixed(2)) 
+                : USER_DEFAULTS.balance,
+        theme: ['day', 'night'].includes(user.theme) ? user.theme : USER_DEFAULTS.theme,
+        avatar: user.avatar || null
+    };
+
+    return validated;
 }
 
-function updateUserProfile() {
+/**
+ * التحقق من صحة عنوان البريد الإلكتروني
+ * @param {string} email - البريد الإلكتروني
+ * @returns {boolean}
+ */
+function isValidEmail(email) {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+}
+
+/**
+ * تحميل بيانات المستخدم من التخزين المحلي
+ * @async
+ * @returns {Promise<void>}
+ */
+async function loadUser() {
     try {
+        const userData = localStorage.getItem(STORAGE_KEYS.USER_DATA);
+        
+        if (!userData) {
+            setUserData(initializeDefaultUser());
+            return;
+        }
+
+        const parsedUser = JSON.parse(userData);
+        
+        if (!setUserData(parsedUser)) {
+            console.warn('بيانات المستخدم غير صالحة، يتم استخدام البيانات الافتراضية');
+            setUserData(initializeDefaultUser());
+        }
+
+        await updateUserProfile();
+    } catch (error) {
+        console.error('خطأ في تحميل بيانات المستخدم:', error);
+        setUserData(initializeDefaultUser());
+        await updateUserProfile();
+    }
+}
+
+/**
+ * تحديث واجهة المستخدم حسب بياناته
+ * @async
+ * @returns {Promise<void>}
+ */
+async function updateUserProfile() {
+    try {
+        // تحديث اسم المستخدم
         const usernameDisplay = document.getElementById('username-display');
         if (usernameDisplay) {
-            usernameDisplay.textContent = currentUser.name || 'زائر';
+            usernameDisplay.textContent = currentUser.name;
         }
 
-        const balanceDisplay = document.getElementById('balance-display');
-        const topBalanceDisplay = document.getElementById('top-balance-display');
+        // تحديث الرصيد
+        const balanceElements = [
+            document.getElementById('balance-display'),
+            document.getElementById('top-balance-display')
+        ].filter(el => el);
 
-        if (balanceDisplay) {
-            balanceDisplay.textContent = currentUser.balance?.toFixed(2) || '0.00';
-        }
+        balanceElements.forEach(el => {
+            el.textContent = currentUser.balance.toFixed(2);
+        });
 
-        if (topBalanceDisplay) {
-            topBalanceDisplay.textContent = currentUser.balance?.toFixed(2) || '0.00';
-        }
-
+        // تحديث الصورة الشخصية
         const profileImg = document.getElementById('profile-img');
         if (profileImg) {
-            profileImg.onerror = () => {
-                profileImg.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDExQzE0LjIwOTEgMTEgMTYgOS4yMDkxIDE2IDdDMTYgNC43OTA4NiAxNC4yMDkxIDMgMTIgM0M5Ljc5MDg2IDMgOCA0Ljc5MDg2IDggN0M4IDkuMjA5MTQgOS43OTA4NiAxMSAxMiAxMVoiIGZpbGw9IiNjY2MiLz4KPHBhdGggZD0iTTEyIDIxQzE2Ljk3MDYgMjEgMjEgMTYuOTcwNiAyMSAxMkMyMSA3LjAyOTQ0IDE2Ljk3MDYgMyAxMiAzQzcuMDI5NDQgMyAzIDcuMDI5NDQgMyAxMkMzIDE2Ljk3MDYgNy4wMjk0NCAyMSAxMiAyMVoiIHN0cm9rZT0iI2NjYyIgc3Ryb2tlLXdpZHRoPSIyIi8+Cjwvc3ZnPg==';
-            };
-
-            if (currentUser.email) {
-                const emailHash = md5(currentUser.email.trim().toLowerCase());
-                profileImg.src = `https://www.gravatar.com/avatar/${emailHash}?d=404&s=160`;
-            } else {
-                const name = encodeURIComponent(currentUser.name || 'زائر');
-                profileImg.src = `https://ui-avatars.com/api/?name=${name}&background=random`;
-            }
+            await updateProfileImage(profileImg);
         }
     } catch (error) {
         console.error('خطأ في تحديث واجهة المستخدم:', error);
     }
 }
 
-function logout() {
-    if (!confirm('هل أنت متأكد من تسجيل الخروج؟')) return;
-
+/**
+ * تحديث صورة الملف الشخصي
+ * @async
+ * @param {HTMLImageElement} imgElement - عنصر صورة الملف الشخصي
+ * @returns {Promise<void>}
+ */
+async function updateProfileImage(imgElement) {
     try {
-        localStorage.removeItem('user');
-        sessionStorage.removeItem('userSession');
-        setDefaultUser();
-        updateUserProfile();
+        imgElement.onerror = () => {
+            imgElement.src = getDefaultAvatar(currentUser.name);
+        };
+
+        if (currentUser.avatar) {
+            imgElement.src = currentUser.avatar;
+        } else if (currentUser.email) {
+            const emailHash = await generateEmailHash(currentUser.email);
+            imgElement.src = `https://www.gravatar.com/avatar/${emailHash}?d=404&s=160`;
+        } else {
+            imgElement.src = getDefaultAvatar(currentUser.name);
+        }
+    } catch (error) {
+        console.error('Error updating profile image:', error);
+        imgElement.src = getDefaultAvatar(currentUser.name);
+    }
+}
+
+/**
+ * إنشاء هاش للبريد الإلكتروني
+ * @async
+ * @param {string} email - البريد الإلكتروني
+ * @returns {Promise<string>}
+ */
+async function generateEmailHash(email) {
+    // يمكن استخدام مكتبة crypto-js بدلاً من md5 إذا لزم الأمر
+    const msgBuffer = new TextEncoder().encode(email);
+    const hashBuffer = await crypto.subtle.digest('MD5', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * الحصول على صورة افتراضية
+ * @param {string} name - اسم المستخدم
+ * @returns {string} رابط الصورة الافتراضية
+ */
+function getDefaultAvatar(name) {
+    const encodedName = encodeURIComponent(name || 'زائر');
+    return `https://ui-avatars.com/api/?name=${encodedName}&background=random&size=160`;
+}
+
+/**
+ * تسجيل خروج المستخدم
+ * @async
+ * @returns {Promise<void>}
+ */
+async function logout() {
+    try {
+        if (!confirm('هل أنت متأكد من تسجيل الخروج؟')) return;
+
+        localStorage.removeItem(STORAGE_KEYS.USER_DATA);
+        sessionStorage.removeItem(STORAGE_KEYS.USER_SESSION);
+        
+        setUserData(initializeDefaultUser());
+        await updateUserProfile();
+        
         showToast('تم تسجيل الخروج بنجاح', 'success');
         setTimeout(() => window.location.reload(), 1000);
-    } catch (err) {
-        console.error('حدث خطأ أثناء تسجيل الخروج:', err);
+    } catch (error) {
+        console.error('حدث خطأ أثناء تسجيل الخروج:', error);
         showToast('حدث خطأ أثناء تسجيل الخروج. يرجى المحاولة مرة أخرى.', 'error');
     }
 }
 
+/**
+ * حفظ بيانات المستخدم
+ * @returns {boolean} true إذا تم الحفظ بنجاح
+ */
 function saveUser() {
     try {
-        localStorage.setItem('user', JSON.stringify(currentUser));
+        localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(currentUser));
+        return true;
     } catch (error) {
         console.error('خطأ في حفظ بيانات المستخدم:', error);
         showToast('حدث خطأ في حفظ بيانات المستخدم', 'error');
+        return false;
     }
 }
-export {loadUser, validateUser, setUserBalance, setDefaultUser, logout, saveUser};
+
+/**
+ * تعيين رصيد المستخدم
+ * @param {number} balance - الرصيد الجديد
+ * @returns {boolean} true إذا تم التحديث بنجاح
+ */
+function setUserBalance(balance) {
+    const newBalance = parseFloat(balance);
+    if (!isNaN(newBalance) && newBalance >= 0) {
+        currentUser.balance = parseFloat(newBalance.toFixed(2));
+        return true;
+    }
+    return false;
+}
+
+/**
+ * الحصول على رصيد المستخدم
+ * @returns {number} الرصيد الحالي
+ */
+function getUserBalance() {
+    return currentUser.balance;
+}
+
+export {
+    loadUser,
+    validateUser,
+    setUserBalance,
+    getUserBalance,
+    logout,
+    saveUser,
+    updateUserProfile
+};

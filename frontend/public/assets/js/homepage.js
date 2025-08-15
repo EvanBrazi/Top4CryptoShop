@@ -1,8 +1,15 @@
 /**
  * @file homepage.js
  * @description نقطة الدخول الرئيسية للتطبيق - تهيئة جميع المكونات وإدارة الأحداث
- * @version 2.0.0
+ * @version 3.0.0
  * @license MIT
+ * 
+ * التحسينات الرئيسية:
+ * - تحسين بنية الكود وتنظيمه
+ * - تحسين إدارة الأخطاء
+ * - تحسين الأداء والذاكرة
+ * - إضافة التوثيق الشامل
+ * - تحسين إدارة الأحداث
  */
 
 import * as th from "./theme.js";
@@ -10,12 +17,54 @@ import * as um from "./usermanager.js";
 import { Taber } from "./core/taber.js";
 import { AppManager } from "./appmanager.js";
 
-document.addEventListener('DOMContentLoaded', async function () {
-    try {
-        // ----------------------------
-        // 1. تهيئة العناصر الأساسية
-        // ----------------------------
-        const DOM = {
+// ثوابت التطبيق
+const APP_CONFIG = {
+    STORAGE_KEYS: {
+        ACTIVE_TAB: 'top4cryptoshop_activeTab',
+        USER_THEME: 'user_theme_preference'
+    },
+    DEFAULT_TAB: 'home',
+    SCROLL_THROTTLE: 100,
+    MODAL_TRANSITION_DURATION: 300
+};
+
+class HomePage {
+    constructor() {
+        this.domElements = {};
+        this.eventListeners = {};
+        this.components = {};
+        this.init();
+    }
+
+    /* ---------------------------------- */
+    /* --------- Initialization --------- */
+    /* ---------------------------------- */
+
+    /**
+     * تهيئة التطبيق الرئيسية
+     * @async
+     */
+    async init() {
+        try {
+            this._cacheDOMElements();
+            this._initComponents();
+            await this._loadUserData();
+            this._setupEventListeners();
+            await this._registerServiceWorker();
+            
+            console.log('✅ تم تحميل النظام بنجاح');
+        } catch (error) {
+            console.error('❌ فشل تحميل التطبيق:', error);
+            this._showFatalError();
+        }
+    }
+
+    /**
+     * تخزين عناصر DOM
+     * @private
+     */
+    _cacheDOMElements() {
+        this.domElements = {
             sidebar: document.querySelector('.sidebar'),
             sidebarMenu: document.querySelector('.sidebar-menu-container'),
             tabsContent: document.querySelector('.tabs-container'),
@@ -38,239 +87,313 @@ document.addEventListener('DOMContentLoaded', async function () {
             logoutBtn: document.getElementById('logoutBtn'),
             footer: document.querySelector('.site-footer')
         };
+    }
 
-        // ----------------------------
-        // 2. الثوابت والإعدادات
-        // ----------------------------
-        const CONFIG = {
-            STORAGE_KEYS: {
-                ACTIVE_TAB: 'top4cryptoshop_activeTab',
-                USER_THEME: 'user_theme_preference'
-            },
-            DEFAULT_TAB: 'home',
-            SCROLL_THROTTLE: 100
-        };
+    /**
+     * تهيئة المكونات الأساسية
+     * @private
+     */
+    _initComponents() {
+        // نظام التبويبات
+        this.components.taber = new Taber(
+            this.domElements.sidebarMenu, 
+            this.domElements.tabsContent, 
+            {
+                activeClass: 'active',
+                defaultTab: APP_CONFIG.DEFAULT_TAB,
+                storageKey: APP_CONFIG.STORAGE_KEYS.ACTIVE_TAB,
+                useCookies: true
+            }
+        );
 
-        // ----------------------------
-        // 3. تهيئة المكونات الأساسية
-        // ----------------------------
+        // مدير التطبيقات
+        this.components.appManager = new AppManager(this.components.taber);
 
-        // 3.1 نظام التبويبات
-        const taber = new Taber(DOM.sidebarMenu, DOM.tabsContent, {
-            activeClass: 'active',
-            defaultTab: CONFIG.DEFAULT_TAB,
-            storageKey: CONFIG.STORAGE_KEYS.ACTIVE_TAB,
-            useCookies: true
-        });
+        // تهيئة السمة
+        // th.initTheme();
+    }
 
-        // 3.2 مدير التطبيقات
-        const appManager = new AppManager(taber);
-
-        // 3.3 تهيئة السمة
-        //th.initTheme();
-
-        // 3.4 تحميل بيانات المستخدم
+    /**
+     * تحميل بيانات المستخدم
+     * @private
+     * @async
+     */
+    async _loadUserData() {
         await um.loadUser();
+        this._updateUserUI();
+    }
 
-        // ----------------------------
-        // 4. إعداد مستمعي الأحداث
-        // ----------------------------
+    /**
+     * تحديث واجهة المستخدم حسب بياناته
+     * @private
+     */
+    _updateUserUI() {
+        // يمكنك هنا تحديث العناصر حسب بيانات المستخدم
+        // مثل: الصورة، الاسم، الرصيد، إلخ
+    }
 
-        // 4.1 أحداث الشريط الجانبي
-        DOM.toggleBtn.addEventListener('click', toggleSidebar);
-        DOM.overlay.addEventListener('click', toggleSidebar);
+    /* ---------------------------------- */
+    /* --------- Event Handling --------- */
+    /* ---------------------------------- */
 
-        // 4.2 أحداث المحفظة
-        DOM.addBalanceBtn.addEventListener('click', () => {
-            taber.activateTab('wallet');
+    /**
+     * إعداد مستمعي الأحداث
+     * @private
+     */
+    _setupEventListeners() {
+        // أحداث الشريط الجانبي
+        this._setupSidebarEvents();
+        
+        // أحداث المحفظة
+        this._setupWalletEvents();
+        
+        // أحداث العودة
+        this._setupBackButtonEvents();
+        
+        // أحداث التمرير
+        this._setupScrollHandlers();
+        
+        // أحداث النوافذ المنبثقة
+        this._setupModalHandlers();
+        
+        // أحداث تسجيل الخروج
+        this._setupLogoutHandler();
+        
+        // تحديث حالة زر العودة
+        this._updateBackButtonVisibility();
+    }
+
+    /**
+     * إعداد أحداث الشريط الجانبي
+     * @private
+     */
+    _setupSidebarEvents() {
+        const { toggleBtn, overlay, sidebar } = this.domElements;
+        
+        const toggleSidebar = () => {
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        };
+        
+        toggleBtn.addEventListener('click', toggleSidebar);
+        overlay.addEventListener('click', toggleSidebar);
+        
+        this.eventListeners.toggleSidebar = toggleSidebar;
+    }
+
+    /**
+     * إعداد أحداث المحفظة
+     * @private
+     */
+    _setupWalletEvents() {
+        this.domElements.addBalanceBtn.addEventListener('click', () => {
+            this.components.taber.activateTab('wallet');
         });
+    }
 
-        // 4.3 أحداث العودة
-        DOM.backBtn.addEventListener('click', (e) => {
+    /**
+     * إعداد أحداث زر العودة
+     * @private
+     */
+    _setupBackButtonEvents() {
+        this.domElements.backBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            taber.activateTab(CONFIG.DEFAULT_TAB);
+            this.components.taber.activateTab(APP_CONFIG.DEFAULT_TAB);
+        });
+    }
+
+    /**
+     * إعداد معالجات التمرير
+     * @private
+     */
+    _setupScrollHandlers() {
+        let lastScrollPosition = 0;
+        let scrollTimeout;
+
+        const throttledScrollHandler = this._throttle(() => {
+            const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+
+            if (currentScroll > lastScrollPosition) {
+                this.domElements.footer.classList.add('hidden');
+            } else {
+                this.domElements.footer.classList.remove('hidden');
+            }
+
+            if (currentScroll <= 0) {
+                this.domElements.footer.classList.remove('hidden');
+            }
+
+            lastScrollPosition = currentScroll;
+        }, APP_CONFIG.SCROLL_THROTTLE);
+
+        window.addEventListener('scroll', throttledScrollHandler);
+        
+        this.domElements.mainContent.addEventListener('scroll', () => {
+            if (this.domElements.sidebar.classList.contains('active')) {
+                this.eventListeners.toggleSidebar();
+            }
+        });
+    }
+
+    /**
+     * إعداد معالجات النوافذ المنبثقة
+     * @private
+     */
+    _setupModalHandlers() {
+        // فتح النوافذ
+        this.domElements.termsBtn.addEventListener('click', () => 
+            this._openModal(this.domElements.termsModal));
+        
+        this.domElements.privacyBtn.addEventListener('click', () => 
+            this._openModal(this.domElements.privacyModal));
+
+        // إغلاق النوافذ
+        this.domElements.closeModalBtns.forEach(btn => {
+            btn.addEventListener('click', this._closeAllModals.bind(this));
         });
 
-        // 4.4 أحداث التمرير
-        setupScrollHandlers();
+        window.addEventListener('click', (event) => {
+            if ([this.domElements.termsModal, this.domElements.privacyModal].includes(event.target)) {
+                this._closeAllModals();
+            }
+        });
+    }
 
-        // 4.5 أحداث النوافذ المنبثقة
-        setupModalHandlers();
-
-        // 4.6 أحداث تسجيل الخروج
-        if (DOM.logoutBtn) {
-            DOM.logoutBtn.addEventListener('click', um.logout);
+    /**
+     * إعداد معالج تسجيل الخروج
+     * @private
+     */
+    _setupLogoutHandler() {
+        if (this.domElements.logoutBtn) {
+            this.domElements.logoutBtn.addEventListener('click', um.logout);
         }
+    }
 
-        // 4.7 تحديث حالة زر العودة
-        updateBackButtonVisibility();
+    /**
+     * تحديث ظهور زر العودة
+     * @private
+     */
+    _updateBackButtonVisibility() {
+        const activeTab = localStorage.getItem(APP_CONFIG.STORAGE_KEYS.ACTIVE_TAB);
+        this.domElements.backBtn.style.display = 
+            (activeTab === APP_CONFIG.DEFAULT_TAB) ? 'none' : 'block';
+    }
 
-        // ----------------------------
-        // 5. تسجيل Service Worker
-        // ----------------------------
-        registerServiceWorker();
+    /* ---------------------------------- */
+    /* --------- Modal Methods ---------- */
+    /* ---------------------------------- */
 
-        console.log('✅ تم تحميل النظام بنجاح');
+    /**
+     * فتح نافذة منبثقة
+     * @private
+     * @param {HTMLElement} modal - عنصر النافذة
+     */
+    _openModal(modal) {
+        const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+        this.domElements.body.style.overflow = 'hidden';
+        this.domElements.body.style.paddingRight = `${scrollbarWidth}px`;
+        modal.style.display = 'block';
+    }
 
-        // ----------------------------
-        // 6. دوال مساعدة
-        // ----------------------------
+    /**
+     * إغلاق جميع النوافذ المنبثقة
+     * @private
+     */
+    _closeAllModals() {
+        this.domElements.body.style.overflow = 'auto';
+        this.domElements.body.style.paddingRight = '0';
+        this.domElements.termsModal.style.display = 'none';
+        this.domElements.privacyModal.style.display = 'none';
+    }
 
-        /**
-         * تبديل حالة الشريط الجانبي
-         */
-        function toggleSidebar() {
-            DOM.sidebar.classList.toggle('active');
-            DOM.overlay.classList.toggle('active');
-        }
+    /* ---------------------------------- */
+    /* --------- Utility Methods -------- */
+    /* ---------------------------------- */
 
-        /**
-         * إعداد معالجات أحداث التمرير
-         */
-        function setupScrollHandlers() {
-            let lastScrollPosition = 0;
-            let scrollTimeout;
-
-            // لمنع التكرار عند التمرير السريع
-            const throttledScrollHandler = throttle(() => {
-                const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
-
-                if (currentScroll > lastScrollPosition) {
-                    DOM.footer.classList.add('hidden');
-                } else {
-                    DOM.footer.classList.remove('hidden');
-                }
-
-                if (currentScroll <= 0) {
-                    DOM.footer.classList.remove('hidden');
-                }
-
-                lastScrollPosition = currentScroll;
-            }, CONFIG.SCROLL_THROTTLE);
-
-            window.addEventListener('scroll', throttledScrollHandler);
-            DOM.mainContent.addEventListener('scroll', () => {
-                if (DOM.sidebar.classList.contains('active')) {
-                    toggleSidebar();
-                }
-            });
-        }
-
-        /**
-         * إعداد معالجات النوافذ المنبثقة
-         */
-        function setupModalHandlers() {
-            // فتح النوافذ
-            DOM.termsBtn.addEventListener('click', () => openModal(DOM.termsModal));
-            DOM.privacyBtn.addEventListener('click', () => openModal(DOM.privacyModal));
-
-            // إغلاق النوافذ
-            DOM.closeModalBtns.forEach(btn => {
-                btn.addEventListener('click', closeAllModals);
-            });
-
-            window.addEventListener('click', (event) => {
-                if ([DOM.termsModal, DOM.privacyModal].includes(event.target)) {
-                    closeAllModals();
-                }
-            });
-        }
-
-        /**
-         * فتح نافذة منبثقة
-         * @param {HTMLElement} modal - عنصر النافذة
-         */
-        function openModal(modal) {
-            const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-            document.body.style.overflow = 'hidden';
-            document.body.style.paddingRight = `${scrollbarWidth}px`;
-            modal.style.display = 'block';
-        }
-
-        /**
-         * إغلاق جميع النوافذ المنبثقة
-         */
-        function closeAllModals() {
-            document.body.style.overflow = 'auto';
-            document.body.style.paddingRight = '0';
-            DOM.termsModal.style.display = 'none';
-            DOM.privacyModal.style.display = 'none';
-        }
-
-        /**
-         * تحديث ظهور زر العودة
-         */
-        function updateBackButtonVisibility() {
-            const activeTab = localStorage.getItem(CONFIG.STORAGE_KEYS.ACTIVE_TAB);
-            DOM.backBtn.style.display = (activeTab === CONFIG.DEFAULT_TAB) ? 'none' : 'block';
-        }
-
-        /**
-         * تسجيل Service Worker
-         */
-        async function registerServiceWorker() {
-            if ('serviceWorker' in navigator) {
-                try {
-                    await navigator.serviceWorker.register('/assets/js/sw.js');
-                    console.log('✅ Service Worker مسجل بنجاح');
-                } catch (err) {
-                    console.error('❌ فشل تسجيل Service Worker:', err);
-                }
+    /**
+     * تسجيل Service Worker
+     * @private
+     * @async
+     */
+    async _registerServiceWorker() {
+        if ('serviceWorker' in navigator) {
+            try {
+                await navigator.serviceWorker.register('/assets/js/sw.js');
+                console.log('✅ Service Worker مسجل بنجاح');
+            } catch (err) {
+                console.error('❌ فشل تسجيل Service Worker:', err);
             }
         }
+    }
 
-        /**
-         * دالة throttle للتحكم في تكرار الأحداث
-         * @param {Function} func - الدالة المراد تنفيذها
-         * @param {number} limit - الفاصل الزمني
-         */
-        function throttle(func, limit) {
-            let lastFunc;
-            let lastRan;
-            return function () {
-                const context = this;
-                const args = arguments;
-                if (!lastRan) {
-                    func.apply(context, args);
-                    lastRan = Date.now();
-                } else {
-                    clearTimeout(lastFunc);
-                    lastFunc = setTimeout(function () {
-                        if ((Date.now() - lastRan) >= limit) {
-                            func.apply(context, args);
-                            lastRan = Date.now();
-                        }
-                    }, limit - (Date.now() - lastRan));
-                }
-            };
-        }
-
-    } catch (error) {
-        console.error('❌ فشل تحميل التطبيق:', error);
-        showFatalError();
+    /**
+     * دالة throttle للتحكم في تكرار الأحداث
+     * @private
+     * @param {Function} func - الدالة المراد تنفيذها
+     * @param {number} limit - الفاصل الزمني
+     * @returns {Function} الدالة المحدودة
+     */
+    _throttle(func, limit) {
+        let lastFunc;
+        let lastRan;
+        return function() {
+            const context = this;
+            const args = arguments;
+            if (!lastRan) {
+                func.apply(context, args);
+                lastRan = Date.now();
+            } else {
+                clearTimeout(lastFunc);
+                lastFunc = setTimeout(function() {
+                    if ((Date.now() - lastRan) >= limit) {
+                        func.apply(context, args);
+                        lastRan = Date.now();
+                    }
+                }, limit - (Date.now() - lastRan));
+            }
+        };
     }
 
     /**
      * عرض رسالة خطأ فادح
-     **/
-    function showFatalError() {
+     * @private
+     */
+    _showFatalError() {
         const errorContainer = document.createElement('div');
         errorContainer.className = 'fatal-error';
-
-        // بناء المحتوى بدون onclick
         errorContainer.innerHTML = `
-        <h2>حدث خطأ جسيم</h2>
-        <p>تعذر تحميل التطبيق، يرجى تحديث الصفحة</p>
-        <button id="reloadBtn">إعادة تحميل</button>
-    `;
+            <h2>حدث خطأ جسيم</h2>
+            <p>تعذر تحميل التطبيق، يرجى تحديث الصفحة</p>
+            <button id="reloadBtn">إعادة تحميل</button>
+        `;
 
         document.body.innerHTML = '';
         document.body.appendChild(errorContainer);
 
-        // ربط الحدث بطريقة آمنة
         document.getElementById('reloadBtn').addEventListener('click', () => {
             window.location.reload();
         });
     }
 
+    /**
+     * تنظيف الموارد عند التدمير
+     */
+    destroy() {
+        // تنظيف مستمعي الأحداث
+        this.domElements.toggleBtn.removeEventListener('click', this.eventListeners.toggleSidebar);
+        this.domElements.overlay.removeEventListener('click', this.eventListeners.toggleSidebar);
+        
+        // تدمير المكونات
+        this.components.appManager?.destroy();
+    }
+}
+
+// بدء التطبيق عند تحميل DOM
+document.addEventListener('DOMContentLoaded', () => {
+    window.homePage = new HomePage();
+});
+
+// تنظيف الذاكرة عند إغلاق الصفحة
+window.addEventListener('beforeunload', () => {
+    window.homePage?.destroy();
 });

@@ -2,7 +2,7 @@
  * @file appmanager.js
  * @class AppManager
  * @description المدير الرئيسي للتطبيق - مسؤول عن تهيئة التطبيق، تحميل البيانات، وإدارة التبويبات
- * @version 3.0.0
+ * @version 4.0.0
  * @license MIT
  */
 
@@ -10,16 +10,9 @@ import { HomeTab } from "./tabs/hometab.js";
 import { AppsTab } from "./tabs/appstab.js";
 import ApiService from './services/apiService.js';
 import { _transformAppsData } from './utils/appUtils.js';
-
+import { PurchaseDialog } from './dialogs/purchaseDialog.js'; // سيتم إنشاء هذا الملف
 
 export class AppManager {
-  /**
-   * @constructor
-   * @param {Object} taberInstance - نسخة من نظام التبويبات
-   * @param {Object} [config={}] - إعدادات التهيئة
-   * @param {string} [config.apiBaseUrl=''] - رابط API الأساسي
-   * @param {Object} [config.cacheOptions] - خيارات التخزين المؤقت
-   */
   constructor(taberInstance, config = {}) {
     this.taber = taberInstance;
     this.api = new ApiService(config.apiBaseUrl, {
@@ -28,6 +21,9 @@ export class AppManager {
     });
     
     this.tabs = {};
+    this.dialogs = {
+      purchase: null
+    };
     this.initState = {
       loaded: false,
       error: null
@@ -36,13 +32,11 @@ export class AppManager {
     this._init();
   }
 
-  /**
-   * @private
-   * @method _init
-   * @description تهيئة التطبيق الرئيسية
-   */
   async _init() {
     try {
+      // تهيئة مربعات الحوار أولاً
+      this._initDialogs();
+      
       await this._setupTabs();
       this._setupEventListeners();
       await this._preloadEssentialData();
@@ -54,11 +48,14 @@ export class AppManager {
     }
   }
 
-  /**
-   * @private
-   * @method _setupTabs
-   * @description تهيئة تبويبات التطبيق
-   */
+  _initDialogs() {
+    // تهيئة مربع حوار الشراء
+    this.dialogs.purchase = new PurchaseDialog({
+      themeColor: '#6a5acd',
+      onPurchase: (app, quantity, userId) => this._handlePurchase(app, quantity, userId)
+    });
+  }
+
   async _setupTabs() {
     this.tabs.home = new HomeTab({
       taber: this.taber,
@@ -73,35 +70,82 @@ export class AppManager {
     await this._initAppsTab();
   }
 
-  /**
-   * @private
-   * @method _initAppsTab
-   * @description تهيئة تبويب التطبيقات
-   */
   async _initAppsTab() {
-    const [appsData, iconsList] = await Promise.all([
-      this.api.fetchData('/api/apps', 'appsData').then(_transformAppsData),
-      this.api.fetchData('/api/icons-list', 'iconsList').then(res => res.icons || [])
-    ]);
+    try {
+      const [appsData, iconsList] = await Promise.all([
+        this.api.fetchData('/api/apps', 'appsData').then(_transformAppsData),
+        this.api.fetchData('/api/icons-list', 'iconsList').then(res => res.icons || [])
+      ]);
 
-    this.tabs.apps = new AppsTab({
-      containerId: 'apps-tab-container',
-      options: {
-        appsData,
-        iconsBasePath: '/icons/apps/',
-        iconsList,
-        themeColor: '#6a5acd',
-        dialogBgColor: '#ffffff',
-        cacheStrategy: 'lazy' // 'eager' أو 'lazy'
-      }
+      this.tabs.apps = new AppsTab({
+        containerId: 'apps-tab-container',
+        options: {
+          appsData,
+          iconsBasePath: '/icons/apps/',
+          iconsList,
+          themeColor: '#6a5acd',
+          dialogBgColor: '#ffffff',
+          cacheStrategy: 'lazy',
+          maxCachedIcons: 40,
+          onCardClick: (app) => this._handleAppCardClick(app),
+          onError: (error) => this._handleAppsTabError(error)
+        }
+      });
+    } catch (error) {
+      console.error('فشل تحميل تبويب التطبيقات:', error);
+      this._handleAppsTabError(error);
+    }
+  }
+
+  _handleAppCardClick(app) {
+    this.dialogs.purchase.open(app);
+  }
+
+  async _handlePurchase(app, quantity, userId) {
+    try {
+      // هنا يمكنك إضافة منطق معالجة الشراء
+      console.log(`تم طلب شراء ${quantity} من ${app.name} للمستخدم ${userId}`);
+      
+      // عرض رسالة نجاح
+      this._showToast('تمت عملية الشراء بنجاح', 'success');
+      
+      // إغلاق مربع الحوار
+      this.dialogs.purchase.close();
+    } catch (error) {
+      console.error('فشل عملية الشراء:', error);
+      this._showToast('فشل في عملية الشراء', 'error');
+    }
+  }
+
+  _handleAppsTabError(error) {
+    const container = document.getElementById('apps-tab-container');
+    if (!container) return;
+
+    container.innerHTML = `
+      <div class="tab-error-state">
+        <div class="error-icon">⚠️</div>
+        <h3>حدث خطأ في تحميل التطبيقات</h3>
+        <p>${error.message || 'تعذر تحميل قائمة التطبيقات'}</p>
+        <button id="retry-apps-btn" class="retry-btn">
+          <i class="refresh-icon">↻</i> إعادة المحاولة
+        </button>
+      </div>
+    `;
+
+    document.getElementById('retry-apps-btn')?.addEventListener('click', () => {
+      this._initAppsTab();
     });
   }
 
-  /**
-   * @private
-   * @method _preloadEssentialData
-   * @description تحميل مسبق للبيانات الأساسية
-   */
+  _showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    setTimeout(() => toast.remove(), 3000);
+  }
+
   async _preloadEssentialData() {
     await Promise.all([
       this.api.fetchData('/api/essential', 'essentialData'),
@@ -113,34 +157,20 @@ export class AppManager {
     ]);
   }
 
-  /**
-   * @private
-   * @method _setupEventListeners
-   * @description إعداد مستمعي الأحداث
-   */
   _setupEventListeners() {
-    // أحداث التبويبات
     this.taber.onTabChange((tabId) => {
       this._handleTabChange(tabId);
     });
 
-    // أحداث الزر الرجوع
     document.getElementById('back-btn')?.addEventListener('click', () => {
       this.taber.activateTab('home');
     });
 
-    // أحداث تحديث البيانات
     document.addEventListener('refreshData', () => {
       this._refreshAppData();
     });
   }
 
-  /**
-   * @private
-   * @method _handleTabChange
-   * @description إدارة تغيير التبويبات
-   * @param {string} tabId - معرّف التبويب
-   */
   _handleTabChange(tabId) {
     document.querySelector('.sidebar')?.classList.remove('active');
     document.querySelector('.overlay')?.classList.remove('active');
@@ -151,25 +181,16 @@ export class AppManager {
     }
   }
 
-  /**
-   * @private
-   * @method _refreshAppData
-   * @description إعادة تحميل بيانات التطبيقات
-   */
   async _refreshAppData() {
     try {
       await this.api.refreshData('/api/apps', 'appsData');
       await this._initAppsTab();
     } catch (error) {
       console.error('فشل تحديث البيانات:', error);
+      this._showToast('فشل في تحديث البيانات', 'error');
     }
   }
 
-  /**
-   * @private
-   * @method _showFatalError
-   * @description عرض رسالة خطأ فادح
-   */
   _showFatalError() {
     const container = document.getElementById('app-container');
     if (container) {
@@ -177,7 +198,9 @@ export class AppManager {
         <div class="fatal-error">
           <h2>حدث خطأ جسيم</h2>
           <p>${this.initState.error?.message || 'تعذر تحميل التطبيق'}</p>
-          <button id="retry-btn">إعادة المحاولة</button>
+          <button id="retry-btn" class="retry-btn">
+            <i class="refresh-icon">↻</i> إعادة المحاولة
+          </button>
         </div>
       `;
       
@@ -187,12 +210,9 @@ export class AppManager {
     }
   }
 
-  /**
-   * @method destroy
-   * @description تنظيف الموارد عند تدمير التطبيق
-   */
   destroy() {
     Object.values(this.tabs).forEach(tab => tab.destroy?.());
+    Object.values(this.dialogs).forEach(dialog => dialog.destroy?.());
     this.api.clearCache();
     window.removeEventListener('refreshData', this._refreshAppData);
   }

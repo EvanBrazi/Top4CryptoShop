@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         // ----------------------------
         // 3. تهيئة المكونات الأساسية
         // ----------------------------
-        
+
         // 3.1 نظام التبويبات
         const taber = new Taber(DOM.sidebarMenu, DOM.tabsContent, {
             activeClass: 'active',
@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         const appManager = new AppManager(taber);
 
         // 3.3 تهيئة السمة
-        th.initTheme();
+        //th.initTheme();
 
         // 3.4 تحميل بيانات المستخدم
         await um.loadUser();
@@ -134,7 +134,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             // لمنع التكرار عند التمرير السريع
             const throttledScrollHandler = throttle(() => {
                 const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
-                
+
                 if (currentScroll > lastScrollPosition) {
                     DOM.footer.classList.add('hidden');
                 } else {
@@ -227,7 +227,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         function throttle(func, limit) {
             let lastFunc;
             let lastRan;
-            return function() {
+            return function () {
                 const context = this;
                 const args = arguments;
                 if (!lastRan) {
@@ -235,7 +235,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                     lastRan = Date.now();
                 } else {
                     clearTimeout(lastFunc);
-                    lastFunc = setTimeout(function() {
+                    lastFunc = setTimeout(function () {
                         if ((Date.now() - lastRan) >= limit) {
                             func.apply(context, args);
                             lastRan = Date.now();
@@ -252,16 +252,25 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     /**
      * عرض رسالة خطأ فادح
-     */
+     **/
     function showFatalError() {
         const errorContainer = document.createElement('div');
         errorContainer.className = 'fatal-error';
+
+        // بناء المحتوى بدون onclick
         errorContainer.innerHTML = `
-            <h2>حدث خطأ جسيم</h2>
-            <p>تعذر تحميل التطبيق، يرجى تحديث الصفحة</p>
-            <button onclick="window.location.reload()">إعادة تحميل</button>
-        `;
+        <h2>حدث خطأ جسيم</h2>
+        <p>تعذر تحميل التطبيق، يرجى تحديث الصفحة</p>
+        <button id="reloadBtn">إعادة تحميل</button>
+    `;
+
         document.body.innerHTML = '';
         document.body.appendChild(errorContainer);
+
+        // ربط الحدث بطريقة آمنة
+        document.getElementById('reloadBtn').addEventListener('click', () => {
+            window.location.reload();
+        });
     }
+
 });

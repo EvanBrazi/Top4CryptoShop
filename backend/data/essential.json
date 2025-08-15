@@ -1,0 +1,33 @@
+{
+    "status": "success",
+    "data": {
+        "config": {
+            "paginationLimit": 20,
+            "cacheTTL": 3600
+        },
+        "essentialApps": [
+            {
+                "id": "core_chat",
+                "name": "Main Chat",
+                "icon": "default.png",
+                "version": "1.2.3",
+                "isRequired": true
+            },
+            {
+                "id": "payment_gateway",
+                "name": "Payment Geteway",
+                "icon": "default.png",
+                "version": "2.1.0",
+                "isRequired": true
+            }
+        ],
+        "serverConfig": {
+            "maxFileSize": 5242880,
+            "allowedMimeTypes": [
+                "image/png",
+                "image/jpeg",
+                "image/webp"
+            ]
+        }
+    }
+}

@@ -154,6 +154,19 @@ app.get('/api/apps', (req, res) => {
   });
 });
 
+app.get('/api/essential', (req, res) => {
+  const filePath = path.join(__dirname, 'data', 'essential.json');
+  fs.readFile(filePath, 'utf8', (err, data) => {
+    if (err) {
+      console.error('❌ خطأ في قراءة ملف essential:', err);
+      return res.status(500).json({ error: 'فشل تحميل essential' });
+    }
+
+    const essential = JSON.parse(data);
+    res.json(essential);
+  });
+});
+
 // API: إرجاع قائمة الأيقونات
 app.get('/api/icons-list', (req, res) => {
   const iconsPath = path.join(__dirname, 'public', 'icons-list.json');

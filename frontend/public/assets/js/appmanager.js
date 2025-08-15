@@ -9,6 +9,8 @@
 import { HomeTab } from "./tabs/hometab.js";
 import { AppsTab } from "./tabs/appstab.js";
 import ApiService from './services/apiService.js';
+import { _transformAppsData } from './utils/appUtils.js';
+
 
 export class AppManager {
   /**
@@ -78,7 +80,7 @@ export class AppManager {
    */
   async _initAppsTab() {
     const [appsData, iconsList] = await Promise.all([
-      this.api.fetchData('/api/apps', 'appsData').then(this._transformAppsData),
+      this.api.fetchData('/api/apps', 'appsData').then(_transformAppsData),
       this.api.fetchData('/api/icons-list', 'iconsList').then(res => res.icons || [])
     ]);
 
@@ -93,51 +95,6 @@ export class AppManager {
         cacheStrategy: 'lazy' // 'eager' أو 'lazy'
       }
     });
-  }
-
-  /**
-   * @private
-   * @method _transformAppsData
-   * @description تحويل وتنظيف بيانات التطبيقات
-   * @param {Array} rawData - البيانات الخام
-   * @returns {Array} - البيانات المنسقة
-   */
-  _transformAppsData(rawData) {
-    if (!Array.isArray(rawData)) return [];
-    
-    return rawData.map(app => ({
-      id: Number.isInteger(app.id) ? app.id : Date.now(),
-      name: typeof app.name === 'string' ? app.name.trim() : 'بدون اسم',
-      icon: this._validateIcon(app.icon),
-      category: typeof app.category === 'string' ? app.category.trim() : 'غير مصنف',
-      price: this._parsePrice(app.price),
-      available: Boolean(app.available)
-    }));
-  }
-
-  /**
-   * @private
-   * @method _validateIcon
-   * @description التحقق من صلاحية أيقونة التطبيق
-   * @param {string} filename - اسم ملف الأيقونة
-   * @returns {string} - مسار الأيقونة الصالح
-   */
-  _validateIcon(filename) {
-    if (typeof filename !== 'string') return 'default.png';
-    const allowedExtensions = /\.(png|jpg|jpeg|svg|webp)$/i;
-    return allowedExtensions.test(filename) ? filename : 'default.png';
-  }
-
-  /**
-   * @private
-   * @method _parsePrice
-   * @description تحويل السعر إلى رقم
-   * @param {any} price - قيمة السعر
-   * @returns {number|null} - السعر كرقم
-   */
-  _parsePrice(price) {
-    const parsed = parseFloat(price);
-    return isNaN(parsed) ? null : Math.max(0, parsed);
   }
 
   /**
@@ -169,7 +126,7 @@ export class AppManager {
 
     // أحداث الزر الرجوع
     document.getElementById('back-btn')?.addEventListener('click', () => {
-      this.taber.switchTab('home');
+      this.taber.activateTab('home');
     });
 
     // أحداث تحديث البيانات
@@ -239,13 +196,4 @@ export class AppManager {
     this.api.clearCache();
     window.removeEventListener('refreshData', this._refreshAppData);
   }
-}
-
-// تصدير الدوال المساعدة
-export function transformAppsData(rawData) {
-  return new AppManager()._transformAppsData(rawData);
-}
-
-export function isValidImage(filename) {
-  return new AppManager()._validateIcon(filename) !== 'default.png';
 }

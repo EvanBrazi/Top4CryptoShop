@@ -19,7 +19,7 @@ export class AppsTab {
    */
   constructor({ containerId, options = {} }) {
     if (!containerId) throw new Error('معرف الحاوية مطلوب');
-    
+
     this.container = document.getElementById(containerId);
     if (!this.container) {
       console.error(`العنصر غير موجود: ${containerId}`);
@@ -28,8 +28,8 @@ export class AppsTab {
 
     this.options = {
       appsData: Array.isArray(options.appsData) ? options.appsData : [],
-      iconsBasePath: options.iconsBasePath?.endsWith('/') 
-        ? options.iconsBasePath 
+      iconsBasePath: options.iconsBasePath?.endsWith('/')
+        ? options.iconsBasePath
         : `${options.iconsBasePath}/`,
       themeColor: options.themeColor || '#6a5acd',
       dialogBgColor: options.dialogBgColor || '#ffffff',
@@ -68,7 +68,7 @@ export class AppsTab {
       this._renderSearchBar();
       this._renderAppsGrid();
       this._setupIntersectionObserver();
-      
+
       if (this.options.cacheStrategy === 'eager') {
         await this._preloadIcons();
       }
@@ -78,6 +78,88 @@ export class AppsTab {
       this._showErrorState();
     }
   }
+
+  /**
+ * تضيف أنماط CSS مخصصة لتبويب التطبيقات.
+ * الهدف: تحسين العرض البصري وضمان توافق الستايل مع الثيم العام.
+ */
+  _injectStyles() {
+    const styleId = 'apps-tab-styles';
+
+    // منع التكرار إذا كانت الأنماط قد أُضيفت مسبقًا
+    if (document.getElementById(styleId)) return;
+
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.textContent = `
+    .apps-tab-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      padding: 12px;
+    }
+
+    .app-card {
+      background-color: var(--card-bg, #fff);
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      transition: transform 0.2s ease;
+    }
+
+    .app-card:hover {
+      transform: scale(1.03);
+    }
+
+    .app-card .title {
+      font-size: 1rem;
+      font-weight: bold;
+      margin: 8px;
+    }
+
+    .app-card .buy-button {
+      background-color: var(--primary-color, #007bff);
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .app-card .buy-button:hover {
+      background-color: var(--primary-hover, #0056b3);
+    }
+  `;
+    document.head.appendChild(style);
+  }
+
+  /**
+ * تعرض واجهة خطأ تفاعلية عند فشل تحميل تبويب التطبيقات.
+ * @param {Error} error - كائن الخطأ الذي تم التقاطه.
+ */
+  _showErrorState(error) {
+    console.error('AppsTab Error:', error);
+
+    const container = document.querySelector('.apps-tab-container');
+    if (!container) return;
+
+    container.innerHTML = `
+    <div class="error-ui">
+      <h2>⚠️ حدث خطأ أثناء تحميل التطبيقات</h2>
+      <p>تعذر تحميل المحتوى. قد يكون السبب مشكلة في الاتصال أو خلل مؤقت.</p>
+      <button id="retry-btn">🔄 إعادة المحاولة</button>
+    </div>
+  `;
+
+    // إعادة المحاولة عند الضغط على الزر
+    const retryBtn = document.getElementById('retry-btn');
+    if (retryBtn) {
+      retryBtn.addEventListener('click', () => {
+        container.innerHTML = '<p>🔄 جاري إعادة التحميل...</p>';
+        this._init(); // إعادة تهيئة التبويب
+      });
+    }
+  }
+
 
   /**
    * @public
@@ -93,10 +175,10 @@ export class AppsTab {
     }
 
     this.options.appsData = newAppsData;
-    this.state.filteredApps = resetFilters 
-      ? [...newAppsData] 
+    this.state.filteredApps = resetFilters
+      ? [...newAppsData]
       : this._applyCurrentFilter(newAppsData);
-    
+
     this._renderAppsGrid();
   }
 
@@ -250,7 +332,7 @@ export class AppsTab {
    */
   async _loadIcon(imgElement) {
     const iconUrl = imgElement.dataset.src;
-    
+
     if (this.resources.iconCache.has(iconUrl)) {
       imgElement.src = this.resources.iconCache.get(iconUrl);
       return;
@@ -266,19 +348,19 @@ export class AppsTab {
    * @description معالجة طابور تحميل الأيقونات
    */
   async _processIconQueue() {
-    while (this.resources.requestQueue.length > 0 && 
-           this.resources.activeRequests < this.options.maxConcurrentLoads) {
-      
+    while (this.resources.requestQueue.length > 0 &&
+      this.resources.activeRequests < this.options.maxConcurrentLoads) {
+
       const { imgElement, iconUrl } = this.resources.requestQueue.shift();
       this.resources.activeRequests++;
 
       try {
         const response = await fetch(iconUrl, { cache: 'force-cache' });
-        
+
         if (response.ok) {
           const blob = await response.blob();
           const objectUrl = URL.createObjectURL(blob);
-          
+
           this.resources.iconCache.set(iconUrl, objectUrl);
           imgElement.src = objectUrl;
           imgElement.onload = () => imgElement.classList.add('loaded');
@@ -396,7 +478,7 @@ export class AppsTab {
     dialog.querySelector('.buy-btn').addEventListener('click', () => {
       const quantity = parseInt(dialog.querySelector('.quantity-input').value) || 1;
       const userId = dialog.querySelector('.user-id-input').value.trim();
-      
+
       if (!userId) {
         this._showToast('الرجاء إدخال معرف المستخدم', 'error');
         return;

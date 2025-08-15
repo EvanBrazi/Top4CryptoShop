@@ -4,9 +4,9 @@ const router = express.Router();
 router.get('/', (req, res) => {
   res.json([
     {
-        /** @private {index[0]} Just select which tab for activate*/whichTab: "apps",
+        whichTab: "apps",
         title: "التطبيقات",
-        icon: "./assets/images/favicon.ico",
+        icon: "./icons/appstab/apps_tab.png",
         logo: "./assets/images/logo.png"
       },
       {

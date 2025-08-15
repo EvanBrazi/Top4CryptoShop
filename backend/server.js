@@ -210,10 +210,6 @@ app.use('/icons', express.static(path.join(__dirname, 'public/icons'), {
 // مسارات API (يجب أن تأتي قبل المسارات الثابتة)
 app.use('/api/auth', authRoutes); // <-- إضافة مسارات المصادقة هنا
 
-// مسارات الأيقونات
-const iconsRouter = require('./routes/icons');
-app.use('/api/icons', iconsRouter);
-
 const cardsRouter = require('./routes/cards');
 const { uptime } = require('process');
 const csrfMiddleware = require('./middlewares/csrfMiddleware');

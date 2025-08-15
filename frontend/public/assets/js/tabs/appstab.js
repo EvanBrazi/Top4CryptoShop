@@ -174,6 +174,7 @@ export class AppsTab {
       }
 
       .app-icon {
+        border-radius: 100%;
         max-width: 60%;
         max-height: 60%;
         object-fit: contain;

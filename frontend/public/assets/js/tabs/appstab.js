@@ -1,10 +1,12 @@
 /**
  * @file appstab.js
  * @class AppsTab
- * @description تبويب التطبيقات مع نظام تحميل ذكي للأيقونات وإدارة الذاكرة
- * @version 8.0.0
+ * @description تبويب التطبيقات مع نظام تحميل ذكي للأيقونات باستخدام IconManager
+ * @version 9.0.0
  * @license MIT
  */
+
+import { IconManager } from './iconmanager.js';
 
 export class AppsTab {
   constructor({ containerId, options = {} }) {
@@ -16,13 +18,17 @@ export class AppsTab {
       appsData: Array.isArray(options.appsData) ? options.appsData : [],
       iconsBasePath: options.iconsBasePath?.endsWith('/') ? options.iconsBasePath : `${options.iconsBasePath}/`,
       themeColor: options.themeColor || '#6a5acd',
-      maxConcurrentLoads: options.maxConcurrentLoads || 3,
+      maxConcurrentLoads: options.maxConcurrentLoads || 4,
       cacheStrategy: options.cacheStrategy || 'lazy',
-      maxCachedIcons: options.maxCachedIcons || 30,
-      iconTTL: options.iconTTL || 24 * 60 * 60 * 1000, // 24 ساعة
       onCardClick: options.onCardClick || (() => {}),
       onError: options.onError || (() => {})
     };
+
+    // تهيئة IconManager
+    this.iconManager = new IconManager({
+      maxConcurrent: this.options.maxConcurrentLoads,
+      cacheSize: options.maxCachedIcons || 50
+    });
 
     // حالة التبويب
     this.state = {
@@ -34,15 +40,12 @@ export class AppsTab {
 
     // موارد النظام
     this.resources = {
-      iconCache: new Map(), // تخزين مؤقت للأيقونات
-      requestQueue: [], // طابور الطلبات
-      activeRequests: 0, // الطلبات النشطة
-      observer: null, // مراقب العناصر
-      lastCleanup: Date.now() // آخر عملية تنظيف
+      observer: null,
+      cleanupInterval: null
     };
 
     this._init().catch(error => {
-      this.onError(error);
+      this.options.onError(error);
     });
   }
 
@@ -64,7 +67,7 @@ export class AppsTab {
     } catch (error) {
       this.state.error = error;
       console.error('فشل تهيئة تبويب التطبيقات:', error);
-      this._showErrorState();
+      this._showErrorState(error);
     }
   }
 
@@ -77,7 +80,6 @@ export class AppsTab {
     style.textContent = `
       .apps-tab-container {
         --theme-color: ${this.options.themeColor};
-        --dialog-bg-color: ${this.options.dialogBgColor || '#ffffff'};
       }
 
       .apps-grid {
@@ -146,6 +148,23 @@ export class AppsTab {
         background: var(--night-card);
         color: var(--night-text);
       }
+
+      /* حالة الخطأ */
+      .tab-error-state {
+        text-align: center;
+        padding: 20px;
+        color: #ff6b6b;
+      }
+      
+      .retry-btn {
+        background: ${this.options.themeColor};
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        margin-top: 10px;
+        cursor: pointer;
+      }
     `;
     document.head.appendChild(style);
   }
@@ -164,10 +183,12 @@ export class AppsTab {
           this._loadAppIcon(entry.target);
         } else {
           this.state.visibleApps.delete(appId);
-          this._unloadAppIconIfNeeded(entry.target);
         }
       });
-    }, { threshold: 0.01, rootMargin: '200px' });
+    }, { 
+      threshold: 0.01,
+      rootMargin: '200px'
+    });
 
     document.querySelectorAll('.app-card').forEach(card => {
       this.resources.observer.observe(card);
@@ -178,67 +199,37 @@ export class AppsTab {
     const imgElement = cardElement.querySelector('.app-icon');
     const iconUrl = imgElement.dataset.src;
 
-    // إذا كانت الأيقونة محملة بالفعل
+    // تجنب إعادة تحميل الأيقونات المرئية بالفعل
     if (imgElement.src && imgElement.src !== '') return;
 
-    // إذا كانت الأيقونة في الكاش
-    if (this.resources.iconCache.has(iconUrl)) {
-      imgElement.src = this.resources.iconCache.get(iconUrl);
-      return;
-    }
-
-    // إضافة الطلب إلى الطابور
-    this.resources.requestQueue.push({ imgElement, iconUrl, cardElement });
-    this._processIconQueue();
-  }
-
-  _unloadAppIconIfNeeded(cardElement) {
-    if (this._shouldFreeMemory()) {
-      const imgElement = cardElement.querySelector('.app-icon');
-      if (imgElement.src && imgElement.src !== '') {
-        imgElement.src = '';
-      }
+    try {
+      const blob = await this.iconManager.load(iconUrl);
+      imgElement.src = URL.createObjectURL(blob);
+      imgElement.onload = () => {
+        imgElement.classList.add('loaded');
+      };
+    } catch (error) {
+      console.warn(`فشل تحميل الأيقونة: ${iconUrl}`, error);
+      imgElement.src = this._getIconPath('default.png');
     }
   }
 
-  async _processIconQueue() {
-    // التحقق من الحد الأقصى للطلبات المتزامنة
-    while (this.resources.requestQueue.length > 0 &&
-           this.resources.activeRequests < this.options.maxConcurrentLoads) {
-      
-      const { imgElement, iconUrl, cardElement } = this.resources.requestQueue.shift();
-      this.resources.activeRequests++;
+  async _preloadVisibleIcons() {
+    const visibleIcons = Array.from(document.querySelectorAll('.app-card'))
+      .filter(card => {
+        const rect = card.getBoundingClientRect();
+        return (
+          rect.top < window.innerHeight &&
+          rect.bottom > 0 &&
+          rect.left < window.innerWidth &&
+          rect.right > 0
+        );
+      })
+      .map(card => card.querySelector('.app-icon').dataset.src);
 
-      try {
-        // تحميل الأيقونة
-        const response = await fetch(iconUrl, { cache: 'force-cache' });
-
-        if (response.ok) {
-          const blob = await response.blob();
-          
-          // تحرير الذاكرة إذا لزم الأمر
-          if (this._shouldFreeMemory()) {
-            this._cleanupIconCache();
-          }
-
-          // تخزين الأيقونة في الكاش
-          const objectUrl = URL.createObjectURL(blob);
-          this.resources.iconCache.set(iconUrl, objectUrl);
-          
-          // تحديث العنصر فقط إذا كان مرئيًا
-          if (this.state.visibleApps.has(cardElement.dataset.appId)) {
-            imgElement.src = objectUrl;
-            imgElement.onload = () => imgElement.classList.add('loaded');
-          }
-        }
-      } catch (error) {
-        console.warn(`فشل تحميل الأيقونة: ${iconUrl}`, error);
-        imgElement.src = this._getIconPath('default.png');
-      } finally {
-        this.resources.activeRequests--;
-        this._processIconQueue();
-      }
-    }
+    await Promise.all(
+      visibleIcons.map(iconUrl => this.iconManager.load(iconUrl))
+    );
   }
 
   /* ------------------------------------ */
@@ -246,53 +237,16 @@ export class AppsTab {
   /* ------------------------------------ */
 
   _setupMemoryManagement() {
-    // تنظيف الذاكرة كل 5 دقائق
-    this.memoryCleanupInterval = setInterval(() => {
-      this._cleanupIconCache();
-    }, 5 * 60 * 1000);
+    // تنظيف الذاكرة كل 10 دقائق
+    this.resources.cleanupInterval = setInterval(() => {
+      this.iconManager.clearCache();
+    }, 10 * 60 * 1000);
 
-    // إدارة الذاكرة عند تغيير التبويب
+    // تنظيف الذاكرة عند إخفاء الصفحة
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
-        this._cleanupIconCache(true); // تنظيف قوي عند ترك الصفحة
+        this.iconManager.clearCache();
       }
-    });
-
-    // إدارة الذاكرة عند تغيير الحجم
-    window.addEventListener('resize', () => {
-      this._cleanupIconCache();
-    });
-  }
-
-  _shouldFreeMemory() {
-    // تحرير الذاكرة إذا تجاوزنا الحد الأقصى للأيقونات المخزنة
-    return this.resources.iconCache.size > this.options.maxCachedIcons;
-  }
-
-  _cleanupIconCache(force = false) {
-    const now = Date.now();
-    
-    // لا نقوم بالتنظيف أكثر من مرة كل دقيقة إلا إذا كان تنظيفًا قويًا
-    if (!force && now - this.resources.lastCleanup < 60 * 1000) return;
-
-    this.resources.lastCleanup = now;
-
-    // نحدد الأيقونات التي يمكن تحريرها (غير مرئية أو منتهية الصلاحية)
-    const iconsToRemove = [];
-    
-    this.resources.iconCache.forEach((url, key) => {
-      const isVisible = Array.from(document.querySelectorAll('.app-icon'))
-        .some(img => img.src === url);
-      
-      if (!isVisible) {
-        iconsToRemove.push(key);
-      }
-    });
-
-    // تحرير الذاكرة
-    iconsToRemove.slice(0, 10).forEach(key => { // نحرر 10 أيقونات كحد أقصى في كل مرة
-      URL.revokeObjectURL(this.resources.iconCache.get(key));
-      this.resources.iconCache.delete(key);
     });
   }
 
@@ -351,9 +305,23 @@ export class AppsTab {
 
     iconContainer.appendChild(icon);
     card.append(iconContainer, name);
-    card.addEventListener('click', () => this.onCardClick(app));
+    card.addEventListener('click', () => this.options.onCardClick(app));
 
     return card;
+  }
+
+  _showErrorState(error) {
+    this.container.innerHTML = `
+      <div class="tab-error-state">
+        <h3>حدث خطأ في تحميل التطبيقات</h3>
+        <p>${error.message || 'تعذر تحميل البيانات'}</p>
+        <button class="retry-btn">إعادة المحاولة</button>
+      </div>
+    `;
+
+    this.container.querySelector('.retry-btn').addEventListener('click', () => {
+      this._init();
+    });
   }
 
   _createEmptyState() {
@@ -375,23 +343,25 @@ export class AppsTab {
     return `${this.options.iconsBasePath}${iconName || 'default.png'}`;
   }
 
-  _formatPrice(price) {
-    return Number(price || 0).toFixed(2);
-  }
-
   destroy() {
-    clearInterval(this.memoryCleanupInterval);
-    
+    // تنظيف المراقبة
     if (this.resources.observer) {
       this.resources.observer.disconnect();
     }
 
-    this.resources.iconCache.forEach(url => URL.revokeObjectURL(url));
-    this.resources.iconCache.clear();
+    // إيقاف定时器 التنظيف
+    if (this.resources.cleanupInterval) {
+      clearInterval(this.resources.cleanupInterval);
+    }
 
+    // تنظيف IconManager
+    this.iconManager.clearCache();
+
+    // إزالة الأنماط
     const style = document.getElementById('apps-tab-styles');
     if (style) style.remove();
 
+    // إزالة المحتوى
     this.container.innerHTML = '';
   }
 }

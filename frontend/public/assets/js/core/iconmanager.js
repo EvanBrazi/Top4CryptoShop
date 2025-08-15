@@ -6,7 +6,7 @@
  * @license MIT
  */
 
-import LRUCache from 'lru-cache';
+import LRUCache from 'https://esm.sh/lru-cache@7';
 
 export class IconManager {
   /**
@@ -21,7 +21,7 @@ export class IconManager {
   constructor(options = {}) {
     // إعدادات الكاش
     this.cache = new LRUCache({
-      max: options.maxItems || 50,
+      max: options.maxItems || 500,
       maxSize: options.maxSize || 50 * 1024 * 1024, // 50MB افتراضيًا
       sizeCalculation: (value) => value.size || 1024,
       ttl: options.ttl || 24 * 60 * 60 * 1000, // 24 ساعة

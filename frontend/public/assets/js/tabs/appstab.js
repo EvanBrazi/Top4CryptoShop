@@ -40,7 +40,7 @@ export class AppsTab {
     // تهيئة IconManager
     this.iconManager = new IconManager({
       maxConcurrent: this.options.maxConcurrentLoads,
-      maxItems: options.maxCachedIcons || 123,
+      maxItems: options.maxCachedIcons || 200,
       ttl: options.iconTTL || 24 * 60 * 60 * 1000, // 24 ساعة
       defaultIconUrl: this._getIconPath('default.png')
     });

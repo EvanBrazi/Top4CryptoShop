@@ -318,7 +318,7 @@ class HomePage {
     async _registerServiceWorker() {
         if ('serviceWorker' in navigator) {
             try {
-                await navigator.serviceWorker.register('/assets/js/sw.js');
+                await navigator.serviceWorker.register('/assets/js/sw.js', { type: 'module' });
                 console.log('✅ Service Worker مسجل بنجاح');
             } catch (err) {
                 console.error('❌ فشل تسجيل Service Worker:', err);

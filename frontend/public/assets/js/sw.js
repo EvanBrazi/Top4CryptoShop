@@ -14,7 +14,7 @@ const ICONS_TO_CACHE = [
 
 // تهيئة IconManager
 const iconManager = new IconManager({
-  maxItems: 100,
+  maxItems: 500,
   maxConcurrent: 4,
   defaultIconUrl: '/icons/apps/default.png'
 });

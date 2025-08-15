@@ -86,7 +86,8 @@ export class AppManager {
           themeColor: '#6a5acd',
           dialogBgColor: '#ffffff',
           cacheStrategy: 'lazy',
-          maxCachedIcons: 40,
+          maxConcurrentLoads: 5,
+          maxCachedIcons: 100,
           onCardClick: (app) => this._handleAppCardClick(app),
           onError: (error) => this._handleAppsTabError(error)
         }

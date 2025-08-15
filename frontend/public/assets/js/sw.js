@@ -3,6 +3,8 @@
  * Service Worker لتخزين الأيقونات والصور الأساسية في الكاش
  */
 
+const { iconManager } = require("./core/iconmanager.js");
+
 const CACHE_NAME = 'static-cache-v1';
 const ICONS_TO_CACHE = [
   '/icons/apps/default.png',
@@ -21,7 +23,7 @@ self.addEventListener('install', event => {
 
 // 🔄 عند الطلب: أعد الملفات من الكاش إن وجدت
 self.addEventListener('fetch', event => {
-  if (event.request.url.includes('/icons') || event.request.url.includes('/assets')) {
+  if (event.request.url.includes('/assets')) {
     event.respondWith(
       caches.match(event.request).then(cached =>
         cached || fetch(event.request).then(res => {
@@ -32,6 +34,8 @@ self.addEventListener('fetch', event => {
         })
       )
     );
+  } else if (event.request.url.includes('/icons/')) {
+    event.respondWith(iconManager.getIcon(event.request.url));
   } else {
     event.respondWith(fetch(event.request));
   }

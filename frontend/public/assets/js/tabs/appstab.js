@@ -6,7 +6,7 @@
  * @license MIT
  */
 
-import { IconManager } from './iconmanager.js';
+import { IconManager } from '../core/iconmanager.js';
 
 export class AppsTab {
   constructor({ containerId, options = {} }) {
@@ -27,7 +27,8 @@ export class AppsTab {
     // تهيئة IconManager
     this.iconManager = new IconManager({
       maxConcurrent: this.options.maxConcurrentLoads,
-      cacheSize: options.maxCachedIcons || 50
+      cacheSize: options.maxCachedIcons || 123,
+      ttl: options.iconTTL || 24 * 60 * 60 * 1000 // 24hour
     });
 
     // حالة التبويب
@@ -203,11 +204,8 @@ export class AppsTab {
     if (imgElement.src && imgElement.src !== '') return;
 
     try {
-      const blob = await this.iconManager.load(iconUrl);
-      imgElement.src = URL.createObjectURL(blob);
-      imgElement.onload = () => {
-        imgElement.classList.add('loaded');
-      };
+      const objectUrl = await this.iconManager.load(iconUrl);
+      imgElement.src = objectUrl;
     } catch (error) {
       console.warn(`فشل تحميل الأيقونة: ${iconUrl}`, error);
       imgElement.src = this._getIconPath('default.png');

@@ -1,8 +1,8 @@
 /**
  * @file appstab.js
  * @class AppsTab
- * @description إدارة تبويب التطبيقات مع نظام التحميل البطيء للأيقونات ونافذة شراء متكاملة
- * @version 6.0.0
+ * @description تبويب التطبيقات مع نظام تحميل ذكي للأيقونات ونافذة شراء متقدمة
+ * @version 7.1.0
  * @license MIT
  */
 
@@ -13,186 +13,124 @@ export class AppsTab {
    * @param {string} config.containerId - معرف العنصر الحاوي
    * @param {Object} [options={}] - خيارات إضافية
    * @param {Array} [options.appsData=[]] - بيانات التطبيقات
-   * @param {string} [options.iconsBasePath='/icons/apps/'] - المسار الأساسي للأيقونات
+   * @param {string} [options.iconsBasePath='/icons/apps/'] - مسار الأيقونات
    * @param {string} [options.themeColor='#6a5acd'] - لون السمة الرئيسي
+   * @param {number} [options.maxConcurrentLoads=3] - الحد الأقصى لطلبات التحميل المتزامنة
    */
   constructor({ containerId, options = {} }) {
-    // التحقق من وجود عنصر الحاوية
+    if (!containerId) throw new Error('معرف الحاوية مطلوب');
+    
     this.container = document.getElementById(containerId);
     if (!this.container) {
+      console.error(`العنصر غير موجود: ${containerId}`);
       throw new Error(`❌ عنصر الحاوية غير موجود: ${containerId}`);
     }
 
-    // تعيين الخيارات مع القيم الافتراضية
     this.options = {
-      appsData: options.appsData || [],
-      iconsBasePath: options.iconsBasePath || '/icons/apps/',
+      appsData: Array.isArray(options.appsData) ? options.appsData : [],
+      iconsBasePath: options.iconsBasePath?.endsWith('/') 
+        ? options.iconsBasePath 
+        : `${options.iconsBasePath}/`,
       themeColor: options.themeColor || '#6a5acd',
-      dialogBgColor: options.dialogBgColor || '#ffffff'
+      dialogBgColor: options.dialogBgColor || '#ffffff',
+      maxConcurrentLoads: options.maxConcurrentLoads || 3,
+      cacheStrategy: options.cacheStrategy || 'lazy' // 'lazy' أو 'eager'
     };
 
-    // ذاكرة تخزين مؤقت للعناصر
-    this.cache = {
-      icons: new Map(),
-      elements: new Map()
+    this.state = {
+      loading: false,
+      error: null,
+      filteredApps: [...this.options.appsData]
     };
 
-    // تهيئة المكون
+    this.resources = {
+      iconCache: new Map(),
+      requestQueue: [],
+      activeRequests: 0,
+      observer: null
+    };
+
     this._init();
   }
 
+  /* ---------------------------------- */
+  /* --------- Core Functions --------- */
+  /* ---------------------------------- */
+
   /**
    * @private
-   * تهيئة المكون الرئيسي
+   * @method _init
+   * @description تهيئة المكون الرئيسي
    */
   async _init() {
-    this._injectStyles();
-    this._renderSearchBar();
-    this._renderAppsGrid();
-    this._setupIntersectionObserver();
+    try {
+      this._injectStyles();
+      this._renderSearchBar();
+      this._renderAppsGrid();
+      this._setupIntersectionObserver();
+      
+      if (this.options.cacheStrategy === 'eager') {
+        await this._preloadIcons();
+      }
+    } catch (error) {
+      this.state.error = error;
+      console.error('فشل تهيئة تبويب التطبيقات:', error);
+      this._showErrorState();
+    }
   }
 
   /**
-   * @private
-   * حقن أنماط CSS المخصصة
+   * @public
+   * @method updateApps
+   * @description تحديث بيانات التطبيقات
+   * @param {Array} newAppsData - بيانات جديدة
+   * @param {boolean} [resetFilters=true] - إعادة تعيين الفلاتر
    */
-  _injectStyles() {
-    const styleId = 'apps-tab-styles';
-    let style = document.getElementById(styleId);
-
-    if (!style) {
-      style = document.createElement('style');
-      style.id = styleId;
-      document.head.appendChild(style);
+  updateApps(newAppsData, resetFilters = true) {
+    if (!Array.isArray(newAppsData)) {
+      console.error('يجب أن تكون البيانات مصفوفة');
+      return;
     }
 
-    style.textContent = `
-      .apps-tab-container {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        padding: 20px;
-      }
-      .search-container {
-        margin-bottom: 20px;
-      }
-      .search-bar {
-        width: 100%;
-        padding: 12px 20px;
-        border: 2px solid ${this.options.themeColor};
-        border-radius: 25px;
-        font-size: 16px;
-      }
-      .apps-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: 20px;
-      }
-      .app-card {
-        background: white;
-        border-radius: 10px;
-        padding: 15px;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        cursor: pointer;
-        transition: transform 0.3s;
-      }
-      .app-card:hover {
-        transform: translateY(-5px);
-      }
-      .app-icon {
-        width: 64px;
-        height: 64px;
-        object-fit: contain;
-        margin-bottom: 10px;
-        border-radius: 12px;
-      }
-      .app-name {
-        font-weight: bold;
-        margin-bottom: 5px;
-      }
-      .app-price {
-        color: ${this.options.themeColor};
-      }
-      .purchase-dialog {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: ${this.options.dialogBgColor};
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 0 20px rgba(0,0,0,0.2);
-        z-index: 1000;
-        width: 90%;
-        max-width: 400px;
-      }
-      .dialog-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0,0,0,0.5);
-        z-index: 999;
-      }
-      .dialog-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 15px;
-      }
-      .dialog-icon {
-        width: 80px;
-        height: 80px;
-        margin: 0 auto 15px;
-        display: block;
-      }
-      .price-display {
-        text-align: center;
-        font-size: 18px;
-        margin: 10px 0;
-        color: ${this.options.themeColor};
-      }
-      .input-group {
-        margin: 15px 0;
-      }
-      .input-group label {
-        display: block;
-        margin-bottom: 5px;
-      }
-      .input-group input {
-        width: 100%;
-        padding: 10px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-      }
-      .total-price {
-        font-weight: bold;
-        margin: 15px 0;
-        text-align: center;
-      }
-      .dialog-actions {
-        display: flex;
-        justify-content: space-between;
-        margin-top: 20px;
-      }
-      .dialog-btn {
-        padding: 10px 20px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-      }
-      .buy-btn {
-        background: ${this.options.themeColor};
-        color: white;
-      }
-      .cancel-btn {
-        background: #f1f1f1;
-      }
-    `;
+    this.options.appsData = newAppsData;
+    this.state.filteredApps = resetFilters 
+      ? [...newAppsData] 
+      : this._applyCurrentFilter(newAppsData);
+    
+    this._renderAppsGrid();
   }
 
   /**
+   * @public
+   * @method destroy
+   * @description تنظيف الموارد
+   */
+  destroy() {
+    // تنظيف المراقبة
+    if (this.resources.observer) {
+      this.resources.observer.disconnect();
+    }
+
+    // تحرير ذاكرة التخزين المؤقت
+    this.resources.iconCache.forEach(url => URL.revokeObjectURL(url));
+    this.resources.iconCache.clear();
+
+    // إزالة الأنماط
+    const style = document.getElementById('apps-tab-styles');
+    if (style) style.remove();
+
+    // إزالة الأحداث
+    this.container.innerHTML = '';
+  }
+
+  /* ------------------------------------ */
+  /* --------- Rendering Methods -------- */
+  /* ------------------------------------ */
+
+  /**
    * @private
-   * إنشاء شريط البحث
+   * @method _renderSearchBar
+   * @description عرض شريط البحث
    */
   _renderSearchBar() {
     const searchContainer = document.createElement('div');
@@ -202,47 +140,29 @@ export class AppsTab {
     searchInput.type = 'text';
     searchInput.placeholder = '🔍 ابحث عن تطبيق...';
     searchInput.className = 'search-bar';
-    searchInput.addEventListener('input', (e) => this._filterApps(e.target.value));
+    searchInput.addEventListener('input', (e) => this._handleSearch(e.target.value));
 
     searchContainer.appendChild(searchInput);
-    this.container.appendChild(searchContainer);
+    this.container.prepend(searchContainer);
   }
 
   /**
    * @private
-   * تصفية التطبيقات حسب كلمة البحث
-   * @param {string} term - كلمة البحث
-   */
-  _filterApps(term) {
-    const keyword = term.toLowerCase().trim();
-    this.filteredApps = keyword
-      ? this.options.appsData.filter(app => 
-          app.name.toLowerCase().includes(keyword) ||
-          (app.description && app.description.toLowerCase().includes(keyword))
-      : [...this.options.appsData];
-
-    this._renderAppsGrid();
-  }
-
-  /**
-   * @private
-   * عرض شبكة التطبيقات
+   * @method _renderAppsGrid
+   * @description عرض شبكة التطبيقات
    */
   _renderAppsGrid() {
-    // إزالة الشبكة القديمة إن وجدت
-    const oldGrid = this.container.querySelector('.apps-grid');
-    if (oldGrid) oldGrid.remove();
+    this.container.querySelector('.apps-grid')?.remove();
 
     const grid = document.createElement('div');
     grid.className = 'apps-grid';
 
-    if (this.filteredApps && this.filteredApps.length > 0) {
-      this.filteredApps.forEach(app => {
-        const card = this._createAppCard(app);
-        grid.appendChild(card);
-      });
+    if (this.state.filteredApps.length === 0) {
+      grid.innerHTML = this._createEmptyState();
     } else {
-      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;">لا توجد تطبيقات متاحة</div>';
+      this.state.filteredApps.forEach(app => {
+        grid.appendChild(this._createAppCard(app));
+      });
     }
 
     this.container.appendChild(grid);
@@ -250,35 +170,31 @@ export class AppsTab {
 
   /**
    * @private
-   * إنشاء بطاقة تطبيق
+   * @method _createAppCard
+   * @description إنشاء بطاقة تطبيق
    * @param {Object} app - بيانات التطبيق
-   * @returns {HTMLElement} عنصر البطاقة
+   * @returns {HTMLElement}
    */
   _createAppCard(app) {
     const card = document.createElement('div');
     card.className = 'app-card';
     card.dataset.appId = app.id;
 
-    // أيقونة التطبيق (سيتم تحميلها عند الظهور على الشاشة)
     const icon = document.createElement('img');
     icon.className = 'app-icon';
-    icon.alt = app.name;
-    icon.dataset.src = `${this.options.iconsBasePath}${app.icon || 'default.png'}`;
+    icon.alt = `${app.name} icon`;
+    icon.dataset.src = this._getIconPath(app.icon);
     icon.loading = 'lazy';
 
-    // معلومات التطبيق
     const name = document.createElement('div');
     name.className = 'app-name';
     name.textContent = app.name;
 
     const price = document.createElement('div');
     price.className = 'app-price';
-    price.textContent = `$${app.price?.toFixed(2) || '0.00'}`;
+    price.textContent = `$${this._formatPrice(app.price)}`;
 
-    // تجميع العناصر
     card.append(icon, name, price);
-    
-    // إضافة حدث النقر لفتح نافذة الشراء
     card.addEventListener('click', () => this._openPurchaseDialog(app));
 
     return card;
@@ -286,63 +202,164 @@ export class AppsTab {
 
   /**
    * @private
-   * إعداد مراقبة العناصر عند ظهورها على الشاشة
+   * @method _createEmptyState
+   * @description عرض حالة عدم وجود نتائج
+   * @returns {string}
+   */
+  _createEmptyState() {
+    return `
+      <div class="empty-state">
+        <svg width="64" height="64" viewBox="0 0 24 24">
+          <path fill="#999" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        </svg>
+        <p>لا توجد تطبيقات متاحة</p>
+      </div>
+    `;
+  }
+
+  /* ------------------------------------ */
+  /* ----------- Icon Loading ----------- */
+  /* ------------------------------------ */
+
+  /**
+   * @private
+   * @method _setupIntersectionObserver
+   * @description تهيئة مراقبة ظهور العناصر
    */
   _setupIntersectionObserver() {
-    if (this._observer) {
-      this._observer.disconnect();
-    }
-
-    this._observer = new IntersectionObserver((entries) => {
+    this.resources.observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           const img = entry.target;
-          if (img.dataset.src) {
-            img.src = img.dataset.src;
-            img.onerror = () => {
-              img.src = `${this.options.iconsBasePath}default.png`;
-            };
-            img.removeAttribute('data-src');
-          }
-          this._observer.unobserve(img);
+          this._loadIcon(img);
+          this.resources.observer.unobserve(img);
         }
       });
-    }, { threshold: 0.01 });
+    }, { threshold: 0.01, rootMargin: '200px' });
 
     document.querySelectorAll('.app-icon[data-src]').forEach(img => {
-      this._observer.observe(img);
+      this.resources.observer.observe(img);
     });
   }
 
   /**
    * @private
-   * فتح نافذة شراء التطبيق
+   * @method _loadIcon
+   * @description تحميل أيقونة التطبيق
+   * @param {HTMLImageElement} imgElement - عنصر الصورة
+   */
+  async _loadIcon(imgElement) {
+    const iconUrl = imgElement.dataset.src;
+    
+    if (this.resources.iconCache.has(iconUrl)) {
+      imgElement.src = this.resources.iconCache.get(iconUrl);
+      return;
+    }
+
+    this.resources.requestQueue.push({ imgElement, iconUrl });
+    this._processIconQueue();
+  }
+
+  /**
+   * @private
+   * @method _processIconQueue
+   * @description معالجة طابور تحميل الأيقونات
+   */
+  async _processIconQueue() {
+    while (this.resources.requestQueue.length > 0 && 
+           this.resources.activeRequests < this.options.maxConcurrentLoads) {
+      
+      const { imgElement, iconUrl } = this.resources.requestQueue.shift();
+      this.resources.activeRequests++;
+
+      try {
+        const response = await fetch(iconUrl, { cache: 'force-cache' });
+        
+        if (response.ok) {
+          const blob = await response.blob();
+          const objectUrl = URL.createObjectURL(blob);
+          
+          this.resources.iconCache.set(iconUrl, objectUrl);
+          imgElement.src = objectUrl;
+          imgElement.onload = () => imgElement.classList.add('loaded');
+        } else {
+          throw new Error('فشل تحميل الأيقونة');
+        }
+      } catch (error) {
+        console.warn(`فشل تحميل الأيقونة: ${iconUrl}`, error);
+        imgElement.src = this._getIconPath('default.png');
+      } finally {
+        this.resources.activeRequests--;
+        this._processIconQueue();
+      }
+    }
+  }
+
+  /**
+   * @private
+   * @method _preloadIcons
+   * @description تحميل مسبق للأيقونات
+   */
+  async _preloadIcons() {
+    const iconUrls = [...new Set(
+      this.options.appsData.map(app => this._getIconPath(app.icon))
+    )];
+
+    await Promise.all(
+      iconUrls.map(url => {
+        return new Promise((resolve) => {
+          const img = new Image();
+          img.src = url;
+          img.onload = resolve;
+          img.onerror = resolve;
+        });
+      })
+    );
+  }
+
+  /* ------------------------------------ */
+  /* -------- Purchase Dialog ----------- */
+  /* ------------------------------------ */
+
+  /**
+   * @private
+   * @method _openPurchaseDialog
+   * @description فتح نافذة الشراء
    * @param {Object} app - بيانات التطبيق
    */
   _openPurchaseDialog(app) {
-    // إغلاق أي نافذة مفتوحة حالياً
     this._closePurchaseDialog();
 
-    // إنشاء طبقة التعتيم
     const overlay = document.createElement('div');
     overlay.className = 'dialog-overlay';
     overlay.addEventListener('click', () => this._closePurchaseDialog());
 
-    // إنشاء نافذة الحوار
     const dialog = document.createElement('div');
     dialog.className = 'purchase-dialog';
+    dialog.innerHTML = this._createPurchaseDialogHTML(app);
 
-    // محتوى النافذة
-    dialog.innerHTML = `
+    document.body.append(overlay, dialog);
+    this._setupDialogEvents(dialog, app);
+  }
+
+  /**
+   * @private
+   * @method _createPurchaseDialogHTML
+   * @description إنشاء محتوى نافذة الشراء
+   * @param {Object} app - بيانات التطبيق
+   * @returns {string}
+   */
+  _createPurchaseDialogHTML(app) {
+    return `
       <div class="dialog-header">
         <h3>${app.name}</h3>
-        <button class="dialog-close-btn">✕</button>
+        <button class="dialog-close-btn" aria-label="إغلاق">✕</button>
       </div>
-      <img src="${this.options.iconsBasePath}${app.icon || 'default.png'}" 
+      <img src="${this._getIconPath(app.icon)}" 
            alt="${app.name}" 
            class="dialog-icon"
-           onerror="this.src='${this.options.iconsBasePath}default.png'">
-      <div class="price-display">السعر: $${app.price?.toFixed(2) || '0.00'}</div>
+           onerror="this.src='${this._getIconPath('default.png')}'">
+      <div class="price-display">السعر: $${this._formatPrice(app.price)}</div>
       
       <div class="input-group">
         <label for="quantity">الكمية:</label>
@@ -354,137 +371,87 @@ export class AppsTab {
         <input type="text" id="user-id" placeholder="أدخل معرفك" class="user-id-input">
       </div>
       
-      <div class="total-price">المجموع: $${app.price?.toFixed(2) || '0.00'}</div>
+      <div class="total-price">المجموع: $${this._formatPrice(app.price)}</div>
       
       <div class="dialog-actions">
         <button class="dialog-btn cancel-btn">إلغاء</button>
         <button class="dialog-btn buy-btn">شراء</button>
       </div>
     `;
+  }
 
-    // إضافة العناصر إلى DOM
-    document.body.appendChild(overlay);
-    document.body.appendChild(dialog);
-
-    // إضافة الأحداث
+  /**
+   * @private
+   * @method _setupDialogEvents
+   * @description إعداد أحداث نافذة الشراء
+   * @param {HTMLElement} dialog - عنصر النافذة
+   * @param {Object} app - بيانات التطبيق
+   */
+  _setupDialogEvents(dialog, app) {
+    // أحداث الإغلاق
     dialog.querySelector('.dialog-close-btn').addEventListener('click', () => this._closePurchaseDialog());
     dialog.querySelector('.cancel-btn').addEventListener('click', () => this._closePurchaseDialog());
-    dialog.querySelector('.buy-btn').addEventListener('click', () => this._processPurchase(app));
 
-    // تحديث السعر عند تغيير الكمية
-    const quantityInput = dialog.querySelector('.quantity-input');
-    const totalPriceEl = dialog.querySelector('.total-price');
-    
-    quantityInput.addEventListener('input', () => {
-      const quantity = parseInt(quantityInput.value) || 1;
+    // حدث الشراء
+    dialog.querySelector('.buy-btn').addEventListener('click', () => {
+      const quantity = parseInt(dialog.querySelector('.quantity-input').value) || 1;
+      const userId = dialog.querySelector('.user-id-input').value.trim();
+      
+      if (!userId) {
+        this._showToast('الرجاء إدخال معرف المستخدم', 'error');
+        return;
+      }
+
+      this._processPurchase(app, quantity, userId);
+    });
+
+    // تحديث السعر
+    dialog.querySelector('.quantity-input').addEventListener('input', (e) => {
+      const quantity = parseInt(e.target.value) || 1;
       const total = (app.price * quantity).toFixed(2);
-      totalPriceEl.textContent = `المجموع: $${total}`;
+      dialog.querySelector('.total-price').textContent = `المجموع: $${total}`;
     });
   }
 
+  /* ------------------------------------ */
+  /* ---------- Helper Methods --------- */
+  /* ------------------------------------ */
+
   /**
    * @private
-   * معالجة عملية الشراء
-   * @param {Object} app - بيانات التطبيق
+   * @method _getIconPath
+   * @description الحصول على مسار الأيقونة
+   * @param {string} iconName - اسم ملف الأيقونة
+   * @returns {string}
    */
-  _processPurchase(app) {
-    const dialog = document.querySelector('.purchase-dialog');
-    const quantity = parseInt(dialog.querySelector('.quantity-input').value) || 1;
-    const userId = dialog.querySelector('.user-id-input').value.trim();
-    
-    if (!userId) {
-      alert('الرجاء إدخال معرف المستخدم');
-      return;
-    }
-
-    const totalPrice = (app.price * quantity).toFixed(2);
-    
-    // هنا يمكنك إضافة منطق الشراء الفعلي
-    console.log(`تم الشراء: 
-      التطبيق: ${app.name}
-      الكمية: ${quantity}
-      المستخدم: ${userId}
-      السعر الإجمالي: $${totalPrice}`);
-    
-    this._closePurchaseDialog();
-    this._showPurchaseSuccess(app.name, quantity, totalPrice);
+  _getIconPath(iconName) {
+    return `${this.options.iconsBasePath}${iconName || 'default.png'}`;
   }
 
   /**
    * @private
-   * إغلاق نافذة الشراء
+   * @method _formatPrice
+   * @description تنسيق السعر
+   * @param {number} price - السعر
+   * @returns {string}
    */
-  _closePurchaseDialog() {
-    const overlay = document.querySelector('.dialog-overlay');
-    const dialog = document.querySelector('.purchase-dialog');
-    
-    if (overlay) overlay.remove();
-    if (dialog) dialog.remove();
+  _formatPrice(price) {
+    return Number(price || 0).toFixed(2);
   }
 
   /**
    * @private
-   * عرض رسالة نجاح الشراء
-   * @param {string} appName - اسم التطبيق
-   * @param {number} quantity - الكمية
-   * @param {string} totalPrice - السعر الإجمالي
+   * @method _showToast
+   * @description عرض رسالة toast
+   * @param {string} message - الرسالة
+   * @param {string} type - نوع الرسالة (success, error, info)
    */
-  _showPurchaseSuccess(appName, quantity, totalPrice) {
+  _showToast(message, type = 'success') {
     const toast = document.createElement('div');
-    toast.className = 'purchase-toast';
-    toast.innerHTML = `
-      <div style="
-        position: fixed;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: #4CAF50;
-        color: white;
-        padding: 12px 24px;
-        border-radius: 4px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        z-index: 1001;
-        animation: fadeInOut 3s;
-      ">
-        تم شراء ${quantity} من ${appName} بنجاح - الإجمالي: $${totalPrice}
-      </div>
-    `;
-    
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
     document.body.appendChild(toast);
+
     setTimeout(() => toast.remove(), 3000);
-  }
-
-  /**
-   * @public
-   * تحديث بيانات التطبيقات
-   * @param {Array} newAppsData - بيانات التطبيقات الجديدة
-   */
-  updateApps(newAppsData) {
-    if (!Array.isArray(newAppsData)) {
-      console.error('يجب أن تكون بيانات التطبيقات مصفوفة');
-      return;
-    }
-    
-    this.options.appsData = newAppsData;
-    this.filteredApps = [...newAppsData];
-    this._renderAppsGrid();
-  }
-
-  /**
-   * @public
-   * تنظيف الموارد عند التدمير
-   */
-  destroy() {
-    if (this._observer) {
-      this._observer.disconnect();
-      this._observer = null;
-    }
-    
-    this._closePurchaseDialog();
-    this.container.innerHTML = '';
-    
-    // إزالة الأنماط المحقونة
-    const style = document.getElementById('apps-tab-styles');
-    if (style) style.remove();
   }
 }

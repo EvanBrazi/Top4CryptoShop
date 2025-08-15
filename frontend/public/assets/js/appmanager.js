@@ -1,184 +1,251 @@
 /**
  * @file appmanager.js
- * @description نقطة البداية لتحميل بيانات التطبيقات وقائمة الأيقونات وربطها بكلاس AppsTab
- * @author Top-Al9mh
+ * @class AppManager
+ * @description المدير الرئيسي للتطبيق - مسؤول عن تهيئة التطبيق، تحميل البيانات، وإدارة التبويبات
+ * @version 3.0.0
+ * @license MIT
  */
+
 import { HomeTab } from "./tabs/hometab.js";
 import { AppsTab } from "./tabs/appstab.js";
 import ApiService from './services/apiService.js';
 
-const sidebar = document.querySelector('.sidebar');
-const overlay = document.querySelector('.overlay');
-const backBtn = document.getElementById('back-btn');
-
-export async function cacheIcon(url) {
-  const cache = await caches.open('icons-cache');
-  const match = await cache.match(url);
-  console.log('CacheIcon: ' + url);
-
-  if (match) return match;
-
-  const response = await fetch(url);
-  cache.put(url, response.clone());
-  return response;
-}
-
-const localStorageIconCache = {
-  get: async (url) => {
-    const cachedData = localStorage.getItem(url);
-    if (!cachedData) return null;
-
-    console.log('LocalStorageIconCache: ' + url);
-    
-    // تحويل base64 مرة أخرى إلى Blob
-    const byteString = atob(cachedData.split(',')[1]);
-    const mimeString = cachedData.split(',')[0].split(':')[1].split(';')[0];
-    const ab = new ArrayBuffer(byteString.length);
-    const ia = new Uint8Array(ab);
-    for (let i = 0; i < byteString.length; i++) {
-      ia[i] = byteString.charCodeAt(i);
-    }
-    return new Blob([ab], { type: mimeString });
-  },
-  set: async (url, blob) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        localStorage.setItem(url, reader.result);  // سلسلة بترميز base64
-        resolve();
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  }
-};
-
-/**
- * @function transformAppsData
- * @description تنظف وتحول بيانات التطبيقات دفعة واحدة
- * @param {Array} rawData - مصفوفة التطبيقات الخام من JSON
- * @returns {Array} - مصفوفة التطبيقات بعد التنظيف
- */
-export function transformAppsData(rawData) {
-  return Array.isArray(rawData) ? rawData.map(app => {
-    const price = parseFloat(app.price);
-    const safeName = typeof app.name === 'string' ? app.name.trim() : 'بدون اسم';
-    const safeIcon = isValidImage(app.icon) ? app.icon.trim() : null;
-    const safeCategory = typeof app.category === 'string' ? app.category.trim() : 'غير مصنف';
-    const safeAvailable = Boolean(app.available);
-
-    return {
-      id: Number.isInteger(app.id) ? app.id : null,
-      name: safeName || 'بدون اسم',
-      icon: safeIcon || '/icons/apps/default.png',
-      category: safeCategory,
-      price: isNaN(price) ? null : price,
-      available: safeAvailable
-    };
-  }) : [];
-}
-
-/**
- * @function isValidImage
- * @description تتحقق من صلاحية اسم الصورة
- * @param {string} filename - اسم ملف الصورة
- * @returns {boolean}
- */
-function isValidImage(filename) {
-  if (typeof filename !== 'string') return false;
-  const allowedExtensions = /\.(png|jpg|jpeg|svg|webp)$/i;
-  const isSafePath = !/^https?:\/\//i.test(filename);
-  return allowedExtensions.test(filename) && isSafePath;
-}
-
-
-/**
- * @class AppManager
- * @description تهيئة تطبيق عرض التطبيقات بتحميل البيانات وربطها بالكلاس
- * @returns {new appmanager}
- */
 export class AppManager {
-  constructor(taberInstance) {
-    // حفظ المرجع إلى taber
+  /**
+   * @constructor
+   * @param {Object} taberInstance - نسخة من نظام التبويبات
+   * @param {Object} [config={}] - إعدادات التهيئة
+   * @param {string} [config.apiBaseUrl=''] - رابط API الأساسي
+   * @param {Object} [config.cacheOptions] - خيارات التخزين المؤقت
+   */
+  constructor(taberInstance, config = {}) {
     this.taber = taberInstance;
-    this.api = new ApiService(); // ربط الخدمة هنا
-    // تهيئة التابات
+    this.api = new ApiService(config.apiBaseUrl, {
+      cacheDuration: config.cacheOptions?.duration || 7,
+      maxConcurrentRequests: config.cacheOptions?.maxConcurrent || 5
+    });
+    
     this.tabs = {};
-    this.initTabs();
-    this.setupBackButton();
-    this.api.clearOldCache(); // ينظف الكاش القديم عند التشغيل
+    this.initState = {
+      loaded: false,
+      error: null
+    };
+
+    this._init();
   }
 
-  async initTabs() {
+  /**
+   * @private
+   * @method _init
+   * @description تهيئة التطبيق الرئيسية
+   */
+  async _init() {
+    try {
+      await this._setupTabs();
+      this._setupEventListeners();
+      await this._preloadEssentialData();
+      this.initState.loaded = true;
+    } catch (error) {
+      this.initState.error = error;
+      console.error('فشل تهيئة التطبيق:', error);
+      this._showFatalError();
+    }
+  }
+
+  /**
+   * @private
+   * @method _setupTabs
+   * @description تهيئة تبويبات التطبيق
+   */
+  async _setupTabs() {
     this.tabs.home = new HomeTab({
-      taber: this.taber/**تمرير المرجع */,
+      taber: this.taber,
       containerId: 'home-tab-cards-container',
-      whichCardClick: this.whichCardClick,
       options: {
-        useCookies: true,
-        enableAnimations: true,
-        apiEndpoint: '/api/cards', // رابط JSON فقط
-        iconBasePath: '/icons/apps/', // مجلد الأيقونات
-        logoBasePath: '/assets/images/' // مجلد الشعارات (اختياري)
+        apiEndpoint: '/api/cards',
+        iconBasePath: '/icons/apps/',
+        themeColor: '#6a5acd'
       }
     });
 
-    (async () => {
-      try {
-        // 🧠 إنشاء خدمة API
-        const api = new ApiService();
-
-        // 📦 تحميل بيانات التطبيقات من السيرفر
-        const rawAppsData = await api.fetchData('/api/apps', 'appsData');
-        const appsData = transformAppsData(rawAppsData);
-
-        // 📦 تحميل قائمة الأيقونات من السيرفر
-        const iconsListResponse = await api.fetchData('/api/icons-list', 'iconsList');
-        const iconsList = Array.isArray(iconsListResponse.icons) ? iconsListResponse.icons : [];
-
-
-        // 🎯 إنشاء كائن AppsTab وربط البيانات
-        new AppsTab({
-          containerId: 'apps-tab-container',
-          options: {
-            appsData,
-            iconsBasePath: '/icons/apps/',
-            iconsList,
-            cacheIcon: fetch,
-            iconCache: localStorageIconCache,
-            themeColor: '#6a5acd',
-            dialogBgColor: '#ffffff'
-          }
-        });
-      } catch (error) {
-        console.error('❌ فشل تهيئة مدير التطبيقات:', error);
-        const container = document.getElementById('apps-tab-container');
-        if (container) {
-          container.innerHTML = `<div class="apps-error">حدث خطأ أثناء تحميل التطبيقات. يرجى تحديث الصفحة.</div>`;
-        }
-      }
-    })();
-
-
-
-    /**
-     * registerTab(name, instance) {
-     * this.tabs[name] = instance;
-     * }
-     */
+    await this._initAppsTab();
   }
 
-  setupBackButton() {
-    this.taber.onTabChange((tabId, link, pane) => {
-      // يمكنك هنا إضافة أي تأثيرات إضافية عند تغيير التاب
-      sidebar.classList.remove('active');
-      overlay.classList.remove('active');
-      //updateBackButton();
-      backBtn.style.display = (tabId === 'home' && pane.id === 'home-tab') ? 'none' : 'block';
+  /**
+   * @private
+   * @method _initAppsTab
+   * @description تهيئة تبويب التطبيقات
+   */
+  async _initAppsTab() {
+    const [appsData, iconsList] = await Promise.all([
+      this.api.fetchData('/api/apps', 'appsData').then(this._transformAppsData),
+      this.api.fetchData('/api/icons-list', 'iconsList').then(res => res.icons || [])
+    ]);
+
+    this.tabs.apps = new AppsTab({
+      containerId: 'apps-tab-container',
+      options: {
+        appsData,
+        iconsBasePath: '/icons/apps/',
+        iconsList,
+        themeColor: '#6a5acd',
+        dialogBgColor: '#ffffff',
+        cacheStrategy: 'lazy' // 'eager' أو 'lazy'
+      }
     });
   }
 
-  whichCardClick(index, card) {
-    console.log(`Which card click: ${index}\n${card.title} : I am clicked!`);
+  /**
+   * @private
+   * @method _transformAppsData
+   * @description تحويل وتنظيف بيانات التطبيقات
+   * @param {Array} rawData - البيانات الخام
+   * @returns {Array} - البيانات المنسقة
+   */
+  _transformAppsData(rawData) {
+    if (!Array.isArray(rawData)) return [];
+    
+    return rawData.map(app => ({
+      id: Number.isInteger(app.id) ? app.id : Date.now(),
+      name: typeof app.name === 'string' ? app.name.trim() : 'بدون اسم',
+      icon: this._validateIcon(app.icon),
+      category: typeof app.category === 'string' ? app.category.trim() : 'غير مصنف',
+      price: this._parsePrice(app.price),
+      available: Boolean(app.available)
+    }));
   }
+
+  /**
+   * @private
+   * @method _validateIcon
+   * @description التحقق من صلاحية أيقونة التطبيق
+   * @param {string} filename - اسم ملف الأيقونة
+   * @returns {string} - مسار الأيقونة الصالح
+   */
+  _validateIcon(filename) {
+    if (typeof filename !== 'string') return 'default.png';
+    const allowedExtensions = /\.(png|jpg|jpeg|svg|webp)$/i;
+    return allowedExtensions.test(filename) ? filename : 'default.png';
+  }
+
+  /**
+   * @private
+   * @method _parsePrice
+   * @description تحويل السعر إلى رقم
+   * @param {any} price - قيمة السعر
+   * @returns {number|null} - السعر كرقم
+   */
+  _parsePrice(price) {
+    const parsed = parseFloat(price);
+    return isNaN(parsed) ? null : Math.max(0, parsed);
+  }
+
+  /**
+   * @private
+   * @method _preloadEssentialData
+   * @description تحميل مسبق للبيانات الأساسية
+   */
+  async _preloadEssentialData() {
+    await Promise.all([
+      this.api.fetchData('/api/essential', 'essentialData'),
+      caches.open('essential-assets')
+        .then(cache => cache.addAll([
+          '/icons/apps/default.png',
+          '/assets/images/loading.gif'
+        ]))
+    ]);
+  }
+
+  /**
+   * @private
+   * @method _setupEventListeners
+   * @description إعداد مستمعي الأحداث
+   */
+  _setupEventListeners() {
+    // أحداث التبويبات
+    this.taber.onTabChange((tabId) => {
+      this._handleTabChange(tabId);
+    });
+
+    // أحداث الزر الرجوع
+    document.getElementById('back-btn')?.addEventListener('click', () => {
+      this.taber.switchTab('home');
+    });
+
+    // أحداث تحديث البيانات
+    document.addEventListener('refreshData', () => {
+      this._refreshAppData();
+    });
+  }
+
+  /**
+   * @private
+   * @method _handleTabChange
+   * @description إدارة تغيير التبويبات
+   * @param {string} tabId - معرّف التبويب
+   */
+  _handleTabChange(tabId) {
+    document.querySelector('.sidebar')?.classList.remove('active');
+    document.querySelector('.overlay')?.classList.remove('active');
+    
+    const backBtn = document.getElementById('back-btn');
+    if (backBtn) {
+      backBtn.style.display = tabId === 'home' ? 'none' : 'block';
+    }
+  }
+
+  /**
+   * @private
+   * @method _refreshAppData
+   * @description إعادة تحميل بيانات التطبيقات
+   */
+  async _refreshAppData() {
+    try {
+      await this.api.refreshData('/api/apps', 'appsData');
+      await this._initAppsTab();
+    } catch (error) {
+      console.error('فشل تحديث البيانات:', error);
+    }
+  }
+
+  /**
+   * @private
+   * @method _showFatalError
+   * @description عرض رسالة خطأ فادح
+   */
+  _showFatalError() {
+    const container = document.getElementById('app-container');
+    if (container) {
+      container.innerHTML = `
+        <div class="fatal-error">
+          <h2>حدث خطأ جسيم</h2>
+          <p>${this.initState.error?.message || 'تعذر تحميل التطبيق'}</p>
+          <button id="retry-btn">إعادة المحاولة</button>
+        </div>
+      `;
+      
+      document.getElementById('retry-btn')?.addEventListener('click', () => {
+        window.location.reload();
+      });
+    }
+  }
+
+  /**
+   * @method destroy
+   * @description تنظيف الموارد عند تدمير التطبيق
+   */
+  destroy() {
+    Object.values(this.tabs).forEach(tab => tab.destroy?.());
+    this.api.clearCache();
+    window.removeEventListener('refreshData', this._refreshAppData);
+  }
+}
+
+// تصدير الدوال المساعدة
+export function transformAppsData(rawData) {
+  return new AppManager()._transformAppsData(rawData);
+}
+
+export function isValidImage(filename) {
+  return new AppManager()._validateIcon(filename) !== 'default.png';
 }

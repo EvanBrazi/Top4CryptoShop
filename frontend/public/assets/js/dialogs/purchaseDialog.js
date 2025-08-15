@@ -187,7 +187,7 @@ export class PurchaseDialog {
            alt="${this.currentApp.name}" 
            class="dialog-icon"
            onerror="this.src='${this.options.iconsBasePath || '/icons/apps/'}default.png'">
-      <div class="dialog-price">السعر: $${this.currentApp.price.toFixed(2)}</div>
+      <div class="dialog-price">السعر: $${this.currentApp.price}</div>
       
       <div class="dialog-input-group">
         <label for="quantity">الكمية:</label>
@@ -199,7 +199,7 @@ export class PurchaseDialog {
         <input type="text" id="user-id" placeholder="أدخل معرفك" class="user-id-input">
       </div>
       
-      <div class="dialog-total">المجموع: $${this.currentApp.price.toFixed(2)}</div>
+      <div class="dialog-total">المجموع: $${this.currentApp.price}</div>
       
       <div class="dialog-actions">
         <button class="dialog-btn dialog-btn-cancel">إلغاء</button>

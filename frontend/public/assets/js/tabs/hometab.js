@@ -193,6 +193,7 @@ class HomeTab {
 
     // Add main icon if available
     if (card.icon) {
+      console.log('This Card had one icon: ' + card.whichTab);
       const icon = document.createElement('img');
       icon.className = 'card-icon';
       icon.src = this._resolveAsset(card.icon, this.options.iconBasePath);
@@ -200,6 +201,28 @@ class HomeTab {
       icon.loading = 'lazy';
       cardElement.appendChild(icon);
     }
+
+    // عرض عدة أيقونات إذا كانت موجودة
+    if (Array.isArray(card.icons)) {
+      console.log('This Card had many icons: ' + card.whichTab);
+      const iconsContainer = document.createElement('div');
+      iconsContainer.className = 'card-icons-group';
+
+      // اختيار 3 صور عشوائية من القائمة
+      const shuffled = card.icons.sort(() => 0.5 - Math.random()).slice(0, 3);
+
+      shuffled.forEach(iconPath => {
+        const icon = document.createElement('img');
+        icon.className = 'card-icon-small';
+        icon.src = this._resolveAsset(iconPath, this.options.iconBasePath);
+        icon.alt = card.title || 'App Icon';
+        icon.loading = 'lazy';
+        iconsContainer.appendChild(icon);
+      });
+
+      cardElement.appendChild(iconsContainer);
+    }
+
 
     // Add logo if available
     if (card.logo) {
@@ -328,7 +351,12 @@ class HomeTab {
       {
         /** @private {index[0]} Just select which tab for activate*/whichTab: "apps",
         title: "التطبيقات",
-        icon: "./assets/images/favicon.ico",
+        icons: [
+          "/icons/apps/chat_saya.png",
+          "/icons/apps/com_taka_vhgyk.png",
+          "/icons/apps/sg_partying_lcb_android.png",
+          "/icons/apps/default.png"
+        ],
         logo: "./assets/images/logo.png"
       },
       {

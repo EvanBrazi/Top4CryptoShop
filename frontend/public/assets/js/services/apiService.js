@@ -13,7 +13,7 @@ export default class ApiService {
       cacheDuration: options.cacheDuration || 1, // يوم واحد افتراضيًا
       maxConcurrentRequests: options.maxConcurrentRequests || 5,
       retryCount: options.retryCount || 2,
-      timeout: options.timeout || 10000, // 10 ثواني افتراضيًا
+      timeout: options.timeout || 100, // 10 ثواني افتراضيًا
       cachePrefix: options.cachePrefix || 'api_cache_v3_'
     };
     

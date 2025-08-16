@@ -1,26 +1,39 @@
+/**
+ * @file scripts/createAdmin.js
+ * @description إنشاء حساب أدمن مبدئي في قاعدة البيانات
+ * @version 1.1.0
+ * @license MIT
+ */
+
 require('dotenv').config();
 const mongoose = require('mongoose');
-const User = require('../models/User');
 const bcrypt = require('bcryptjs');
+const User = require('../models/User');
 
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('Connection error:', err));
-
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log('✅ تم الاتصال بقاعدة البيانات بنجاح'))
+  .catch(err => {
+    console.error('❌ فشل الاتصال بقاعدة البيانات:', err);
+    process.exit(1);
+  });
+/**
+ * إنشاء حساب أدمن إذا لم يكن موجودًا
+ */
 async function createAdmin() {
   const adminData = {
-    username: 'admin', // يمكنك تغيير اسم المستخدم
-    password: await bcrypt.hash('admin123', 10), // سيتم تشفير كلمة المرور
-    phone: '+966500000000', // رقم الأدمن
-    role: 'admin', // تمييزه كأدمن
+    username: 'EvanBrazi',
+    email: "admin@top4cryptoshop.com",
+    password: await bcrypt.hash('Admin.evan123456', 10),
+    phone: '+966500000000',
+    role: 'admin',
     balance: 0,
     theme: 0
   };
 
   try {
-    const existingAdmin = await User.findOne({ username: 'admin' });
+    const existingAdmin = await User.findOne({ username: adminData.username });
     if (existingAdmin) {
-      console.log('⚠️ حساب الأدمن موجود بالفعل');
+      console.log('⚠️ حساب الأدمن موجود مسبقًا');
       return;
     }
 
@@ -31,7 +44,7 @@ async function createAdmin() {
       _id: admin._id
     });
   } catch (err) {
-    console.error('❌ خطأ في الإنشاء:', err.message);
+    console.error('❌ خطأ أثناء الإنشاء:', err.message);
   } finally {
     mongoose.disconnect();
   }

@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const uri = "mongodb+srv://leporejamesw0:JJhVie5dhZsFis0v@cluster0.qatrhhk.mongodb.net/Top4CryptoShop?retryWrites=true&w=majority";
+const uri = 'mongodb://127.0.0.1:27017/Top4CryptoShop';
 
 mongoose.connect(uri, {
   useNewUrlParser: true,

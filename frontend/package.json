@@ -8,7 +8,11 @@
     "dev": "live-server --port=10001 --host=localhost",
     "build": "echo 'No build step required for static files'"
   },
-  "keywords": ["cryptocurrency", "shop", "frontend"],
+  "keywords": [
+    "cryptocurrency",
+    "shop",
+    "frontend"
+  ],
   "author": "Top4CryptoShop Team",
   "license": "MIT",
   "devDependencies": {

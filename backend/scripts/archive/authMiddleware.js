@@ -1,6 +1,6 @@
-const RevokedToken = require('../models/RevokedToken');
+const RevokedToken = require('../../models/RevokedToken');
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const User = require('../../models/User');
 
 // دالة التحقق من التوكن
 const verifyToken = async (req, res, next) => {

@@ -161,7 +161,7 @@ export class AppManager {
           themeColor: this.config.themeColor,
           dialogBgColor: '#ffffff',
           cacheStrategy: 'lazy',
-          maxConcurrentLoads: 5,
+          maxConcurrentLoads: 50,
           maxCachedIcons: 250,
           onCardClick: (app) => this._handleAppCardClick(app),
           onError: (error) => this._handleAppsTabError(error)

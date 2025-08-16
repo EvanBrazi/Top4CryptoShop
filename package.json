@@ -11,16 +11,7 @@
     "install-all": "npm run backend-install && npm run frontend-install"
   },
   "dependencies": {
-    "axios": "^1.11.0",
-    "cheerio": "^1.1.2",
-    "concurrently": "^7.6.0",
-    "csrf": "^3.1.0",
-    "hpp": "^0.2.3",
-    "lru-cache": "^11.1.0",
-    "mime": "^4.0.7",
-    "mime-types": "^3.0.1",
-    "sentry": "^0.1.2",
-    "sharp": "^0.34.3"
+    "concurrently": "^7.6.0"
   },
   "keywords": [
     "cryptocurrency",

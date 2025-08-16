@@ -51,7 +51,7 @@ class HomePage {
             await this._loadUserData();
             this._setupEventListeners();
             await this._registerServiceWorker();
-            
+
             console.log('✅ تم تحميل النظام بنجاح');
         } catch (error) {
             console.error('❌ فشل تحميل التطبيق:', error);
@@ -96,8 +96,8 @@ class HomePage {
     _initComponents() {
         // نظام التبويبات
         this.components.taber = new Taber(
-            this.domElements.sidebarMenu, 
-            this.domElements.tabsContent, 
+            this.domElements.sidebarMenu,
+            this.domElements.tabsContent,
             {
                 activeClass: 'active',
                 defaultTab: APP_CONFIG.DEFAULT_TAB,
@@ -143,22 +143,22 @@ class HomePage {
     _setupEventListeners() {
         // أحداث الشريط الجانبي
         this._setupSidebarEvents();
-        
+
         // أحداث المحفظة
         this._setupWalletEvents();
-        
+
         // أحداث العودة
         this._setupBackButtonEvents();
-        
+
         // أحداث التمرير
         this._setupScrollHandlers();
-        
+
         // أحداث النوافذ المنبثقة
         this._setupModalHandlers();
-        
+
         // أحداث تسجيل الخروج
         this._setupLogoutHandler();
-        
+
         // تحديث حالة زر العودة
         this._updateBackButtonVisibility();
     }
@@ -169,15 +169,15 @@ class HomePage {
      */
     _setupSidebarEvents() {
         const { toggleBtn, overlay, sidebar } = this.domElements;
-        
+
         const toggleSidebar = () => {
             sidebar.classList.toggle('active');
             overlay.classList.toggle('active');
         };
-        
+
         toggleBtn.addEventListener('click', toggleSidebar);
         overlay.addEventListener('click', toggleSidebar);
-        
+
         this.eventListeners.toggleSidebar = toggleSidebar;
     }
 
@@ -227,7 +227,7 @@ class HomePage {
         }, APP_CONFIG.SCROLL_THROTTLE);
 
         window.addEventListener('scroll', throttledScrollHandler);
-        
+
         this.domElements.mainContent.addEventListener('scroll', () => {
             if (this.domElements.sidebar.classList.contains('active')) {
                 this.eventListeners.toggleSidebar();
@@ -241,10 +241,10 @@ class HomePage {
      */
     _setupModalHandlers() {
         // فتح النوافذ
-        this.domElements.termsBtn.addEventListener('click', () => 
+        this.domElements.termsBtn.addEventListener('click', () =>
             this._openModal(this.domElements.termsModal));
-        
-        this.domElements.privacyBtn.addEventListener('click', () => 
+
+        this.domElements.privacyBtn.addEventListener('click', () =>
             this._openModal(this.domElements.privacyModal));
 
         // إغلاق النوافذ
@@ -275,7 +275,7 @@ class HomePage {
      */
     _updateBackButtonVisibility() {
         const activeTab = localStorage.getItem(APP_CONFIG.STORAGE_KEYS.ACTIVE_TAB);
-        this.domElements.backBtn.style.display = 
+        this.domElements.backBtn.style.display =
             (activeTab === APP_CONFIG.DEFAULT_TAB) ? 'none' : 'block';
     }
 
@@ -336,7 +336,7 @@ class HomePage {
     _throttle(func, limit) {
         let lastFunc;
         let lastRan;
-        return function() {
+        return function () {
             const context = this;
             const args = arguments;
             if (!lastRan) {
@@ -344,7 +344,7 @@ class HomePage {
                 lastRan = Date.now();
             } else {
                 clearTimeout(lastFunc);
-                lastFunc = setTimeout(function() {
+                lastFunc = setTimeout(function () {
                     if ((Date.now() - lastRan) >= limit) {
                         func.apply(context, args);
                         lastRan = Date.now();
@@ -382,11 +382,82 @@ class HomePage {
         // تنظيف مستمعي الأحداث
         this.domElements.toggleBtn.removeEventListener('click', this.eventListeners.toggleSidebar);
         this.domElements.overlay.removeEventListener('click', this.eventListeners.toggleSidebar);
-        
+
         // تدمير المكونات
         this.components.appManager?.destroy();
     }
 }
+
+/**
+ * homepage.js - WebSocket client for regular user
+ * Receives real-time updates like payment status
+ *
+ * @author: Evan Brazi
+ */
+
+const socket = new WebSocket('ws://localhost:3000');
+
+socket.addEventListener('open', () => {
+    console.log('✅ WebSocket connected (user)');
+
+    // تعريف المستخدم عند الاتصال
+    socket.send(JSON.stringify({
+        type: 'auth',
+        role: 'user',
+        userId: 'user-123' // يمكن تغييره حسب النظام
+    }));
+});
+
+socket.addEventListener('message', event => {
+    const data = JSON.parse(event.data);
+
+    switch (data.type) {
+        case 'welcome':
+            showUserNotification(data.message);
+            break;
+
+        case 'paymentAccepted':
+            showUserNotification(`✅ تم قبول دفعتك بنجاح!`);
+            break;
+
+        case 'paymentRejected':
+            showUserNotification(`❌ تم رفض دفعتك. يرجى التواصل مع الدعم.`);
+            break;
+
+        case 'orderStatus':
+            showUserNotification(`📦 حالة طلبك: ${data.status}`);
+            break;
+
+        default:
+            console.log('📨 إشعار غير معروف:', data);
+    }
+});
+
+function showUserNotification(message) {
+    const container = document.getElementById('user-notifications');
+    if (container) {
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-success';
+        alert.textContent = message;
+        container.prepend(alert);
+        setTimeout(() => alert.remove(), 10000);
+    } else {
+        alert(message);
+    }
+}
+
+fetch('/api/auth/check-session')
+    .then(res => res.json())
+    .then(data => {
+        if (data.role !== 'user') {
+            window.location.href = '/login';
+        } else {
+            // تابع تحميل البيانات
+            console.log('Welcome');
+        }
+    });
+
+
 
 // بدء التطبيق عند تحميل DOM
 document.addEventListener('DOMContentLoaded', () => {

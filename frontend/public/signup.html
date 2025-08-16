@@ -374,6 +374,32 @@
             const countryCode = byId('countryCode').value;
             const phoneNumberRaw = byId('phoneNumber').value;
 
+            // تحقق من اسم المستخدم
+            if (!username) {
+                showError('usernameError', 'يرجى إدخال اسم المستخدم');
+                return;
+            }
+            if (username.length < 3 || username.length > 20) {
+                showError('usernameError', 'اسم المستخدم يجب أن يكون بين 3 و 20 حرفًا');
+                return;
+            }
+
+            // تحقق من كلمة المرور
+            if (!password) {
+                showError('passwordError', 'يرجى إدخال كلمة المرور');
+                return;
+            }
+            if (password.length < 6) {
+                showError('passwordError', 'كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+                return;
+            }
+
+            // تحقق من البريد الإلكتروني (اختياري لكن بصيغة صحيحة إن وُجد)
+            if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                showError('emailError', 'صيغة البريد الإلكتروني غير صحيحة');
+                return;
+            }
+
             // تحقق بسيط من الهاتف
             if (!countryCode) {
                 showError('phoneError', 'يرجى اختيار رمز الدولة');
@@ -394,9 +420,6 @@
                 showError('phoneError', 'صيغة رقم الهاتف غير صحيحة');
                 return;
             }
-
-
-
 
             try {
                 const response = await fetch('/api/auth/register', {

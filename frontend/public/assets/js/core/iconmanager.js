@@ -1,66 +1,54 @@
 /**
  * @file iconmanager.js
  * @class IconManager
- * @description نظام متقدم لإدارة وتحسين تحميل الأيقونات مع LRU Cache وذاكرة التخزين المؤقت
- * @version 4.0.0
+ * @description نظام متقدم لإدارة وتحسين تحميل الأيقونات باستخدام LRU Cache، مراقبة الأداء، وإعادة المحاولة الذكية
+ * @version 4.1.0
  * @license MIT
  */
 
 import LRUCache from 'https://esm.sh/lru-cache@7';
+import { fetchIconWithMonitoring } from '../monitoring/iconLoader.js';
 
 export class IconManager {
   /**
    * @constructor
-   * @param {Object} options - خيارات الإدارة
-   * @param {number} options.maxItems - الحد الأقصى للعناصر في الكاش (افتراضي: 50)
-   * @param {number} options.maxSize - الحد الأقصى لحجم الكاش بالبايت (افتراضي: 50MB)
-   * @param {number} options.ttl - مدة بقاء العنصر في الكاش بالميلي ثانية (افتراضي: 24 ساعة)
-   * @param {number} options.maxConcurrent - الحد الأقصى للطلبات المتزامنة (افتراضي: 4)
-   * @param {number} options.retryCount - عدد محاولات إعادة المحاولة (افتراضي: 2)
+   * @param {Object} options - إعدادات النظام
    */
   constructor(options = {}) {
-    // إعدادات الكاش
     this.cache = new LRUCache({
       max: options.maxItems || 500,
-      maxSize: options.maxSize || 50 * 1024 * 1024, // 50MB افتراضيًا
-      sizeCalculation: (value) => value.size || 1024,
-      ttl: options.ttl || 24 * 60 * 60 * 1000, // 24 ساعة
+      maxSize: options.maxSize || 50 * 1024 * 1024,
+      sizeCalculation: value => value.size || 1024,
+      ttl: options.ttl || 24 * 60 * 60 * 1000,
       updateAgeOnGet: true,
       ttlRefreshOnGet: true,
-      dispose: (value) => {
-        if (value?.objectUrl) {
-          URL.revokeObjectURL(value.objectUrl); // تحرير الذاكرة عند الإزالة
-        }
+      dispose: value => {
+        if (value?.objectUrl) URL.revokeObjectURL(value.objectUrl);
       }
     });
 
-    // إعدادات النظام
     this.maxConcurrent = options.maxConcurrent || 4;
     this.retryCount = options.retryCount || 2;
+    this.defaultIconUrl = options.defaultIconUrl || null;
+
     this.requestQueue = [];
     this.activeRequests = new Set();
     this.pendingRequests = new Map();
-    this.defaultIconUrl = options.defaultIconUrl || null;
   }
 
   /**
-   * جلب أيقونة من الكاش أو من الشبكة
-   * @param {string} iconUrl - رابط الأيقونة
-   * @returns {Promise<string>} رابط Object URL للأيقونة
+   * تحميل الأيقونة من الكاش أو الشبكة
+   * @param {string} iconUrl
+   * @returns {Promise<string>} رابط Object URL
    */
   async getIcon(iconUrl) {
-    // التحقق من الطلبات المعلقة لنفس الأيقونة
     if (this.pendingRequests.has(iconUrl)) {
       return this.pendingRequests.get(iconUrl);
     }
 
-    // التحقق من وجود الأيقونة في الكاش
     const cached = this.cache.get(iconUrl);
-    if (cached) {
-      return cached.objectUrl;
-    }
+    if (cached) return cached.objectUrl;
 
-    // إنشاء وعاء للطلب الجديد
     const requestPromise = this._queueRequest(iconUrl);
     this.pendingRequests.set(iconUrl, requestPromise);
 
@@ -69,7 +57,7 @@ export class IconManager {
       return result;
     } catch (error) {
       if (this.defaultIconUrl) {
-        console.warn(`استخدام الأيقونة الافتراضية بسبب خطأ في تحميل: ${iconUrl}`);
+        console.warn(`Fallback: ${iconUrl}`);
         return this.defaultIconUrl;
       }
       throw error;
@@ -79,38 +67,29 @@ export class IconManager {
   }
 
   /**
-   * تحميل الأيقونة (مرادف لـ getIcon لتحسين قابلية القراءة)
-   * @param {string} iconUrl - رابط الأيقونة
-   * @returns {Promise<string>} رابط Object URL للأيقونة
+   * مرادف لـ getIcon
    */
   async load(iconUrl) {
     return this.getIcon(iconUrl);
   }
 
   /**
-   * إضافة طلب جديد إلى قائمة الانتظار
+   * إضافة طلب إلى قائمة الانتظار
    * @private
-   * @param {string} iconUrl - رابط الأيقونة
-   * @returns {Promise<string>} 
    */
   async _queueRequest(iconUrl) {
     return new Promise((resolve, reject) => {
-      this.requestQueue.push({
-        iconUrl,
-        resolve,
-        reject,
-        retries: 0
-      });
+      this.requestQueue.push({ iconUrl, resolve, reject, retries: 0 });
       this._processQueue();
     });
   }
 
   /**
-   * معالجة طلبات قائمة الانتظار
+   * معالجة الطلبات المتراكمة
    * @private
    */
   async _processQueue() {
-    while (this.requestQueue.length > 0 && 
+    while (this.requestQueue.length > 0 &&
            this.activeRequests.size < this.maxConcurrent) {
       const request = this.requestQueue.shift();
       this.activeRequests.add(request.iconUrl);
@@ -122,7 +101,7 @@ export class IconManager {
       } catch (error) {
         if (request.retries < this.retryCount) {
           request.retries++;
-          this.requestQueue.unshift(request); // إعادة المحاولة في المقدمة
+          this.requestQueue.unshift(request);
         } else {
           request.reject(error);
         }
@@ -134,27 +113,22 @@ export class IconManager {
   }
 
   /**
-   * جلب الأيقونة مع إمكانية إعادة المحاولة
+   * تحميل الأيقونة مع إعادة المحاولة
    * @private
-   * @param {string} iconUrl - رابط الأيقونة
-   * @param {number} attempt - عدد المحاولات الحالية
-   * @returns {Promise<Object>} بيانات الأيقونة
    */
   async _fetchWithRetry(iconUrl, attempt = 0) {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => controller.abort(), 500);
 
     try {
-      const response = await fetch(iconUrl, {
+      const response = await fetchIconWithMonitoring(iconUrl, {
         signal: controller.signal,
         cache: 'force-cache'
       });
 
       clearTimeout(timeoutId);
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       const blob = await response.blob();
       return {
@@ -165,27 +139,26 @@ export class IconManager {
     } catch (error) {
       clearTimeout(timeoutId);
       if (attempt < this.retryCount) {
+        console.warn(`Retry ${attempt + 1}: ${iconUrl}`);
         await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
         return this._fetchWithRetry(iconUrl, attempt + 1);
+      } else {
+        console.error(`Final failure: ${iconUrl}`);
+        throw error;
       }
-      throw error;
     }
   }
 
   /**
-   * تحميل مسبق لمجموعة من الأيقونات
-   * @param {Array<string>} iconUrls - مصفوفة بروابط الأيقونات
-   * @returns {Promise<Array>} نتائج تحميل الأيقونات
+   * تحميل مسبق لمجموعة أيقونات
    */
   async preloadIcons(iconUrls) {
-    const uniqueUrls = [...new Set(iconUrls)];
-    return Promise.allSettled(
-      uniqueUrls.map(url => this.getIcon(url).catch(() => null))
-    );
+    const unique = [...new Set(iconUrls)];
+    return Promise.allSettled(unique.map(url => this.getIcon(url).catch(() => null)));
   }
 
   /**
-   * مسح الكاش بالكامل
+   * مسح الكاش والطلبات
    */
   clearCache() {
     this.cache.clear();
@@ -195,8 +168,7 @@ export class IconManager {
   }
 
   /**
-   * الحصول على إحصائيات الكاش
-   * @returns {Object} إحصائيات الكاش
+   * إحصائيات الكاش
    */
   getCacheStats() {
     return {
@@ -208,8 +180,7 @@ export class IconManager {
   }
 
   /**
-   * تعيين أيقونة افتراضية عند فشل التحميل
-   * @param {string} url - رابط الأيقونة الافتراضية
+   * تعيين رابط fallback
    */
   setDefaultIcon(url) {
     this.defaultIconUrl = url;

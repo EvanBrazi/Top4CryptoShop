@@ -1,13 +1,35 @@
 const User = require('../models/User');
+const bcrypt = require('bcryptjs');
 
 /**
  * تسجيل مستخدم جديد
- * @param {Request} req
- * @param {Response} res
+ * @route POST /api/auth/register
  */
 const registerUser = async (req, res) => {
   try {
-    const user = new User(req.body);
+    const { username, email, password, phone } = req.body;
+
+    // تحقق من وجود المستخدم مسبقًا
+    const existingUser = await User.findOne({ $or: [{ username }, { email }] });
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        error: 'USER_EXISTS',
+        message: 'اسم المستخدم أو البريد الإلكتروني مستخدم مسبقًا'
+      });
+    }
+
+    // تشفير كلمة المرور
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // إنشاء المستخدم
+    const user = new User({
+      username,
+      email,
+      password: hashedPassword,
+      phone
+    });
+
     await user.save();
 
     res.status(201).json({
@@ -20,7 +42,6 @@ const registerUser = async (req, res) => {
       }
     });
   } catch (err) {
-    // التعامل مع أخطاء التحقق من Mongoose
     const errors = Object.values(err.errors || {}).map(e => ({
       field: e.path,
       message: e.message,
@@ -29,17 +50,13 @@ const registerUser = async (req, res) => {
 
     res.status(422).json({
       success: false,
-      error: 'فشل التحقق من البيانات',
+      error: 'VALIDATION_ERROR',
+      message: 'فشل التحقق من البيانات',
       details: errors
     });
   }
 };
 
-/**
- * اقتراحات ذكية حسب نوع الخطأ
- * @param {string} field
- * @returns {string}
- */
 function getSuggestion(field) {
   switch (field) {
     case 'username':

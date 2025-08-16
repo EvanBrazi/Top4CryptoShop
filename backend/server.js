@@ -1,252 +1,212 @@
 /**
- * server.js - ملف التشغيل الرئيسي للتطبيق
- * إصدار: 2.1.1
- * وصف: يحتوي على إعدادات الخادم الأساسية، وسائط الأمان، إدارة الجلسات، تعريف المسارات ومعالجة الأخطاء
+ * server.js - ملف التشغيل الرئيسي لتطبيق Top4CryptoShop
+ * الإصدار: 2.2.0
+ * الوصف: إعدادات الخادم، الأمان، الجلسات، WebSocket، المسارات، والملفات الثابتة
+ * المؤلف: Evan Brazi
  */
 
 require('dotenv').config();
+
+// =======================
+// 📚 استيراد المكتبات
+// =======================
 const express = require('express');
 const mongoose = require('mongoose');
-const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
+const cors = require('cors');
+const hpp = require('hpp');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const compression = require('compression');
 const morgan = require('morgan');
-const crypto = require('crypto');
-const fs = require('fs');
+const rateLimit = require('express-rate-limit');
 const favicon = require('serve-favicon');
-const mime = require('mime');
-const authRoutes = require('./routes/auth'); // <-- إضافة استيراد مسارات المصادقة
-const hpp = require('hpp');
+const http = require('http');
+const setupWebSocket = require('./socket');
+//require('./backend/db');
 
-// =============================================
-//               تهيئة التطبيق
-// =============================================
+// =======================
+// 🚀 تهيئة التطبيق
+// =======================
 const app = express();
+const server = http.createServer(app);
+const { broadcast } = setupWebSocket(server);
 
-// أضف هذا الجزء بعد تعريف app وقبل تعريف المسارات
-mongoose.connect(process.env.MONGO_URI || process.env.MONGODB_URI)
-.then(() => console.log('✅ تم الاتصال بقاعدة البيانات بنجاح'))
-.catch(err => {
-  console.error('❌ فشل الاتصال بقاعدة البيانات:', err);
-  process.exit(1);
-});
+// =======================
+// 🔗 الاتصال بقاعدة البيانات
+// =======================
+mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/Top4CryptoShop')
+  .then(() => console.log('✅ تم الاتصال بقاعدة البيانات'))
+  .catch(err => {
+    console.error('❌ فشل الاتصال بقاعدة البيانات:', err);
+    process.exit(1);
+  });
 
-// =============================================
-//             الملفات الثابتة
-// =============================================
-const staticFilesPath = path.join(__dirname, '../frontend/public');
-
-// تحقق من وجود مجلد الملفات الثابتة
-try {
-  if (!fs.existsSync(staticFilesPath)) {
-    console.error('❌ مجلد الملفات الثابتة غير موجود:', staticFilesPath);
-    fs.mkdirSync(staticFilesPath, { recursive: true });
-  }
-} catch (err) {
-  console.error('❌ خطأ في التحقق من مجلد الملفات:', err);
-  process.exit(1);
-}
-
-// =============================================
-//               وسائط الأمان (مفعلة الآن)
-// =============================================
-
+// =======================
+// 🛡️ إعدادات الأمان
+// =======================
 // 1. تفعيل وسائط الأمان
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net", "https://accounts.google.com", "https://apis.google.com"],
-      scriptSrcElem: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net", "https://accounts.google.com", "https://apis.google.com", "https://esm.sh"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net", "https://accounts.google.com", "https://apis.google.com", "chrome-extension://fhimbbbmdjiifimnepkibjfjbppnjble"],
+      scriptSrcElem: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net", "https://accounts.google.com", "https://apis.google.com", "https://esm.sh", "https://browser.sentry-cdn.com", "chrome-extension://fhimbbbmdjiifimnepkibjfjbppnjble"],
       imgSrc: ["'self'", "data:", "blob:", "https://cdn-icons-png.flaticon.com", "https://www.gravatar.com", "https://ui-avatars.com", "https://lh3.googleusercontent.com", "https://upload.wikimedia.org"],
       fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
       connectSrc: ["'self'", "'unsafe-inline'", "https://api.ipify.org", "https://accounts.google.com", "https://www.googleapis.com"],
       frameSrc: ["'self'", "'unsafe-inline'", "https://accounts.google.com"]
     }
   },
-  dnsPrefetchControl: { allow: true },
-  frameguard: { action: 'deny' },
+  dnsPrefetchControl: {
+    allow: true
+  },
+  frameguard: {
+    action: 'deny'
+  },
   hidePoweredBy: true,
-  hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  },
   ieNoOpen: true,
   noSniff: true,
-  referrerPolicy: { policy: 'no-referrer' },
+  referrerPolicy: {
+    policy: 'no-referrer'
+  },
   xssFilter: true
 }));
 
-app.set('trust proxy', 1); // Trust first proxy
+app.set('trust proxy', 1);
 
-// 2. إعداد الجلسات مع قيود الأمان
-const sessionConfig = {
-  secret: process.env.SESSION_SECRET || 'fallback-secret-key-change-in-production',
+// =======================
+// 🍪 إعداد الجلسات
+// =======================
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'fallback-secret',
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({
-    mongoUrl: process.env.MONGODB_URI,
-    ttl: 24 * 60 * 60,
-    autoRemove: 'native'
+    mongoUrl: process.env.MONGO_URI,
+    ttl: 24 * 60 * 60
   }),
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     sameSite: 'strict',
-    maxAge: 24 * 60 * 60 * 1000
+    maxAge: 86400000
   },
   name: 'sessionId'
-};
-
-app.use(session(sessionConfig));
-
-// 3. تفعيل rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 دقيقة
-  max: 100, // حد الطلبات لكل IP
-  message: {
-    error: 'لقد تجاوزت الحد المسموح من الطلبات، يرجى المحاولة لاحقاً'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-app.use(limiter);
-
-// 4. إعداniد CORS بشكل آمن
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-  maxAge: 86400
 }));
 
+// =======================
+// 🚦 تحديد معدل الطلبات
+// =======================
+app.use(rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 150,
+  message: { error: 'تم تجاوز الحد المسموح من الطلبات' }
+}));
 
-app.use(hpp());
-
-// =============================================
-//             وسائط تحليل الطلبات
-// =============================================
+// =======================
+// 🔄 وسائط تحليل الطلبات
+// =======================
 app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use(hpp());
 app.use(compression());
 app.use(morgan('combined'));
-app.use(compression({ level: 6 }));
 
-// =============================================
-//             الملفات الثابتة
-// =============================================
-app.use(express.static(path.join(__dirname, 'public')));
+// =======================
+// 🌐 إعداد CORS
+// =======================
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:10000',
+  credentials: true
+}));
 
+// =======================
+// 📁 الملفات الثابتة
+// =======================
+const staticPath = path.join(__dirname, '../frontend/public');
+if (!fs.existsSync(staticPath)) fs.mkdirSync(staticPath, { recursive: true });
+
+app.use(favicon(path.join(staticPath, 'assets/images/favicon.ico')));
+app.use(express.static(staticPath, {
+  maxAge: '1d',
+  setHeaders: res => res.set('Access-Control-Allow-Origin', '*')
+}));
+
+// =======================
+// 🔀 المسارات الديناميكية
+// =======================
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/users', require('./routes/users'));
+app.use('/api/icons', require('./routes/icons'));
+app.use('/api/cards', require('./routes/cards'));
+
+// =======================
+// 📦 مسارات API إضافية
+// =======================
 app.get('/api/apps', (req, res) => {
-  const filePath = path.join(__dirname, 'data', 'apps.json');
-  fs.readFile(filePath, 'utf8', (err, data) => {
-    if (err) {
-      console.error('❌ خطأ في قراءة ملف التطبيقات:', err);
-      return res.status(500).json({ error: 'فشل تحميل التطبيقات' });
-    }
-
-    const apps = JSON.parse(data);
-    res.json(apps);
+  fs.readFile(path.join(__dirname, 'data/apps.json'), 'utf8', (err, data) => {
+    if (err) return res.status(500).json({ error: 'فشل تحميل التطبيقات' });
+    res.json(JSON.parse(data));
   });
 });
 
 app.get('/api/essential', (req, res) => {
-  const filePath = path.join(__dirname, 'data', 'essential.json');
-  fs.readFile(filePath, 'utf8', (err, data) => {
-    if (err) {
-      console.error('❌ خطأ في قراءة ملف essential:', err);
-      return res.status(500).json({ error: 'فشل تحميل essential' });
-    }
-
-    const essential = JSON.parse(data);
-    res.json(essential);
+  fs.readFile(path.join(__dirname, 'data/essential.json'), 'utf8', (err, data) => {
+    if (err) return res.status(500).json({ error: 'فشل تحميل essential' });
+    res.json(JSON.parse(data));
   });
 });
 
-// API: إرجاع قائمة الأيقونات
-app.get('/api/icons-list', (req, res) => {
-  const iconsPath = path.join(__dirname, 'public', 'icons-list.json');
+// =======================
+// 🧠 منطق WebSocket
+// =======================
+app.put('/api/users/:id/balance', async (req, res) => {
+  const userId = req.params.id;
+  const newBalance = req.body.balance;
 
-  fs.readFile(iconsPath, 'utf8', (err, data) => {
-    if (err) {
-      console.error('❌ فشل قراءة icons-list.json:', err);
-      return res.status(500).json({ error: 'حدث خطأ داخلي' });
-    }
+  // تعديل الرصيد في قاعدة البيانات (معلق)
+  // await User.findByIdAndUpdate(userId, { balance: newBalance });
 
-    try {
-      const icons = JSON.parse(data);
-      res.json({ icons });
-    } catch (parseErr) {
-      console.error('❌ خطأ في تنسيق JSON:', parseErr);
-      res.status(500).json({ error: 'ملف JSON غير صالح' });
-    }
-  });
+  broadcast({ type: 'balanceUpdate', userId, newBalance }, 'admin');
+  res.json({ message: 'تم تعديل الرصيد بنجاح' });
 });
 
-app.use(favicon(path.join(staticFilesPath, './assets/images/favicon.ico')));
-
-app.use(express.static(staticFilesPath, {
-  maxAge: '1d',
-  setHeaders: (res) => {
-    res.set('Access-Control-Allow-Origin', '*');
-  }
-}));
-
-app.use('/icons', express.static(path.join(__dirname, 'public/icons'), {
-  setHeaders: (res, filePath) => {
-    res.type(filePath);
-  }
-}));
-
-
-// =============================================
-//                تعريف المسارات
-// =============================================
-
-// مسارات API (يجب أن تأتي قبل المسارات الثابتة)
-app.use('/api/auth', authRoutes); // <-- إضافة مسارات المصادقة هنا
-
-const cardsRouter = require('./routes/cards');
-const { uptime } = require('process');
-const csrfMiddleware = require('./middlewares/csrfMiddleware');
-const { cookie } = require('express-validator');
-app.use('/api/cards', cardsRouter);
-
-const serveStaticPage = (page) => (req, res) => {
-  const filePath = path.join(staticFilesPath, `${page}.html`);
-  res.sendFile(filePath, (err) => {
-    if (err) {
-      console.error(`❌ فشل تحميل ${page}.html`);
-      res.status(404).send('الصفحة غير موجودة');
-    }
+// =======================
+// 📄 صفحات الواجهة
+// =======================
+const servePage = page => (req, res) => {
+  res.sendFile(path.join(staticPath, `${page}.html`), err => {
+    if (err) res.status(404).send('الصفحة غير موجودة');
   });
 };
 
-// المسارات الأساسية
-app.get('/', serveStaticPage('dashboard'));
-app.get('/dashboard', serveStaticPage('dashboard'));
-app.get('/signup', serveStaticPage('signup'));
-app.get('/login', serveStaticPage('login'));
-app.get('/homepage', serveStaticPage('homepage'));
+app.get('/', servePage('dashboard'));
+app.get('/dashboard', servePage('dashboard'));
+app.get('/signup', servePage('signup'));
+app.get('/login', servePage('login'));
 
-// نقطة نهاية للصحة
-app.get('/health', (req, res) => {
-  res.json({ status: 'UP' });
+app.get('/homepage', (req, res) => {
+  if (!req.session || !req.session.isAdmin) {
+    return res.redirect('/login'); // أو صفحة مخصصة للأدمن
+  }
+
+  const filePath = path.join(staticPath, 'homepage.html');
+  res.sendFile(filePath);
 });
 
-// معالجة الأخطاء
-app.use((err, req, res, next) => {
-  console.error('❌ خطأ في الخادم:', err.stack);
-  res.status(500).json({
-    error: 'حدث خطأ في الخادم',
-    message: process.env.NODE_ENV === 'development' ? err.message : undefined
-  });
-});
-
+// =======================
+// ❤️ نقطة فحص الصحة
+// =======================
 app.get('/health', (req, res) => {
   res.json({
     status: 'UP',
@@ -256,11 +216,18 @@ app.get('/health', (req, res) => {
   });
 });
 
-// =============================================
-//              تشغيل الخادم
-// =============================================
+// =======================
+// ❌ معالجة الأخطاء
+// =======================
+app.use((err, req, res, next) => {
+  console.error('❌ خطأ في الخادم:', err.stack);
+  res.status(500).json({ error: 'حدث خطأ في الخادم' });
+});
+
+// =======================
+// 🚀 تشغيل الخادم
+// =======================
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => {
-  console.log(`🚀 الخادم يعمل على http://localhost:${PORT}`);
-  console.log('🔒 إعدادات الأمان مفعلة');
+server.listen(PORT, () => {
+  console.log(`🚀 Server + WebSocket يعمل على http://localhost:${PORT}`);
 });

@@ -1,6 +1,8 @@
 /**
  * @file sw.js
- * Service Worker لتخزين الأيقونات والصور الأساسية في الكاش
+ * @description Service Worker لتخزين الأيقونات والصور الأساسية في الكاش
+ * @version 4.1.0
+ * @license MIT
  */
 
 import { IconManager } from './core/iconmanager.js';
@@ -12,68 +14,70 @@ const ICONS_TO_CACHE = [
   '/assets/images/favicon.ico'
 ];
 
-// تهيئة IconManager
 const iconManager = new IconManager({
   maxItems: 500,
   maxConcurrent: 4,
   defaultIconUrl: '/icons/apps/default.png'
 });
 
-// 📦 عند التثبيت: خزّن الملفات الأساسية
+// 📦 عند التثبيت
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(ICONS_TO_CACHE);
-    })
+    caches.open(CACHE_NAME).then(cache => cache.addAll(ICONS_TO_CACHE))
   );
 });
 
-// 🔄 عند الطلب: أعد الملفات من الكاش إن وجدت
+// 🔄 عند التفعيل
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(names =>
+      Promise.all(names.map(name => name !== CACHE_NAME && caches.delete(name)))
+    )
+  );
+});
+
+// 🧠 تخمين نوع الصورة
+function guessMimeType(path) {
+  if (path.endsWith('.svg')) return 'image/svg+xml';
+  if (path.endsWith('.webp')) return 'image/webp';
+  if (path.endsWith('.jpg') || path.endsWith('.jpeg')) return 'image/jpeg';
+  return 'image/png';
+}
+
+// 🛰️ عند الطلب
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
-  
-  // معالجة طلبات الأصول
+
   if (url.pathname.startsWith('/assets')) {
     event.respondWith(
       caches.match(event.request).then(cached =>
         cached || fetch(event.request).then(res => {
-          const cacheCopy = res.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, cacheCopy));
+          const copy = res.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
           return res;
         })
       )
     );
-  } 
-  // معالجة طلبات الأيقونات
-  else if (url.pathname.startsWith('/icons/')) {
+  } else if (url.pathname.startsWith('/icons/')) {
     event.respondWith(
       (async () => {
         try {
           const objectUrl = await iconManager.getIcon(event.request.url);
-          return Response.redirect(objectUrl, 307);
+          const blobResponse = await fetch(objectUrl);
+          const blob = await blobResponse.blob();
+          const contentType = blobResponse.headers.get('Content-Type') || guessMimeType(url.pathname);
+
+          return new Response(blob, {
+            status: 200,
+            headers: { 'Content-Type': contentType }
+          });
         } catch (error) {
+          console.warn(`Fallback icon used: ${url.pathname}`);
           return caches.match('/icons/apps/default.png');
         }
       })()
     );
-  } 
-  // معالجة الطلبات الأخرى
-  else {
+  } else {
     event.respondWith(fetch(event.request));
   }
-});
-
-// تنظيف الكاش القديم عند التفعيل
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cache => {
-          if (cache !== CACHE_NAME) {
-            return caches.delete(cache);
-          }
-        })
-      );
-    })
-  );
 });

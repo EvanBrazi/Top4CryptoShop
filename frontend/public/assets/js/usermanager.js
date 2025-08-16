@@ -5,6 +5,8 @@
  * @license MIT
  */
 
+import { showToast } from './utils/toast.js';
+
 // ثوابت التطبيق
 const USER_DEFAULTS = {
     name: 'زائر',

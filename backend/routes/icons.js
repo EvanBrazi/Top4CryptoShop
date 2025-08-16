@@ -6,49 +6,21 @@
 
 const express = require('express');
 const router = express.Router();
-const path = require('path');
-const fs = require('fs').promises;
+const Icon = require('../models/Icon');
+const { verifyToken } = require('../middlewares/auth');
 
-// مسار تخزين الأيقونات المحلية
-const ICONS_DIR = path.join(__dirname, '../public/icons/apps');
 
-/**
- * @route GET /apps/icons/status
- * @description التحقق من حالة الأيقونات المحلية
- * @returns {Object} {downloaded: boolean}
- */
-router.get('/apps/icons/status', async (req, res) => {
-  try {
-    const files = await fs.readdir(ICONS_DIR);
-    const hasIcons = files.some(file => file.endsWith('.png'));
-    res.json({ downloaded: hasIcons });
-  } catch (error) {
-    res.json({ downloaded: false });
-  }
+router.get('/', async (req, res) => {
+  const icons = await Icon.find();
+  res.json(icons);
 });
 
-/**
- * @route POST /apps/icons
- * @description جلب الأيقونات (معدل لاستخدام الأيقونات المحلية فقط)
- * @returns {Object} {message: string, localIcons: boolean}
- */
-router.post('/apps/icons', async (req, res) => {
-  res.json({ 
-    message: 'يتم استخدام الأيقونات المحلية فقط',
-    localIcons: true
-  });
-});
-
-/**
- * @route POST /apps/icons/download-all
- * @description تحميل الأيقونات (معدل لتعطيل التحميل التلقائي)
- * @returns {Object} {message: string, disabled: boolean}
- */
-router.post('/apps/icons/download-all', async (req, res) => {
-  res.json({ 
-    message: 'تم تعطيل التحميل التلقائي للأيقونات',
-    disabled: true
-  });
+router.put('/:id/retry', verifyToken, async (req, res) => {
+  const icon = await Icon.findById(req.params.id);
+  icon.status = 'pending';
+  icon.attempts += 1;
+  await icon.save();
+  res.json({ message: 'تمت إعادة المحاولة', icon });
 });
 
 module.exports = router;

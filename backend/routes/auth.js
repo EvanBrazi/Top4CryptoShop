@@ -86,6 +86,7 @@ router.post('/register',
 //          تسجيل الدخول (يدعم JSON وHTML)
 // =============================================
 router.post('/login',
+  doubleCsrfProtection,
   validateLogin,
   handleValidationErrors,
   async (req, res) => {
@@ -154,6 +155,11 @@ router.post('/login',
         });
       }
 
+      if (user && user.role === 'admin') {
+        req.session.userId = user._id;
+        req.session.role = 'admin';
+      }
+
       user.loginAttempts = 0;
       user.lastLogin = new Date();
       await user.save();
@@ -208,6 +214,16 @@ router.post('/login',
 router.post('/logout', doubleCsrfProtection, async (req, res) => {
   try {
     const token = req.cookies.session_token || req.headers.authorization?.split(' ')[1];
+    const revoked = await RevokedToken.findOne({ token });
+
+    if (revoked) {
+      return handleAuthResponse(req, res, {
+        success: false,
+        isAuthenticated: false,
+        message: 'رمز الجلسة موقوف'
+      });
+    }
+
 
     if (!token) {
       return handleAuthResponse(req, res, {
@@ -258,6 +274,15 @@ router.post('/logout', doubleCsrfProtection, async (req, res) => {
 router.get('/check-auth', async (req, res) => {
   try {
     const token = req.cookies.session_token || req.headers.authorization?.split(' ')[1];
+    const revoked = await RevokedToken.findOne({ token });
+
+    if (revoked) {
+      return handleAuthResponse(req, res, {
+        success: false,
+        isAuthenticated: false,
+        message: 'رمز الجلسة موقوف'
+      });
+    }
 
     if (!token) {
       return handleAuthResponse(req, res, {

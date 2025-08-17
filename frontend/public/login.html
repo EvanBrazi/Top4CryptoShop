@@ -347,18 +347,28 @@
                     return;
                 }
 
+                fetch('/api/auth/ping', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+
                 console.log('Username:', username);
                 console.log('Password:', password);
+
+                // ✅ جلب رمز CSRF قبل إرسال الطلب
+                const csrfRes = await fetch("/csrf-token");
+                const csrfData = await csrfRes.json();
+                const csrfToken = csrfData.csrfToken;
+                console.log('login had csrfData : ', csrfData);
 
                 const response = await fetch('/api/auth/login', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'x-csrf-token': csrfToken // ✅ داخل headers
                     },
-                    body: JSON.stringify({
-                        username,
-                        password
-                    })
+                    body: JSON.stringify({ username, password }),
                 });
 
                 const result = await response.json();
@@ -369,6 +379,8 @@
 
                 console.log('Username:', username);
                 console.log('Password:', password);
+                console.log('الاستجابة: ', response);
+                console.log('الاستجابة: ', response.status);
 
                 // إذا نجح تسجيل الدخول
                 alert('تم تسجيل الدخول بنجاح!');

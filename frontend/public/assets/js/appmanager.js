@@ -196,7 +196,7 @@ export class AppManager {
    */
   async _fetchIconsList() {
     try {
-      const response = await this.api.fetchData('/api/icons-list', 'iconsList');
+      const response = await this.api.fetchData('/icons-list.json', 'iconsList');
       return response.icons || [];
     } catch (error) {
       console.error('فشل جلب قائمة الأيقونات:', error);
@@ -423,7 +423,7 @@ export class AppManager {
     }
 
     // إزالة مستمعات الأحداث
-    this.taber.offTabChange(this._eventHandlers.tabChange);
+    this.taber.onTabChange(this._eventHandlers.tabChange);
     document.removeEventListener('refreshData', this._eventHandlers.refreshData);
     document.getElementById('back-btn')?.removeEventListener('click', this._eventHandlers.backButton);
   }

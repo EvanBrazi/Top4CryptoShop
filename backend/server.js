@@ -26,7 +26,7 @@ const rateLimit = require('express-rate-limit');
 const favicon = require('serve-favicon');
 const http = require('http');
 const setupWebSocket = require('./socket');
-//require('./backend/db');
+const { generateCsrfToken } = require('./middlewares/csrfMiddleware');
 
 // =======================
 // 🚀 تهيئة التطبيق
@@ -34,6 +34,11 @@ const setupWebSocket = require('./socket');
 const app = express();
 const server = http.createServer(app);
 const { broadcast } = setupWebSocket(server);
+
+app.use((req, res, next) => {
+  console.log(`📡 طلب وارد: ${req.method} ${req.url}`);
+  next();
+});
 
 // =======================
 // 🔗 الاتصال بقاعدة البيانات
@@ -57,7 +62,7 @@ app.use(helmet({
       scriptSrcElem: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net", "https://accounts.google.com", "https://apis.google.com", "https://esm.sh", "https://browser.sentry-cdn.com", "chrome-extension://fhimbbbmdjiifimnepkibjfjbppnjble"],
       imgSrc: ["'self'", "data:", "blob:", "https://cdn-icons-png.flaticon.com", "https://www.gravatar.com", "https://ui-avatars.com", "https://lh3.googleusercontent.com", "https://upload.wikimedia.org"],
       fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
-      connectSrc: ["'self'", "'unsafe-inline'", "https://api.ipify.org", "https://accounts.google.com", "https://www.googleapis.com"],
+      connectSrc: ["'self'", "'unsafe-inline'", "ws://localhost:3000", "https://api.ipify.org", "https://accounts.google.com", "https://www.googleapis.com"],
       frameSrc: ["'self'", "'unsafe-inline'", "https://accounts.google.com"]
     }
   },
@@ -122,17 +127,32 @@ app.use(hpp());
 app.use(compression());
 app.use(morgan('combined'));
 
+app.get("/csrf-token", (req, res) => {
+  try {
+    const token = generateCsrfToken(req, res);
+    res.json({ csrfToken: token });
+    console.log('Server:: csrfToken :', token);
+  } catch (err) {
+    console.error("CSRF Error:", err.message);
+    res.status(500).json({ error: "حدث خطأ في الخادم" });
+  }
+});
+
 // =======================
 // 🌐 إعداد CORS
 // =======================
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:10000',
-  credentials: true
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  maxAge: 86400
 }));
 
 // =======================
 // 📁 الملفات الثابتة
 // =======================
+app.use(express.static(path.join(__dirname, 'public')));
 const staticPath = path.join(__dirname, '../frontend/public');
 if (!fs.existsSync(staticPath)) fs.mkdirSync(staticPath, { recursive: true });
 
@@ -145,7 +165,9 @@ app.use(express.static(staticPath, {
 // =======================
 // 🔀 المسارات الديناميكية
 // =======================
-app.use('/api/auth', require('./routes/auth'));
+const authRouter = require('./routes/auth'); // أو حسب اسم الملف
+app.use('/api/auth', authRouter); // ✅ هذا يربط المسارات بشكل صحيح
+//app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/icons', require('./routes/icons'));
 app.use('/api/cards', require('./routes/cards'));

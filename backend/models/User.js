@@ -1,12 +1,13 @@
 /**
  * User.js - نموذج مستخدم MongoDB
- * الإصدار: 2.1.0
+ * الإصدار: 2.2.0
  * الوصف: يحتوي على تعريف نموذج المستخدم وجميع الوظائف المرتبطة به
  * التحسينات:
- * - تحسين تحقق كلمة المرور لتشمل رمز خاص
- * - عرض تفاصيل الخطأ بدقة
- * - توثيق شامل لكل خاصية
- * - تحسين أداء الفهارس والتحقق
+ * - إصلاح نقص الحقول الخاصة بإعادة تعيين كلمة المرور
+ * - توسيع دالة البحث لتشمل البريد الإلكتروني
+ * - تحسين التحقق من كلمة المرور
+ * - توثيق شامل لكل خاصية ودالة
+ * - حماية إضافية عند الحفظ والمقارنة
  */
 
 const mongoose = require('mongoose');
@@ -28,6 +29,8 @@ const crypto = require('crypto');
  * @property {string} [role='user'] - دور المستخدم
  * @property {string} [accountStatus='active'] - حالة الحساب
  * @property {number} [tokenVersion=0] - إصدار التوكن
+ * @property {string} [resetPasswordToken] - رمز إعادة تعيين كلمة المرور
+ * @property {Date} [resetPasswordExpires] - تاريخ انتهاء صلاحية رمز إعادة التعيين
  */
 
 const userSchema = new Schema({
@@ -48,7 +51,6 @@ const userSchema = new Schema({
     select: false,
     validate: {
       validator: function (v) {
-        // تحقق من وجود حرف كبير، صغير، رقم، ورمز خاص
         return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/.test(v);
       },
       message: 'كلمة المرور يجب أن تحتوي على حرف كبير، حرف صغير، رقم، ورمز خاص'
@@ -115,6 +117,14 @@ const userSchema = new Schema({
   tokenVersion: {
     type: Number,
     default: 0
+  },
+  resetPasswordToken: {
+    type: String,
+    select: false
+  },
+  resetPasswordExpires: {
+    type: Date,
+    select: false
   }
 }, {
   timestamps: true,
@@ -123,6 +133,8 @@ const userSchema = new Schema({
     transform: function (doc, ret) {
       delete ret.password;
       delete ret.__v;
+      delete ret.resetPasswordToken;
+      delete ret.resetPasswordExpires;
       return ret;
     }
   }
@@ -150,6 +162,7 @@ userSchema.pre('save', async function (next) {
  * @returns {Promise<boolean>}
  */
 userSchema.methods.comparePassword = async function (candidatePassword) {
+  if (!this.password) return false;
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
@@ -167,25 +180,26 @@ userSchema.methods.incrementLoginAttempts = async function () {
 
 /**
  * إنشاء رمز إعادة تعيين كلمة المرور
- * @returns {string}
+ * @returns {string} resetToken - الرمز الخام قبل التشفير
  */
 userSchema.methods.createPasswordResetToken = function () {
   const resetToken = crypto.randomBytes(32).toString('hex');
-  this.resetPasswordToken = crypto
-    .createHash('sha256')
-    .update(resetToken)
-    .digest('hex');
-  this.resetPasswordExpires = Date.now() + 10 * 60 * 1000;
+  this.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+  this.resetPasswordExpires = Date.now() + 10 * 60 * 1000; // صالح لمدة 10 دقائق
   return resetToken;
 };
 
 /**
- * البحث عن مستخدم حسب اسم المستخدم
- * @param {string} username
+ * البحث عن مستخدم حسب اسم المستخدم أو البريد الإلكتروني
+ * @param {string} identifier
  * @returns {Promise<User>}
  */
-userSchema.statics.findByUsername = function (username) {
-  return this.findOne({ username }).select('+password +loginAttempts');
+userSchema.statics.findByIdentifier = function (identifier) {
+  const query = identifier.includes('@')
+    ? { email: identifier.trim().toLowerCase() }
+    : { username: { $regex: new RegExp(`^${identifier}$`, 'i') } };
+
+  return this.findOne(query).select('+password +loginAttempts +accountStatus +lastLogin');
 };
 
 module.exports = mongoose.model('User', userSchema);

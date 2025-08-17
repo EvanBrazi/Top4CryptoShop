@@ -18,6 +18,7 @@ const { validateRegister, validateLogin, handleValidationErrors } = require('../
 const rateLimit = require('express-rate-limit');
 const { doubleCsrfProtection } = require('../middlewares/csrfMiddleware');
 const { registerUser } = require('../controllers/authController');
+const { checkSession } = require('../middlewares/auth');
 
 // =============================================
 //          دالة مساعدة للاستجابات
@@ -90,6 +91,7 @@ router.post('/login',
   validateLogin,
   handleValidationErrors,
   async (req, res) => {
+    console.log("📥 تم استقبال طلب تسجيل الدخول:", req.body);
     try {
       const { username, password } = req.body;
       // إضافة تسجيل الأحداث المهمة
@@ -208,6 +210,12 @@ router.post('/login',
   }
 );
 
+router.post('/ping', (req, res) => {
+  console.log("✅ وصل طلب ping");
+  res.json({ message: "pong" });
+});
+
+
 // =============================================
 //          تسجيل الخروج
 // =============================================
@@ -271,57 +279,7 @@ router.post('/logout', doubleCsrfProtection, async (req, res) => {
 // =============================================
 //          التحقق من حالة المصادقة
 // =============================================
-router.get('/check-auth', async (req, res) => {
-  try {
-    const token = req.cookies.session_token || req.headers.authorization?.split(' ')[1];
-    const revoked = await RevokedToken.findOne({ token });
-
-    if (revoked) {
-      return handleAuthResponse(req, res, {
-        success: false,
-        isAuthenticated: false,
-        message: 'رمز الجلسة موقوف'
-      });
-    }
-
-    if (!token) {
-      return handleAuthResponse(req, res, {
-        success: false,
-        isAuthenticated: false,
-        message: 'لم يتم توفير رمز الجلسة'
-      });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId).select('-password');
-
-    if (!user) {
-      return handleAuthResponse(req, res, {
-        success: false,
-        isAuthenticated: false,
-        message: 'المستخدم غير موجود'
-      });
-    }
-
-    return handleAuthResponse(req, res, {
-      success: true,
-      isAuthenticated: true,
-      user: {
-        id: user._id,
-        username: user.username,
-        phone: user.phone,
-        theme: user.theme,
-        balance: user.balance
-      }
-    });
-
-  } catch (err) {
-    return handleAuthResponse(req, res, {
-      success: false,
-      isAuthenticated: false,
-      message: 'جلسة غير صالحة'
-    });
-  }
-});
+// ✅ التحقق من حالة الجلسة
+router.get('/check-session', checkSession);
 
 module.exports = router;

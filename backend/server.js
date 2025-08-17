@@ -96,7 +96,7 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({
-    mongoUrl: process.env.MONGO_URI,
+    mongoUrl: process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/Top4CryptoShop',
     ttl: 24 * 60 * 60
   }),
   cookie: {

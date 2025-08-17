@@ -74,7 +74,8 @@ const checkSession = async (req, res) => {
           username: req.user.username,
           phone: req.user.phone,
           theme: req.user.theme,
-          balance: req.user.balance
+          balance: req.user.balance,
+          role: req.user.role
         }
       });
     });

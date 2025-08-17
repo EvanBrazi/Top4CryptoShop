@@ -449,9 +449,10 @@ function showUserNotification(message) {
 fetch('/api/auth/check-session')
     .then(res => res.json())
     .then(data => {
-        if (data.role !== 'user') {
+        if (!data.isAuthenticated || !data.user || data.user.role !== 'user') {
             window.location.href = '/login';
-        } else {
+        }
+        else {
             // تابع تحميل البيانات
             console.log('Welcome');
         }

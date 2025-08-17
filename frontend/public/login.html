@@ -254,7 +254,7 @@
 
         <!-- زر تسجيل الدخول عبر Google -->
         <button class="btn-google" id="googleSignIn">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="20"
+            <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" width="20"
                 alt="Google">
             تسجيل الدخول عبر Google
         </button>
@@ -347,12 +347,6 @@
                     return;
                 }
 
-                fetch('/api/auth/ping', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({})
-                });
-
                 console.log('Username:', username);
                 console.log('Password:', password);
 
@@ -368,6 +362,7 @@
                         'Content-Type': 'application/json',
                         'x-csrf-token': csrfToken // ✅ داخل headers
                     },
+                    credentials: 'include', // ✅ هذا يسمح بإرسال واستقبال الكوكي الخاص بالجلسة
                     body: JSON.stringify({ username, password }),
                 });
 

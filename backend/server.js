@@ -99,7 +99,7 @@ const sessionStore = MongoStore.create({
   autoRemove: 'native'
 })
 app.use(session({
-  secret: process.env.SESSION_SECRET,
+  secret: process.env.SESSION_SECRET || 'dev-secret-key',
   store: sessionStore,
   resave: false,
   saveUninitialized: false,

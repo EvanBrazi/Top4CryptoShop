@@ -91,14 +91,18 @@ app.set('trust proxy', 1);
 // =======================
 // 🍪 إعداد الجلسات
 // =======================
+const sessionStore = MongoStore.create({
+  client: mongoose.connection.getClient(),
+  dbName: 'Top4CryptoShop',
+  collectionName: 'sessions',
+  ttl: 24 * 60 * 60,
+  autoRemove: 'native'
+})
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'fallback-secret',
+  secret: process.env.SESSION_SECRET,
+  store: sessionStore,
   resave: false,
   saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/Top4CryptoShop',
-    ttl: 24 * 60 * 60
-  }),
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,

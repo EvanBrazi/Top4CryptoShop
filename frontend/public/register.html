@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل حساب جديد - متجر العملات الرقمية</title>
+    <link rel="stylesheet" href="./assets/css/register.css">
+    <!-- تعريف تسجيل الدخول عبر Google -->
+    <meta name="google-signin-client_id" content="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+
+<body class="day-theme">
+    <div class="container">
+        <h2>إنشاء حساب جديد</h2>
+
+        <!-- رسالة خطأ عامة -->
+        <div id="generalError" class="general-error"></div>
+
+        <!-- زر تسجيل الدخول عبر Google -->
+        <button class="btn-google" id="googleSignIn">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="20"
+                alt="Google">
+            التسجيل عبر Google
+        </button>
+
+        <!-- زر تسجيل الدخول عبر Apple -->
+        <button class="btn-apple" id="appleSignIn">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" width="20" alt="Apple">
+            التسجيل عبر Apple
+        </button>
+
+        <div class="divider">أو</div>
+
+        <!-- نموذج التسجيل التقليدي -->
+        <form id="registerForm">
+            <div class="form-group">
+                <input type="text" id="username" placeholder="اسم المستخدم" required autocomplete="username">
+                <div id="usernameError" class="error-message"></div>
+            </div>
+            <div class="form-group">
+                <input type="password" id="password" placeholder="كلمة المرور" required minlength="8"
+                    autocomplete="new-password">
+                <div id="passwordError" class="error-message"></div>
+            </div>
+            <div class="form-group">
+                <input type="email" id="email" placeholder="البريد الإلكتروني" required>
+                <div id="emailError" class="error-message"></div>
+            </div>
+            <div class="form-group">
+                <div class="phone-input-group">
+                    <select id="countryCode" class="country-code" required title="رمز الدولة">
+                        <option value="" disabled selected>رمز الدولة</option>
+                        <option value="+966">🇸🇦 +966 (السعودية)</option>
+                        <option value="+971">🇦🇪 +971 (الإمارات)</option>
+                        <option value="+965">🇰🇼 +965 (الكويت)</option>
+                        <option value="+968">🇴🇦 +968 (عمان)</option>
+                        <option value="+974">🇶🇦 +974 (قطر)</option>
+                        <option value="+973">🇧🇭 +973 (البحرين)</option>
+                        <option value="+20">🇪🇬 +20 (مصر)</option>
+                        <option value="+962">🇯🇴 +962 (الأردن)</option>
+                        <option value="+963">🇸🇾 +963 (سوريا)</option>
+                        <option value="+961">🇱🇧 +961 (لبنان)</option>
+                        <option value="+964">🇮🇶 +964 (العراق)</option>
+                        <option value="+212">🇲🇦 +212 (المغرب)</option>
+                        <option value="+213">🇩🇿 +213 (الجزائر)</option>
+                        <option value="+216">🇹🇳 +216 (تونس)</option>
+                        <option value="+218">🇱🇾 +218 (ليبيا)</option>
+                        <option value="+249">🇸🇩 +249 (السودان)</option>
+                        <option value="+967">🇾🇪 +967 (اليمن)</option>
+                        <option value="+1">🇺🇸 +1 (الولايات المتحدة)</option>
+                        <option value="+44">🇬🇧 +44 (المملكة المتحدة)</option>
+                    </select>
+                    <input type="tel" id="phoneNumber" class="phone-number" placeholder="رقم الجوال" required>
+                </div>
+                <div id="phoneError" class="error-message"></div>
+            </div>
+            <button type="submit" class="btn-primary">تسجيل</button>
+        </form>
+    </div>
+    <script src="./assets/js/register.js"></script>
+</body>
+
+</html>

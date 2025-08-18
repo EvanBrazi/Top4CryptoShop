@@ -176,10 +176,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // زر التسجيل
-    const signupBtn = document.getElementById('signupBtn');
-    if (signupBtn) {
-        signupBtn.addEventListener('click', function() {
-            window.location.href = '/signup.html';
+    const registerBtn = document.getElementById('registerBtn');
+    if (registerBtn) {
+        re.addEventListener('click', function() {
+            window.location.href = '/register.html';
         });
     }
 });

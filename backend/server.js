@@ -224,7 +224,7 @@ const servePage = page => (req, res) => {
 
 app.get('/', servePage('dashboard'));
 app.get('/dashboard', servePage('dashboard'));
-app.get('/signup', servePage('signup'));
+app.get('/register', servePage('register'));
 app.get('/login', servePage('login'));
 
 app.get('/homepage', (req, res) => {

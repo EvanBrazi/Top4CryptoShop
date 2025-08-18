@@ -11,48 +11,38 @@
  * @license: MIT
  */
 
-const socket = new WebSocket('ws://localhost:3000');
+const socket = new WebSocket('ws://localhost:10000');
 
-fetch('/api/auth/check-session')
+fetch('/api/auth/check-session', { credentials: 'include' })
     .then(res => res.json())
     .then(data => {
-        if (data.role !== 'admin') {
+        if (!data.isAuthenticated || data.user.role !== 'admin') {
+            alert("🚫 ليس لديك صلاحية الوصول إلى لوحة التحكم");
             window.location.href = '/login';
+
         } else {
-            // تابع تحميل البيانات
             loadUsers();
             loadIcons();
         }
     });
 
-
 socket.addEventListener('open', () => {
     console.log('✅ WebSocket connected (admin)');
-
-    // تعريف الأدمن عند الاتصال
     socket.send(JSON.stringify({
         type: 'auth',
         role: 'admin',
-        userId: 'admin-001' // يمكن تغييره حسب النظام
+        userId: 'admin-001'
     }));
 });
 
 socket.addEventListener('message', event => {
     const data = JSON.parse(event.data);
-
     switch (data.type) {
         case 'welcome':
-            showNotification(data.message);
-            break;
-
         case 'balanceUpdate':
-            showNotification(`📢 تم تعديل رصيد المستخدم رقم ${data.userId} إلى ${data.newBalance} 💰`);
-            break;
-
         case 'paymentUploaded':
-            showNotification(`🧾 تم رفع صورة دفع جديدة من المستخدم رقم ${data.userId}`);
+            showNotification(data.message || '📨 إشعار جديد');
             break;
-
         default:
             console.log('📨 إشعار غير معروف:', data);
     }
@@ -65,24 +55,21 @@ function showNotification(message) {
         alert.className = 'alert alert-info';
         alert.textContent = message;
         container.prepend(alert);
-        setTimeout(() => alert.remove(), 10000); // يختفي بعد 10 ثوانٍ
+        setTimeout(() => alert.remove(), 10000);
     } else {
         alert(message);
     }
 }
 
-
 document.addEventListener('DOMContentLoaded', () => {
     loadUsers();
     loadIcons();
-
-    // زر تعديل الرصيد من النموذج العلوي
     document.getElementById('updateBalanceBtn').addEventListener('click', updateBalance);
+    document.getElementById('updateStatusBtn')?.addEventListener('click', updateUserStatus);
 });
 
 /**
  * Fetches and displays all users in the admin table
- * Uses safe event binding to comply with CSP
  */
 async function loadUsers() {
     try {
@@ -97,35 +84,37 @@ async function loadUsers() {
         <td>${user._id}</td>
         <td>${user.username}</td>
         <td><input type="number" value="${user.balance}" id="balance-${user._id}"></td>
-        <td>${user.accountStatus === 'active' ? '✅ نشط' : user.accountStatus === 'suspended' ? '❄️ مجمد' : '🚫 معطل'}</td>
-        <td>${user.loginAttempts}</td>
+        <td>
+          <select id="status-${user._id}">
+            <option value="active" ${user.accountStatus === 'active' ? 'selected' : ''}>✅ نشط</option>
+            <option value="suspended" ${user.accountStatus === 'suspended' ? 'selected' : ''}>❄️ مجمد</option>
+            <option value="deactivated" ${user.accountStatus === 'deactivated' ? 'selected' : ''}>🚫 محذوف</option>
+          </select>
+        </td>
+        <td style="color:${user.loginAttempts >= 4 ? 'red' : 'inherit'}; font-weight:${user.loginAttempts >= 4 ? 'bold' : 'normal'}">
+          ${user.loginAttempts}
+        </td>
         <td>${user.lastLogin ? new Date(user.lastLogin).toLocaleString('ar-EG') : '-'}</td>
         <td><button class="update-btn" data-id="${user._id}">💾</button></td>
         <td><button class="delete-btn" data-id="${user._id}">🗑️</button></td>
-        <td>${user.accountStatus === 'suspended' ? `<button class="activate-btn" data-id="${user._id}">🔓 تفعيل</button>` : '-'}</td>
+        <td><button class="status-btn" data-id="${user._id}">🔄</button></td>
       `;
             tbody.appendChild(row);
         });
 
-        // ربط الأحداث بطريقة آمنة بعد إنشاء العناصر
         tbody.querySelectorAll('.update-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const userId = btn.dataset.id;
-                updateUserBalance(userId);
-            });
+            btn.addEventListener('click', () => updateUserBalance(btn.dataset.id));
         });
 
         tbody.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const userId = btn.dataset.id;
-                deleteUser(userId);
-            });
+            btn.addEventListener('click', () => deleteUser(btn.dataset.id));
         });
 
-        tbody.querySelectorAll('.activate-btn').forEach(btn => {
+        tbody.querySelectorAll('.status-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const userId = btn.dataset.id;
-                activateUser(userId);
+                const newStatus = document.getElementById(`status-${userId}`).value;
+                changeUserStatus(userId, newStatus);
             });
         });
 
@@ -136,7 +125,6 @@ async function loadUsers() {
 
 /**
  * Updates the balance of a specific user
- * @param {string} userId - معرف المستخدم
  */
 async function updateUserBalance(userId) {
     const balance = document.getElementById(`balance-${userId}`).value;
@@ -156,7 +144,6 @@ async function updateUserBalance(userId) {
 
 /**
  * Deletes a user from the system
- * @param {string} userId - معرف المستخدم
  */
 async function deleteUser(userId) {
     try {
@@ -168,16 +155,20 @@ async function deleteUser(userId) {
 }
 
 /**
- * Activates a suspended user account
- * @param {string} userId - معرف المستخدم
+ * Changes user account status
  */
-async function activateUser(userId) {
+async function changeUserStatus(userId, newStatus) {
     try {
-        await fetch(`/api/users/${userId}/activate`, { method: 'PUT' });
-        alert('تم تفعيل الحساب بنجاح');
+        const res = await fetch('/api/admin/update-status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, newStatus })
+        });
+        const result = await res.json();
+        alert(result.message || result.error || 'تم تحديث الحالة');
         loadUsers();
     } catch (error) {
-        console.error('فشل تفعيل الحساب:', error);
+        console.error('فشل تحديث الحالة:', error);
     }
 }
 
@@ -204,6 +195,28 @@ async function updateBalance() {
 }
 
 /**
+ * Updates user status via top form
+ */
+async function updateUserStatus() {
+    const userId = document.getElementById('statusUserId').value;
+    const newStatus = document.getElementById('newStatus').value;
+
+    try {
+        const res = await fetch('/api/admin/update-status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, newStatus })
+        });
+
+        const result = await res.json();
+        document.getElementById('statusResult').textContent = result.message || result.error;
+        loadUsers();
+    } catch (error) {
+        console.error('فشل تعديل الحالة من النموذج:', error);
+    }
+}
+
+/**
  * Fetches and displays icon data in the admin table
  */
 async function loadIcons() {
@@ -226,12 +239,8 @@ async function loadIcons() {
             tbody.appendChild(row);
         });
 
-        // ربط زر إعادة المحاولة بطريقة آمنة
         tbody.querySelectorAll('.retry-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const iconId = btn.dataset.id;
-                retryIcon(iconId);
-            });
+            btn.addEventListener('click', () => retryIcon(btn.dataset.id));
         });
 
     } catch (error) {
@@ -241,7 +250,6 @@ async function loadIcons() {
 
 /**
  * Retries loading a failed icon
- * @param {string} iconId - معرف الأيقونة
  */
 async function retryIcon(iconId) {
     try {

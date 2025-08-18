@@ -16,6 +16,7 @@ import * as th from "./theme.js";
 import * as um from "./usermanager.js";
 import { Taber } from "./core/taber.js";
 import { AppManager } from "./appmanager.js";
+import { showToast } from "./utils/toast.js";
 
 // ثوابت التطبيق
 const APP_CONFIG = {
@@ -395,7 +396,7 @@ class HomePage {
  * @author: Evan Brazi
  */
 
-const socket = new WebSocket('ws://localhost:3000');
+const socket = new WebSocket('ws://localhost:10000');
 
 socket.addEventListener('open', () => {
     console.log('✅ WebSocket connected (user)');
@@ -455,6 +456,7 @@ fetch('/api/auth/check-session')
         else {
             // تابع تحميل البيانات
             console.log('Welcome');
+            showToast('Welcome')
         }
     });
 

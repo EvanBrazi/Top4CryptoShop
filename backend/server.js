@@ -10,6 +10,9 @@ require('dotenv').config();
 // =======================
 // 📚 استيراد المكتبات
 // =======================
+require('dotenv').config();
+
+// 📚 استيراد المكتبات الأساسية
 const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');
@@ -25,8 +28,11 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const favicon = require('serve-favicon');
 const http = require('http');
+
+// 🧠 استيراد الوظائف الداخلية
 const setupWebSocket = require('./socket');
 const { generateCsrfToken } = require('./middlewares/csrfMiddleware');
+const { verifyToken, checkAdmin } = require('./middlewares/auth');
 
 // =======================
 // 🚀 تهيئة التطبيق
@@ -129,13 +135,12 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(hpp());
 app.use(compression());
-app.use(morgan('combined'));
+app.use(morgan('dev'));
 
 app.get("/csrf-token", (req, res) => {
   try {
     const token = generateCsrfToken(req, res);
     res.json({ csrfToken: token });
-    console.log('Server:: csrfToken :', token);
   } catch (err) {
     console.error("CSRF Error:", err.message);
     res.status(500).json({ error: "حدث خطأ في الخادم" });
@@ -170,8 +175,9 @@ app.use(express.static(staticPath, {
 // 🔀 المسارات الديناميكية
 // =======================
 const authRouter = require('./routes/auth'); // أو حسب اسم الملف
+const adminRouter = require('./routes/admin');
 app.use('/api/auth', authRouter); // ✅ هذا يربط المسارات بشكل صحيح
-//app.use('/api/auth', require('./routes/auth'));
+app.use('/api/admin', adminRouter); // ✅ تسجيل جميع مسارات الأدمن تحت /api/admin
 app.use('/api/users', require('./routes/users'));
 app.use('/api/icons', require('./routes/icons'));
 app.use('/api/cards', require('./routes/cards'));
@@ -202,7 +208,7 @@ app.put('/api/users/:id/balance', async (req, res) => {
 
   // تعديل الرصيد في قاعدة البيانات (معلق)
   // await User.findByIdAndUpdate(userId, { balance: newBalance });
-
+  // ⚠️ تأكد من التحقق من صلاحيات الأدمن هنا لاحقًا
   broadcast({ type: 'balanceUpdate', userId, newBalance }, 'admin');
   res.json({ message: 'تم تعديل الرصيد بنجاح' });
 });
@@ -228,6 +234,12 @@ app.get('/homepage', (req, res) => {
 
   const filePath = path.join(staticPath, 'homepage.html');
   res.sendFile(filePath);
+});
+
+// ✅ تقديم صفحة الأدمن فقط إذا كانت الجلسة صالحة
+app.get('/admin', verifyToken, checkAdmin, (req, res) => {
+  // ✅ السماح فقط للمستخدمين الذين لديهم دور "admin"
+  res.sendFile(path.join(__dirname, 'protectedViews', 'admin.html'));
 });
 
 // =======================

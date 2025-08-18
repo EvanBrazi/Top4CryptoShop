@@ -1,6 +1,6 @@
 /**
  * Script to generate icons-list.json from /public/icons/apps/
- * Author: شادي & Copilot
+ * Author: EVAN BRAZI & Copilot
  */
 
 const fs = require('fs');

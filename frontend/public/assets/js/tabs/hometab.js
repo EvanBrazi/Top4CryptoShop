@@ -193,7 +193,6 @@ class HomeTab {
 
     // Add main icon if available
     if (card.icon) {
-      console.log('This Card had one icon: ' + card.whichTab);
       const icon = document.createElement('img');
       icon.className = 'card-icon';
       icon.src = this._resolveAsset(card.icon, this.options.iconBasePath);
@@ -204,7 +203,6 @@ class HomeTab {
 
     // عرض عدة أيقونات إذا كانت موجودة
     if (Array.isArray(card.icons)) {
-      console.log('This Card had many icons: ' + card.whichTab);
       const iconsContainer = document.createElement('div');
       iconsContainer.className = 'card-icons-group';
 

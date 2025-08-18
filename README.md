@@ -1,139 +1,137 @@
-# Top4CryptoShop
+# 🪙 Top4CryptoShop
 
-A cryptocurrency shop application built with Node.js, Express, and MongoDB.
+تطبيق متجر العملات الرقمية مبني باستخدام Node.js وExpress وMongoDB، يوفر تجربة مستخدم تفاعلية وآمنة لإدارة المحافظ والمدفوعات.
 
-## Features
+---
 
-- User authentication (register, login, logout)
-- Session management with MongoDB storage
-- Rate limiting for security
-- Responsive design with 3D effects
-- Dark/Light theme support
-- Application grid with 3D cards
-- Wallet and payment management
+## 🚀 الميزات
 
-## Prerequisites
+- تسجيل وتسجيل دخول المستخدمين مع تشفير آمن
+- إدارة الجلسات باستخدام MongoDB
+- حماية من هجمات Brute Force عبر Rate Limiting
+- تصميم متجاوب مع تأثيرات ثلاثية الأبعاد
+- دعم الوضع الداكن والفاتح
+- واجهة شبكية ببطاقات ثلاثية الأبعاد
+- إدارة الرصيد والمحفظة والمدفوعات
+- تعليق الحساب تلقائيًا بعد محاولات دخول خاطئة
+- حماية CSRF لجميع النماذج
+- التحقق من حالة الجلسة عبر API
 
-- Node.js (v14 or higher)
-- MongoDB (local or remote instance)
-- npm or yarn
+---
 
-## Installation
+## 🧰 المتطلبات
 
-1. Clone the repository:
+- Node.js (الإصدار 14 أو أعلى)
+- MongoDB (محلي أو سحابي)
+- npm أو yarn
+
+---
+
+## ⚙️ التثبيت
+
+1. استنساخ المستودع:
 ```bash
 git clone <repository-url>
 cd Top4CryptoShop
-```
+تثبيت تبعيات الخادم:
 
-2. Install backend dependencies:
-```bash
+bash
 cd backend
 npm install
-```
+تثبيت تبعيات الواجهة الأمامية (إن وجدت):
 
-3. Install frontend dependencies (if any):
-```bash
+bash
 cd ../frontend
-# If there are frontend dependencies
 npm install
-```
+إنشاء ملف .env داخل مجلد backend:
 
-4. Create a `.env` file in the `backend` directory with the following variables:
-```env
+env
 NODE_ENV=development
 PORT=10000
 MONGODB_URI=mongodb://127.0.0.1:27017/Top4CryptoShop
 SESSION_SECRET=your-session-secret
 JWT_SECRET=your-jwt-secret
 CSRF_SECRET=your-csrf-secret
-```
-
-## Running the Application
-
-### Development Mode
-
-```bash
-# From the root directory
+▶️ تشغيل التطبيق
+وضع التطوير
+bash
 npm run dev
-```
-
-### Production Mode
-
-```bash
-# From the root directory
+وضع الإنتاج
+bash
 npm start
-```
-
-## Project Structure
-
-```
+🗂️ هيكل المشروع
+كتابة تعليمات برمجية
 Top4CryptoShop/
 ├── backend/
-## Authentication Documentation
-
-### Login Methods
-- **Traditional Login**: Use username and password
-- **Google Login**: Click the "Login via Google" button
-- **Apple Login**: Click the "Login via Apple" button
-
-### Security Features
-- Passwords are encrypted using bcrypt
-- JWT tokens are generated upon successful login
-- Session management with MongoDB storage
-- Rate limiting to prevent brute force attacks
-- CSRF protection for all forms
-
-### Registration Methods
-- **Traditional Registration**: Fill out the form with required data
-- **Google Registration**: Click the "Register via Google" button
-- **Apple Registration**: Click the "Register via Apple" button
-
-### Logout Process
-- Tokens are revoked and added to a blacklist
-- Cookies are cleared from the browser
-- Session is securely terminated
-│   ├── controllers/
-│   ├── middlewares/
-│   ├── models/
-│   ├── routes/
-│   ├── .env
-│   ├── server.js
+│   ├── controllers/         # دوال التحكم مثل registerUser
+│   ├── middlewares/         # حماية CSRF، التحقق من الجلسة، التحقق من الدور
+│   ├── models/              # نماذج Mongoose مثل User وRevokedToken
+│   ├── routes/              # مسارات المصادقة
+│   ├── .env                 # متغيرات البيئة
+│   ├── server.js            # نقطة تشغيل التطبيق
 │   └── package.json
 ├── frontend/
 │   ├── public/
-│   │   ├── assets/
-│   │   ├── index.html
+│   │   ├── assets/          # صور وأيقونات
+│   │   ├── index.html       # الصفحة الرئيسية
 │   │   └── ...
 │   └── ...
 ├── README.md
 └── package.json
-```
+🔐 توثيق المصادقة
+طرق تسجيل الدخول
+تقليدي: اسم مستخدم + كلمة مرور
 
-## API Endpoints
+Google: زر "تسجيل الدخول عبر Google"
 
-- `POST /api/auth/register` - Register a new user
-- `POST /api/auth/login` - Login user
-- `POST /api/auth/logout` - Logout user
-- `GET /api/auth/check-session` - Check authentication status
+Apple: زر "تسجيل الدخول عبر Apple"
 
-## Security Features
+طرق التسجيل
+تقليدي: تعبئة النموذج
 
-- Password hashing with bcrypt
-- JWT token authentication
-- CSRF protection
-- Rate limiting
-- Session management with MongoDB storage
-- Cookie security settings
+Google: زر "التسجيل عبر Google"
 
-## Contributing
+Apple: زر "التسجيل عبر Apple"
 
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a pull request
+عملية تسجيل الخروج
+إلغاء التوكن وإضافته إلى القائمة السوداء
 
-## License
+حذف الكوكيز من المتصفح
 
-This project is licensed under the MIT License.
+إنهاء الجلسة بأمان
+
+🔌 نقاط نهاية الـ API
+المسار	الوصف
+POST /api/auth/register	تسجيل مستخدم جديد
+POST /api/auth/login	تسجيل الدخول
+POST /api/auth/logout	تسجيل الخروج
+GET /api/auth/check-session	التحقق من حالة الجلسة
+POST /api/admin/update-status	تحديث حالة الحساب (إدمن فقط)
+🛡️ ميزات الأمان
+تشفير كلمات المرور باستخدام bcrypt
+
+إنشاء توكنات JWT مع توقيع آمن
+
+حماية CSRF لجميع الطلبات
+
+تحديد عدد المحاولات لتسجيل الدخول
+
+إدارة الجلسات باستخدام MongoDB
+
+إعدادات كوكيز آمنة (httpOnly, sameSite, secure)
+
+تعليق الحساب تلقائيًا بعد 5 محاولات خاطئة
+
+🤝 المساهمة
+اعمل Fork للمستودع
+
+أنشئ فرعًا جديدًا
+
+نفّذ التعديلات
+
+ادفع التغييرات إلى الفرع
+
+أنشئ Pull Request
+
+📄 الرخصة
+هذا المشروع مرخص تحت رخصة MIT.

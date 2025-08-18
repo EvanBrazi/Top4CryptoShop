@@ -2,15 +2,49 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 
 /**
- * تسجيل مستخدم جديد
+ * @function registerUser
+ * @description تسجيل مستخدم جديد في النظام
  * @route POST /api/auth/register
+ * @access Public
  */
 const registerUser = async (req, res) => {
   try {
     const { username, email, password, phone } = req.body;
 
-    // تحقق من وجود المستخدم مسبقًا
-    const existingUser = await User.findOne({ $or: [{ username }, { email }] });
+    // ✅ التحقق من وجود جميع الحقول المطلوبة
+    if (!username || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        error: 'MISSING_FIELDS',
+        message: 'يرجى تعبئة جميع الحقول المطلوبة'
+      });
+    }
+
+    // ✅ التحقق من صحة البريد الإلكتروني
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(422).json({
+        success: false,
+        error: 'INVALID_EMAIL',
+        message: 'صيغة البريد الإلكتروني غير صحيحة'
+      });
+    }
+
+    // ✅ التحقق من قوة كلمة المرور
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
+    if (!passwordRegex.test(password)) {
+      return res.status(422).json({
+        success: false,
+        error: 'WEAK_PASSWORD',
+        message: 'كلمة المرور ضعيفة. يجب أن تحتوي على حرف كبير وصغير ورقم ورمز خاص'
+      });
+    }
+
+    // ✅ التحقق من وجود المستخدم مسبقًا
+    const existingUser = await User.findOne({
+      $or: [{ username: username.trim() }, { email: email.trim().toLowerCase() }]
+    });
+
     if (existingUser) {
       return res.status(409).json({
         success: false,
@@ -19,20 +53,23 @@ const registerUser = async (req, res) => {
       });
     }
 
-    // تشفير كلمة المرور
+    // ✅ تشفير كلمة المرور
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // إنشاء المستخدم
+    // ✅ إنشاء المستخدم الجديد
     const user = new User({
-      username,
-      email,
+      username: username.trim(),
+      email: email.trim().toLowerCase(),
       password: hashedPassword,
-      phone
+      phone: phone?.trim(),
+      accountStatus: 'active',
+      loginAttempts: 0
     });
 
     await user.save();
 
-    res.status(201).json({
+    // ✅ الرد النهائي
+    return res.status(201).json({
       success: true,
       message: 'تم إنشاء الحساب بنجاح',
       user: {
@@ -41,22 +78,32 @@ const registerUser = async (req, res) => {
         email: user.email
       }
     });
+
   } catch (err) {
+    console.error('❌ خطأ أثناء التسجيل:', err);
+
+    // ✅ التعامل مع أخطاء قاعدة البيانات
     const errors = Object.values(err.errors || {}).map(e => ({
       field: e.path,
       message: e.message,
       suggestion: getSuggestion(e.path)
     }));
 
-    res.status(422).json({
+    return res.status(500).json({
       success: false,
-      error: 'VALIDATION_ERROR',
-      message: 'فشل التحقق من البيانات',
-      details: errors
+      error: 'SERVER_ERROR',
+      message: 'حدث خطأ أثناء إنشاء الحساب',
+      details: errors.length ? errors : undefined
     });
   }
 };
 
+/**
+ * @function getSuggestion
+ * @description يقدم اقتراحات للمستخدم حسب نوع الخطأ
+ * @param {string} field - اسم الحقل
+ * @returns {string} اقتراح للمستخدم
+ */
 function getSuggestion(field) {
   switch (field) {
     case 'username':

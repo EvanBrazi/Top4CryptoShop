@@ -24,20 +24,13 @@ const csrfOptions = {
 const { generateCsrfToken, validateRequest } = doubleCsrf(csrfOptions);
 
 const doubleCsrfProtection = (req, res, next) => {
-  console.log("🛡️ بدأ التحقق من CSRF");
   const valid = validateRequest(req);
   if (!valid) {
     console.warn("❌ رمز CSRF غير صالح");
     return res.status(403).json({ error: "رمز CSRF غير صالح" });
   }
-  console.log("✅ رمز CSRF صالح");
   next();
 };
-
-
-// ✅ تحقق أن الكائن يحتوي على الدوال المطلوبة
-console.log(typeof generateCsrfToken); // يجب أن تطبع: function
-console.log(typeof validateRequest); // يجب أن تطبع: function
 
 module.exports = {
   doubleCsrfProtection,//: validateRequest,

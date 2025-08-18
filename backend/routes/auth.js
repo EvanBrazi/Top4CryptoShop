@@ -1,11 +1,8 @@
 /**
- * auth.js - مسارات المصادقة
- * إصدار: 2.3.0
- * يحتوي على:
- * - تسجيل المستخدمين
- * - تسجيل الدخول (يدعم JSON وHTML)
- * - تسجيل الخروج
- * - إدارة الجلسات
+ * @file routes/auth.js
+ * @description مسارات المصادقة وتسجيل الدخول والخروج والتحقق من الجلسة
+ * @version 2.3.0
+ * @author Evan Brazi
  */
 
 const express = require('express');
@@ -18,43 +15,31 @@ const { validateRegister, validateLogin, handleValidationErrors } = require('../
 const rateLimit = require('express-rate-limit');
 const { doubleCsrfProtection } = require('../middlewares/csrfMiddleware');
 const { registerUser } = require('../controllers/authController');
-const { checkSession } = require('../middlewares/auth');
+const { body, validationResult } = require('express-validator');
+const { verifyToken, checkAdmin, requireRole, checkSession } = require('../middlewares/auth');
 
 // =============================================
-//          دالة مساعدة للاستجابات
+// 🛡️ دالة موحدة للاستجابات
 // =============================================
-/**
- * تعالج استجابات المصادقة بناءً على نوع المحتوى المطلوب
- * @param {Object} req - طلب Express
- * @param {Object} res - رد Express
- * @param {Object} data - بيانات الاستجابة
- */
 function handleAuthResponse(req, res, data) {
-  // إذا كان الطلب يتوقع HTML أو كان من متصفح
   if (req.accepts('html') && !req.accepts('json')) {
-    if (data.success && data.redirectTo) {
-      // تحويل ناجح إلى الصفحة المطلوبة
-      return res.redirect(data.redirectTo);
-    } else {
-      // في حالة الخطأ، إعادة تحويل إلى صفحة تسجيل الدخول مع رسالة خطأ
-      const redirectUrl = `/login.html?error=${encodeURIComponent(data.error || 'حدث خطأ')}`;
-      return res.redirect(redirectUrl);
-    }
+    const redirectUrl = data.success && data.redirectTo
+      ? data.redirectTo
+      : `/login.html?error=${encodeURIComponent(data.error || 'حدث خطأ')}`;
+    return res.redirect(redirectUrl);
   }
 
-  // الافتراضي: إرجاع JSON
-  if (data.status) {
-    return res.status(data.status).json(data);
-  }
-  return res.json(data);
+  return data.status
+    ? res.status(data.status).json(data)
+    : res.json(data);
 }
 
 // =============================================
-//          معدل الحد للحماية من هجمات Brute Force
+// 🚦 تحديد معدل المحاولات لتسجيل الدخول
 // =============================================
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 دقيقة
-  max: 10, // 10 محاولات لكل IP
+  windowMs: 15 * 60 * 1000,
+  max: 10,
   handler: (req, res) => {
     return handleAuthResponse(req, res, {
       status: 429,
@@ -64,18 +49,10 @@ const authLimiter = rateLimit({
   }
 });
 
-// =============================================
-//          وسائط Router العامة
-// =============================================
-router.use((req, res, next) => {
-  // لا نفرض نوع محتوى معين، نتركه للطلب ليحدد
-  next();
-});
-
 router.use(authLimiter);
 
 // =============================================
-//          تسجيل مستخدم جديد
+// 📝 تسجيل مستخدم جديد
 // =============================================
 router.post('/register',
   validateRegister,
@@ -84,40 +61,33 @@ router.post('/register',
 );
 
 // =============================================
-//          تسجيل الدخول (يدعم JSON وHTML)
+// 🔐 تسجيل الدخول
 // =============================================
 router.post('/login',
   doubleCsrfProtection,
   validateLogin,
   handleValidationErrors,
   async (req, res) => {
-    console.log("📥 تم استقبال طلب تسجيل الدخول:", req.body);
     try {
       const { username, password } = req.body;
-      // إضافة تسجيل الأحداث المهمة
-      console.log(`User login attempt: ${username}`);
+      if (!password) {
+        return res.status(400).json({
+          success: false,
+          error: 'يرجى إدخال كلمة المرور',
+          type: 'missing_password'
+        });
+      }
 
       const query = username.includes('@')
         ? { email: username.trim().toLowerCase() }
         : { username: { $regex: new RegExp(`^${username}$`, 'i') } };
 
-      console.log('passwore: ' + password);
-
-      if (!password) {
-        console.error('كلمة المرور غير موجودة في السجل');
-        return res.status(500).json({ message: 'حدث خطأ في بيانات المستخدم' });
-      }
-
-
-      const user = await User.findOne(query)
-        .select('+password +loginAttempts +accountStatus +lastLogin');
-
+      const user = await User.findOne(query).select('+password +loginAttempts +accountStatus +lastLogin');
       if (!user) {
         return handleAuthResponse(req, res, {
           status: 401,
           success: false,
           error: 'بيانات الدخول غير صحيحة',
-          solution: 'تحقق من اسم المستخدم أو البريد وكلمة المرور',
           type: 'invalid_credentials'
         });
       }
@@ -127,7 +97,6 @@ router.post('/login',
           status: 403,
           success: false,
           error: 'الحساب موقوف مؤقتاً',
-          solution: 'اتصل بدعم العملاء',
           type: 'account_suspended'
         });
       }
@@ -138,8 +107,7 @@ router.post('/login',
         return handleAuthResponse(req, res, {
           status: 429,
           success: false,
-          error: 'تم تجاوز عدد المحاولات المسموحة',
-          solution: 'تم تعليق الحساب مؤقتاً. اتصل بالدعم',
+          error: 'تم تعليق الحساب مؤقتاً',
           type: 'too_many_attempts'
         });
       }
@@ -151,13 +119,13 @@ router.post('/login',
         return handleAuthResponse(req, res, {
           status: 401,
           success: false,
-          error: 'بيانات الدخول غير صحيحة',
+          error: 'كلمة المرور غير صحيحة',
           remainingAttempts: 5 - user.loginAttempts,
           type: 'invalid_password'
         });
       }
 
-      if (user && user.role === 'admin') {
+      if (user.role === 'admin') {
         req.session.userId = user._id;
         req.session.role = 'admin';
       }
@@ -166,10 +134,11 @@ router.post('/login',
       user.lastLogin = new Date();
       await user.save();
 
+      const issuer = user.role === 'admin' ? 'admin-panel' : 'your-app-api';
       const token = jwt.sign(
         { userId: user._id, role: user.role || 'user' },
         process.env.JWT_SECRET,
-        { expiresIn: '1h', issuer: 'your-app-api', algorithm: 'HS256' }
+        { expiresIn: '1h', issuer, algorithm: 'HS256' }
       );
 
       res.cookie('session_token', token, {
@@ -187,18 +156,18 @@ router.post('/login',
         phone: user.phone,
         theme: user.theme,
         balance: user.balance,
-        lastLogin: user.lastLogin
+        lastLogin: user.lastLogin,
+        role: user.role
       };
 
       return handleAuthResponse(req, res, {
         success: true,
         user: userResponse,
-        token: token,
-        redirectTo: '/homepage.html'
+        token,
+        redirectTo: user.role === 'admin' ? '/admin' : '/homepage.html'
       });
 
     } catch (err) {
-      console.error('Login error:', err);
       return handleAuthResponse(req, res, {
         status: 500,
         success: false,
@@ -210,47 +179,35 @@ router.post('/login',
   }
 );
 
-router.post('/ping', (req, res) => {
-  console.log("✅ وصل طلب ping");
-  res.json({ message: "pong" });
-});
-
-
 // =============================================
-//          تسجيل الخروج
+// 🔓 تسجيل الخروج
 // =============================================
 router.post('/logout', doubleCsrfProtection, async (req, res) => {
   try {
     const token = req.cookies.session_token || req.headers.authorization?.split(' ')[1];
-    const revoked = await RevokedToken.findOne({ token });
-
-    if (revoked) {
-      return handleAuthResponse(req, res, {
-        success: false,
-        isAuthenticated: false,
-        message: 'رمز الجلسة موقوف'
-      });
-    }
-
-
     if (!token) {
       return handleAuthResponse(req, res, {
         status: 400,
         success: false,
-        error: 'لم يتم توفير رمز الجلسة',
-        solution: 'قد تكون مسجلًا للخروج بالفعل'
+        error: 'لم يتم توفير رمز الجلسة'
       });
     }
 
-    // إضافة التوكن إلى القائمة السوداء
+    const isRevoked = await RevokedToken.exists({ token });
+    if (isRevoked) {
+      return handleAuthResponse(req, res, {
+        success: false,
+        error: 'رمز الجلسة موقوف'
+      });
+    }
+
     await RevokedToken.create({
       token,
       revokedAt: new Date(),
       reason: 'user_logout',
-      expiresAt: new Date(Date.now() + 3600000) // تنتهي بعد ساعة
+      expiresAt: new Date(Date.now() + 3600000)
     });
 
-    // مسح الكوكيز
     res.clearCookie('session_token', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -265,21 +222,53 @@ router.post('/logout', doubleCsrfProtection, async (req, res) => {
     });
 
   } catch (err) {
-    console.error('Logout error:', err);
     return handleAuthResponse(req, res, {
       status: 500,
       success: false,
       error: 'حدث خطأ أثناء تسجيل الخروج',
-      details: process.env.NODE_ENV === 'development' ? err.message : null,
-      type: 'server_error'
+      details: process.env.NODE_ENV === 'development' ? err.message : null
     });
   }
 });
 
 // =============================================
-//          التحقق من حالة المصادقة
+// 🔧 فك حظر المستخدمين (إدمن فقط)
 // =============================================
-// ✅ التحقق من حالة الجلسة
+router.post('/admin/update-status',
+  verifyToken,
+  checkAdmin,
+  body('userId').isMongoId(),
+  body('newStatus').isIn(['active', 'suspended']),
+  handleValidationErrors,
+  async (req, res) => {
+    try {
+      const { userId, newStatus } = req.body;
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({ success: false, error: 'المستخدم غير موجود' });
+      }
+
+      user.accountStatus = newStatus;
+      user.loginAttempts = 0;
+      await user.save();
+
+      return res.json({
+        success: true,
+        message: `✅ تم تحديث حالة المستخدم إلى "${newStatus}" بنجاح`
+      });
+
+    } catch (err) {
+      return res.status(500).json({
+        success: false,
+        error: 'حدث خطأ أثناء تحديث الحالة'
+      });
+    }
+  }
+);
+
+// =============================================
+// 🔍 التحقق من الجلسة
+// =============================================
 router.get('/check-session', checkSession);
 
 module.exports = router;

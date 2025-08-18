@@ -1,7 +1,7 @@
 /**
  * auth.js - JWT authentication and role-based access control
  * يحتوي على ميدل وير التحقق من التوكن، صلاحيات الأدمن، والتحقق من الجلسة
- * @version: 2.1.0
+ * @version: 2.2.0
  * @author: Evan Brazi
  */
 
@@ -18,24 +18,25 @@ const RevokedToken = require('../models/RevokedToken');
  */
 const verifyToken = async (req, res, next) => {
   try {
-    console.log('verifyToken : ', req.cookies.session_token);
-    
     const token =
       req.headers.authorization?.split(' ')[1] ||
-      req.cookies.session_token;
+      req.cookies?.session_token;
 
     if (!token) {
       return res.status(401).json({ error: 'يجب توفير رمز الجلسة' });
     }
 
-    const revoked = await RevokedToken.findOne({ token });
-    if (revoked) {
+    const isRevoked = await RevokedToken.exists({ token });
+    if (isRevoked) {
       return res.status(401).json({ error: 'رمز الجلسة موقوف' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId).select('-password');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, {
+      algorithms: ['HS256'],
+      issuer: ['your-app-api', 'admin-panel']
+    });
 
+    const user = await User.findById(decoded.userId).select('-password');
     if (!user) {
       return res.status(404).json({ error: 'المستخدم غير موجود' });
     }
@@ -43,7 +44,8 @@ const verifyToken = async (req, res, next) => {
     req.user = user;
     next();
   } catch (err) {
-    return res.status(401).json({ error: 'رمز الجلسة غير صالح' });
+    console.error('❌ فشل التحقق من التوكن:', err.message);
+    return res.status(403).json({ error: '🚫 الجلسة غير صالحة أو التوكن مزور' });
   }
 };
 
@@ -52,10 +54,23 @@ const verifyToken = async (req, res, next) => {
  * - يجب أن يكون المستخدم لديه role = 'admin'
  */
 const checkAdmin = (req, res, next) => {
-  if (req.user?.role !== 'admin') {
+  if (!req.user || req.user.role !== 'admin') {
     return res.status(403).json({ error: 'صلاحيات الأدمن مطلوبة' });
   }
   next();
+};
+
+/**
+ * ✅ التحقق من صلاحيات حسب الدور
+ * - يسمح لك بتمرير أدوار متعددة مثل ['admin', 'moderator']
+ */
+const requireRole = (roles = []) => {
+  return (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({ error: 'ليس لديك صلاحية الوصول لهذه العملية' });
+    }
+    next();
+  };
 };
 
 /**
@@ -91,5 +106,6 @@ const checkSession = async (req, res) => {
 module.exports = {
   verifyToken,
   checkAdmin,
+  requireRole,
   checkSession
 };

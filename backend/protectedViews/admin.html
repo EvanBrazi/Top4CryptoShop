@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>لوحة تحكم الأدمن</title>
   <link rel="stylesheet" href="./assets/css/admin.css">
-
-  <!-- CSP-compliant: No inline styles or scripts -->
-  <!-- Author: Evan Brazi | Created: 2025-08-16 -->
+  <!-- Author: Evan Brazi | Last Updated: 2025-08-17 -->
 </head>
+
 <body>
 
   <header>
@@ -24,6 +24,40 @@
       <button id="updateBalanceBtn">تحديث</button>
     </section>
 
+    <!-- 🔐 نموذج تغيير حالة المستخدم -->
+    <section class="card">
+      <h2>تغيير حالة المستخدم</h2>
+      <input id="statusUserId" placeholder="معرف المستخدم">
+      <select id="newStatus">
+        <option value="active">نشط</option>
+        <option value="suspended">معلّق</option>
+        <option value="deactivated">محذوف</option>
+      </select>
+      <button id="updateStatusBtn">تحديث الحالة</button>
+      <div id="statusResult" class="status-message"></div>
+    </section>
+
+    <section class="card">
+      <h2>إدارة المستخدمين</h2>
+      <div id="admin-notifications" class="notifications"></div>
+      <table id="usersTable">
+        <thead>
+          <tr>
+            <th>المعرف</th>
+            <th>الاسم</th>
+            <th>الرصيد</th>
+            <th>الحالة</th>
+            <th>المحاولات</th>
+            <th>آخر دخول</th>
+            <th>تعديل</th>
+            <th>حذف</th>
+            <th>فك الحظر</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+    
     <!-- 👥 جدول المستخدمين -->
     <section class="card">
       <h2>قائمة المستخدمين</h2>
@@ -38,10 +72,12 @@
             <th>آخر دخول</th>
             <th>تعديل</th>
             <th>حذف</th>
-            <th>تفعيل</th>
+            <th>فك الحظر</th>
           </tr>
         </thead>
-        <tbody></tbody>
+        <tbody>
+          <!-- يتم تعبئة الصفوف ديناميكيًا من admin.js -->
+        </tbody>
       </table>
     </section>
 
@@ -67,4 +103,5 @@
   <!-- ✅ External script only (CSP-safe) -->
   <script src="./assets/js/admin.js"></script>
 </body>
+
 </html>

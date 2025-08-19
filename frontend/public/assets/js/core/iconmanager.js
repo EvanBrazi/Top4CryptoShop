@@ -43,11 +43,13 @@ export class IconManager {
    */
   async getIcon(iconUrl) {
     if (this.pendingRequests.has(iconUrl)) {
+      console.log('getIcon on pending :: ' + iconUrl);
       return this.pendingRequests.get(iconUrl);
     }
 
     const cached = this.cache.get(iconUrl);
     if (cached) return cached.objectUrl;
+    console.log('No Caching :: ' + iconUrl);
 
     const requestPromise = this._queueRequest(iconUrl);
     this.pendingRequests.set(iconUrl, requestPromise);
@@ -57,7 +59,7 @@ export class IconManager {
       return result;
     } catch (error) {
       if (this.defaultIconUrl) {
-        console.warn(`Fallback: ${iconUrl}`);
+        console.warn(`Failed to load ,Fallback: ${iconUrl}`);
         return this.defaultIconUrl;
       }
       throw error;

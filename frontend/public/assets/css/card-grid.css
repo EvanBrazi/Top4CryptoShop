@@ -33,6 +33,48 @@
   /* تحريك البطاقات للأسفل */
 }
 
+.loading-bar {
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, #00c6ff, #0072ff);
+  animation: loadingAnim 1.2s infinite linear;
+  border-radius: 2px;
+  margin-bottom: 12px;
+}
+
+@keyframes loadingAnim {
+  0% {
+    background-position: 0%
+  }
+
+  100% {
+    background-position: 100%
+  }
+}
+
+.empty-state {
+  text-align: center;
+  color: #777;
+  padding: 40px 0;
+}
+.empty-state img {
+  width: 80px;
+  opacity: 0.6;
+  margin-bottom: 16px;
+}
+
+.apps-grid {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.apps-grid.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+
 .card:hover {
   transform: translateY(10px) rotateX(8deg) rotateY(2deg) scale(1.02);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);

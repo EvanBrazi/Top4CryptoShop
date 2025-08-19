@@ -31,7 +31,6 @@ const http = require('http');
 
 // 🧠 استيراد الوظائف الداخلية
 const setupWebSocket = require('./socket');
-const { generateCsrfToken } = require('./middlewares/csrfMiddleware');
 const { verifyToken, checkAdmin } = require('./middlewares/auth');
 
 // =======================
@@ -60,37 +59,11 @@ mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/Top4CryptoS
 // 🛡️ إعدادات الأمان
 // =======================
 // 1. تفعيل وسائط الأمان
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net", "https://accounts.google.com", "https://apis.google.com", "chrome-extension://fhimbbbmdjiifimnepkibjfjbppnjble"],
-      scriptSrcElem: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net", "https://accounts.google.com", "https://apis.google.com", "https://esm.sh", "https://browser.sentry-cdn.com", "chrome-extension://fhimbbbmdjiifimnepkibjfjbppnjble"],
-      imgSrc: ["'self'", "data:", "blob:", "https://cdn-icons-png.flaticon.com", "https://www.gravatar.com", "https://ui-avatars.com", "https://lh3.googleusercontent.com", "https://upload.wikimedia.org"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
-      connectSrc: ["'self'", "'unsafe-inline'", "ws://localhost:3000", "https://api.ipify.org", "https://accounts.google.com", "https://www.googleapis.com"],
-      frameSrc: ["'self'", "'unsafe-inline'", "https://accounts.google.com"]
-    }
-  },
-  dnsPrefetchControl: {
-    allow: true
-  },
-  frameguard: {
-    action: 'deny'
-  },
-  hidePoweredBy: true,
-  hsts: {
-    maxAge: 31536000,
-    includeSubDomains: true,
-    preload: true
-  },
-  ieNoOpen: true,
-  noSniff: true,
-  referrerPolicy: {
-    policy: 'no-referrer'
-  },
-  xssFilter: true
-}));
+// استدعاء إعدادات الأمان
+const securityHeaders = require('./middleware/security');
+
+// تطبيق إعدادات الأمان
+app.use(securityHeaders);
 
 app.set('trust proxy', 1);
 
@@ -112,7 +85,7 @@ app.use(session({
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    sameSite: 'strict',
+    sameSite: 'lax',
     maxAge: 86400000
   },
   name: 'sessionId'
@@ -137,14 +110,13 @@ app.use(hpp());
 app.use(compression());
 app.use(morgan('dev'));
 
-app.get("/csrf-token", (req, res) => {
-  try {
-    const token = generateCsrfToken(req, res);
-    res.json({ csrfToken: token });
-  } catch (err) {
-    console.error("CSRF Error:", err.message);
-    res.status(500).json({ error: "حدث خطأ في الخادم" });
-  }
+app.post('/api/compare-token', (req, res) => {
+  const clientToken = req.body.clientToken;
+  const cookieToken = req.cookies.session_token;
+
+  const match = clientToken && cookieToken && clientToken === cookieToken;
+
+  res.json({ match });
 });
 
 // =======================

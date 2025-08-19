@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="x-csrf-token" content="{{token}}">
     <title>لوحة التحكم</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/brands.min.css">
@@ -12,6 +13,7 @@
     <link rel="stylesheet" href="./assets/css/card-grid.css">
     <link rel="stylesheet" href="./assets/css/homepage.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.19.0/js/md5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
@@ -47,13 +49,13 @@
     <div class="sidebar">
         <div class="sidebar-header">
             <div class="profile-header">
-                <div class="profile-img-container">
-                    <img src="assets/images/logo.png" id="profile-img" loading="lazy" class="profile-sidebar-img"
+                <div class="user-avatar-container">
+                    <img src="assets/images/logo.png" id="user-avatar" loading="lazy" class="profile-sidebar-img"
                         src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDExQzE0LjIwOTEgMTEgMTYgOS4yMDkxIDE2IDdDMTYgNC43OTA4NiAxNC4yMDkxIDMgMTIgM0M5Ljc5MDg2IDMgOCA0Ljc5MDg2IDggN0M4IDkuMjA5MTQgOS43OTA4NiAxMSAxMiAxMVoiIGZpbGw9IiNjY2MiLz4KPHBhdGggZD0iTTEyIDIxQzE2Ljk3MDYgMjEgMjEgMTYuOTcwNiAyMSAxMkMyMSA3LjAyOTQ0IDE2Ljk3MDYgMyAxMiAzQzcuMDI5NDQgMyAzIDcuMDI5NDQgMyAxMkMzIDE2Ljk3MDYgNy4wMjk0NCAyMSAxMiAyMVoiIHN0cm9rZT0iI2NjYyIgc3Ryb2tlLXdpZHRoPSIyIi8+Cjwvc3ZnPg=="
                         alt="صورة البروفايل">
                 </div>
                 <div class="profile-info">
-                    <span class="user-name" id="username-display">زائر</span>
+                    <span class="user-name" id="username-display">غير معروف</span>
                     <div class="user-balance">
                         <span id="balance-display">0.00</span>
                         <span class="currency-icon">💵</span>

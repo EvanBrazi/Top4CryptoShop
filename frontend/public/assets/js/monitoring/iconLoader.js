@@ -5,9 +5,6 @@
  * @version 2.1.0
  * @license MIT
  */
-
-import * as Sentry from 'https://browser.sentry-cdn.com/7.100.1/bundle.min.js';
-
 /**
  * تحميل أيقونة من الشبكة مع مراقبة الأداء والأخطاء
  * @param {string} iconUrl - رابط الأيقونة المطلوب تحميلها
@@ -55,27 +52,12 @@ export async function fetchIconWithMonitoring(iconUrl, retryCount = 3) {
 
     } catch (error) {
       clearTimeout(timeoutId);
-
-      // تسجيل الخطأ في Sentry
-      Sentry.captureException(error, {
-        extra: {
-          iconUrl,
-          attempt,
-          retryLimit: retryCount,
-          timestamp: Date.now()
-        }
-      });
-
       attempt++;
-
       // تأخير تدريجي قبل إعادة المحاولة
       await new Promise(r => setTimeout(r, 500 + attempt * 200));
     }
   }
-
-  // تسجيل استخدام fallback في Sentry
-  Sentry.captureMessage(`Fallback icon used for ${iconUrl}`, 'warning');
-
+  
   // إرجاع رابط fallback فقط (يتم تحميله لاحقًا في IconManager)
   return {
     objectUrl: '/icons/apps/default.png',

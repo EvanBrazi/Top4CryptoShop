@@ -1,78 +1,64 @@
+<!-- \Top4CryptoShop\backend\protectedViews\admin.html -->
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>لوحة تحكم الأدمن</title>
   <link rel="stylesheet" href="./assets/css/admin.css">
-  <!-- Author: Evan Brazi | Last Updated: 2025-08-17 -->
+  <!-- Author: Evan Brazi | Last Updated: 2025-08-19 -->
 </head>
-
 <body>
 
   <header>
     <h1>لوحة تحكم الأدمن</h1>
+    <div id="globalNotification" class="notification-bar"></div>
   </header>
 
   <main>
     <!-- 🧾 نموذج تعديل رصيد مستخدم -->
     <section class="card">
-      <h2>تحديث رصيد مستخدم</h2>
-      <input id="userId" placeholder="معرف المستخدم">
-      <input id="newBalance" placeholder="الرصيد الجديد">
-      <button id="updateBalanceBtn">تحديث</button>
+      <h2>💰 تحديث رصيد مستخدم</h2>
+      <label for="userId">معرف المستخدم</label>
+      <input id="userId" placeholder="12345">
+      <label for="newBalance">الرصيد الجديد</label>
+      <input id="newBalance" placeholder="100.00">
+      <button id="updateBalanceBtn">💾 تحديث</button>
+      <div id="balanceResult" class="status-message"></div>
     </section>
 
     <!-- 🔐 نموذج تغيير حالة المستخدم -->
     <section class="card">
-      <h2>تغيير حالة المستخدم</h2>
-      <input id="statusUserId" placeholder="معرف المستخدم">
+      <h2>🔄 تغيير حالة المستخدم</h2>
+      <label for="statusUserId">معرف المستخدم</label>
+      <input id="statusUserId" placeholder="12345">
+      <label for="newStatus">الحالة الجديدة</label>
       <select id="newStatus">
         <option value="active">نشط</option>
         <option value="suspended">معلّق</option>
         <option value="deactivated">محذوف</option>
       </select>
-      <button id="updateStatusBtn">تحديث الحالة</button>
+      <button id="updateStatusBtn">🔄 تحديث الحالة</button>
       <div id="statusResult" class="status-message"></div>
     </section>
 
+    <!-- 👥 جدول المستخدمين -->
     <section class="card">
-      <h2>إدارة المستخدمين</h2>
+      <h2>👥 قائمة المستخدمين</h2>
       <div id="admin-notifications" class="notifications"></div>
       <table id="usersTable">
         <thead>
           <tr>
             <th>المعرف</th>
-            <th>الاسم</th>
-            <th>الرصيد</th>
-            <th>الحالة</th>
-            <th>المحاولات</th>
-            <th>آخر دخول</th>
-            <th>تعديل</th>
-            <th>حذف</th>
-            <th>فك الحظر</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </section>
-    
-    <!-- 👥 جدول المستخدمين -->
-    <section class="card">
-      <h2>قائمة المستخدمين</h2>
-      <table id="usersTable">
-        <thead>
-          <tr>
-            <th>المعرف</th>
             <th>اسم المستخدم</th>
+            <th>الرقم</th>
             <th>الرصيد</th>
             <th>الحالة</th>
             <th>عدد المحاولات</th>
             <th>آخر دخول</th>
-            <th>تعديل</th>
-            <th>حذف</th>
-            <th>فك الحظر</th>
+            <th>✏️ تعديل</th>
+            <th>🗑️ حذف</th>
+            <th>🔓 فك الحظر</th>
           </tr>
         </thead>
         <tbody>
@@ -83,7 +69,7 @@
 
     <!-- 🖼️ جدول مراقبة الأيقونات -->
     <section class="card">
-      <h2>مراقبة تحميل الأيقونات</h2>
+      <h2>🖼️ مراقبة تحميل الأيقونات</h2>
       <table id="iconsTable">
         <thead>
           <tr>
@@ -92,7 +78,7 @@
             <th>عدد المحاولات</th>
             <th>المدة (ms)</th>
             <th>معاينة</th>
-            <th>إعادة المحاولة</th>
+            <th>🔁 إعادة المحاولة</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -100,8 +86,6 @@
     </section>
   </main>
 
-  <!-- ✅ External script only (CSP-safe) -->
   <script type="module" src="./assets/js/admin.js"></script>
 </body>
-
 </html>

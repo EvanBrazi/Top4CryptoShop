@@ -33,8 +33,8 @@ export class AppsTab {
       themeColor: options.themeColor || '#6a5acd',
       maxConcurrentLoads: options.maxConcurrentLoads || 4,
       cacheStrategy: options.cacheStrategy || 'lazy',
-      onCardClick: options.onCardClick || (() => {}),
-      onError: options.onError || (() => {})
+      onCardClick: options.onCardClick || (() => { }),
+      onError: options.onError || (() => { })
     };
 
     // تهيئة IconManager
@@ -315,7 +315,7 @@ export class AppsTab {
     this.resources.observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         const appId = entry.target.dataset.appId;
-        
+
         if (entry.isIntersecting) {
           this.state.visibleApps.add(appId);
           this._loadAppIcon(entry.target);
@@ -323,7 +323,7 @@ export class AppsTab {
           this.state.visibleApps.delete(appId);
         }
       });
-    }, { 
+    }, {
       threshold: 0.01,
       rootMargin: '200px'
     });
@@ -345,6 +345,8 @@ export class AppsTab {
 
     // تجنب إعادة تحميل الأيقونات المرئية بالفعل
     if (imgElement.src && imgElement.src !== '') return;
+    // عرض placeholder أولاً
+    imgElement.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNlZWVlZWUiLz48L3N2Zz4=';
 
     try {
       const objectUrl = await this.iconManager.getIcon(iconUrl);
@@ -353,7 +355,7 @@ export class AppsTab {
         imgElement.src = this._getIconPath('default.png');
       };
     } catch (error) {
-      console.warn(`فشل تحميل الأيقونة: ${iconUrl}`, error);
+      console.warn(`_loadAppIcon() :: فشل تحميل الأيقونة: ${iconUrl}`, error);
       imgElement.src = this._getIconPath('default.png');
     }
   }
@@ -489,18 +491,35 @@ export class AppsTab {
    * @returns {Promise<void>}
    */
   async _renderAppsGrid() {
+    this.container.innerHTML = '<div class="loading-bar"></div>';
+    await this._renderActualGrid();
+  }
+
+  /**
+   * عرض شبكة التطبيقات
+   * دالة مساعدة
+   * @private
+   * @returns {Promise<void>}
+   */
+  _renderActualGrid() {
     return new Promise((resolve) => {
       this.container.querySelector('.apps-grid')?.remove();
 
       const grid = document.createElement('div');
       grid.className = 'apps-grid';
+      // أضف الكلاس بعد إدراج العنصر لبدء المؤثر
+      requestAnimationFrame(() => {
+        grid.classList.add('visible');
+      });
 
       if (this.state.filteredApps.length === 0) {
         grid.innerHTML = this._createEmptyState();
       } else {
+        const fragment = document.createDocumentFragment();
         this.state.filteredApps.forEach(app => {
-          grid.appendChild(this._createAppCard(app));
+          fragment.appendChild(this._createAppCard(app));
         });
+        grid.appendChild(fragment);
       }
 
       this.container.appendChild(grid);
@@ -569,13 +588,12 @@ export class AppsTab {
    */
   _createEmptyState() {
     return `
-      <div class="empty-state">
-        <svg width="64" height="64" viewBox="0 0 24 24">
-          <path fill="#999" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
-        </svg>
-        <p>لا توجد تطبيقات متاحة</p>
-      </div>
-    `;
+  <div class="empty-state">
+    <img src="/assets/img/empty-box.svg" alt="لا توجد تطبيقات" />
+    <p>لا توجد تطبيقات مطابقة للبحث الحالي.</p>
+  </div>
+`;
+
   }
 
   /* ------------------------------------ */
@@ -589,11 +607,11 @@ export class AppsTab {
    */
   _handleSearch(query) {
     const searchTerm = query.trim().toLowerCase();
-    
+
     if (!searchTerm) {
       this.state.filteredApps = [...this.options.appsData];
     } else {
-      this.state.filteredApps = this.options.appsData.filter(app => 
+      this.state.filteredApps = this.options.appsData.filter(app =>
         app.name.toLowerCase().includes(searchTerm) ||
         (app.tags && app.tags.some(tag => tag.toLowerCase().includes(searchTerm)))
       );

@@ -17,7 +17,7 @@ import * as um from "./usermanager.js";
 import { Taber } from "./core/taber.js";
 import { AppManager } from "./appmanager.js";
 import { showToast } from "./utils/toast.js";
-import { checkSession } from './utils/session.js';
+import { checkSession } from './auth.js';
 
 // ثوابت التطبيق
 const APP_CONFIG = {
@@ -52,13 +52,16 @@ class HomePage {
             this._initComponents();
             await this._loadUserData();
             this._setupEventListeners();
-            await this._registerServiceWorker();
-
+            //await this._registerServiceWorker();
             console.log('✅ تم تحميل النظام بنجاح');
         } catch (error) {
             console.error('❌ فشل تحميل التطبيق:', error);
             this._showFatalError();
         }
+        navigator.serviceWorker.controller
+            ? console.log('✅ SW is controlling the page')
+            : console.warn('❌ SW is NOT controlling the page');
+
     }
 
     /**
@@ -76,7 +79,7 @@ class HomePage {
             addBalanceBtn: document.getElementById('add-balance-btn'),
             backBtn: document.getElementById('back-btn'),
             currentPage: document.getElementById('current-page-indicator'),
-            profileImg: document.getElementById('profile-img'),
+            userAvatar: document.getElementById('user-avatar'),
             usernameDisplay: document.getElementById('username-display'),
             balanceDisplay: document.getElementById('balance-display'),
             topBalanceDisplay: document.getElementById('top-balance-display'),
@@ -116,23 +119,54 @@ class HomePage {
     }
 
     /**
-     * تحميل بيانات المستخدم
-     * @private
-     * @async
-     */
+ * تحميل بيانات المستخدم وتحديث الواجهة
+ * @private
+ * @async
+ */
     async _loadUserData() {
-        await um.loadUser();
-        this._updateUserUI();
+        try {
+            await um.loadUser(); // يفترض أن um.user يحتوي على البيانات الآن
+            //this._updateUserUI();
+        } catch (err) {
+            console.error('فشل تحميل بيانات المستخدم:', err);
+            this._showError('تعذر تحميل بياناتك، يرجى المحاولة لاحقًا');
+        }
     }
 
     /**
-     * تحديث واجهة المستخدم حسب بياناته
+     * تحديث واجهة المستخدم حسب بيانات المستخدم
      * @private
      */
     _updateUserUI() {
-        // يمكنك هنا تحديث العناصر حسب بيانات المستخدم
-        // مثل: الصورة، الاسم، الرصيد، إلخ
+        // 🛡️ حالة الحساب
+        if (user.accountStatus !== 'active') {
+            this._showWarning(`⚠️ حسابك ${user.accountStatus}، قد تكون بعض الميزات غير متاحة`);
+        }
+
+        // 🕒 آخر دخول
+        const lastLoginEl = document.querySelector('last-login');
+        if (lastLoginEl && user.lastLogin) {
+            const date = new Date(user.lastLogin).toLocaleString();
+            lastLoginEl.textContent = `آخر دخول: ${date}`;
+        }
     }
+
+    /**
+     * عرض رسالة خطأ
+     * @private
+     */
+    _showError(message) {
+        alert(message); // يمكنك استبدالها بنظام إشعارات مخصص
+    }
+
+    /**
+     * عرض تحذير
+     * @private
+     */
+    _showWarning(message) {
+        console.warn(message); // أو عرضها في واجهة المستخدم
+    }
+
 
     /* ---------------------------------- */
     /* --------- Event Handling --------- */
@@ -267,7 +301,7 @@ class HomePage {
      */
     _setupLogoutHandler() {
         if (this.domElements.logoutBtn) {
-            this.domElements.logoutBtn.addEventListener('click', um.logout);
+            this.domElements.logoutBtn.addEventListener('click', um.handleLogout);
         }
     }
 
@@ -311,23 +345,6 @@ class HomePage {
     /* ---------------------------------- */
     /* --------- Utility Methods -------- */
     /* ---------------------------------- */
-
-    /**
-     * تسجيل Service Worker
-     * @private
-     * @async
-     */
-    async _registerServiceWorker() {
-        if ('serviceWorker' in navigator) {
-            try {
-                await navigator.serviceWorker.register('/assets/js/sw.js', { type: 'module' });
-                console.log('✅ Service Worker مسجل بنجاح');
-            } catch (err) {
-                console.error('❌ فشل تسجيل Service Worker:', err);
-            }
-        }
-    }
-
     /**
      * دالة throttle للتحكم في تكرار الأحداث
      * @private
@@ -448,15 +465,28 @@ function showUserNotification(message) {
     }
 }
 
-(async () => {
-  const user = await checkSession(); // لا حاجة لدور معين
-  if (!user) return;
-
-  showToast(`مرحبًا ${user.username} 👋`);
-})();
-
 // بدء التطبيق عند تحميل DOM
 document.addEventListener('DOMContentLoaded', () => {
+    (async () => {
+        const user = await checkSession(); // لا حاجة لدور معين
+        if (!user) return;
+
+        showToast(`مرحبًا ${user.username} 👋`);
+    })();
+
+    /**
+     * تسجيل Service Worker
+     * @private
+     */
+    if ('serviceWorker' in navigator) {
+        try {
+            navigator.serviceWorker.register('/sw.js', { type: 'module', scope: '/' });
+            console.log('✅ Service Worker مسجل بنجاح');
+        } catch (err) {
+            console.error('❌ فشل تسجيل Service Worker:', err);
+        }
+    }
+
     window.homePage = new HomePage();
 });
 

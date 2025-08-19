@@ -13,7 +13,7 @@ const User = require('../models/User');
 const RevokedToken = require('../models/RevokedToken');
 const { validateRegister, validateLogin, handleValidationErrors } = require('../middlewares/validation');
 const rateLimit = require('express-rate-limit');
-const { doubleCsrfProtection } = require('../middlewares/csrfMiddleware');
+const { attachCsrfToken } = require('../middlewares/csrfMiddleware');
 const { registerUser } = require('../controllers/authController');
 const { body, validationResult } = require('express-validator');
 const { verifyToken, checkAdmin, requireRole, checkSession } = require('../middlewares/auth');
@@ -57,14 +57,26 @@ router.use(authLimiter);
 router.post('/register',
   validateRegister,
   handleValidationErrors,
-  registerUser
+  async (req, res) => {
+    try {
+      const user = await registerUser(req.body); // تنفيذ التسجيل
+      req.session.userId = user._id; // تخزين معرف المستخدم في الجلسة
+
+      attachCsrfToken(req, res); // ✅ توليد وإرسال رمز CSRF
+
+      res.status(201).json({ success: true, user });
+    } catch (err) {
+      console.error('❌ خطأ أثناء التسجيل:', err);
+      res.status(500).json({ error: 'حدث خطأ أثناء التسجيل' });
+    }
+  }
 );
+
 
 // =============================================
 // 🔐 تسجيل الدخول
 // =============================================
 router.post('/login',
-  doubleCsrfProtection,
   validateLogin,
   handleValidationErrors,
   async (req, res) => {
@@ -125,10 +137,8 @@ router.post('/login',
         });
       }
 
-      if (user.role === 'admin') {
-        req.session.userId = user._id;
-        req.session.role = 'admin';
-      }
+      req.session.userId = user._id;
+      req.session.role = user.role;
 
       user.loginAttempts = 0;
       user.lastLogin = new Date();
@@ -148,6 +158,8 @@ router.post('/login',
         maxAge: 3600000,
         path: '/'
       });
+
+      attachCsrfToken(req, res); // ✅ توليد رمز CSRF بعد نجاح الدخول
 
       const userResponse = {
         id: user._id,
@@ -182,14 +194,20 @@ router.post('/login',
 // =============================================
 // 🔓 تسجيل الخروج
 // =============================================
+const { doubleCsrfProtection } = require('../middlewares/csrfMiddleware');
+
 router.post('/logout', doubleCsrfProtection, async (req, res) => {
+  console.log('🔐 CSRF من الهيدر:', req.headers['x-csrf-token']);
+  console.log('🔐 CSRF من الجلسة:', req.session?.csrfToken);
+
   try {
     const token = req.cookies.session_token || req.headers.authorization?.split(' ')[1];
     if (!token) {
       return handleAuthResponse(req, res, {
         status: 400,
         success: false,
-        error: 'لم يتم توفير رمز الجلسة'
+        error: 'لم يتم توفير رمز الجلسة',
+        type: 'missing_token'
       });
     }
 
@@ -197,7 +215,8 @@ router.post('/logout', doubleCsrfProtection, async (req, res) => {
     if (isRevoked) {
       return handleAuthResponse(req, res, {
         success: false,
-        error: 'رمز الجلسة موقوف'
+        error: 'رمز الجلسة موقوف',
+        type: 'revoked_token'
       });
     }
 
@@ -226,7 +245,8 @@ router.post('/logout', doubleCsrfProtection, async (req, res) => {
       status: 500,
       success: false,
       error: 'حدث خطأ أثناء تسجيل الخروج',
-      details: process.env.NODE_ENV === 'development' ? err.message : null
+      details: process.env.NODE_ENV === 'development' ? err.message : null,
+      type: 'server_error'
     });
   }
 });

@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "npm run dev",
-    "dev": "live-server --port=10001 --host=localhost",
+    "dev": "live-server --port=10000 --host=localhost",
     "build": "echo 'No build step required for static files'"
   },
   "keywords": [

@@ -10,251 +10,214 @@
  * @created: 2025-08-16
  * @license: MIT
  */
-import { showToast } from "./utils/toast.js";
-import { checkSession } from './utils/session.js';
+// ✅ Author: Evan Brazi | Last Updated: 2025-08-19
+// ✅ Author: Evan Brazi | Last Updated: 2025-08-19
+// 📄 هذا الملف مسؤول عن إدارة واجهة الأدمن: تعديل الرصيد، الحالة، تحميل المستخدمين، مراقبة الأيقونات، وإظهار الإشعارات
 
-const socket = new WebSocket('ws://localhost:10000');
+// 🔔 عرض إشعار عام في أعلى الصفحة
+function showNotification(message, type = 'success') {
+  const bar = document.getElementById('globalNotification');
+  bar.textContent = message;
+  bar.style.backgroundColor = type === 'error' ? '#e74c3c' : '#27ae60';
+  bar.style.display = 'block';
+  setTimeout(() => bar.style.display = 'none', 3000);
+}
 
-socket.addEventListener('open', () => {
-    console.log('✅ WebSocket connected (admin)');
-    socket.send(JSON.stringify({
-        type: 'auth',
-        role: 'admin',
-        userId: 'admin-001'
-    }));
-});
+// 💰 تحديث رصيد مستخدم
+document.getElementById('updateBalanceBtn').addEventListener('click', async () => {
+  const userId = document.getElementById('userId').value.trim();
+  const newBalance = document.getElementById('newBalance').value.trim();
+  const result = document.getElementById('balanceResult');
 
-socket.addEventListener('message', event => {
-    const data = JSON.parse(event.data);
-    switch (data.type) {
-        case 'welcome':
-        case 'balanceUpdate':
-        case 'paymentUploaded':
-            showNotification(data.message || '📨 إشعار جديد');
-            break;
-        default:
-            console.log('📨 إشعار غير معروف:', data);
-    }
-});
+  if (!userId || !newBalance) {
+    showNotification('يرجى إدخال جميع الحقول', 'error');
+    return;
+  }
 
-function showNotification(message) {
-    const container = document.getElementById('admin-notifications');
-    if (container) {
-        const alert = document.createElement('div');
-        alert.className = 'alert alert-info';
-        alert.textContent = message;
-        container.prepend(alert);
-        setTimeout(() => alert.remove(), 10000);
+  try {
+    const res = await fetch(`/api/users/${userId}/balance`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ balance: parseFloat(newBalance) })
+    });
+
+    if (res.ok) {
+      result.textContent = '✅ تم تحديث الرصيد بنجاح';
+      showNotification('تم تحديث الرصيد');
+      loadUsers(); // إعادة تحميل الجدول
     } else {
-        alert(message);
+      throw new Error('فشل التحديث');
     }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    loadUsers();
-    loadIcons();
-    document.getElementById('updateBalanceBtn').addEventListener('click', updateBalance);
-    document.getElementById('updateStatusBtn')?.addEventListener('click', updateUserStatus);
+  } catch (err) {
+    result.textContent = '❌ حدث خطأ أثناء التحديث';
+    showNotification(err.message, 'error');
+  }
 });
 
-/**
- * Fetches and displays all users in the admin table
- */
+// 🔄 تغيير حالة المستخدم
+document.getElementById('updateStatusBtn').addEventListener('click', async () => {
+  const userId = document.getElementById('statusUserId').value.trim();
+  const newStatus = document.getElementById('newStatus').value;
+  const result = document.getElementById('statusResult');
+
+  if (!userId) {
+    showNotification('يرجى إدخال معرف المستخدم', 'error');
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/users/${userId}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus })
+    });
+
+    if (res.ok) {
+      result.textContent = '✅ تم تغيير الحالة بنجاح';
+      showNotification('تم تغيير حالة المستخدم');
+      loadUsers();
+    } else {
+      throw new Error('فشل تغيير الحالة');
+    }
+  } catch (err) {
+    result.textContent = '❌ حدث خطأ أثناء تغيير الحالة';
+    showNotification(err.message, 'error');
+  }
+});
+
+// 👥 تحميل قائمة المستخدمين وعرضها في الجدول
 async function loadUsers() {
-    try {
-        const res = await fetch('/api/users');
-        const users = await res.json();
-        const tbody = document.querySelector('#usersTable tbody');
-        tbody.innerHTML = '';
+  const tbody = document.querySelector('#usersTable tbody');
+  tbody.innerHTML = '';
 
-        users.forEach(user => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-        <td>${user._id}</td>
+  try {
+    const res = await fetch('/api/users');
+    const users = await res.json();
+
+    users.forEach(user => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${user.id}</td>
         <td>${user.username}</td>
-        <td><input type="number" value="${user.balance}" id="balance-${user._id}"></td>
-        <td>
-          <select id="status-${user._id}">
-            <option value="active" ${user.accountStatus === 'active' ? 'selected' : ''}>✅ نشط</option>
-            <option value="suspended" ${user.accountStatus === 'suspended' ? 'selected' : ''}>❄️ مجمد</option>
-            <option value="deactivated" ${user.accountStatus === 'deactivated' ? 'selected' : ''}>🚫 محذوف</option>
-          </select>
-        </td>
-        <td style="color:${user.loginAttempts >= 4 ? 'red' : 'inherit'}; font-weight:${user.loginAttempts >= 4 ? 'bold' : 'normal'}">
-          ${user.loginAttempts}
-        </td>
-        <td>${user.lastLogin ? new Date(user.lastLogin).toLocaleString('ar-EG') : '-'}</td>
-        <td><button class="update-btn" data-id="${user._id}">💾</button></td>
-        <td><button class="delete-btn" data-id="${user._id}">🗑️</button></td>
-        <td><button class="status-btn" data-id="${user._id}">🔄</button></td>
+        <td>${user.phone}</td>
+        <td>${user.balance.toFixed(2)}</td>
+        <td>${user.accountStatus}</td>
+        <td>${user.loginAttempts}</td>
+        <td>${user.lastLogin}</td>
+        <td><button class="edit-btn" data-id="${user.id}">✏️</button></td>
+        <td><button class="delete-btn" data-id="${user.id}">🗑️</button></td>
+        <td><button class="unban-btn" data-id="${user.id}">🔓</button></td>
       `;
-            tbody.appendChild(row);
-        });
-
-        tbody.querySelectorAll('.update-btn').forEach(btn => {
-            btn.addEventListener('click', () => updateUserBalance(btn.dataset.id));
-        });
-
-        tbody.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', () => deleteUser(btn.dataset.id));
-        });
-
-        tbody.querySelectorAll('.status-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const userId = btn.dataset.id;
-                const newStatus = document.getElementById(`status-${userId}`).value;
-                changeUserStatus(userId, newStatus);
-            });
-        });
-
-    } catch (error) {
-        console.error('فشل تحميل المستخدمين:', error);
-    }
+      tbody.appendChild(row);
+    });
+  } catch (err) {
+    showNotification('فشل تحميل المستخدمين', 'error');
+  }
 }
 
-/**
- * Updates the balance of a specific user
- */
-async function updateUserBalance(userId) {
-    const balance = document.getElementById(`balance-${userId}`).value;
-    try {
-        const res = await fetch(`/api/users/${userId}/balance`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ balance })
-        });
-        const result = await res.json();
-        alert(result.message || 'تم التعديل بنجاح');
-        loadUsers();
-    } catch (error) {
-        console.error('فشل تعديل الرصيد:', error);
-    }
-}
-
-/**
- * Deletes a user from the system
- */
-async function deleteUser(userId) {
-    try {
-        await fetch(`/api/users/${userId}`, { method: 'DELETE' });
-        loadUsers();
-    } catch (error) {
-        console.error('فشل حذف المستخدم:', error);
-    }
-}
-
-/**
- * Changes user account status
- */
-async function changeUserStatus(userId, newStatus) {
-    try {
-        const res = await fetch('/api/admin/update-status', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId, newStatus })
-        });
-        const result = await res.json();
-        alert(result.message || result.error || 'تم تحديث الحالة');
-        loadUsers();
-    } catch (error) {
-        console.error('فشل تحديث الحالة:', error);
-    }
-}
-
-/**
- * Updates user balance via top form
- */
-async function updateBalance() {
-    const userId = document.getElementById('userId').value;
-    const newBalance = document.getElementById('newBalance').value;
-
-    try {
-        const res = await fetch(`/api/users/${userId}/balance`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ balance: newBalance })
-        });
-
-        const result = await res.json();
-        alert(result.message || 'تم التعديل بنجاح');
-        loadUsers();
-    } catch (error) {
-        console.error('فشل تعديل الرصيد من النموذج:', error);
-    }
-}
-
-/**
- * Updates user status via top form
- */
-async function updateUserStatus() {
-    const userId = document.getElementById('statusUserId').value;
-    const newStatus = document.getElementById('newStatus').value;
-
-    try {
-        const res = await fetch('/api/admin/update-status', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId, newStatus })
-        });
-
-        const result = await res.json();
-        document.getElementById('statusResult').textContent = result.message || result.error;
-        loadUsers();
-    } catch (error) {
-        console.error('فشل تعديل الحالة من النموذج:', error);
-    }
-}
-
-/**
- * Fetches and displays icon data in the admin table
- */
+// 🖼️ تحميل حالة الأيقونات
 async function loadIcons() {
-    try {
-        const res = await fetch('/api/icons');
-        const icons = await res.json();
-        const tbody = document.querySelector('#iconsTable tbody');
-        tbody.innerHTML = '';
+  const tbody = document.querySelector('#iconsTable tbody');
+  tbody.innerHTML = '';
 
-        icons.forEach(icon => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
+  try {
+    const res = await fetch('/api/icons');
+    const icons = await res.json();
+
+    icons.forEach(icon => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
         <td>${icon.url}</td>
-        <td style="color:${icon.status === 'success' ? 'green' : 'red'}">${icon.status}</td>
+        <td>${icon.status}</td>
         <td>${icon.attempts}</td>
-        <td>${icon.duration || '-'}</td>
-        <td><img src="${icon.preview}" onerror="this.src='/icons/apps/default.png'"></td>
-        <td><button class="retry-btn" data-id="${icon._id}">🔄</button></td>
+        <td>${icon.duration}</td>
+        <td><img src="${icon.url}" alt="معاينة"></td>
+        <td><button class="retry-icon-btn" data-url="${icon.url}">🔁</button></td>
       `;
-            tbody.appendChild(row);
-        });
-
-        tbody.querySelectorAll('.retry-btn').forEach(btn => {
-            btn.addEventListener('click', () => retryIcon(btn.dataset.id));
-        });
-
-    } catch (error) {
-        console.error('فشل تحميل الأيقونات:', error);
-    }
+      tbody.appendChild(row);
+    });
+  } catch (err) {
+    showNotification('فشل تحميل الأيقونات', 'error');
+  }
 }
 
-/**
- * Retries loading a failed icon
- */
-async function retryIcon(iconId) {
-    try {
-        await fetch(`/api/icons/${iconId}/retry`, { method: 'PUT' });
-        loadIcons();
-    } catch (error) {
-        console.error('فشل إعادة المحاولة:', error);
+// 🗑️ حذف مستخدم
+async function deleteUser(id) {
+  if (!confirm('هل أنت متأكد من حذف هذا المستخدم؟')) return;
+
+  try {
+    const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      showNotification('تم حذف المستخدم');
+      loadUsers();
+    } else {
+      throw new Error('فشل الحذف');
     }
+  } catch (err) {
+    showNotification(err.message, 'error');
+  }
 }
 
+// 🔓 فك الحظر عن مستخدم
+async function unbanUser(id) {
+  try {
+    const res = await fetch(`/api/users/${id}/unban`, { method: 'POST' });
+    if (res.ok) {
+      showNotification('تم فك الحظر');
+      loadUsers();
+    } else {
+      throw new Error('فشل فك الحظر');
+    }
+  } catch (err) {
+    showNotification(err.message, 'error');
+  }
+}
 
-(async () => {
-    const user = await checkSession('admin');
-    if (!user) return;
+// 🔁 إعادة محاولة تحميل أيقونة
+async function retryIcon(url) {
+  try {
+    const res = await fetch('/api/icons/retry', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
 
-    console.log('مرحبًا أيها المدير:', user.username);
-    showToast('Welcome : ' + user.username);
-    // تابع تحميل الصفحة...
-})();
+    if (res.ok) {
+      showNotification('تمت إعادة المحاولة');
+      loadIcons();
+    } else {
+      throw new Error('فشل إعادة المحاولة');
+    }
+  } catch (err) {
+    showNotification(err.message, 'error');
+  }
+}
+
+// 🧠 ربط الأحداث بطريقة آمنة (بدون inline handlers)
+document.addEventListener('click', (e) => {
+  const target = e.target;
+
+  if (target.classList.contains('edit-btn')) {
+    const id = target.dataset.id;
+    // يمكنك لاحقًا فتح نافذة تعديل أو تعبئة النموذج
+    showNotification(`تعديل المستخدم ${id}`);
+  }
+
+  if (target.classList.contains('delete-btn')) {
+    deleteUser(target.dataset.id);
+  }
+
+  if (target.classList.contains('unban-btn')) {
+    unbanUser(target.dataset.id);
+  }
+
+  if (target.classList.contains('retry-icon-btn')) {
+    retryIcon(target.dataset.url);
+  }
+});
+
+// 🚀 تحميل البيانات عند بدء الصفحة
+window.addEventListener('DOMContentLoaded', () => {
+  loadUsers();
+  loadIcons();
+});

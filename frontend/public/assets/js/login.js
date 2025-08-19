@@ -7,6 +7,11 @@ const spinner = document.getElementById('spinner');
 const btnText = document.getElementById('btnText');
 const submitBtn = document.getElementById('submitBtn');
 
+const STORAGE_KEYS = {
+    USER_ID: 'userId',
+    USER_TOKEN: 'userToken',
+};
+
 // ✅ تطبيق الثيم المحفوظ
 document.addEventListener('DOMContentLoaded', () => {
     const savedTheme = localStorage.getItem('theme') || 'day';
@@ -42,6 +47,16 @@ if (appleBtn) {
     });
 }
 
+/**
+ * حفظ بيانات الجلسة في التخزين المحلي
+ * @param {object} user - بيانات المستخدم
+ * @param {string} token - رمز التوثيق
+ */
+function saveSession(user, token) {
+    localStorage.setItem(STORAGE_KEYS.USER_ID, user.id);
+    localStorage.setItem(STORAGE_KEYS.USER_TOKEN, token);
+}
+
 // ✅ عرض رسالة خطأ في عنصر معين
 function showError(elementId, message) {
     const el = document.getElementById(elementId);
@@ -70,29 +85,26 @@ function showAlert(icon, title, text) {
 }
 
 // ✅ تنفيذ عملية تسجيل الدخول
+/**
+ * ✅ تنفيذ عملية تسجيل الدخول بشكل آمن ومتوافق مع auth.js و secureFetch.js
+ * @param {string} username - اسم المستخدم
+ * @param {string} password - كلمة المرور
+ */
+import { login } from './auth.js';
+
+/**
+ * تنفيذ عملية تسجيل الدخول من الواجهة
+ * @param {string} username
+ * @param {string} password
+ */
 async function loginUser(username, password) {
     spinner.style.display = 'inline-block';
     btnText.style.display = 'none';
     submitBtn.disabled = true;
 
     try {
-        const csrfRes = await fetch("/csrf-token");
-        if (!csrfRes.ok) throw new Error("فشل في جلب رمز CSRF");
-        const { csrfToken } = await csrfRes.json();
+        const result = await login(username, password); // ⬅️ استخدام الدالة الموحدة
 
-        const loginRes = await fetch('/api/auth/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-csrf-token': csrfToken
-            },
-            credentials: 'include',
-            body: JSON.stringify({ username, password })
-        });
-
-        const result = await loginRes.json();
-
-        // ✅ معالجة أخطاء مخصصة
         if (result.error === "يجب توفير رمز الجلسة") {
             showAlert('error', 'رمز الجلسة مفقود', 'يرجى إعادة تحميل الصفحة أو تسجيل الدخول من جديد.');
             return;
@@ -115,13 +127,11 @@ async function loginUser(username, password) {
             return;
         }
 
-        if (!loginRes.ok || !result.success) {
+        if (!result.success) {
             throw new Error(result.error || 'حدث خطأ أثناء تسجيل الدخول');
         }
 
-        // ✅ تسجيل الدخول ناجح
-        localStorage.setItem('userRole', result.user.role);
-        localStorage.setItem('username', result.user.username);
+        saveSession(result.user, result.token);
 
         const roleRedirects = {
             admin: '/protectedViews/admin.html',
@@ -148,6 +158,7 @@ async function loginUser(username, password) {
         submitBtn.disabled = false;
     }
 }
+
 
 // ✅ ربط النموذج بعملية تسجيل الدخول
 const loginForm = document.getElementById('loginForm');

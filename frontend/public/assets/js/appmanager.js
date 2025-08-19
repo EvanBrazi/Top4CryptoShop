@@ -270,7 +270,9 @@ export class AppManager {
         this.api.fetchData('/api/essential', 'essentialData'),
         caches.open('essential-assets').then(cache => cache.addAll([
           `${this.config.iconsBasePath}${this.config.defaultIcon}`,
-          '/assets/images/loading.gif'
+          '/assets/images/loading.gif',
+          '/icons/apps/chat_saya.png',
+          '/icons/apps/com_taka_vhgyk.png'
         ]))
       ]);
     } catch (error) {

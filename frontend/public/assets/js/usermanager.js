@@ -1,122 +1,133 @@
 /**
  * @file usermanager.js
- * @description نظام متقدم لإدارة بيانات المستخدم مع التحقق من الصحة والتخزين الآمن
- * @version 2.0.0
+ * @description إدارة بيانات المستخدم مع مزامنة قاعدة البيانات، فحص التوكن، وتحديث الواجهة
+ * @version 3.0.0
  * @license MIT
  */
-
+//import MD5 from 'https://cdn.jsdelivr.net/npm/crypto-js/crypto-js.min.js';
+import { logout } from './auth.js';
+import { toggleDBTheme } from './theme.js';
 import { showToast } from './utils/toast.js';
 
-// ثوابت التطبيق
-const USER_DEFAULTS = {
-    name: 'زائر',
-    email: null,
-    balance: 0.00,
-    theme: 'day',
-    avatar: null
-};
-
+// مفاتيح التخزين المحلي
 const STORAGE_KEYS = {
-    USER_DATA: 'user',
-    USER_SESSION: 'userSession'
+    USER_ID: 'userId',
+    USER_TOKEN: 'userToken',
 };
-
 // حالة المستخدم الحالية
-let currentUser = { ...USER_DEFAULTS };
+let currentUser = null;
 
 /**
- * تهيئة المستخدم الافتراضي
- * @returns {Object} بيانات المستخدم الافتراضية
- */
-function initializeDefaultUser() {
-    return {
-        ...USER_DEFAULTS,
-        name: 'Evan Barzi',
-        email: 'evanbrazi@support.com',
-        balance: 99999.99
-    };
-}
-
-/**
- * تعيين بيانات المستخدم مع التحقق من الصحة
- * @param {Object} userData - بيانات المستخدم
- * @returns {boolean} true إذا كانت البيانات صالحة
- */
-function setUserData(userData) {
-    try {
-        const validated = validateUser(userData);
-        if (validated) {
-            currentUser = validated;
-            return true;
-        }
-        return false;
-    } catch (error) {
-        console.error('Error setting user data:', error);
-        return false;
-    }
-}
-
-/**
- * التحقق من صحة بيانات المستخدم
- * @param {Object} user - بيانات المستخدم
- * @returns {Object|boolean} بيانات المستخدم الصالحة أو false
- */
-function validateUser(user) {
-    if (!user || typeof user !== 'object') return false;
-
-    // التحقق من الحقول الأساسية
-    const validated = {
-        name: typeof user.name === 'string' ? user.name.trim() : USER_DEFAULTS.name,
-        email: (user.email && typeof user.email === 'string' && isValidEmail(user.email)) 
-               ? user.email.trim().toLowerCase() 
-               : null,
-        balance: typeof user.balance === 'number' && user.balance >= 0 
-                ? parseFloat(user.balance.toFixed(2)) 
-                : USER_DEFAULTS.balance,
-        theme: ['day', 'night'].includes(user.theme) ? user.theme : USER_DEFAULTS.theme,
-        avatar: user.avatar || null
-    };
-
-    return validated;
-}
-
-/**
- * التحقق من صحة عنوان البريد الإلكتروني
- * @param {string} email - البريد الإلكتروني
+ * التحقق من صحة التوكن
+ * @param {string} token - رمز التوثيق
  * @returns {boolean}
  */
-function isValidEmail(email) {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(email);
+function isValidToken(token) {
+    return typeof token === 'string' && token.length >= 16 && (
+        fetch('/api/compare-token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` // أو أي اسم تريده
+            },
+            credentials: 'include', // هذا يضمن إرسال الكوكي مع الطلب
+            body: JSON.stringify({ clientToken: token })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.match) {
+                    console.log('✅ التوكنات متطابقة');
+                } else {
+                    console.warn('❌ التوكنات غير متطابقة');
+                }
+            })
+            .catch(err => console.error('خطأ في الاتصال:', err))
+    );
 }
 
 /**
- * تحميل بيانات المستخدم من التخزين المحلي
+ * تحميل بيانات المستخدم من السيرفر باستخدام userId والتوكن
  * @async
  * @returns {Promise<void>}
  */
 async function loadUser() {
-    try {
-        const userData = localStorage.getItem(STORAGE_KEYS.USER_DATA);
-        
-        if (!userData) {
-            setUserData(initializeDefaultUser());
-            return;
-        }
+    const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
+    const token = localStorage.getItem(STORAGE_KEYS.USER_TOKEN);
 
-        const parsedUser = JSON.parse(userData);
-        
-        if (!setUserData(parsedUser)) {
-            console.warn('بيانات المستخدم غير صالحة، يتم استخدام البيانات الافتراضية');
-            setUserData(initializeDefaultUser());
-        }
-
-        await updateUserProfile();
-    } catch (error) {
-        console.error('خطأ في تحميل بيانات المستخدم:', error);
-        setUserData(initializeDefaultUser());
-        await updateUserProfile();
+    if (!userId || !isValidToken(token)) {
+        console.warn('⚠️ لا يوجد توكن صالح أو معرف مستخدم');
+        return;
     }
+
+    try {
+        const res = await fetch(`/api/users/${userId}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!res.ok) throw new Error('فشل تحميل بيانات المستخدم');
+
+        const userData = await res.json();
+        console.log('User Data: ', userData);
+        const isValidateUser = validateUser(userData);
+        if (isValidateUser.valid) {
+            currentUser = userData;
+            await updateUserProfile();
+            console.log('validateUser : ', userData);
+        } else {
+            throw new Error(isValidateUser.errors);
+        }
+    } catch (error) {
+        console.error('❌ خطأ في تحميل المستخدم:', error.message);
+        showToast('تعذر تحميل بيانات المستخدم', 'error');
+    }
+}
+
+/**
+ * التحقق من صحة بيانات المستخدم بطريقة مرنة وآمنة
+ * @param {Object} user - بيانات المستخدم
+ * @returns {{ valid: boolean, errors: string[] }}
+ */
+function validateUser(user) {
+    const errors = [];
+
+    if (!user || typeof user !== 'object') {
+        errors.push('المدخل ليس كائنًا صالحًا');
+        return { valid: false, errors };
+    }
+
+    // التحقق من الاسم أو اسم المستخدم
+    const name = user.name || user.username;
+    if (typeof name !== 'string' || name.trim() === '') {
+        errors.push('الاسم غير صالح');
+    }
+
+    // التحقق من البريد الإلكتروني
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(user.email || '')) {
+        errors.push('البريد الإلكتروني غير صالح');
+    }
+
+    // التحقق من الرصيد
+    if (typeof user.balance !== 'number' || user.balance < 0) {
+        errors.push('الرصيد غير صالح');
+    }
+
+    // التحقق من الثيم
+    if (![0, 1].includes(user.theme)) {
+        errors.push('قيمة الثيم غير مدعومة');
+    }
+
+    // التحقق من رقم الهاتف (اختياري)
+    if (user.phone && !/^\+?\d{7,15}$/.test(user.phone)) {
+        errors.push('رقم الهاتف غير صالح');
+    }
+
+    return {
+        valid: errors.length === 0,
+        errors
+    };
 }
 
 /**
@@ -126,124 +137,148 @@ async function loadUser() {
  */
 async function updateUserProfile() {
     try {
-        // تحديث اسم المستخدم
         const usernameDisplay = document.getElementById('username-display');
-        if (usernameDisplay) {
-            usernameDisplay.textContent = currentUser.name;
-        }
+        if (usernameDisplay) usernameDisplay.textContent = currentUser.name;
 
-        // تحديث الرصيد
         const balanceElements = [
             document.getElementById('balance-display'),
             document.getElementById('top-balance-display')
-        ].filter(el => el);
+        ].filter(Boolean);
 
         balanceElements.forEach(el => {
             el.textContent = currentUser.balance.toFixed(2);
         });
 
-        // تحديث الصورة الشخصية
-        const profileImg = document.getElementById('profile-img');
-        if (profileImg) {
-            await updateProfileImage(profileImg);
-        }
+        const userAvatar = document.getElementById('user-avatar');
+        if (userAvatar) await updateUserAvatar(userAvatar);
+
+        toggleDBTheme(currentUser.theme === 1 ? 'night' : 'day');
     } catch (error) {
-        console.error('خطأ في تحديث واجهة المستخدم:', error);
+        console.error('❌ خطأ في تحديث الواجهة:', error.message);
     }
 }
 
 /**
- * تحديث صورة الملف الشخصي
- * @async
- * @param {HTMLImageElement} imgElement - عنصر صورة الملف الشخصي
+ * تحديث صورة الملف الشخصي بطريقة آمنة ومرنة
+ * @param {HTMLImageElement} imgElement - عنصر الصورة
  * @returns {Promise<void>}
  */
-async function updateProfileImage(imgElement) {
+async function updateUserAvatar(imgElement) {
     try {
+        const fallbackSrc = getDefaultAvatar(currentUser.name);
+
+        // منع التكرار اللانهائي
+        let hasFailedOnce = false;
         imgElement.onerror = () => {
-            imgElement.src = getDefaultAvatar(currentUser.name);
+            if (!hasFailedOnce) {
+                hasFailedOnce = true;
+                imgElement.src = fallbackSrc;
+            }
         };
 
-        if (currentUser.avatar) {
+        // تحديد مصدر الصورة
+        if (currentUser.avatar && currentUser.avatar.startsWith('http')) {
             imgElement.src = currentUser.avatar;
-        } else if (currentUser.email) {
-            const emailHash = await generateEmailHash(currentUser.email);
-            imgElement.src = `https://www.gravatar.com/avatar/${emailHash}?d=404&s=160`;
         } else {
-            imgElement.src = getDefaultAvatar(currentUser.name);
+            const emailHash = generateEmailHash(currentUser.email);
+            imgElement.src = `https://www.gravatar.com/avatar/${emailHash}?d=404&s=160`;
         }
     } catch (error) {
-        console.error('Error updating profile image:', error);
+        console.error('❌ خطأ في تحميل الصورة:', error.message);
         imgElement.src = getDefaultAvatar(currentUser.name);
     }
 }
 
 /**
- * إنشاء هاش للبريد الإلكتروني
- * @async
- * @param {string} email - البريد الإلكتروني
- * @returns {Promise<string>}
+ * إنشاء هاش MD5 للبريد الإلكتروني (Gravatar)
+ * @param {string} email
+ * @returns {string}
  */
-async function generateEmailHash(email) {
-    // يمكن استخدام مكتبة crypto-js بدلاً من md5 إذا لزم الأمر
-    const msgBuffer = new TextEncoder().encode(email);
-    const hashBuffer = await crypto.subtle.digest('MD5', msgBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+function generateEmailHash(email) {
+    console.log("اختبار md5:", md5("test@example.com"));
+    return md5(email.trim().toLowerCase());
 }
 
 /**
- * الحصول على صورة افتراضية
- * @param {string} name - اسم المستخدم
- * @returns {string} رابط الصورة الافتراضية
+ * الحصول على صورة افتراضية باسم المستخدم
+ * @param {string} name
+ * @returns {string}
  */
 function getDefaultAvatar(name) {
     const encodedName = encodeURIComponent(name || 'زائر');
     return `https://ui-avatars.com/api/?name=${encodedName}&background=random&size=160`;
 }
 
+
 /**
- * تسجيل خروج المستخدم
+ * حفظ بيانات المستخدم في قاعدة البيانات
  * @async
- * @returns {Promise<void>}
+ * @returns {Promise<boolean>}
  */
-async function logout() {
-    try {
-        if (!confirm('هل أنت متأكد من تسجيل الخروج؟')) return;
+async function saveUser() {
+    const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
+    const token = localStorage.getItem(STORAGE_KEYS.USER_TOKEN);
 
-        localStorage.removeItem(STORAGE_KEYS.USER_DATA);
-        sessionStorage.removeItem(STORAGE_KEYS.USER_SESSION);
-        
-        setUserData(initializeDefaultUser());
-        await updateUserProfile();
-        
-        showToast('تم تسجيل الخروج بنجاح', 'success');
-        setTimeout(() => window.location.reload(), 1000);
-    } catch (error) {
-        console.error('حدث خطأ أثناء تسجيل الخروج:', error);
-        showToast('حدث خطأ أثناء تسجيل الخروج. يرجى المحاولة مرة أخرى.', 'error');
+    if (!userId || !isValidToken(token)) {
+        showToast('لا يمكن حفظ البيانات بدون توكن صالح', 'error');
+        return false;
     }
-}
 
-/**
- * حفظ بيانات المستخدم
- * @returns {boolean} true إذا تم الحفظ بنجاح
- */
-function saveUser() {
     try {
-        localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(currentUser));
+        const res = await fetch(`/api/users/${userId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(currentUser)
+        });
+
+        if (!res.ok) throw new Error('فشل حفظ البيانات');
+        showToast('✅ تم حفظ البيانات بنجاح', 'success');
         return true;
     } catch (error) {
-        console.error('خطأ في حفظ بيانات المستخدم:', error);
-        showToast('حدث خطأ في حفظ بيانات المستخدم', 'error');
+        console.error('❌', error.message);
+        showToast('حدث خطأ أثناء حفظ البيانات', 'error');
         return false;
     }
 }
 
 /**
+ * تنفيذ عملية تسجيل الخروج من الواجهة
+ * @async
+ * @returns {Promise<void>}
+ */
+async function handleLogout() {
+    const token = localStorage.getItem(STORAGE_KEYS.USER_TOKEN);
+    if (!token) throw new Error('ليس لديك صلاحيات لتسجيل الخروج');
+
+    try {
+        if (!confirm('هل أنت متأكد من تسجيل الخروج؟')) return;
+
+        const result = await logout(); // ← الآن تستخدم الدالة المستوردة من auth.js
+
+        if (!result.success) {
+            throw new Error(result.error || 'فشل تسجيل الخروج');
+        }
+
+        localStorage.clear();
+        currentUser = null;
+        await updateUserProfile();
+
+        showToast('تم تسجيل الخروج بنجاح', 'success');
+        setTimeout(() => window.location.reload(), 1000);
+
+    } catch (error) {
+        console.error('❌ خطأ أثناء تسجيل الخروج:', error.message);
+        showToast('حدث خطأ أثناء تسجيل الخروج', 'error');
+    }
+}
+
+/**
  * تعيين رصيد المستخدم
- * @param {number} balance - الرصيد الجديد
- * @returns {boolean} true إذا تم التحديث بنجاح
+ * @param {number} balance
+ * @returns {boolean}
  */
 function setUserBalance(balance) {
     const newBalance = parseFloat(balance);
@@ -254,16 +289,20 @@ function setUserBalance(balance) {
     return false;
 }
 
+/**
+ * الحصول على اسم المستخدم
+ * @returns {string}
+ */
 function getUserName() {
-    return currentUser.name;
+    return currentUser?.name || 'زائر';
 }
 
 /**
  * الحصول على رصيد المستخدم
- * @returns {number} الرصيد الحالي
+ * @returns {number}
  */
 function getUserBalance() {
-    return currentUser.balance;
+    return currentUser?.balance || 0.00;
 }
 
 export {
@@ -272,7 +311,7 @@ export {
     getUserName,
     setUserBalance,
     getUserBalance,
-    logout,
+    handleLogout,
     saveUser,
     updateUserProfile
 };

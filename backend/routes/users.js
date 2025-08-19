@@ -1,17 +1,76 @@
+//Top4CryptoShop/backend/models/User.js
+/**
+ * @file routes/users.js
+ * @description واجهات REST لإدارة المستخدمين مع تحقق من الهوية وتحديث شامل
+ * @version 3.0.0
+ * @license MIT
+ */
+
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const { verifyToken } = require('../middlewares/auth');
 
-router.get('/', async (req, res) => {
-  const users = await User.find();
-  res.json(users);
+// 📥 جلب جميع المستخدمين (للوحة التحكم)
+router.get('/', verifyToken, async (req, res) => {
+  try {
+    const users = await User.find();
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ message: 'فشل تحميل المستخدمين' });
+  }
 });
 
-router.put('/users/:id/activate', async (req, res) => {
-  const userId = req.params.id;
+// 📥 جلب مستخدم واحد (لـ usermanager.js)
+router.get('/:id', verifyToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'المستخدم غير موجود' });
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ message: 'فشل تحميل المستخدم' });
+  }
+});
+
+// 🔄 تحديث بيانات المستخدم بالكامل
+router.put('/:id', verifyToken, async (req, res) => {
+  try {
+    const allowedFields = ['name', 'email', 'balance', 'theme', 'avatar'];
+    const updates = {};
+
+    allowedFields.forEach(field => {
+      if (req.body[field] !== undefined) updates[field] = req.body[field];
+    });
+
+    const user = await User.findByIdAndUpdate(req.params.id, updates, { new: true });
+    if (!user) return res.status(404).json({ message: 'المستخدم غير موجود' });
+
+    res.json({ message: '✅ تم التحديث بنجاح', user });
+  } catch (err) {
+    res.status(500).json({ message: '❌ خطأ في التحديث' });
+  }
+});
+
+// 💰 تعديل الرصيد فقط
+router.put('/:id/balance', verifyToken, async (req, res) => {
+  const balance = parseFloat(req.body.balance);
+  if (isNaN(balance) || balance < 0) {
+    return res.status(400).json({ message: 'رصيد غير صالح' });
+  }
 
   try {
-    const user = await User.findById(userId);
+    const user = await User.findByIdAndUpdate(req.params.id, { balance }, { new: true });
+    if (!user) return res.status(404).json({ message: 'المستخدم غير موجود' });
+    res.json({ message: '✅ تم تعديل الرصيد', user });
+  } catch (err) {
+    res.status(500).json({ message: '❌ خطأ في تعديل الرصيد' });
+  }
+});
+
+// 🔓 تفعيل المستخدم
+router.put('/:id/activate', verifyToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: 'المستخدم غير موجود' });
 
     if (user.accountStatus === 'active') {
@@ -19,31 +78,25 @@ router.put('/users/:id/activate', async (req, res) => {
     }
 
     user.accountStatus = 'active';
-    user.loginAttempts = 0; // إعادة تعيين المحاولات
+    user.loginAttempts = 0;
+    user.activatedAt = new Date();
+
     await user.save();
-
-    res.json({ message: 'تم تفعيل المستخدم بنجاح' });
+    res.json({ message: '✅ تم تفعيل المستخدم', user });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'حدث خطأ أثناء التفعيل' });
+    res.status(500).json({ message: '❌ خطأ أثناء التفعيل' });
   }
 });
 
-
-router.put('/:id/balance', async (req, res) => {
+// 🗑️ حذف المستخدم
+router.delete('/:id', verifyToken, async (req, res) => {
   try {
-    const user = await User.findByIdAndUpdate(req.params.id, {
-      balance: req.body.balance
-    }, { new: true });
-    res.json({ message: 'تم التحديث بنجاح', user });
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) return res.status(404).json({ message: 'المستخدم غير موجود' });
+    res.json({ message: '🗑️ تم حذف المستخدم' });
   } catch (err) {
-    res.status(500).json({ message: 'خطأ في التحديث' });
+    res.status(500).json({ message: '❌ خطأ أثناء الحذف' });
   }
-});
-
-router.delete('/:id', async (req, res) => {
-  await User.findByIdAndDelete(req.params.id);
-  res.json({ message: 'تم حذف المستخدم' });
 });
 
 module.exports = router;

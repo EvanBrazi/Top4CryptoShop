@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <title>انتهت الجلسة</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./assets/css/themes.css">
+    <style>
+        :root {
+            --bg-light: #f8f9fa;
+            --bg-dark: #1a1a2e;
+            --text-light: #333;
+            --text-dark: #eee;
+            --card-light: #fff;
+            --card-dark: #2c2c3c;
+            --accent: #dc3545;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Cairo', sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            transition: background-color 0.4s ease, color 0.4s ease;
+        }
+
+        body.night-theme {
+            background-color: var(--bg-dark);
+            color: var(--text-dark);
+        }
+
+        .card {
+            background-color: var(--card-light);
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            opacity: 0;
+            transform: scale(0.9);
+            animation: fadeIn 0.6s ease forwards;
+        }
+
+        body.night-theme .card {
+            background-color: var(--card-dark);
+            box-shadow: 0 20px 40px rgba(255, 255, 255, 0.05);
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .card img {
+            width: 80px;
+            margin-bottom: 1rem;
+        }
+
+        .card h1 {
+            color: var(--accent);
+            margin-bottom: 1rem;
+        }
+
+        .card p {
+            margin-bottom: 2rem;
+            font-size: 1rem;
+        }
+
+        .card button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .card button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <img src="https://cdn-icons-png.flaticon.com/512/5957/5957196.png" alt="Session Expired">
+        <h1>انتهت الجلسة</h1>
+        <p>يبدو أن جلستك انتهت أو فقدت رمز الدخول.<br>يرجى تسجيل الدخول من جديد للمتابعة.</p>
+        <button type="button" id="loginBtn">تسجيل الدخول</button>
+    </div>
+
+    <script>
+        // تطبيق الثيم المحفوظ
+        const theme = localStorage.getItem('theme') || 'day';
+        document.body.classList.add(`${theme}-theme`);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('loginBtn')?.addEventListener('click', () => {
+                window.location.href = './login.html';
+            });
+        });
+
+    </script>
+</body>
+
+</html>

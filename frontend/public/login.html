@@ -9,6 +9,8 @@
     <!-- تعريف تسجيل الدخول عبر Google -->
     <meta name="google-signin-client_id" content="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 </head>
 
 <body class="day-theme">
@@ -43,12 +45,13 @@
                 <input type="password" id="password" placeholder="كلمة المرور" required minlength="8"
                     autocomplete="current-password">
                 <div id="passwordError" class="error-message"></div>
-                <div id="attemptsWarning" class="error-message" style="color: red; font-weight: bold;"></div>
+                <div id="attemptsWarning" class="error-message"></div>
+
             </div>
             <!-- إضافة مؤشر تحميل -->
             <button type="submit" class="btn-primary" id="submitBtn">
                 <span id="btnText">تسجيل الدخول</span>
-                <div id="spinner" class="spinner" style="display:none;"></div>
+                <div id="spinner" class="spinner"></div>
             </button>
         </form>
 
@@ -57,7 +60,7 @@
             <a href="register.html">إنشاء حساب جديد</a>
         </div>
     </div>
-    <script src="./assets/js/login.js"></script>
+    <script type="module" src="./assets/js/login.js"></script>
 </body>
 
 </html>

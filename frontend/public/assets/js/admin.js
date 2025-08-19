@@ -10,21 +10,10 @@
  * @created: 2025-08-16
  * @license: MIT
  */
+import { showToast } from "./utils/toast.js";
+import { checkSession } from './utils/session.js';
 
 const socket = new WebSocket('ws://localhost:10000');
-
-fetch('/api/auth/check-session', { credentials: 'include' })
-    .then(res => res.json())
-    .then(data => {
-        if (!data.isAuthenticated || data.user.role !== 'admin') {
-            alert("🚫 ليس لديك صلاحية الوصول إلى لوحة التحكم");
-            window.location.href = '/login';
-
-        } else {
-            loadUsers();
-            loadIcons();
-        }
-    });
 
 socket.addEventListener('open', () => {
     console.log('✅ WebSocket connected (admin)');
@@ -259,3 +248,13 @@ async function retryIcon(iconId) {
         console.error('فشل إعادة المحاولة:', error);
     }
 }
+
+
+(async () => {
+    const user = await checkSession('admin');
+    if (!user) return;
+
+    console.log('مرحبًا أيها المدير:', user.username);
+    showToast('Welcome : ' + user.username);
+    // تابع تحميل الصفحة...
+})();

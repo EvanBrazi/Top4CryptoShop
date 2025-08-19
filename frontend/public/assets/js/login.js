@@ -2,16 +2,19 @@
  * ✅ تطبيق الثيم المحفوظ في localStorage
  * يضبط مظهر الصفحة حسب تفضيل المستخدم
  **/
+// ✅ عناصر الواجهة
+const spinner = document.getElementById('spinner');
+const btnText = document.getElementById('btnText');
+const submitBtn = document.getElementById('submitBtn');
+
+// ✅ تطبيق الثيم المحفوظ
 document.addEventListener('DOMContentLoaded', () => {
     const savedTheme = localStorage.getItem('theme') || 'day';
     document.body.classList.remove('day-theme', 'night-theme');
     document.body.classList.add(`${savedTheme}-theme`);
 });
 
-/**
- * ✅ تسجيل الدخول عبر Google
- * يعيد توجيه المستخدم إلى صفحة المصادقة الخاصة بـ Google
- */
+// ✅ تسجيل الدخول عبر Google
 const googleBtn = document.getElementById('googleSignIn');
 if (googleBtn) {
     googleBtn.addEventListener('click', () => {
@@ -25,9 +28,7 @@ if (googleBtn) {
     });
 }
 
-/**
- * ✅ تسجيل الدخول عبر Apple
- */
+// ✅ تسجيل الدخول عبر Apple
 const appleBtn = document.getElementById('appleSignIn');
 if (appleBtn) {
     appleBtn.addEventListener('click', () => {
@@ -41,11 +42,7 @@ if (appleBtn) {
     });
 }
 
-/**
- * ✅ عرض رسالة خطأ في عنصر معين
- * @param {string} elementId - معرف العنصر
- * @param {string} message - نص الرسالة
- */
+// ✅ عرض رسالة خطأ في عنصر معين
 function showError(elementId, message) {
     const el = document.getElementById(elementId);
     if (el) {
@@ -54,10 +51,7 @@ function showError(elementId, message) {
     }
 }
 
-/**
- * ✅ عرض رسالة خطأ عامة
- * @param {string} message
- */
+// ✅ عرض رسالة خطأ عامة
 function showLoginError(message) {
     const generalError = document.getElementById('generalError');
     if (generalError) {
@@ -66,19 +60,26 @@ function showLoginError(message) {
     }
 }
 
-/**
- * ✅ تنفيذ عملية تسجيل الدخول التقليدي
- * @param {string} username
- * @param {string} password
- */
+// ✅ تنبيه SweetAlert2
+function showAlert(icon, title, text) {
+    if (window.Swal) {
+        Swal.fire({ icon, title, text, confirmButtonText: 'حسنًا' });
+    } else {
+        alert(`${title}: ${text}`);
+    }
+}
+
+// ✅ تنفيذ عملية تسجيل الدخول
 async function loginUser(username, password) {
+    spinner.style.display = 'inline-block';
+    btnText.style.display = 'none';
+    submitBtn.disabled = true;
+
     try {
-        // جلب رمز CSRF
         const csrfRes = await fetch("/csrf-token");
         if (!csrfRes.ok) throw new Error("فشل في جلب رمز CSRF");
         const { csrfToken } = await csrfRes.json();
 
-        // إرسال بيانات الدخول
         const loginRes = await fetch('/api/auth/login', {
             method: 'POST',
             headers: {
@@ -91,7 +92,12 @@ async function loginUser(username, password) {
 
         const result = await loginRes.json();
 
-        // التعامل مع الأخطاء الخاصة
+        // ✅ معالجة أخطاء مخصصة
+        if (result.error === "يجب توفير رمز الجلسة") {
+            showAlert('error', 'رمز الجلسة مفقود', 'يرجى إعادة تحميل الصفحة أو تسجيل الدخول من جديد.');
+            return;
+        }
+
         if (result.type === 'invalid_password' && result.remainingAttempts !== undefined) {
             showError('attemptsWarning', `❌ تبقّى ${result.remainingAttempts} محاولة قبل تعليق الحساب`);
             return;
@@ -99,10 +105,10 @@ async function loginUser(username, password) {
 
         if (result.type === 'too_many_attempts') {
             const suspendedMessage = `
-          🚫 تم تعليق الحساب مؤقتًا بسبب عدد المحاولات.
-          <br>📞 يمكنك مراسلتنا عبر <a href="https://wa.me/+963980217649" target="_blank" style="color:green;font-weight:bold;">واتساب</a>
-          أو الضغط هنا لإرسال طلب إعادة التفعيل.
-        `;
+              🚫 تم تعليق الحساب مؤقتًا بسبب عدد المحاولات.
+              <br>📞 يمكنك مراسلتنا عبر <a href="https://wa.me/+963980217649" target="_blank" style="color:green;font-weight:bold;">واتساب</a>
+              أو الضغط هنا لإرسال طلب إعادة التفعيل.
+            `;
             const generalError = document.getElementById('generalError');
             generalError.innerHTML = suspendedMessage;
             generalError.classList.add('show');
@@ -113,12 +119,10 @@ async function loginUser(username, password) {
             throw new Error(result.error || 'حدث خطأ أثناء تسجيل الدخول');
         }
 
-        // تسجيل الدخول ناجح
-        console.log("✅ تسجيل الدخول ناجح:", result.user);
+        // ✅ تسجيل الدخول ناجح
         localStorage.setItem('userRole', result.user.role);
         localStorage.setItem('username', result.user.username);
 
-        // التوجيه حسب الدور
         const roleRedirects = {
             admin: '/protectedViews/admin.html',
             user: '/homepage.html',
@@ -126,24 +130,31 @@ async function loginUser(username, password) {
             support: '/support/center.html'
         };
 
-        const redirectPath = result.redirectTo || roleRedirects[result.user.role] || '/homepage.html';
-        window.location.href = redirectPath;
+        setTimeout(() => {
+            spinner.style.display = 'none';
+            btnText.style.display = 'inline';
+            submitBtn.disabled = false;
+
+            const redirectPath = result.redirectTo || roleRedirects[result.user.role] || '/homepage.html';
+            window.location.href = redirectPath;
+        }, 1500);
 
     } catch (err) {
         console.error("🚨 خطأ أثناء تسجيل الدخول:", err);
-        showLoginError(err.message || 'حدث خطأ غير متوقع. حاول لاحقًا.');
+        showAlert('error', 'فشل تسجيل الدخول', err.message || 'حدث خطأ غير متوقع. حاول لاحقًا.');
+    } finally {
+        spinner.style.display = 'none';
+        btnText.style.display = 'inline';
+        submitBtn.disabled = false;
     }
 }
 
-/**
- * ✅ ربط النموذج بعملية تسجيل الدخول
- */
+// ✅ ربط النموذج بعملية تسجيل الدخول
 const loginForm = document.getElementById('loginForm');
 if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        // تنظيف الأخطاء السابقة
         document.querySelectorAll('.error-message').forEach(el => {
             el.classList.remove('show');
             el.textContent = '';
@@ -157,7 +168,7 @@ if (loginForm) {
         const password = document.getElementById('password')?.value;
 
         if (!username || !password) {
-            showLoginError('يرجى إدخال اسم المستخدم وكلمة المرور');
+            showAlert('warning', 'بيانات ناقصة', 'يرجى إدخال اسم المستخدم وكلمة المرور');
             return;
         }
 

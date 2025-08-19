@@ -23,12 +23,14 @@ const verifyToken = async (req, res, next) => {
       req.cookies?.session_token;
 
     if (!token) {
-      return res.status(401).json({ error: 'يجب توفير رمز الجلسة' });
+      // message: 'يجب توفير رمز الجلسة'
+      return res.status(401).redirect('/401.html');
     }
 
     const isRevoked = await RevokedToken.exists({ token });
     if (isRevoked) {
-      return res.status(401).json({ error: 'رمز الجلسة موقوف' });
+      // message: 'رمز الجلسة موقوف'
+      return res.status(401).redirect('/401.html');
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET, {
@@ -38,14 +40,16 @@ const verifyToken = async (req, res, next) => {
 
     const user = await User.findById(decoded.userId).select('-password');
     if (!user) {
-      return res.status(404).json({ error: 'المستخدم غير موجود' });
+      // message: 'المستخدم غير موجود'
+      return res.status(401).redirect('/401.html');
     }
 
     req.user = user;
     next();
   } catch (err) {
+    // message: '🚫 الجلسة غير صالحة أو التوكن مزور'
     console.error('❌ فشل التحقق من التوكن:', err.message);
-    return res.status(403).json({ error: '🚫 الجلسة غير صالحة أو التوكن مزور' });
+    return res.status(401).redirect('/401.html');
   }
 };
 
@@ -55,7 +59,8 @@ const verifyToken = async (req, res, next) => {
  */
 const checkAdmin = (req, res, next) => {
   if (!req.user || req.user.role !== 'admin') {
-    return res.status(403).json({ error: 'صلاحيات الأدمن مطلوبة' });
+    // message: 'صلاحيات الأدمن مطلوبة'
+    return res.status(401).redirect('/401.html');
   }
   next();
 };
@@ -67,7 +72,8 @@ const checkAdmin = (req, res, next) => {
 const requireRole = (roles = []) => {
   return (req, res, next) => {
     if (!req.user || !roles.includes(req.user.role)) {
-      return res.status(403).json({ error: 'ليس لديك صلاحية الوصول لهذه العملية' });
+      // message: 'ليس لديك صلاحية الوصول لهذه العملية'
+      return res.status(401).redirect('/401.html');
     }
     next();
   };
@@ -95,11 +101,8 @@ const checkSession = async (req, res) => {
       });
     });
   } catch (err) {
-    res.status(401).json({
-      success: false,
-      isAuthenticated: false,
-      message: 'جلسة غير صالحة'
-    });
+    // message: 'جلسة غير صالحة'
+    return res.status(401).redirect('/401.html');
   }
 };
 

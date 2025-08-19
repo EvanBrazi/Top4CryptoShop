@@ -17,6 +17,7 @@ import * as um from "./usermanager.js";
 import { Taber } from "./core/taber.js";
 import { AppManager } from "./appmanager.js";
 import { showToast } from "./utils/toast.js";
+import { checkSession } from './utils/session.js';
 
 // ثوابت التطبيق
 const APP_CONFIG = {
@@ -447,20 +448,12 @@ function showUserNotification(message) {
     }
 }
 
-fetch('/api/auth/check-session')
-    .then(res => res.json())
-    .then(data => {
-        if (!data.isAuthenticated || !data.user || data.user.role !== 'user') {
-            window.location.href = '/login';
-        }
-        else {
-            // تابع تحميل البيانات
-            console.log('Welcome');
-            showToast('Welcome')
-        }
-    });
+(async () => {
+  const user = await checkSession(); // لا حاجة لدور معين
+  if (!user) return;
 
-
+  showToast(`مرحبًا ${user.username} 👋`);
+})();
 
 // بدء التطبيق عند تحميل DOM
 document.addEventListener('DOMContentLoaded', () => {

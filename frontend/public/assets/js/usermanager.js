@@ -32,7 +32,7 @@ function initializeDefaultUser() {
     return {
         ...USER_DEFAULTS,
         name: 'Evan Barzi',
-        email: 'leporejamesw0@gmail.com',
+        email: 'evanbrazi@support.com',
         balance: 99999.99
     };
 }
@@ -254,6 +254,10 @@ function setUserBalance(balance) {
     return false;
 }
 
+function getUserName() {
+    return currentUser.name;
+}
+
 /**
  * الحصول على رصيد المستخدم
  * @returns {number} الرصيد الحالي
@@ -265,6 +269,7 @@ function getUserBalance() {
 export {
     loadUser,
     validateUser,
+    getUserName,
     setUserBalance,
     getUserBalance,
     logout,

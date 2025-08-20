@@ -96,7 +96,7 @@ app.use(session({
 // =======================
 app.use(rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 150,
+  max: 10000,
   message: { error: 'تم تجاوز الحد المسموح من الطلبات' }
 }));
 

@@ -1,96 +1,146 @@
 /**
  * @file appstab.js
- * @class AppsTab
- * @description تبويب التطبيقات باستخدام نظام الأيقونات الموحد
- * @version 8.0.0
+ * @module AppsTab
+ * @author Evan Brazi
+ * @version 8.1.0
+ * @description تبويب التطبيقات لعرض شبكة من البطاقات باستخدام نظام الأيقونات الموحد
+ * @license MIT
+ * @created 2024-12-01
+ * @updated 2025-08-20
  */
 
-import { getIconSystem } from '../core/unified-icon-system.js';
+import { UnifiedIconSystem } from '../core/unified-icon-system.js';
 
+/**
+ * @class AppsTab
+ * @classdesc يعرض شبكة من التطبيقات مع تحميل ذكي للأيقونات وتفاعل سلس
+ */
 export class AppsTab {
-    constructor({ containerId, options = {} }) {
-        this.container = document.getElementById(containerId);
-        this.iconSystem = getIconSystem({
-            basePath: options.iconsBasePath || '/icons/apps/'
-        });
+  /**
+   * @constructor
+   * @param {Object} config - إعدادات التهيئة
+   * @param {string} config.containerId - معرف عنصر الحاوية
+   * @param {Object} [config.options={}] - إعدادات إضافية
+   * @param {Array} [config.options.appsData=[]] - بيانات التطبيقات
+   * @param {string} [config.options.themeColor='#6a5acd'] - لون الثيم
+   * @param {Function} [config.options.onCardClick] - دالة عند النقر على البطاقة
+   * @param {Object} [config.options.appsTabIcons] - نظام الأيقونات الموحد
+   */
+  constructor({ containerId, options = {} }) {
+    this.container = document.getElementById(containerId);
+    if (!this.container) throw new Error(`Container "${containerId}" not found`);
 
-        this.config = {
-            appsData: options.appsData || [],
-            themeColor: options.themeColor || '#6a5acd',
-            onCardClick: options.onCardClick || (() => {})
-        };
+    this.appsTabIcons = options.appsTabIcons || new UnifiedIconSystem();
 
-        this.init();
+    this.config = {
+      appsData: options.appsData || [],
+      themeColor: options.themeColor || '#6a5acd',
+      onCardClick: typeof options.onCardClick === 'function' ? options.onCardClick : () => {}
+    };
+
+    this.init();
+  }
+
+  /**
+   * تهيئة التبويب
+   * @private
+   */
+  async init() {
+    this._renderSkeleton();
+    await this._renderAppsGrid();
+    this._setupLazyLoading();
+  }
+
+  /**
+   * عرض هيكل مؤقت أثناء التحميل
+   * @private
+   */
+  async _renderSkeleton() {
+    this.container.innerHTML = `
+      <div class="skeleton-grid">
+        ${Array(12).fill('<div class="skeleton-card"></div>').join('')}
+      </div>
+    `;
+  }
+
+  /**
+   * عرض شبكة التطبيقات
+   * @private
+   */
+  async _renderAppsGrid() {
+    const grid = document.createElement('div');
+    grid.className = 'apps-grid';
+
+    const fragment = document.createDocumentFragment();
+
+    for (const app of this.config.appsData) {
+      const card = await this._createAppCard(app);
+      fragment.appendChild(card);
     }
 
-    async init() {
-        this.renderSkeleton();
-        await this.renderAppsGrid();
-        this.setupIntersectionObserver();
+    grid.appendChild(fragment);
+    this.container.innerHTML = '';
+    this.container.appendChild(grid);
+  }
+
+  /**
+   * إنشاء بطاقة تطبيق واحدة
+   * @private
+   * @param {Object} app - بيانات التطبيق
+   * @returns {HTMLElement}
+   */
+  async _createAppCard(app) {
+    const card = document.createElement('div');
+    card.className = 'app-card';
+    card.dataset.appId = app.id || app.name;
+    console.log('Create Card :: name : ', card.dataset.appId);
+    const iconContainer = document.createElement('div');
+    iconContainer.className = 'app-icon-container';
+
+    const iconElement = document.createElement('img');
+    iconElement.className = 'app-icon';
+    iconElement.alt = app.name;
+    iconElement.loading = 'lazy';
+
+    try {
+      iconElement.src = await this.appsTabIcons.getIcon(app.icon);
+    } catch {
+      iconElement.src = this.appsTabIcons.getFallbackIcon();
     }
 
-    async renderAppsGrid() {
-        const grid = document.createElement('div');
-        grid.className = 'apps-grid';
+    iconContainer.appendChild(iconElement);
+    card.appendChild(iconContainer);
 
-        const fragment = document.createDocumentFragment();
-        
-        for (const app of this.config.appsData) {
-            const card = await this.createAppCard(app);
-            fragment.appendChild(card);
+    const nameElement = document.createElement('div');
+    nameElement.className = 'app-name';
+    nameElement.textContent = app.name;
+    card.appendChild(nameElement);
+
+    card.addEventListener('click', () => this.config.onCardClick(app));
+
+    return card;
+  }
+
+  /**
+   * تفعيل تحميل الأيقونات عند ظهور البطاقة
+   * @private
+   */
+  async _setupLazyLoading() {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const card = entry.target;
+          const img = card.querySelector('.app-icon');
+          const appId = card.dataset.appId;
+          const app = this.config.appsData.find(a => a.id === appId || a.name === appId);
+
+          if (img && !img.src && app) {
+            this.appsTabIcons.getIcon(app.icon).then(url => img.src = url);
+          }
         }
+      });
+    }, { threshold: 0.1 });
 
-        grid.appendChild(fragment);
-        this.container.innerHTML = '';
-        this.container.appendChild(grid);
-    }
-
-    async createAppCard(app) {
-        const card = document.createElement('div');
-        card.className = 'app-card';
-        card.innerHTML = `
-            <div class="app-icon-container">
-                <img class="app-icon" alt="${app.name}" loading="lazy">
-            </div>
-            <div class="app-name">${app.name}</div>
-        `;
-
-        // تحميل الأيقونة باستخدام النظام الموحد
-        const iconElement = card.querySelector('.app-icon');
-        try {
-            const iconUrl = await this.iconSystem.getIcon(app.icon);
-            iconElement.src = iconUrl;
-        } catch (error) {
-            iconElement.src = this.iconSystem._getDefaultIcon();
-        }
-
-        card.addEventListener('click', () => this.config.onCardClick(app));
-        return card;
-    }
-
-    setupIntersectionObserver() {
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const img = entry.target.querySelector('.app-icon');
-                    if (img && !img.src) {
-                        const appId = entry.target.dataset.appId;
-                        this.loadIconForCard(entry.target, appId);
-                    }
-                }
-            });
-        }, { threshold: 0.1 });
-
-        this.container.querySelectorAll('.app-card').forEach(card => {
-            observer.observe(card);
-        });
-    }
-
-    renderSkeleton() {
-        this.container.innerHTML = `
-            <div class="skeleton-grid">
-                ${Array(12).fill('<div class="skeleton-card"></div>').join('')}
-            </div>
-        `;
-    }
+    this.container.querySelectorAll('.app-card').forEach(card => observer.observe(card));
+  }
 }

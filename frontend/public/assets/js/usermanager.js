@@ -36,7 +36,7 @@ function isValidToken(token) {
             .then(res => res.json())
             .then(data => {
                 if (data.match) {
-                    console.log('✅ التوكنات متطابقة');
+                    //console.log('✅ التوكنات متطابقة');
                 } else {
                     console.warn('❌ التوكنات غير متطابقة');
                 }
@@ -69,12 +69,10 @@ async function loadUser() {
         if (!res.ok) throw new Error('فشل تحميل بيانات المستخدم');
 
         const userData = await res.json();
-        console.log('User Data: ', userData);
         const isValidateUser = validateUser(userData);
         if (isValidateUser.valid) {
             currentUser = userData;
             await updateUserProfile();
-            console.log('validateUser : ', userData);
         } else {
             throw new Error(isValidateUser.errors);
         }
@@ -199,7 +197,6 @@ async function updateUserAvatar(imgElement) {
  * @returns {string}
  */
 function generateEmailHash(email) {
-    console.log("اختبار md5:", md5("test@example.com"));
     return md5(email.trim().toLowerCase());
 }
 

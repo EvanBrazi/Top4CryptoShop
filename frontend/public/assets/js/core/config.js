@@ -27,7 +27,7 @@ export const APP_CONFIG = {
 
     // إعدادات API
     API: {
-        BASE_URL: process.env.API_BASE_URL || '/api',
+        BASE_URL: '/api',
         ENDPOINTS: {
             APPS: '/apps',
             ESSENTIAL: '/essential',

@@ -4,45 +4,39 @@
  * @version 4.2.0
  * @license MIT
  */
+import { getIconSystem } from './assets/js/core/unified-icon-system.js';
 
-import { IconManager } from './assets/js/core/iconmanager.js';
 
-const CACHE_NAME = 'static-cache-v2';
-const ICONS_TO_CACHE = [
-  '/icons/apps/default.png',
-  '/assets/images/logo.png',
-  '/assets/images/favicon.ico'
+
+const CACHE_NAME = 'top4crypto-v3';
+const PRECACHE_URLS = [
+    '/icons/apps/default.png',
+    '/assets/images/logo.png',
+    '/assets/images/favicon.ico'
 ];
 
-const iconManager = new IconManager({
-  maxItems: 500,
-  maxConcurrent: 4,
-  defaultIconUrl: '/icons/apps/default.png'
+const iconSystem = getIconSystem();
+
+
+// التثبيت: تخزين الموارد الأساسية
+self.addEventListener('install', (event) => {
+    event.waitUntil(
+        caches.open(CACHE_NAME)
+            .then(cache => cache.addAll(PRECACHE_URLS))
+            .then(() => self.skipWaiting())
+    );
 });
 
-// 📦 عند التثبيت: تخزين الموارد الأساسية
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ICONS_TO_CACHE))
-  );
+// التفعيل: تنظيف الكاش القديم
+self.addEventListener('activate', (event) => {
+    event.waitUntil(
+        caches.keys()
+            .then(keys => Promise.all(
+                keys.map(key => key !== CACHE_NAME && caches.delete(key))
+            ))
+            .then(() => self.clients.claim())
+    );
 });
-
-// 🔄 عند التفعيل: حذف الكاش القديم
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(names =>
-      Promise.all(names.map(name => name !== CACHE_NAME && caches.delete(name)))
-    )
-  );
-});
-
-// 🧠 تخمين نوع الصورة حسب الامتداد
-function guessMimeType(path) {
-  if (path.endsWith('.svg')) return 'image/svg+xml';
-  if (path.endsWith('.webp')) return 'image/webp';
-  if (path.endsWith('.jpg') || path.endsWith('.jpeg')) return 'image/jpeg';
-  return 'image/png';
-}
 
 // 📤 إرسال تقرير إلى لوحة التحكم
 function reportToAdmin(data) {
@@ -60,97 +54,60 @@ function reportToAdmin(data) {
   });
 }
 
-// 🛰️ عند الطلب: مراقبة وتحليل الأداء
-self.addEventListener('fetch', event => {
-  const url = new URL(event.request.url);
-  const start = performance.now();
-
-  // 🧩 التعامل مع ملفات /assets
-  if (url.pathname.startsWith('/assets')) {
-    event.respondWith(
-      caches.match(event.request).then(cached =>
-        cached || fetch(event.request).then(res => {
-          const duration = performance.now() - start;
-          const copy = res.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
-
-          reportToAdmin({
-            url: url.href,
-            status: res.status,
-            duration: duration.toFixed(2),
-            size: res.headers.get('Content-Length') || 'unknown'
-          });
-
-          return res;
-        }).catch(error => {
-          reportToAdmin({
-            url: url.href,
-            error: error.message,
-            type: 'fetch-failure'
-          });
-          throw error;
-        })
-      )
-    );
-
-    // 🧩 التعامل مع الأيقونات
-  } else if (url.pathname.startsWith('/icons/')) {
-    event.respondWith(
-      (async () => {
-        try {
-          const objectUrl = await iconManager.getIcon(event.request.url);
-          const blobResponse = await fetch(objectUrl);
-          const blob = await blobResponse.blob();
-          const contentType = blobResponse.headers.get('Content-Type') || guessMimeType(url.pathname);
-          const duration = performance.now() - start;
-
-          reportToAdmin({
-            url: url.href,
-            status: blobResponse.status,
-            duration: duration.toFixed(2),
-            size: blob.size + ' bytes'
-          });
-
-          return new Response(blob, {
-            status: 200,
-            headers: { 'Content-Type': contentType }
-          });
-        } catch (error) {
-          console.warn(`Fallback icon used: ${url.pathname}`);
-          reportToAdmin({
-            url: url.href,
-            error: error.message,
-            type: 'icon-failure'
-          });
-          return caches.match('/icons/apps/default.png');
+// معالجة طلبات الأيقونات
+async function handleIconRequest(request) {
+    const iconUrl = request.url;
+    
+    try {
+        // محاولة الحصول من الكاش أولاً
+        const cached = await caches.match(request);
+        if (cached) {
+            return cached;
         }
-      })()
-    );
 
-    // 🧩 الطلبات الأخرى
-  } else {
-    event.respondWith(
-      fetch(event.request).then(res => {
-        const duration = performance.now() - start;
-        reportToAdmin({
-          url: url.href,
-          status: res.status,
-          duration: duration.toFixed(2)
-        });
-        return res;
-      }).catch(error => {
-        reportToAdmin({
-          url: url.href,
-          error: error.message,
-          type: 'general-failure'
-        });
-        return new Response('Service Worker fetch error', {
-          status: 500,
-          headers: { 'Content-Type': 'text/plain' }
-        });
-      })
-    );
-  }
+        // استخدام نظام الأيقونات الموحد
+        const objectUrl = await iconSystem.getIcon(iconUrl);
+        const response = await fetch(objectUrl);
+        
+        // تخزين في كاش المتصفح
+        const cache = await caches.open(CACHE_NAME);
+        cache.put(request, response.clone());
+        
+        return response;
+    } catch (error) {
+        console.warn('Icon fetch failed, returning default:', error);
+        return caches.match('/icons/apps/default.png');
+    }
+}
+
+// معالجة الطلبات العادية
+async function handleNormalRequest(request) {
+    try {
+        // استراتيجية Network First مع fallback إلى Cache
+        const response = await fetch(request);
+        const cache = await caches.open(CACHE_NAME);
+        cache.put(request, response.clone());
+        return response;
+    } catch (error) {
+        const cached = await caches.match(request);
+        if (cached) {
+            return cached;
+        }
+        return new Response('Service unavailable', { status: 503 });
+    }
+}
+
+
+// معالجة الطلبات
+self.addEventListener('fetch', (event) => {
+    const url = new URL(event.request.url);
+
+    // معالجة طلبات الأيقونات بشكل خاص
+    if (url.pathname.startsWith('/icons/')) {
+        event.respondWith(this.handleIconRequest(event.request));
+    } else {
+        event.respondWith(this.handleNormalRequest(event.request));
+    }
 });
 
 // 📦 مراقبة التخزين كل 30 ثانية (اختياري ويمكن تفعيله من الصفحة)

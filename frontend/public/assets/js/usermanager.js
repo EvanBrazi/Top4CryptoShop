@@ -137,6 +137,10 @@ function validateUser(user) {
  */
 async function updateUserProfile() {
     try {
+        if (!currentUser) {
+            console.warn('⚠️ لا يوجد مستخدم حالي لتحديث الواجهة');
+            return;
+        }
         const usernameDisplay = document.getElementById('username-display');
         if (usernameDisplay) usernameDisplay.textContent = currentUser.name;
 
@@ -185,7 +189,7 @@ async function updateUserAvatar(imgElement) {
         }
     } catch (error) {
         console.error('❌ خطأ في تحميل الصورة:', error.message);
-        imgElement.src = getDefaultAvatar(currentUser.name);
+        imgElement.src = getDefaultAvatar(currentUser?.name);
     }
 }
 
@@ -245,6 +249,39 @@ async function saveUser() {
 }
 
 /**
+ * تنظيف واجهة المستخدم بعد تسجيل الخروج أو غياب بيانات المستخدم.
+ * تُستخدم هذه الدالة لإعادة ضبط عناصر الواجهة إلى الحالة الافتراضية،
+ * بحيث لا تُعرض بيانات مستخدم غير موجود أو منتهي الجلسة.
+ *
+ * @function clearUserUI
+ * @returns {void}
+ */
+function clearUserUI() {
+    // 🔹 تعيين اسم المستخدم إلى "زائر" في عنصر العرض الرئيسي
+    const usernameDisplay = document.getElementById('username-display');
+    if (usernameDisplay) usernameDisplay.textContent = 'زائر';
+
+    // 🔹 تحديد عناصر عرض الرصيد (قد تكون متعددة في أماكن مختلفة من الواجهة)
+    const balanceElements = [
+        document.getElementById('balance-display'),
+        document.getElementById('top-balance-display')
+    ].filter(Boolean); // ← إزالة العناصر غير الموجودة لتجنب الأخطاء
+
+    // 🔹 تعيين الرصيد إلى القيمة الافتراضية "0.00" لكل عنصر موجود
+    balanceElements.forEach(el => {
+        el.textContent = '0.00';
+    });
+
+    // 🔹 تعيين صورة الملف الشخصي إلى صورة افتراضية باسم "زائر"
+    const userAvatar = document.getElementById('user-avatar');
+    if (userAvatar) userAvatar.src = getDefaultAvatar('زائر');
+
+    // 🔹 إعادة تعيين الثيم إلى الوضع النهاري كخيار افتراضي
+    toggleDBTheme('day');
+}
+
+
+/**
  * تنفيذ عملية تسجيل الخروج من الواجهة
  * @async
  * @returns {Promise<void>}
@@ -264,10 +301,11 @@ async function handleLogout() {
 
         localStorage.clear();
         currentUser = null;
-        await updateUserProfile();
+        clearUserUI(); // ← دالة مخصصة لتنظيف الواجهة بعد تسجيل الخروج
 
         showToast('تم تسجيل الخروج بنجاح', 'success');
-        setTimeout(() => window.location.href('/dashboard'), 1000);
+        setTimeout(() => window.location.assign('/dashboard') // ✅ بديل آمن
+            , 1000);
 
     } catch (error) {
         console.error('❌ خطأ أثناء تسجيل الخروج:', error.message);

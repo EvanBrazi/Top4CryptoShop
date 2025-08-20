@@ -267,7 +267,7 @@ async function handleLogout() {
         await updateUserProfile();
 
         showToast('تم تسجيل الخروج بنجاح', 'success');
-        setTimeout(() => window.location.reload(), 1000);
+        setTimeout(() => window.location.href('/dashboard'), 1000);
 
     } catch (error) {
         console.error('❌ خطأ أثناء تسجيل الخروج:', error.message);

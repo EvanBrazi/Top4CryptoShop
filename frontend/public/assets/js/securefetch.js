@@ -6,10 +6,6 @@
 import { checkSession } from "./auth.js";
 
 function getCsrfTokenFromCookie() {
-    (async () => {
-        const user = await checkSession(); // لا حاجة لدور معين
-        if (!user) return null;
-    })();
     const match = document.cookie.match(/(?:^|;\s*)x-csrf-token=([^;]+)/);
     return match ? decodeURIComponent(match[1]) : null;
 }

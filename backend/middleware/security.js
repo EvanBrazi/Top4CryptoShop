@@ -20,7 +20,6 @@ const securityHeaders = helmet({
         "https://cdn.jsdelivr.net",
         "https://accounts.google.com",
         "https://apis.google.com",
-        "chrome-extension://fhimbbbmdjiifimnepkibjfjbppnjble"
       ],
 
       scriptSrcElem: [
@@ -31,7 +30,6 @@ const securityHeaders = helmet({
         "https://apis.google.com",
         "https://esm.sh",
         "https://browser.sentry-cdn.com",
-        "chrome-extension://fhimbbbmdjiifimnepkibjfjbppnjble"
       ],
 
       imgSrc: [

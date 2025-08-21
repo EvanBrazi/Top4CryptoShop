@@ -196,7 +196,8 @@ export class AppManager {
                     cardsData: this.cardsData,
                     homeTabIcons: this.homeTabIcons,
                     iconRenderer: this.iconRenderer,
-                    fallbackUrl: '/icons/appstab/apps_tab.png'
+                    fallbackUrl: '/icons/appstab/apps_tab.png',
+                    themeColor: '#6a5acd'
                 }
             }),
             apps: new AppsTab({
@@ -204,7 +205,8 @@ export class AppManager {
                 options: {
                     appsTabIcons: this.appsTabIcons,
                     appsData: this.appsData,
-                    onCardClick: (app) => this.handleAppsCardsClick(app)
+                    onCardClick: (app) => this.handleAppsCardsClick(app),
+                    themeColor: '#6a5acd'
                 }
             })
         };
@@ -279,6 +281,7 @@ export class AppManager {
      * @public
      */
     destroy() {
-        this.iconSystem.clearCache();
+        this.homeTabIcons.clearCache();
+        this.appsTabIcons.clearCache();
     }
 }

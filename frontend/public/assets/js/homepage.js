@@ -23,7 +23,7 @@ import { checkSession } from './auth.js';
 const APP_CONFIG = {
     STORAGE_KEYS: {
         ACTIVE_TAB: 'top4cryptoshop_activeTab',
-        USER_THEME: 'user_theme_preference'
+        USER_THEME: 'theme'
     },
     DEFAULT_TAB: 'home',
     SCROLL_THROTTLE: 100,

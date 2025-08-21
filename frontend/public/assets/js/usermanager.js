@@ -310,6 +310,10 @@ async function handleLogout() {
     }
 }
 
+function setUserTheme(theme) {
+    currentUser.theme = theme;
+}
+
 /**
  * تعيين رصيد المستخدم
  * @param {number} balance
@@ -348,5 +352,6 @@ export {
     getUserBalance,
     handleLogout,
     saveUser,
-    updateUserProfile
+    updateUserProfile,
+    setUserTheme
 };

@@ -8,7 +8,8 @@
     "dev": "cd backend && nodemon server.js",
     "backend-install": "cd backend && npm install",
     "frontend-install": "cd frontend && npm install",
-    "install-all": "npm run backend-install && npm run frontend-install"
+    "install-all": "npm run backend-install && npm run frontend-install",
+    "test": "jest"
   },
   "dependencies": {
     "concurrently": "^7.6.0"
@@ -20,5 +21,8 @@
     "express"
   ],
   "author": "Top4CryptoShop Team",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^30.0.5"
+  }
 }

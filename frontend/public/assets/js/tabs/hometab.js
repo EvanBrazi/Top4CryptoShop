@@ -34,7 +34,7 @@ class HomeTab {
 
     this.options = {
       cardsData: options.cardsData || this._defaultCards(),
-      CSSLink: options.CSSLink || 'card-grid.css',
+      CSSLink: options.CSSLink || 'apps-cards.css',
       fallbackUrl: options.fallbackUrl || '/icons/appstab/apps_tab.png'
     };
 
@@ -42,10 +42,31 @@ class HomeTab {
   }
 
   /**
+   * عرض حالة التحميل المؤقت
+   * @private
+   */
+  _renderSkeletonLoading() {
+    const skeleton = document.createElement('div');
+    skeleton.className = 'skeleton-loading';
+    skeleton.innerHTML = `
+      <div class="skeleton-grid">
+        ${Array(12).fill('<div class="skeleton-card"></div>').join('')}
+      </div>
+    `;
+    this.container.appendChild(skeleton);
+
+    // إزالة الهيكل بعد التحميل
+    setTimeout(() => {
+      skeleton.remove();
+    }, 500);
+  }
+
+  /**
    * تهيئة المكون
    * @private
    */
   async _initializeComponent() {
+    this._renderSkeletonLoading();
     try {
       await this._loadCSS();
       this.render();

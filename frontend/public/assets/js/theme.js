@@ -1,3 +1,4 @@
+import { setUserTheme } from "./usermanager.js";
 // نظام إدارة الثيمات
 export function initTheme() {
     const savedTheme = localStorage.getItem('theme') || 'day';
@@ -11,6 +12,7 @@ export function toggleTheme() {
     document.body.classList.remove(`${currentTheme}-theme`);
     document.body.classList.add(`${newTheme}-theme`);
     localStorage.setItem('theme', newTheme);
+    setUserTheme(newTheme);
 }
 
 export function toggleDBTheme (userDBTheme) {

@@ -57,7 +57,6 @@ async function handleIconRequest(request) {
     if (!iconUrl || typeof iconUrl !== 'string') {
       throw new Error('Invalid icon URL from iconSystem');
     }
-
     const response = await fetch(iconUrl);
     // إذا لم تكن الاستجابة ناجحة، استخدم fallback
     if (!response.ok) {
@@ -98,6 +97,8 @@ async function handleNormalRequest(request) {
 // معالجة الطلبات
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
+  //console.log('🔍 Blob:', blob);
+  console.trace('📍 تتبع مصدر الـ Blob',event);
   // معالجة طلبات الأيقونات بشكل خاص
   if (url.pathname.startsWith('/icons/')) {
     event.respondWith(handleIconRequest(event.request));

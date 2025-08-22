@@ -7,10 +7,29 @@
 import { secureFetch } from './securefetch.js';
 
 /**
+ * تسجيل مستخدم جديد
+ * @param {string} username - اسم المستخدم المطلوب تسجيله
+ * @param {string} password - كلمة المرور الخاصة بالمستخدم
+ * @param {string} email - البريد الإلكتروني للمستخدم
+ * @param {string} phone - رقم الهاتف الكامل للمستخدم (مع رمز الدولة)
+ * @param {string} theme - الثيم المفضل للمستخدم (مثلاً: 'dark' أو 'light')
+ * @returns {Promise<object>} - كائن يحتوي على نتيجة التسجيل (نجاح أو خطأ)
+ */
+export async function register(username, password, email, phone, theme) {
+    const res = await secureFetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password, email, phone, theme })
+    });
+
+    return res.json();
+}
+
+/**
  * تسجيل الدخول
- * @param {string} username
- * @param {string} password
- * @returns {Promise<object>}
+ * @param {string} username - اسم المستخدم
+ * @param {string} password - كلمة المرور
+ * @returns {Promise<object>} - كائن يحتوي على بيانات الجلسة أو رسالة الخطأ
  */
 export async function login(username, password) {
     const res = await secureFetch('/api/auth/login', {
@@ -22,8 +41,8 @@ export async function login(username, password) {
 }
 
 /**
- * تسجيل الخروج
- * @returns {Promise<object>}
+ * تسجيل الخروج من الجلسة الحالية
+ * @returns {Promise<object>} - كائن يحتوي على نتيجة الخروج (نجاح أو خطأ)
  */
 export async function logout() {
     const res = await secureFetch('/api/auth/logout', {
@@ -32,6 +51,7 @@ export async function logout() {
 
     return res.json();
 }
+
 
 /**
  * التحقق من الجلسة الحالية

@@ -1,3 +1,4 @@
+import { checkSession } from './auth.js';
 // حالة التطبيق
 const AppState = {
     isSidebarOpen: false,
@@ -148,15 +149,15 @@ function sendAnalytics() {
                 'Content-Type': 'application/json'
             }
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .catch(error => {
-            console.error('Error sending analytics:', error);
-        });
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .catch(error => {
+                console.error('Error sending analytics:', error);
+            });
     } catch (error) {
         console.error('Analytics error:', error);
     }
@@ -166,11 +167,15 @@ function sendAnalytics() {
 document.addEventListener('DOMContentLoaded', initApp);
 
 // تحويل المستخدم عند النقر على أزرار التسجيل/الدخول
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
+    (async () => {
+        const user = await checkSession(); // لا حاجة لدور معين
+        if (user) window.location.href = '/homepage.html';
+    })();
     // زر تسجيل الدخول
     const loginBtn = document.getElementById('loginBtn');
     if (loginBtn) {
-        loginBtn.addEventListener('click', function() {
+        loginBtn.addEventListener('click', function () {
             window.location.href = '/login.html';
         });
     }
@@ -178,7 +183,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // زر التسجيل
     const registerBtn = document.getElementById('registerBtn');
     if (registerBtn) {
-        re.addEventListener('click', function() {
+        re.addEventListener('click', function () {
             window.location.href = '/register.html';
         });
     }

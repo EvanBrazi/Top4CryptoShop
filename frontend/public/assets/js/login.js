@@ -1,7 +1,7 @@
-/**
- * ✅ تطبيق الثيم المحفوظ في localStorage
- * يضبط مظهر الصفحة حسب تفضيل المستخدم
- **/
+import { login } from './auth.js';
+
+import { showToast } from "./utils/toast.js";
+import { checkSession } from './auth.js';
 // ✅ عناصر الواجهة
 const spinner = document.getElementById('spinner');
 const btnText = document.getElementById('btnText');
@@ -14,6 +14,10 @@ const STORAGE_KEYS = {
 
 // ✅ تطبيق الثيم المحفوظ
 document.addEventListener('DOMContentLoaded', () => {
+    /**
+ * ✅ تطبيق الثيم المحفوظ في localStorage
+ * يضبط مظهر الصفحة حسب تفضيل المستخدم
+ **/
     const savedTheme = localStorage.getItem('theme') || 'day';
     document.body.classList.remove('day-theme', 'night-theme');
     document.body.classList.add(`${savedTheme}-theme`);
@@ -84,18 +88,10 @@ function showAlert(icon, title, text) {
     }
 }
 
-// ✅ تنفيذ عملية تسجيل الدخول
 /**
  * ✅ تنفيذ عملية تسجيل الدخول بشكل آمن ومتوافق مع auth.js و secureFetch.js
  * @param {string} username - اسم المستخدم
  * @param {string} password - كلمة المرور
- */
-import { login } from './auth.js';
-
-/**
- * تنفيذ عملية تسجيل الدخول من الواجهة
- * @param {string} username
- * @param {string} password
  */
 async function loginUser(username, password) {
     spinner.style.display = 'inline-block';
@@ -147,6 +143,7 @@ async function loginUser(username, password) {
 
             const redirectPath = result.redirectTo || roleRedirects[result.user.role] || '/homepage.html';
             window.location.href = redirectPath;
+            showToast(`اهلاً بعودتك ${username} 👋`);
         }, 1500);
 
     } catch (err) {

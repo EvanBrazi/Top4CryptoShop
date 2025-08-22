@@ -1,15 +1,26 @@
-// 0 = نهاري، 1 = ليلي
+/**
+ * @file register.js
+ * @description نموذج التسجيل التقليدي مع دعم التحقق، الثيم، وOAuth
+ * @author Evan Brazi
+ * @version 2.0.0
+ * @created 2024-12-01
+ * @updated 2025-08-22
+ */
+
+import { register } from './auth.js'; // دالة التسجيل الموحدة عبر secureFetch
+
+// 🔧 إعدادات الثيم
 const THEME_KEY = 'theme';
 
-// طبّق الثيم مبكرًا بعد تحميل الـ DOM
-document.addEventListener('DOMContentLoaded', function () {
+// ✅ تطبيق الثيم عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', () => {
     const savedTheme = Number(localStorage.getItem(THEME_KEY) ?? 0);
     document.body.classList.remove('day-theme', 'night-theme');
     document.body.classList.add(savedTheme === 1 ? 'night-theme' : 'day-theme');
 });
 
-// 1) تسجيل الدخول عبر Google (placeholder حتى تكمل ضبط OAuth)
-document.getElementById('googleSignIn').addEventListener('click', () => {
+// 🧭 روابط OAuth (Google و Apple)
+byId('googleSignIn').addEventListener('click', () => {
     window.location.href =
         'https://accounts.google.com/o/oauth2/auth?' +
         'response_type=code&' +
@@ -19,8 +30,7 @@ document.getElementById('googleSignIn').addEventListener('click', () => {
         'state=random_state_string';
 });
 
-// 2) تسجيل الدخول عبر Apple (placeholder حتى تكمل ضبط OAuth)
-document.getElementById('appleSignIn').addEventListener('click', () => {
+byId('appleSignIn').addEventListener('click', () => {
     window.location.href =
         'https://appleid.apple.com/auth/authorize?' +
         'client_id=YOUR_APPLE_SERVICE_ID&' +
@@ -30,106 +40,110 @@ document.getElementById('appleSignIn').addEventListener('click', () => {
         'response_mode=form_post';
 });
 
-// أدوات صغيرة للمساعدة
+// 🧰 أدوات مساعدة
 const digitsOnly = (s) => (s || '').replace(/[^\d]+/g, '');
 const byId = (id) => document.getElementById(id);
 
-// 3) التسجيل التقليدي
+/**
+ * عرض رسالة خطأ في عنصر معين
+ * @param {string} elementId - معرف العنصر
+ * @param {string} message - نص الرسالة
+ */
+function showError(elementId, message) {
+    const element = byId(elementId);
+    element.textContent = message;
+    element.classList.add('show');
+}
+
+/**
+ * عرض رسالة خطأ عامة
+ * @param {string} message - نص الرسالة
+ */
+function showGeneralError(message) {
+    const el = byId('generalError');
+    el.textContent = message;
+    el.classList.add('show');
+}
+
+/**
+ * التحقق من صحة النموذج
+ * @param {Object} data - بيانات النموذج
+ * @returns {Object} - كائن يحتوي على الأخطاء
+ */
+function validateForm(data) {
+    const errors = {};
+    const { username, password, email, countryCode, phoneNumber } = data;
+
+    if (!username) errors.usernameError = 'يرجى إدخال اسم المستخدم';
+    else if (username.length < 3 || username.length > 20)
+        errors.usernameError = 'اسم المستخدم يجب أن يكون بين 3 و 20 حرفًا';
+
+    if (!password) errors.passwordError = 'يرجى إدخال كلمة المرور';
+    else if (password.length < 6)
+        errors.passwordError = 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
+
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+        errors.emailError = 'صيغة البريد الإلكتروني غير صحيحة';
+
+    if (!countryCode) errors.phoneError = 'يرجى اختيار رمز الدولة';
+    else if (!phoneNumber) errors.phoneError = 'يرجى إدخال رقم الجوال';
+    else if (!/^\+\d{8,15}$/.test(`${countryCode}${phoneNumber}`))
+        errors.phoneError = 'صيغة رقم الهاتف غير صحيحة';
+
+    return errors;
+}
+
+// 📝 التعامل مع نموذج التسجيل
 byId('registerForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    // عرض رسائل الخطأ
-    console.log('Error: ' + e);
-    // إخفاء رسائل الخطأ السابقة
+
+    // 🧹 تنظيف الأخطاء السابقة
     document.querySelectorAll('.error-message').forEach((el) => {
         el.classList.remove('show');
         el.textContent = '';
     });
+    byId('generalError').classList.remove('show');
+    byId('generalError').textContent = '';
 
-    // إخفاء رسالة الخطأ العامة
-    const generalError = byId('generalError');
-    generalError.classList.remove('show');
-    generalError.textContent = '';
-
-    // التقاط القيم
+    // 📥 التقاط القيم من النموذج
     const username = byId('username').value.trim();
     const password = byId('password').value;
     const email = byId('email').value.trim();
     const countryCode = byId('countryCode').value;
     const phoneNumberRaw = byId('phoneNumber').value;
-
-    // تحقق من اسم المستخدم
-    if (!username) {
-        showError('usernameError', 'يرجى إدخال اسم المستخدم');
-        return;
-    }
-    if (username.length < 3 || username.length > 20) {
-        showError('usernameError', 'اسم المستخدم يجب أن يكون بين 3 و 20 حرفًا');
-        return;
-    }
-
-    // تحقق من كلمة المرور
-    if (!password) {
-        showError('passwordError', 'يرجى إدخال كلمة المرور');
-        return;
-    }
-    if (password.length < 6) {
-        showError('passwordError', 'كلمة المرور يجب أن تكون 6 أحرف على الأقل');
-        return;
-    }
-
-    // تحقق من البريد الإلكتروني (اختياري لكن بصيغة صحيحة إن وُجد)
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        showError('emailError', 'صيغة البريد الإلكتروني غير صحيحة');
-        return;
-    }
-
-    // تحقق بسيط من الهاتف
-    if (!countryCode) {
-        showError('phoneError', 'يرجى اختيار رمز الدولة');
-        return;
-    }
     const phoneNumber = digitsOnly(phoneNumberRaw);
-    if (!phoneNumber) {
-        showError('phoneError', 'يرجى إدخال رقم الجوال');
-        return;
-    }
-
     const fullPhoneNumber = `${countryCode}${phoneNumber}`;
-
-    // اجلب الثيم كرقم 0/1 من localStorage (افتراضي 0)
     const themeRaw = localStorage.getItem(THEME_KEY);
     const theme = !isNaN(themeRaw) ? Number(themeRaw) : 0;
-    if (!/^\+\d{8,15}$/.test(fullPhoneNumber)) {
-        showError('phoneError', 'صيغة رقم الهاتف غير صحيحة');
+
+    // ✅ التحقق من صحة البيانات
+    const errors = validateForm({ username, password, email, countryCode, phoneNumber });
+    if (Object.keys(errors).length > 0) {
+        Object.entries(errors).forEach(([id, msg]) => showError(id, msg));
         return;
     }
 
-    try {
-        const response = await fetch('/api/auth/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                username,
-                password,
-                email: email || undefined,
-                phone: fullPhoneNumber,
-                theme
-            })
-        });
-        const result = await response.json();
+    // ⏳ حالة تحميل مؤقتة
+    const submitBtn = byId('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'جاري التسجيل...';
 
-        if (!response.ok) {
-            throw new Error(result.error || 'حدث خطأ أثناء التسجيل');
+    try {
+        const result = await register(username, password, email, fullPhoneNumber, theme);
+
+        if (result?.success === false || result?.error) {
+            const errorMessage = typeof result === 'string' ? result : result.error || 'حدث خطأ أثناء التسجيل';
+            throw new Error(errorMessage);
         }
 
-        // نجاح
+        // 🎉 نجاح التسجيل
         alert('تم تسجيل الحساب بنجاح!');
         window.location.href = '/homepage.html';
-    } catch (err) {
-        console.error('Error:', err);
 
-        // توزيع رسائل الخطأ
+    } catch (err) {
+        console.error('❌ خطأ أثناء التسجيل:', err);
         const msg = String(err.message || '');
+
         if (msg.includes('اسم المستخدم')) {
             showError('usernameError', msg);
         } else if (msg.includes('كلمة المرور')) {
@@ -139,14 +153,10 @@ byId('registerForm').addEventListener('submit', async (e) => {
         } else if (msg.includes('البريد')) {
             showError('emailError', msg);
         } else {
-            generalError.textContent = msg;
-            generalError.classList.add('show');
+            showGeneralError(msg);
         }
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'تسجيل';
     }
 });
-
-function showError(elementId, message) {
-    const element = document.getElementById(elementId);
-    element.textContent = message;
-    element.classList.add('show');
-}

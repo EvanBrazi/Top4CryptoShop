@@ -11,12 +11,9 @@
  * - إضافة التوثيق الشامل
  * - تحسين إدارة الأحداث
  */
-
-import * as th from "./theme.js";
 import * as um from "./usermanager.js";
 import { Taber } from "./core/taber.js";
 import { AppManager } from "./appmanager.js";
-import { showToast } from "./utils/toast.js";
 import { checkSession } from './auth.js';
 
 // ثوابت التطبيق
@@ -470,8 +467,6 @@ document.addEventListener('DOMContentLoaded', () => {
     (async () => {
         const user = await checkSession(); // لا حاجة لدور معين
         if (!user) return;
-
-        showToast(`مرحبًا ${user.username} 👋`);
     })();
 
     /**

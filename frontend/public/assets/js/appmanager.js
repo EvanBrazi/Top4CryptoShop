@@ -2,46 +2,43 @@
  * @file appmanager.js
  * @module AppManager
  * @author Evan Brazi
- * @version 6.1.0
- * @description مدير التبويبات المركزي، يهيئ النظام الموحد للأيقونات ويدير التفاعل بين التبويبات
+ * @version 6.2.0
+ * @description مدير التبويبات المركزي، يهيئ النظام الموحد للأيقونات ويدير التفاعل بين التبويبات مع دعم التخزين والتحليل
  * @license MIT
  * @created 2024-12-01
- * @updated 2025-08-20
- * التحسينات الرئيسية:
- * - تحسين إدارة الأخطاء والصلابة
- * - إضافة نظام التخزين المؤقت المحسن
- * - تحسين أداء تحميل التبويبات
- * - إضافة التوثيق الشامل
- * - تحسين إدارة الذاكرة
+ * @updated 2025-08-22
  */
 
 import { HomeTab } from "./tabs/hometab.js";
 import { AppsTab } from "./tabs/appstab.js";
-import ApiService from './services/apiService.js';
-import { _transformAppsData } from './utils/appUtils.js';
-import { PurchaseDialog } from './dialogs/purchaseDialog.js';
+import { IconLoader } from "./core/icon-loader.js";
 import { UnifiedIconSystem } from './core/unified-icon-system.js';
 import { IconRenderer } from './core/icon-renderer.js';
 
-// ثوابت التطبيق
+/* ---------------------------------- */
+/* --------- إعدادات التطبيق -------- */
+/* ---------------------------------- */
+
 const DEFAULT_CONFIG = {
     themeColor: '#6a5acd',
-    cacheOptions: {
-        duration: 7, // أيام
-        maxConcurrent: 5
-    },
+    fallbackIcon: 'default.png',
     iconsBasePath: '/icons/apps/',
-    defaultIcon: 'default.png'
+    cacheOptions: {
+        duration: 7,
+        maxConcurrent: 5
+    }
 };
 
+/* ---------------------------------- */
+/* --------- وظائف المساعدة --------- */
+/* ---------------------------------- */
+
 /**
- * @function fetchCards
- * @description تحميل بيانات البطاقات من السيرفر
- * @returns {Promise<Array>} مصفوفة البطاقات أو مصفوفة فارغة عند الفشل
+ * تحميل بيانات البطاقات من السيرفر
  */
 async function fetchCards() {
     try {
-        const response = await fetch('/api/cards'); // تأكد أن المسار يطابق إعدادات السيرفر
+        const response = await fetch('/api/cards');
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const cards = await response.json();
         return Array.isArray(cards) ? cards : [];
@@ -52,10 +49,8 @@ async function fetchCards() {
 }
 
 /**
-   * جلب بيانات التطبيقات
-   * @private
-   * @returns {Promise<Array>}
-   */
+ * تحميل بيانات التطبيقات من السيرفر
+ */
 async function _fetchAppsData() {
     try {
         const response = await fetch('/api/apps');
@@ -63,59 +58,61 @@ async function _fetchAppsData() {
         const appsData = await response.json();
         return Array.isArray(appsData) ? appsData : [];
     } catch (error) {
-        console.error('فشل جلب بيانات التطبيقات:', error);
-        return []; // إرجاع مصفوفة فارغة بدلاً من إيقاف التطبيق
+        console.error('❌ فشل جلب بيانات التطبيقات:', error);
+        return [];
     }
 }
 
 /**
- * جلب قائمة الأيقونات
- * @private
- * @returns {Promise<Array>}
+ * تحميل قائمة الأيقونات من ملف JSON
  */
 async function _fetchIconsList() {
     try {
         const response = await fetch('/icons-list.json');
-        return response.icons || [];
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const iconsList = await response.json();
+        return Array.isArray(iconsList) ? iconsList : [];
     } catch (error) {
-        console.error('فشل جلب قائمة الأيقونات:', error);
-        return []; // إرجاع مصفوفة فارغة بدلاً من إيقاف التطبيق
+        console.error('❌ فشل جلب قائمة الأيقونات:', error);
+        return [];
     }
 }
 
+/* ---------------------------------- */
+/* --------- الفئة الرئيسية --------- */
+/* ---------------------------------- */
 
-/**
- * @class AppManager
- * @classdesc مسؤول عن تهيئة التبويبات وربطها بنظام الأيقونات الموحد، ويعمل كطبقة تحكم مركزية
- */
 export class AppManager {
-    /**
-     * @constructor
-     * @param {Object} taberInstance - كائن إدارة التبويبات
-     * @param {Object} config - إعدادات التهيئة
-     * @param {string} [config.iconBasePath='/icons/apps/'] - المسار الأساسي للأيقونات
-     * @param {string} [config.fallbackIcon='default.png'] - اسم الأيقونة الافتراضية عند الفشل
-     */
     constructor(taberInstance, config = {}) {
         if (!taberInstance) throw new Error('Taber instance is required');
-
         this.taber = taberInstance;
 
+        // 🧠 تهيئة النظام الموحد للأيقونات
         this.homeTabIcons = new UnifiedIconSystem({
             basePath: '/icons/hometab/',
-            fallback: 'default.png'
+            fallback: config.fallbackIcon || DEFAULT_CONFIG.fallbackIcon
         });
 
         this.appsTabIcons = new UnifiedIconSystem({
-            basePath: '/icons/apps/',
-            fallback: 'default.png'
+            basePath: DEFAULT_CONFIG.iconsBasePath,
+            fallback: config.fallbackIcon || DEFAULT_CONFIG.fallbackIcon
         });
+
+        // 🎨 وحدة عرض الأيقونات
         this.iconRenderer = new IconRenderer({
             fallback: config.fallbackIcon || '/icons/apps/default.png'
         });
 
+        this.homeIconLoader = new IconLoader({
+            system: this.homeTabIcons,
+            renderer: this.iconRenderer
+        });
+        this.appsIconLoader = new IconLoader({
+            system: this.appsTabIcons,
+            renderer: this.iconRenderer
+        })
 
-        // تهيئة الحالات
+        // 🧩 الحالة الداخلية
         this.tabs = {};
         this.dialogs = { purchase: null };
         this.initState = {
@@ -124,7 +121,7 @@ export class AppManager {
             isInitializing: false
         };
 
-        // إعداد مستمعات الأحداث
+        // 🎯 مستمعات الأحداث
         this._eventHandlers = {
             refreshData: () => this._refreshAppData(),
             tabChange: (tabId) => this._handleTabChange(tabId),
@@ -134,32 +131,25 @@ export class AppManager {
         this.initComponents();
     }
 
-    /* ---------------------------------- */
-    /* --------- Initialization --------- */
-    /* ---------------------------------- */
-
     /**
      * تهيئة المكونات الأساسية
-     * @private
-     * @returns {Promise<void>}
      */
     async initComponents() {
         if (this.initState.isInitializing) return;
         this.initState.isInitializing = true;
 
         try {
-            // تهيئة المكونات بالترتيب الصحيح
-            //this._initDialogs();
-            //await this._setupTabs();
+            // يتم تحميل الأيقونات الأساسية وتخزينها في Service Worker Cache عبر UnifiedIconSystem
+            // يتم تضمين X-Timestamp تلقائيًا لضمان صلاحية التخزين وتحليل الأداء
             this._setupEventListeners();
             await this.preloadEssentialIcons();
-            this.initTabs();
+            await this.initTabs();
 
             this.initState.loaded = true;
             this.initState.error = null;
         } catch (error) {
             this.initState.error = error;
-            console.error('فشل تهيئة التطبيق:', error);
+            console.error('❌ فشل تهيئة التطبيق:', error);
             this._showFatalError(error);
         } finally {
             this.initState.isInitializing = false;
@@ -167,8 +157,8 @@ export class AppManager {
     }
 
     /**
-     * تحميل مسبق للأيقونات الأساسية المستخدمة في الواجهة
-     * @returns {Promise<void>}
+     * تحميل مسبق للأيقونات الأساسية
+     * يدعم تعدد الأيقونات عبر cardsData[].icons[]
      */
     async preloadEssentialIcons() {
         const essentialIcons = [
@@ -181,63 +171,54 @@ export class AppManager {
 
     /**
      * تهيئة التبويبات وربطها بالنظام الموحد
-     * @private
      */
     async initTabs() {
         this.cardsData = await fetchCards();
         this.appsData = await _fetchAppsData();
+
         this.tabs = {
             home: new HomeTab({
                 taber: this.taber,
                 containerId: 'home-tab-cards-container',
                 whichCardClick: this._whichCardClick,
                 options: {
-                    apiEndpoint: '/api/cards',
                     cardsData: this.cardsData,
                     homeTabIcons: this.homeTabIcons,
                     iconRenderer: this.iconRenderer,
                     fallbackUrl: '/icons/appstab/apps_tab.png',
-                    themeColor: '#6a5acd'
+                    themeColor: DEFAULT_CONFIG.themeColor
                 }
             }),
             apps: new AppsTab({
                 containerId: 'apps-tab-container',
                 options: {
-                    appsTabIcons: this.appsTabIcons,
                     appsData: this.appsData,
+                    appsTabIcons: this.appsTabIcons,
+                    iconRenderer: this.iconRenderer,
+                    fallbackUrl: '/icons/apps/default.png',
                     onCardClick: (app) => this.handleAppsCardsClick(app),
-                    themeColor: '#6a5acd'
+                    themeColor: DEFAULT_CONFIG.themeColor
                 }
             })
         };
     }
 
-    /* ---------------------------------- */
-    /* --------- Event Handling --------- */
-    /* ---------------------------------- */
-
     /**
      * إعداد مستمعات الأحداث
-     * @private
      */
     _setupEventListeners() {
-        // مستمع تغيير التبويب
         this.taber.onTabChange(this._eventHandlers.tabChange);
 
-        // زر الرجوع
         const backBtn = document.getElementById('back-btn');
         if (backBtn) {
             backBtn.addEventListener('click', this._eventHandlers.backButton);
         }
 
-        // حدث تحديث البيانات
         document.addEventListener('refreshData', this._eventHandlers.refreshData);
     }
 
     /**
-     * معالجة تغيير التبويب
-     * @private
-     * @param {string} tabId - معرف التبويب
+     * التعامل مع تغيير التبويب
      */
     _handleTabChange(tabId) {
         document.querySelector('.sidebar')?.classList.remove('active');
@@ -249,36 +230,23 @@ export class AppManager {
         }
     }
 
+    /**
+     * التعامل مع النقر على بطاقة في تبويب الصفحة الرئيسية
+     */
     _whichCardClick(index, card) {
         console.log('AppManager_whichCardClick :: Card Clicked : ', card.title, ' ,index ' + index);
     }
 
     /**
-     * معالجة النقر على بطاقة التطبيق
-     * @private
-     * @param {Object} app - بيانات التطبيق
-     */
-    _handleAppCardClick(app) {
-        try {
-            this.dialogs.purchase.open(app);
-        } catch (error) {
-            console.error('فشل فتح مربع حوار الشراء:', error);
-            this._showToast('فشل فتح صفحة الشراء', 'error');
-        }
-    }
-
-    /**
-     * معالجة النقر على بطاقة تطبيق
-     * @param {Object} app - بيانات التطبيق
+     * التعامل مع النقر على بطاقة تطبيق
      */
     handleAppsCardsClick(app) {
         console.log('تم النقر على التطبيق:', app.name);
-        // لاحقًا: dialogpurchase.open(app) أو favoritesManager.add(app)
+        // لاحقًا: this.dialogs.purchase.open(app) أو favoritesManager.add(app)
     }
 
     /**
      * تنظيف الكاش والموارد عند الإغلاق
-     * @public
      */
     destroy() {
         this.homeTabIcons.clearCache();

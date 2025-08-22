@@ -232,6 +232,8 @@ app.get('/health', (req, res) => {
 app.use((err, req, res, next) => {
   console.error('❌ خطأ في الخادم:', err.stack);
   res.status(500).json({ error: 'حدث خطأ في الخادم' });
+  console.log('Error::: ', req);
+  
 });
 
 // =======================

@@ -8,26 +8,26 @@ router.get('/', (req, res) => {
     {
         whichTab: "apps",
         title: "التطبيقات",
-        icon: "/icons/hometab/apps_tab.png",
-        logo: "/assets/images/logo.png"
+        icon: "apps_tab.png",
+        logo: "logo.png"
       },
       {
-        whichTab: "smallCards",
+        whichTab: "games",
         title: "الألعاب",
-        icon: "/assets/images/logo.png",
-        logo: "/assets/images/favicon.ico"
+        icon: "games_tab.png",
+        logo: "logo.png"
       },
       {
-        whichTab: "smallCards",
+        whichTab: "cryptos",
         title: "العملات الرقمية",
-        icon: "/assets/images/logo.png",
-        logo: "/assets/images/favicon.ico"
+        icon: "cryptos_tab.png",
+        logo: "logo.png"
       },
       {
-        whichTab: "smallCards",
+        whichTab: "balances",
         title: "تعبئة رصيد",
-        icon: "/assets/images/logo.png",
-        logo: "/assets/images/favicon.ico"
+        icon: "balance_tab.png",
+        logo: "logo.png"
       }
   ]);
 });

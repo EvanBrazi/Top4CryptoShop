@@ -2,11 +2,11 @@
  * @file hometab.js
  * @module HomeTab
  * @author Evan Brazi
- * @version 4.2.0
- * @description تبويب الصفحة الرئيسية لعرض البطاقات الأساسية باستخدام نظام الأيقونات الموحد
+ * @version 4.3.0
+ * @description تبويب الصفحة الرئيسية لعرض البطاقات الأساسية باستخدام نظام الأيقونات الموحد مع دعم تعدد الأيقونات وتحليل الأداء
  * @license MIT
  * @created 2024-12-01
- * @updated 2025-08-20
+ * @updated 2025-08-22
  */
 
 class HomeTab {
@@ -18,8 +18,10 @@ class HomeTab {
    * @param {Function} [config.whichCardClick] - دالة يتم استدعاؤها عند النقر على بطاقة
    * @param {Object} [config.options={}] - إعدادات إضافية
    * @param {Object} [config.options.homeTabIcons] - نظام الأيقونات الموحد
+   * @param {Object} [config.options.iconRenderer] - وحدة عرض الأيقونات
    * @param {Array} [config.options.cardsData] - بيانات البطاقات
    * @param {string} [config.options.CSSLink='card-grid.css'] - مسار ملف CSS
+   * @param {string} [config.options.fallbackUrl='/icons/appstab/apps_tab.png'] - أيقونة بديلة عند الفشل
    */
   constructor({ taber, containerId, whichCardClick, options = {} }) {
     if (!taber) throw new Error('Taber instance is required');
@@ -29,8 +31,7 @@ class HomeTab {
     if (!this.container) throw new Error(`Container "${containerId}" not found`);
 
     this.whichCardClick = typeof whichCardClick === 'function' ? whichCardClick : () => { };
-    this.homeTabIcons = options.homeTabIcons;
-    this.iconRenderer = options.iconRenderer;
+    this.homeIconLoader = options.homeIconLoader;
 
     this.options = {
       cardsData: options.cardsData || this._defaultCards(),
@@ -42,7 +43,7 @@ class HomeTab {
   }
 
   /**
-   * عرض حالة التحميل المؤقت
+   * عرض هيكل تحميل مؤقت
    * @private
    */
   _renderSkeletonLoading() {
@@ -54,11 +55,7 @@ class HomeTab {
       </div>
     `;
     this.container.appendChild(skeleton);
-
-    // إزالة الهيكل بعد التحميل
-    setTimeout(() => {
-      skeleton.remove();
-    }, 500);
+    setTimeout(() => skeleton.remove(), 500);
   }
 
   /**
@@ -95,16 +92,16 @@ class HomeTab {
   }
 
   /**
- * عرض البطاقات في الشبكة
- * @public
- */
+   * عرض البطاقات في الشبكة
+   * @public
+   */
   async render() {
     this.container.innerHTML = '';
     const grid = document.createElement('div');
     grid.className = 'card-grid-container';
 
     const cardElements = await Promise.all(
-      this.options.cardsData.map((card, index) => this._createCardElement(card, index))
+      this.options.cardsData.map(async (card, index) => await this._createCardElement(card, index))
     );
 
     cardElements.forEach(el => {
@@ -131,43 +128,44 @@ class HomeTab {
     el.setAttribute('tabindex', '0');
     el.setAttribute('aria-label', card.title || 'بطاقة');
 
-    // أيقونة رئيسية
-    if (card.icon) {
+    // 🖼️ تحميل الأيقونة
+    const iconName = card.icon || (Array.isArray(card.icons) ? card.icons[0] : null);
+    console.log('HomeTab ::: _createCardElement : iconName : ', iconName);
+
+    if (iconName) {
       const icon = document.createElement('img');
       icon.className = 'card-icon';
       icon.alt = card.title || 'Icon';
       icon.loading = 'lazy';
-      const blob = await this.homeTabIcons.getIcon(card.icon);
-      // استخدام renderer
-      this.iconRenderer.render(blob, this.options.fallbackUrl, icon);
-      el.appendChild(icon);
+
+      try {
+        this.appsIconLoader.render(iconName, img, this.options.fallbackUrl);
+
+        icon.onload = () => {
+          console.log('✅ تم تحميل الصورة بنجاح:', icon.src);
+        };
+        icon.onerror = () => {
+          console.error('❌ فشل تحميل الصورة:', icon.src);
+        };
+
+        el.appendChild(icon);
+      } catch (error) {
+        console.warn('❌ فشل تحميل الأيقونة:', iconName, error);
+      }
     }
 
-    // عنوان البطاقة
+    // 📝 عنوان البطاقة
     const title = document.createElement('h3');
     title.className = 'card-title';
     title.textContent = card.title || 'بطاقة';
     el.appendChild(title);
 
-    el.style.border = '2px solid red';
+    // 💡 تفاعل المستخدم
     el.style.cursor = 'pointer';
-
-    console.log('Binding click for', card.title)
-    el.addEventListener('click', () => {
-      try {
-        console.log('Card Clicked : ', card.title, ' ,index ' + index);
-        this._handleCardClick(index, card);
-      } catch (err) {
-        console.error('❌ خطأ أثناء التعامل مع النقر:', err);
-      }
-    });
-
-    // تفاعل لوحة المفاتيح
+    el.addEventListener('click', () => this._handleCardClick(index, card));
     el.addEventListener('keydown', (e) => {
-      console.log('Card Clicked : ', card.title, ' ,index ' + index);
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
-        console.log('Card Clicked : ', card.title, ' ,index ' + index);
         this._handleCardClick(index, card);
       }
     });
@@ -180,11 +178,7 @@ class HomeTab {
    * @private
    */
   _handleCardClick(index, card) {
-    console.log('Card Click : ', index, card.title);
-    // إزالة التفعيل من جميع البطاقات
     this.container.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
-
-    // تفعيل البطاقة المختارة
     const clickedCard = this.container.querySelector(`.card[data-index="${index}"]`);
     if (clickedCard) clickedCard.classList.add('active');
 

@@ -1,30 +1,20 @@
 /**
  * @file sw.js
- * @description Service Worker لتخزين الأيقونات والصور الأساسية، مع دعم fallback، وتحسين الأداء، وإرسال تقارير إلى لوحة التحكم.
- * @version 4.4.0
+ * @description Service Worker لتخزين الأيقونات والصور الأساسية، مع دعم fallback، وتحسين الأداء
+ * @version 5.0.0
  * @license MIT
  * @author Evan Brazi
- * @created 2024-01-01
  * @updated 2025-08-22
- *
- * ✅ الميزات:
- * - تخزين مسبق للصور الأساسية
- * - دعم تحميل الأيقونات من مسارات مشفرة
- * - استراتيجية Network First للطلبات العامة
- * - إرسال تقارير أداء إلى لوحة التحكم
- * - دعم fallback عند الفشل
- * - تنظيف الكاش القديم عند التفعيل
- * - إضافة توقيت التخزين (X-Timestamp) لتحليل صلاحية الأيقونات
  */
 
-const CACHE_NAME = 'top4crypto-v4';
+const CACHE_NAME = 'top4crypto-v5';
 const PRECACHE_URLS = [
   '/icons/apps/default.png',
   '/assets/images/logo.png',
   '/assets/images/favicon.ico'
 ];
 
-// 🧹 تنظيف الأيقونات المنتهية الصلاحية بناءً على X-Timestamp
+// تنظيف الأيقونات المنتهية الصلاحية
 async function cleanOldIcons(ttl = 24 * 60 * 60 * 1000) {
   const cache = await caches.open(CACHE_NAME);
   const keys = await cache.keys();
@@ -32,6 +22,8 @@ async function cleanOldIcons(ttl = 24 * 60 * 60 * 1000) {
 
   for (const request of keys) {
     const response = await cache.match(request);
+    if (!response) continue;
+    
     const dateHeader = response.headers.get('X-Timestamp');
     if (dateHeader && now - Number(dateHeader) > ttl) {
       await cache.delete(request);
@@ -40,7 +32,7 @@ async function cleanOldIcons(ttl = 24 * 60 * 60 * 1000) {
   }
 }
 
-// 📦 تثبيت الموارد الأساسية مسبقًا
+// تثبيت الموارد الأساسية مسبقًا
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -49,7 +41,7 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// 🔄 تفعيل الخدمة وتنظيف الكاشات القديمة
+// تفعيل الخدمة وتنظيف الكاشات القديمة
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
@@ -57,42 +49,26 @@ self.addEventListener('activate', (event) => {
         keys.map(key => key !== CACHE_NAME && caches.delete(key))
       ))
       .then(() => self.clients.claim())
+      .then(() => cleanOldIcons())
   );
 });
 
-// 📤 إرسال تقرير إلى لوحة التحكم (داخلي وخارجي)
-function reportToAdmin(data) {
-  // إرسال داخلي إلى الصفحات المفتوحة
-  self.clients.matchAll().then(clients => {
-    clients.forEach(client => {
-      client.postMessage({ type: 'SW_REPORT', payload: data });
-    });
-  });
-
-  // إرسال خارجي إلى لوحة التحكم
-  fetch('http://localhost:10000/admin', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  });
-}
-
-// 🖼️ معالجة طلبات الأيقونات المشفرة
+// معالجة طلبات الأيقونات المشفرة
 async function handleIconRequest(request) {
-  const cacheKey = new URL(request.url).pathname;
-  console.log('handleIconRequest ::: cacheKey : ', cacheKey);
+  const url = new URL(request.url);
+  const cacheKey = url.pathname;
+  
   try {
     const cache = await caches.open(CACHE_NAME);
     const cachedResponse = await cache.match(cacheKey);
     if (cachedResponse) return cachedResponse;
 
     // استخراج اسم الأيقونة من المفتاح المشفر
-    const encodedName = cacheKey.replace('/cache', '');
+    const encodedName = cacheKey.replace('/cache/', '');
     const iconName = atob(encodedName);
-    console.log('handleIconRequest ::: iconName : ', iconName);
     const iconUrl = `/icons/${iconName}`;
 
-    const response = await fetch(iconName);
+    const response = await fetch(iconUrl);
     if (!response.ok) throw new Error(`Fetch failed with status ${response.status}`);
 
     const contentType = response.headers.get('Content-Type');
@@ -120,12 +96,12 @@ async function handleIconRequest(request) {
   }
 }
 
-// 🌐 معالجة الطلبات العامة باستراتيجية Network First
+// معالجة الطلبات العامة باستراتيجية Network First
 async function handleNormalRequest(request) {
   try {
     const response = await fetch(request);
 
-    // ✅ تخزين فقط طلبات GET التي تحتوي على صور
+    // تخزين فقط طلبات GET التي تحتوي على صور
     if (request.method === 'GET') {
       const contentType = response.headers.get('Content-Type');
       if (contentType?.startsWith('image/')) {
@@ -151,24 +127,12 @@ async function handleNormalRequest(request) {
   }
 }
 
-
-// 🧠 تحديد نوع الطلب ومعالجته
+// تحديد نوع الطلب ومعالجته
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
-  if (url.pathname.startsWith('/cache')) {
+  if (url.pathname.startsWith('/cache/')) {
     event.respondWith(handleIconRequest(event.request));
   } else {
     event.respondWith(handleNormalRequest(event.request));
   }
 });
-
-// 📊 مراقبة التخزين (اختياري، يمكن تفعيله من الصفحة)
-setInterval(() => {
-  navigator.storage?.estimate?.().then(({ usage, quota }) => {
-    /**reportToAdmin({
-      type: 'storage',
-      usage: (usage / 1024 / 1024).toFixed(2) + ' MB',
-      quota: (quota / 1024 / 1024).toFixed(2) + ' MB'
-    });**/
-  });
-}, 30000);

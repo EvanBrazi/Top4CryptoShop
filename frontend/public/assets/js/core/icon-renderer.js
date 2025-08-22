@@ -1,53 +1,42 @@
 /**
  * @file icon-renderer.js
- * @description وحدة عرض الأيقونات باستخدام Blob أو objectURL، مع دعم fallback ذكي وتكامل مع UnifiedIconSystem
+ * @description وحدة عرض الأيقونات باستخدام Blob أو objectURL، مع دعم fallback ذكي
  * @version 2.0.0
  * @license MIT
+ * @author Evan Brazi
+ * @updated 2025-08-22
  */
+
 /**
  * @class IconRenderer
- * @description وحدة مسؤولة عن عرض الأيقونات داخل عناصر <img> باستخدام Blob أو objectURL، مع دعم fallback ذكي عند الفشل.
- * @method render - عرض الأيقونة من Blob داخل عنصر <img>
- * @method renderFromSystem - تحميل الأيقونة من النظام الموحد وعرضها مباشرة
- * @method _generateFallbackIcon - توليد صورة بديلة ديناميكية باستخدام Canvas
+ * @description وحدة مسؤولة عن عرض الأيقونات داخل عناصر <img> باستخدام Blob أو objectURL
  */
 export class IconRenderer {
     /**
-     * @constructor
-     * @param {string|HTMLElement} target - عنصر <img> أو محدد CSS
-     * @throws {Error} إذا لم يكن العنصر صالحًا
-     */
-    constructor(target) {
-        this.imgElement = typeof target === 'string'
-            ? document.querySelector(target)
-            : target;
-
-        if (!target && !this.imgElement && !(this.imgElement instanceof HTMLImageElement)) {
-            //throw new Error('❌ IconRenderer requires a valid <img> element');
-        }
-    }
-
-    /**
      * توليد صورة fallback ديناميكية باستخدام Canvas
-     * @param {string} title - رمز يظهر داخل الصورة (مثل أول حرف من اسم التطبيق)
+     * @param {string} text - النص الذي سيظهر داخل الصورة
      * @param {string} bgColor - لون الخلفية
      * @param {string} textColor - لون النص
      * @returns {string} رابط DataURL للصورة
      */
-    _generateFallbackIcon(title = '؟', bgColor = '#6a5acd', textColor = '#fff') {
+    generateFallbackIcon(text = '?', bgColor = '#6a5acd', textColor = '#fff') {
         const canvas = document.createElement('canvas');
         canvas.width = 64;
         canvas.height = 64;
         const ctx = canvas.getContext('2d');
 
+        // خلفية مستديرة
         ctx.fillStyle = bgColor;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.beginPath();
+        ctx.arc(32, 32, 30, 0, Math.PI * 2);
+        ctx.fill();
 
+        // نص في المركز
         ctx.fillStyle = textColor;
-        ctx.font = 'bold 32px sans-serif';
+        ctx.font = 'bold 28px sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(title[0], canvas.width / 2, canvas.height / 2);
+        ctx.fillText(text[0].toUpperCase(), 32, 32);
 
         return canvas.toDataURL();
     }
@@ -55,47 +44,49 @@ export class IconRenderer {
     /**
      * عرض الأيقونة من Blob داخل عنصر <img>
      * @param {Blob|null} blob - بيانات الصورة
-     * @param {string} fallbackText - رمز fallback عند الفشل
      * @param {HTMLImageElement} imgElement - عنصر <img> الذي سيتم عرض الصورة فيه
+     * @param {string} fallbackText - نص بديل عند الفشل
      */
-    async render(blob, fallbackText = '!', imgElement = this.imgElement) {
-        console.log('IconRenderer :: render : ', blob);
-        
-        if (!(imgElement instanceof HTMLImageElement)) return;
-
-        if (!(blob instanceof Blob)) {
-            imgElement.src = this._generateFallbackIcon(fallbackText);
+    render(blob, imgElement, fallbackText = '!') {
+        if (!(imgElement instanceof HTMLImageElement)) {
+            console.error('❌ عنصر الصورة غير صالح');
             return;
         }
 
-        const objectUrl = URL.createObjectURL(blob);
-        imgElement.src = objectUrl;
+        // إذا كان Blob صالحاً، إنشاء objectURL وعرضه
+        if (blob instanceof Blob) {
+            const objectUrl = URL.createObjectURL(blob);
+            imgElement.src = objectUrl;
 
-        imgElement.onload = () => {
-            setTimeout(() => URL.revokeObjectURL(objectUrl), 3000);
-        };
+            // تنظيف الذاكرة بعد التحميل
+            imgElement.onload = () => {
+                setTimeout(() => URL.revokeObjectURL(objectUrl), 100);
+            };
 
-        imgElement.onerror = () => {
-            imgElement.src = this._generateFallbackIcon(fallbackText);
-        };
-    }
-
-    /**
-     * تحميل الأيقونة من النظام الموحد وعرضها مباشرة
-     * @param {UnifiedIconSystem} iconSystem - النظام الموحد للأيقونات
-     * @param {string} iconName - اسم الأيقونة المطلوبة
-     * @param {string} fallbackText - رمز fallback عند الفشل
-     */
-    async renderFromSystem(iconSystem, iconName, fallbackText = '!', imgElement = this.imgElement) {
-        console.log('IconRenderer :: renderFromSystem : ', iconName);
-        if (!(imgElement instanceof HTMLImageElement)) return;
-
-        try {
-            const blob = await iconSystem.getIcon(iconName);
-            await his.render(blob, fallbackText, imgElement);
-        } catch (err) {
-            imgElement.src = this._generateFallbackIcon(fallbackText);
+            imgElement.onerror = () => {
+                URL.revokeObjectURL(objectUrl);
+                imgElement.src = this.generateFallbackIcon(fallbackText);
+            };
+        } else {
+            // استخدام fallback إذا لم يكن Blob صالحاً
+            imgElement.src = this.generateFallbackIcon(fallbackText);
         }
     }
 
+    /**
+     * تحميل وعرض الأيقونة مباشرة من النظام
+     * @param {UnifiedIconSystem} iconSystem - النظام الموحد للأيقونات
+     * @param {string} iconName - اسم الأيقونة المطلوبة
+     * @param {HTMLImageElement} imgElement - عنصر الصورة
+     * @param {string} fallbackText - نص بديل عند الفشل
+     */
+    async renderFromSystem(iconSystem, iconName, imgElement, fallbackText = '!') {
+        try {
+            const blob = await iconSystem.getIcon(iconName);
+            this.render(blob, imgElement, fallbackText);
+        } catch (err) {
+            console.error(`❌ Failed to render icon: ${iconName}`, err);
+            imgElement.src = this.generateFallbackIcon(fallbackText);
+        }
+    }
 }

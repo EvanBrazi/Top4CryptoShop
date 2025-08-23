@@ -85,6 +85,7 @@ class UserManager {
       const validation = this.validateUser(userData);
 
       if (validation.valid) {
+        showToast(`اهلاً بعودتك ${userData.name} 👋`);
         this.#currentUser = userData;
         await this.updateUserProfile();
       } else {

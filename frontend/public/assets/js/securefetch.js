@@ -3,7 +3,6 @@
  * @description 🛡️ وحدة إرسال الطلبات مع حماية CSRF تلقائية
  * @version 1.0.0
  */
-import { checkSession } from "./auth.js";
 
 function getCsrfTokenFromCookie() {
     const match = document.cookie.match(/(?:^|;\s*)x-csrf-token=([^;]+)/);

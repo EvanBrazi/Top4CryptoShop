@@ -1,7 +1,6 @@
 import { login } from './auth.js';
 
 import { showToast } from "./utils/toast.js";
-import { checkSession } from './auth.js';
 // ✅ عناصر الواجهة
 const spinner = document.getElementById('spinner');
 const btnText = document.getElementById('btnText');
@@ -143,7 +142,6 @@ async function loginUser(username, password) {
 
             const redirectPath = result.redirectTo || roleRedirects[result.user.role] || '/homepage.html';
             window.location.href = redirectPath;
-            showToast(`اهلاً بعودتك ${username} 👋`);
         }, 1500);
 
     } catch (err) {

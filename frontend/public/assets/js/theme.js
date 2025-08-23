@@ -1,4 +1,4 @@
-import { UserManager } from "./usermanager.js";
+import UserManager from "./usermanager.js";
 // نظام إدارة الثيمات
 export function initTheme() {
     const savedTheme = localStorage.getItem('theme') || 'day';

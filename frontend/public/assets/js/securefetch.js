@@ -29,15 +29,8 @@ export async function secureFetch(url, options = {}) {
         ...(csrfToken ? { 'x-csrf-token': csrfToken } : {})
     };
 
-    const res = await secureFetch(url, {
+    return fetch(url, {
         ...options,
         headers
     });
-    const data = await res.json();
-    console.log('📦 استجابة السيرفر:', data);
-    return res;
-    /**return fetch(url, {
-        ...options,
-        headers
-    });*/
 }

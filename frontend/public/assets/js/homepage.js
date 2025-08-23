@@ -11,7 +11,7 @@
  * - إضافة التوثيق الشامل
  * - تحسين إدارة الأحداث
  */
-import { UserManager } from "./usermanager.js";
+import UserManager from "./usermanager.js";
 import { Taber } from "./core/taber.js";
 import { AppManager } from "./appmanager.js";
 import { checkSession } from './auth.js';
@@ -29,6 +29,7 @@ const APP_CONFIG = {
 
 class HomePage {
     constructor() {
+        this.userManager = UserManager.getInstance(); 
         this.domElements = {};
         this.eventListeners = {};
         this.components = {};
@@ -122,8 +123,7 @@ class HomePage {
  */
     async _loadUserData() {
         try {
-            const userManager = UserManager.getInstance(); 
-            await userManager.loadUser(); // يفترض أن um.user يحتوي على البيانات الآن
+            await this.userManager.loadUser(); // يفترض أن um.user يحتوي على البيانات الآن
             //this._updateUserUI();
         } catch (err) {
             console.error('فشل تحميل بيانات المستخدم:', err);
@@ -299,7 +299,7 @@ class HomePage {
      */
     _setupLogoutHandler() {
         if (this.domElements.logoutBtn) {
-            this.domElements.logoutBtn.addEventListener('click', um.handleLogout);
+            this.domElements.logoutBtn.addEventListener('click', this.userManager.handleLogout);
         }
     }
 

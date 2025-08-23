@@ -84,7 +84,7 @@ export async function checkSession(expectedRole = null) {
 
         return data.user;
     } catch (error) {
-        console.error('Session check failed:', err);
+        console.error('Session check failed:', error);
         window.location.href = '/401.html';
         return null;
     }

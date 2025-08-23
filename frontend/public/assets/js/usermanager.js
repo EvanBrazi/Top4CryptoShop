@@ -93,7 +93,6 @@ class UserManager {
       const validation = this.validateUser(userData);
 
       if (validation.valid) {
-        showToast(`اهلاً بعودتك ${userData.name} 👋`);
         this.#currentUser = userData;
         await this.updateUserProfile();
       } else {
@@ -256,8 +255,6 @@ class UserManager {
         return;
       }
 
-      console.log(this instanceof UserManager); // يجب أن يكون true
-      //if (this instanceof UserManager) this.#currentUser = null;
       UserManager.getInstance().#currentUser = null;
       showToast(result.message || 'تم تسجيل الخروج بنجاح', 'success');
       clearBrowserData(false);

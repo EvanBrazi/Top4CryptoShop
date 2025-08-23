@@ -2,6 +2,8 @@
 
 /* شبكة التطبيقات */
 .apps-grid {
+  opacity: 1;
+  visibility: visible;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   gap: 16px;
@@ -10,19 +12,27 @@
 }
 
 /* بطاقة التطبيق */
-.app-card {
+.app-card[data-visible="true"] {
   background: #fff;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   cursor: pointer;
   text-align: center;
   padding: 12px;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  opacity: 1;
+  transform: scale(1);
+  animation: fadeIn 0.4s ease-in;
 }
+
+.app-icon.visible {
+  opacity: 1;
+}
+
 
 .app-card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
 }
 
 /* أيقونة التطبيق */
@@ -38,6 +48,8 @@
   object-fit: contain;
   border-radius: 8px;
   outline: 2px solid red;
+  opacity: 1;
+  transition: opacity 0.3s ease-in-out;
 }
 
 /* اسم التطبيق */
@@ -49,19 +61,26 @@
 
 /* تأثير دخول */
 @keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* الوضع الداكن */
 body.dark-mode .app-card {
   background: #1e1e1e;
   color: #eee;
-  box-shadow: 0 4px 12px rgba(255,255,255,0.05);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.05);
 }
 
 body.dark-mode .app-card:hover {
-  box-shadow: 0 8px 20px rgba(255,255,255,0.1);
+  box-shadow: 0 8px 20px rgba(255, 255, 255, 0.1);
 }
 
 .card.active {

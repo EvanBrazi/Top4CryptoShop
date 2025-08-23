@@ -7,7 +7,6 @@
  * @license MIT
  * @updated 2025-08-22
  */
-
 export class AppsTab {
     /**
      * @constructor
@@ -16,7 +15,11 @@ export class AppsTab {
     constructor({ containerId, options = {} }) {
         this.container = document.getElementById(containerId);
         if (!this.container) throw new Error(`Container "${containerId}" not found`);
-        this._renderSkeleton();
+        // ✅ لا تعرض الهيكل المؤقت إذا كانت البطاقات موجودة مسبقًا
+        const hasCards = this.container.querySelectorAll('.app-card').length > 0;
+        if (!hasCards) {
+            this._renderSkeleton();
+        }
         this.config = {
             appsData: options.appsData || [],
             appsIconLoader: options.appsIconLoader,
@@ -26,7 +29,7 @@ export class AppsTab {
                 ? options.onCardClick
                 : () => console.log('تم النقر على التطبيق')
         };
-
+        this.isInitialized = false;
         this.observer = null;
         this.init();
     }
@@ -37,11 +40,18 @@ export class AppsTab {
      * @returns {Promise<void>}
      */
     async init() {
+        if (this.isInitialized) return;
         this._injectStyles();
+        // ✅ تحقق من وجود شبكة التطبيقات مسبقًا
+        if (this.container.querySelector('.apps-grid')) {
+            console.log('⚠️ الشبكة موجودة مسبقًا، لن تتم إعادة التهيئة');
+            return;
+        }
         await this._renderAppsGrid();
-        this._setupLazyLoading();
+        await this._setupLazyLoading();
 
         console.log('✅ تم تهيئة تبويب التطبيقات');
+        this.isInitialized = true;
     }
 
     /**
@@ -62,13 +72,12 @@ export class AppsTab {
      * @returns {Promise<void>}
      */
     async _renderAppsGrid() {
-        this.container.innerHTML = '';
         const grid = document.createElement('div');
         grid.className = 'apps-grid';
 
         // إنشاء البطاقات
         const cardElements = await Promise.all(
-            this.config.appsData.map(app => this._createAppCard(app))
+            await this.config.appsData.map(async app => await this._createAppCard(app))
         );
 
         // إضافة البطاقات إلى الشبكة
@@ -78,7 +87,8 @@ export class AppsTab {
                 fragment.appendChild(card);
             }
         });
-
+        const skeleton = this.container.querySelector('.skeleton-grid');
+        if (skeleton) skeleton.remove();
         grid.appendChild(fragment);
         this.container.appendChild(grid);
     }
@@ -125,7 +135,7 @@ export class AppsTab {
      * تفعيل تحميل الأيقونات عند ظهور البطاقة
      * @private
      */
-    _setupLazyLoading() {
+    async _setupLazyLoading() {
         // إيقاف المراقبة السابقة إذا كانت موجودة
         if (this.observer) {
             this.observer.disconnect();
@@ -146,8 +156,8 @@ export class AppsTab {
         });
 
         // بدء مراقبة جميع البطاقات
-        this.container.querySelectorAll('.app-card').forEach(card => {
-            this.observer.observe(card);
+        this.container.querySelectorAll('.app-card').forEach(async card => {
+            await this.observer.observe(card);
         });
     }
 
@@ -194,7 +204,6 @@ export class AppsTab {
         link.href = '/assets/css/apps-tab.css'; // تأكد من المسار الصحيح حسب بنية مشروعك
         document.head.appendChild(link);
     }
-
 
     /**
      * تحديث بيانات التطبيقات

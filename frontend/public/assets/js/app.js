@@ -1,5 +1,4 @@
-import { checkSession } from './auth.js';
-import { STORAGE_KEYS } from './utils/appUtils.js';
+import { STORAGE_KEYS, isValidToken } from './utils/appUtils.js';
 // حالة التطبيق
 const AppState = {
     isSidebarOpen: false,
@@ -171,8 +170,11 @@ document.addEventListener('DOMContentLoaded', initApp);
 document.addEventListener('DOMContentLoaded', function () {
     const TOKEN = localStorage.getItem(STORAGE_KEYS.USER_TOKEN);
     (async () => {
-        const user = await checkSession(); // لا حاجة لدور معين
-        if (TOKEN && user) window.location.href = '/homepage.html';
+        console.log('Token : ', await isValidToken(TOKEN));
+        if (await isValidToken(TOKEN)) {
+            alert('You will go home!', TOKEN)
+            window.location.href = '/homepage.html';
+        }
     })();
     // زر تسجيل الدخول
     const loginBtn = document.getElementById('loginBtn');

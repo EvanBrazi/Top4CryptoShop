@@ -1,5 +1,6 @@
-import { login, checkSession } from './auth.js';
+import { login } from './auth.js';
 import { STORAGE_KEYS, isValidToken } from './utils/appUtils.js';
+import { showToast } from './utils/toast.js';
 // ✅ عناصر الواجهة
 const spinner = document.getElementById('spinner');
 const btnText = document.getElementById('btnText');
@@ -9,9 +10,7 @@ const submitBtn = document.getElementById('submitBtn');
 document.addEventListener('DOMContentLoaded', () => {
     const TOKEN = localStorage.getItem(STORAGE_KEYS.USER_TOKEN);
     (async () => {
-        console.log('Token : ', await isValidToken(TOKEN));
         if (await isValidToken(TOKEN)) {
-            alert('You will go home!', TOKEN)
             window.location.href = '/homepage.html';
         }
     })();
@@ -145,7 +144,7 @@ async function loginUser(username, password) {
             const redirectPath = result.redirectTo || roleRedirects[result.user.role] || '/homepage.html';
             window.location.href = redirectPath;
         }, 1500);
-
+        alert(`اهلاً بعودتك ${username} 👋`, 5000);
     } catch (err) {
         console.error("🚨 خطأ أثناء تسجيل الدخول:", err);
         showAlert('error', 'فشل تسجيل الدخول', err.message || 'حدث خطأ غير متوقع. حاول لاحقًا.');

@@ -11,7 +11,7 @@
  * - إضافة التوثيق الشامل
  * - تحسين إدارة الأحداث
  */
-import * as um from "./usermanager.js";
+import { UserManager } from "./usermanager.js";
 import { Taber } from "./core/taber.js";
 import { AppManager } from "./appmanager.js";
 import { checkSession } from './auth.js';
@@ -122,7 +122,8 @@ class HomePage {
  */
     async _loadUserData() {
         try {
-            await um.loadUser(); // يفترض أن um.user يحتوي على البيانات الآن
+            const userManager = UserManager.getInstance(); 
+            await userManager.loadUser(); // يفترض أن um.user يحتوي على البيانات الآن
             //this._updateUserUI();
         } catch (err) {
             console.error('فشل تحميل بيانات المستخدم:', err);

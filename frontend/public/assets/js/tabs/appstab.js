@@ -16,7 +16,7 @@ export class AppsTab {
     constructor({ containerId, options = {} }) {
         this.container = document.getElementById(containerId);
         if (!this.container) throw new Error(`Container "${containerId}" not found`);
-
+        this._renderSkeleton();
         this.config = {
             appsData: options.appsData || [],
             appsIconLoader: options.appsIconLoader,
@@ -37,7 +37,6 @@ export class AppsTab {
      * @returns {Promise<void>}
      */
     async init() {
-        this._renderSkeleton();
         this._injectStyles();
         await this._renderAppsGrid();
         this._setupLazyLoading();
@@ -143,7 +142,7 @@ export class AppsTab {
             });
         }, {
             threshold: 0.1,
-            rootMargin: '50px' // تحميل قبل الظهور بـ 50px
+            rootMargin: '100px' // تحميل قبل الظهور بـ 50px
         });
 
         // بدء مراقبة جميع البطاقات

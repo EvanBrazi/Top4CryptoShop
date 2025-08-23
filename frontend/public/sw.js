@@ -67,6 +67,7 @@ async function handleIconRequest(request) {
     const encodedName = cacheKey.replace('/cache/', '');
     const iconName = atob(encodedName);
     const iconUrl = `/icons/${iconName}`;
+    console.warn('SW: handleIconRequest iconName: ', iconUrl);
 
     const response = await fetch(iconUrl);
     if (!response.ok) throw new Error(`Fetch failed with status ${response.status}`);

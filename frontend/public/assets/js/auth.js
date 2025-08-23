@@ -5,6 +5,7 @@
  */
 
 import { secureFetch } from './securefetch.js';
+import { clearBrowserData } from './utils/appUtils.js';
 
 /**
  * تسجيل مستخدم جديد

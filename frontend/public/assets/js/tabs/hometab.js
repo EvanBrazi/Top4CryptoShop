@@ -23,7 +23,7 @@ export class HomeTab {
 
         this.container = document.getElementById(containerId);
         if (!this.container) throw new Error(`Container "${containerId}" not found`);
-
+        this._renderSkeletonLoading();
         this.whichCardClick = typeof whichCardClick === 'function' ? whichCardClick : () => { };
 
         this.options = {
@@ -43,7 +43,6 @@ export class HomeTab {
      * @returns {Promise<void>}
      */
     async _initializeComponent() {
-        this._renderSkeletonLoading();
         try {
             await this._loadCSS();
             await this.render();

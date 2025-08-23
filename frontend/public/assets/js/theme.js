@@ -1,4 +1,4 @@
-import { setUserTheme } from "./usermanager.js";
+import { UserManager } from "./usermanager.js";
 // نظام إدارة الثيمات
 export function initTheme() {
     const savedTheme = localStorage.getItem('theme') || 'day';
@@ -9,10 +9,14 @@ export function initTheme() {
 export function toggleTheme() {
     const currentTheme = document.body.classList.contains('day-theme') ? 'day' : 'night';
     const newTheme = currentTheme === 'day' ? 'night' : 'day';
+
     document.body.classList.remove(`${currentTheme}-theme`);
     document.body.classList.add(`${newTheme}-theme`);
     localStorage.setItem('theme', newTheme);
-    setUserTheme(newTheme);
+
+    const userManager = UserManager.getInstance();
+    const themeValue = newTheme === 'night' ? 1 : 0;
+    userManager.setUserTheme(themeValue);
 }
 
 export function toggleDBTheme (userDBTheme) {

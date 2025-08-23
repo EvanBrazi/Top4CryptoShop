@@ -30,6 +30,7 @@ export async function secureFetch(url, options = {}) {
 
     return fetch(url, {
         ...options,
-        headers
+        headers,
+        credentials: 'include' // مهم جدًا لإرسال الكوكي
     });
 }

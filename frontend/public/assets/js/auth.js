@@ -53,7 +53,6 @@ export async function logout() {
     return res.json();
 }
 
-
 /**
  * التحقق من الجلسة الحالية
  * @returns {Promise<object>}

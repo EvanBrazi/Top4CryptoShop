@@ -67,6 +67,28 @@ router.put('/:id/balance', verifyToken, async (req, res) => {
   }
 });
 
+// 🎨 تحديث الثيم الخاص بالمستخدم
+router.put('/:id/theme', verifyToken, async (req, res) => {
+  try {
+    const { theme } = req.body;
+    if (typeof theme !== 'number' || ![0, 1].includes(theme)) {
+      return res.status(400).json({ message: 'قيمة الثيم يجب أن تكون 0 أو 1' });
+    }
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      { theme },
+      { new: true } // يرجع النسخة المحدثة
+    );
+
+    if (!updatedUser) return res.status(404).json({ message: 'المستخدم غير موجود' });
+
+    res.json({ message: '✅ تم تحديث الثيم بنجاح', user: updatedUser });
+  } catch (err) {
+    res.status(500).json({ message: '❌ خطأ أثناء تحديث الثيم' });
+  }
+});
+
+
 // 🔓 تفعيل المستخدم
 router.put('/:id/activate', verifyToken, async (req, res) => {
   try {

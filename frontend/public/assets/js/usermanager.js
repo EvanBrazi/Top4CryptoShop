@@ -34,6 +34,14 @@ class UserManager {
     return UserManager.#instance;
   }
 
+  _getToken() {
+    return localStorage.getItem(STORAGE_KEYS.USER_TOKEN);
+  }
+
+  _setUser(newUser) {
+    this.#currentUser = newUser;
+  }
+
   /**
    * التحقق من صحة التوكن
    * @param {string} token
@@ -213,7 +221,7 @@ class UserManager {
     }
 
     try {
-      const res = await secureFetch(`/api/users/${userId}`, {
+      const res = await fetch(`/api/users/${userId}`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}` },
         body: JSON.stringify(this.#currentUser)
@@ -240,16 +248,23 @@ class UserManager {
       if (!confirm('هل أنت متأكد من تسجيل الخروج؟')) return;
 
       const result = await logout();
-      if (!result.success) throw new Error(result.error || 'فشل تسجيل الخروج');
+      console.log('Logout: ', result);
 
-      this.#currentUser = null;
-      this.clearUserUI();
+      if (!result.success) {
+        showToast(result.error || 'فشل تسجيل الخروج', 'error');
+        alert(error.message);
+        return;
+      }
 
-      showToast('تم تسجيل الخروج بنجاح', 'success');
+      console.log(this instanceof UserManager); // يجب أن يكون true
+      //if (this instanceof UserManager) this.#currentUser = null;
+      UserManager.getInstance().#currentUser = null;
+      showToast(result.message || 'تم تسجيل الخروج بنجاح', 'success');
       clearBrowserData(false);
-      setTimeout(() => window.location.replace('/logout.html'), 100);
+      setTimeout(() => window.location.replace(result.redirectTo || '/logout.html'), 100);
     } catch (error) {
-      showToast('حدث خطأ أثناء تسجيل الخروج', 'error');
+      showToast(error.message || 'حدث خطأ أثناء تسجيل الخروج', 'error');
+      alert(error.message);
     }
   }
 
@@ -272,32 +287,34 @@ class UserManager {
     const userAvatar = document.getElementById('user-avatar');
     if (userAvatar) userAvatar.src = this.getDefaultAvatar('زائر');
 
-        toggleDBTheme('day');
+    toggleDBTheme('day');
   }
 
-  /**
-   * تعيين الثيم
-   * @param {number} theme
-   */
-  setUserTheme(theme) {
-    if ([0, 1].includes(theme)) {
-      this.#currentUser.theme = theme;
-      this.saveUser();
-    }
-  }
 
   /**
    * تعيين الرصيد
    * @param {number} balance
    * @returns {boolean}
    */
-  setUserBalance(balance) {
-    const newBalance = parseFloat(balance);
-    if (!isNaN(newBalance) && newBalance >= 0) {
-      this.#currentUser.balance = parseFloat(newBalance.toFixed(2));
-      return true;
+  async setUserTheme(theme) {
+    console.log('Set New Theme : User Id : ', theme, this.#currentUser._id, this.#currentUser.id);
+    if ([0, 1].includes(theme)) {
+      this.#currentUser.theme = theme;
+      this.saveUser();
+
+      try {
+        await fetch(`/api/users/${this.#currentUser._id}/theme`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${this._getToken()}`
+          },
+          body: JSON.stringify({ theme })
+        });
+      } catch (err) {
+        console.error('فشل تحديث الثيم في السيرفر', err);
+      }
     }
-    return false;
   }
 
   /**

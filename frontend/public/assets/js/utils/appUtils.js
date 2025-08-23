@@ -1,4 +1,9 @@
-export function clearBrowserData(withIndexedDB=false) {
+export const STORAGE_KEYS = {
+    USER_ID: 'userId',
+    USER_TOKEN: 'userToken',
+};
+
+export function clearBrowserData(withIndexedDB = false) {
     // حذف التخزين المحلي
     localStorage.clear();
 
@@ -19,4 +24,31 @@ export function clearBrowserData(withIndexedDB=false) {
     }
 
     console.log('🧹 تم مسح كل بيانات المتصفح بنجاح');
+}
+
+/**
+   * التحقق من صحة التوكن
+   * @param {string} token
+   * @returns {Promise<boolean>}
+   */
+export async function isValidToken(token) {
+    if (typeof token !== 'string' || token.length < 16) return false;
+
+    try {
+        const res = await fetch('/api/compare-token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            credentials: 'include',
+            body: JSON.stringify({ clientToken: token })
+        });
+
+        const data = await res.json();
+        return data.match === true;
+    } catch (err) {
+        console.error('❌ خطأ في التحقق من التوكن:', err);
+        return false;
+    }
 }

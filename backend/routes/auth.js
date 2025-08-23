@@ -13,7 +13,7 @@ const User = require('../models/User');
 const RevokedToken = require('../models/RevokedToken');
 const { validateRegister, validateLogin, handleValidationErrors } = require('../middlewares/validation');
 const rateLimit = require('express-rate-limit');
-const { attachCsrfToken } = require('../middlewares/csrfMiddleware');
+const { attachCsrfToken, doubleCsrfProtection } = require('../middlewares/csrfMiddleware');
 const { registerUser } = require('../controllers/authController');
 const { body, validationResult } = require('express-validator');
 const { verifyToken, checkAdmin, requireRole, checkSession } = require('../middlewares/auth');
@@ -194,8 +194,6 @@ router.post('/login',
 // =============================================
 // 🔓 تسجيل الخروج
 // =============================================
-const { doubleCsrfProtection } = require('../middlewares/csrfMiddleware');
-
 router.post('/logout', doubleCsrfProtection, async (req, res) => {
   console.log('🔐 CSRF من الهيدر:', req.headers['x-csrf-token']);
   console.log('🔐 CSRF من الجلسة:', req.session?.csrfToken);
@@ -237,7 +235,7 @@ router.post('/logout', doubleCsrfProtection, async (req, res) => {
     return handleAuthResponse(req, res, {
       success: true,
       message: 'تم تسجيل الخروج بنجاح',
-      redirectTo: '/login.html'
+      redirectTo: '/logout.html'
     });
 
   } catch (err) {

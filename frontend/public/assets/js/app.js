@@ -1,4 +1,5 @@
 import { checkSession } from './auth.js';
+import { STORAGE_KEYS } from './utils/appUtils.js';
 // حالة التطبيق
 const AppState = {
     isSidebarOpen: false,
@@ -168,9 +169,10 @@ document.addEventListener('DOMContentLoaded', initApp);
 
 // تحويل المستخدم عند النقر على أزرار التسجيل/الدخول
 document.addEventListener('DOMContentLoaded', function () {
+    const TOKEN = localStorage.getItem(STORAGE_KEYS.USER_TOKEN);
     (async () => {
         const user = await checkSession(); // لا حاجة لدور معين
-        if (user) window.location.href = '/homepage.html';
+        if (TOKEN && user) window.location.href = '/homepage.html';
     })();
     // زر تسجيل الدخول
     const loginBtn = document.getElementById('loginBtn');

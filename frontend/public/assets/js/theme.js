@@ -6,20 +6,19 @@ export function initTheme() {
     document.body.classList.add(`${savedTheme}-theme`);
 }
 
-export function toggleTheme() {
+export async function toggleTheme() {
     const currentTheme = document.body.classList.contains('day-theme') ? 'day' : 'night';
     const newTheme = currentTheme === 'day' ? 'night' : 'day';
 
     document.body.classList.remove(`${currentTheme}-theme`);
     document.body.classList.add(`${newTheme}-theme`);
     localStorage.setItem('theme', newTheme);
-
     const userManager = UserManager.getInstance();
     const themeValue = newTheme === 'night' ? 1 : 0;
     userManager.setUserTheme(themeValue);
 }
 
-export function toggleDBTheme (userDBTheme) {
+export function toggleDBTheme(userDBTheme) {
     console.log('Theme from User', userDBTheme);
     if (!userDBTheme) return;
     localStorage.setItem('theme', userDBTheme);

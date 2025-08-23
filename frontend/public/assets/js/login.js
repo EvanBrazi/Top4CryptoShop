@@ -1,18 +1,20 @@
-import { login } from './auth.js';
-
-import { showToast } from "./utils/toast.js";
+import { login, checkSession } from './auth.js';
+import { STORAGE_KEYS, isValidToken } from './utils/appUtils.js';
 // ✅ عناصر الواجهة
 const spinner = document.getElementById('spinner');
 const btnText = document.getElementById('btnText');
 const submitBtn = document.getElementById('submitBtn');
 
-const STORAGE_KEYS = {
-    USER_ID: 'userId',
-    USER_TOKEN: 'userToken',
-};
-
 // ✅ تطبيق الثيم المحفوظ
 document.addEventListener('DOMContentLoaded', () => {
+    const TOKEN = localStorage.getItem(STORAGE_KEYS.USER_TOKEN);
+    (async () => {
+        console.log('Token : ', await isValidToken(TOKEN));
+        if (await isValidToken(TOKEN)) {
+            alert('You will go home!', TOKEN)
+            window.location.href = '/homepage.html';
+        }
+    })();
     /**
  * ✅ تطبيق الثيم المحفوظ في localStorage
  * يضبط مظهر الصفحة حسب تفضيل المستخدم

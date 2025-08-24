@@ -1,3 +1,5 @@
+/* ملف login.css */
+/* المتغيرات المحدثة */
 :root {
     /* ألوان الثيم النهاري */
     --day-bg: #f5f5f5;
@@ -40,6 +42,12 @@
     --night-border-menu-link: 1px solid rgba(255, 255, 255, 0.1);
     --night-background-menu-l: rgba(0, 0, 0, 0.2);
     --night-border-left: 1px solid rgba(255, 255, 255, 0.1);
+
+    /* زوايا دائرية */
+    --border-radius: 12px;
+    --input-radius: 8px;
+    --transition-speed: 0.3s;
+    --input-padding: 12px 15px;
 }
 
 /* الثيمات */
@@ -91,83 +99,283 @@
     --sidebar-border-left: var(--night-border-left);
 }
 
+/* الأساسيات */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    transition: all var(--transition-speed) ease;
+}
+
 body {
-    font-family: 'Tahoma', sans-serif;
+    font-family: 'Tahoma', 'Arial', sans-serif;
     background: var(--bg-color);
     color: var(--text-color);
-    height: 100vh;
+    min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    margin: 0;
+    padding: 20px;
     transition: background-color 0.4s ease, color 0.4s ease;
 }
 
 /* الحاوية */
 .container {
-    max-width: 420px;
-    margin: 60px auto;
-    padding: 2rem;
+    max-width: 450px;
+    width: 100%;
+    padding: 2.5rem;
     background-color: var(--card-color);
-    border-radius: 10px;
-    box-shadow: 0 4px 15px var(--shadow-color);
+    border-radius: var(--border-radius);
+    box-shadow: 0 10px 30px var(--shadow-color), 
+                0 5px 15px rgba(0,0,0,0.1),
+                inset 0 1px 0 rgba(255,255,255,0.8);
+    margin: 20px auto;
+    position: relative;
+    overflow: hidden;
     border: 1px solid var(--border-color);
+    transform: perspective(800px) rotateX(5deg);
+}
+
+.night-theme .container {
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+.container::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        to bottom right,
+        rgba(255,255,255,0.2),
+        rgba(255,255,255,0)
+    );
+    transform: rotate(20deg);
+    pointer-events: none;
+}
+
+.night-theme .container::before {
+    background: linear-gradient(
+        to bottom right,
+        rgba(255,255,255,0.05),
+        rgba(255,255,255,0)
+    );
+}
+
+.container:hover {
+    transform: perspective(800px) rotateX(2deg) rotateY(-2deg);
 }
 
 /* العنوان */
 .container h2 {
     text-align: center;
-    margin-bottom: 1.5rem;
-    color: var(--text-color);
+    margin-bottom: 1.8rem;
+    color: var(--primary-color);
+    position: relative;
+    z-index: 1;
+    font-size: 1.8rem;
 }
 
-/* الحقول */
-.form-group {
-    margin-bottom: 1rem;
+/* رسائل الخطأ */
+.general-error {
+    background: rgba(231, 76, 60, 0.1);
+    color: #e74c3c;
+    padding: 12px;
+    border-radius: var(--border-radius);
+    margin-bottom: 20px;
+    text-align: center;
+    display: none;
+    border: 1px solid rgba(231, 76, 60, 0.3);
 }
 
-input {
+.general-error.show {
+    display: block;
+    animation: shake 0.3s ease;
+}
+
+.error-message {
+    color: #e74c3c;
+    font-size: 0.85rem;
+    margin-top: 5px;
+    display: none;
+}
+
+.error-message.show {
+    display: block;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+/* أزرار OAuth */
+.btn-google, .btn-apple {
     width: 100%;
     padding: 12px;
-    font-size: 1rem;
+    margin-bottom: 15px;
+    border-radius: var(--border-radius);
     border: 1px solid var(--border-color);
-    border-radius: 6px;
-    background-color: var(--card-color);
+    background: var(--card-color);
     color: var(--text-color);
-    box-sizing: border-box;
-}
-
-/* الأزرار */
-button {
-    width: 100%;
-    padding: 12px;
-    font-size: 1rem;
-    border: none;
-    border-radius: 6px;
     font-weight: bold;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
-    transition: background-color 0.3s ease;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
-.btn-primary {
-    background-color: var(--primary-color);
-    color: white;
+.btn-google:hover, .btn-apple:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
-.btn-google {
-    background-color: #DB4437;
-    color: white;
-    margin-top: 15px;
+.btn-google:active, .btn-apple:active {
+    transform: translateY(1px);
 }
 
-.btn-apple {
-    background-color: #000000;
+/* الفاصل */
+.links {
+    text-align: center;
+    margin: 20px 0;
+    position: relative;
+    color: var(--text-color);
+    font-size: 0.9rem;
+}
+
+.links::before, .links::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 40%;
+    height: 1px;
+    background: var(--divider-color);
+}
+
+.links::before {
+    right: 0;
+}
+
+.links::after {
+    left: 0;
+}
+
+.links a {
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.links a:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+}
+
+/* مجموعة النموذج */
+.form-group {
+    margin-bottom: 1.5rem;
+    width: 100%;
+    position: relative;
+    z-index: 1;
+}
+
+input {
+    width: 100%;
+    padding: var(--input-padding);
+    border-radius: var(--input-radius);
+    border: 1px solid var(--border-color);
+    background-color: var(--card-color);
+    color: var(--text-color);
+    font-size: 1rem;
+    box-sizing: border-box;
+    transition: all var(--transition-speed);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.night-theme input {
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+}
+
+input:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(212, 167, 106, 0.3),
+                inset 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.night-theme input:focus {
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.3),
+                inset 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* الأزرار */
+button {
+    width: 100%;
+    padding: 14px;
+    background: var(--primary-color);
     color: white;
+    border: none;
+    border-radius: var(--border-radius);
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.2),
+                inset 0 -2px 0 rgba(0,0,0,0.1),
+                inset 0 1px 0 rgba(255,255,255,0.2);
+    transform-style: preserve-3d;
     margin-top: 10px;
+    font-size: 1.1rem;
+}
+
+.night-theme button {
+    box-shadow: 0 4px 0 rgba(42, 82, 128, 0.8),
+                inset 0 -2px 0 rgba(0,0,0,0.2),
+                inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+button:hover {
+    background: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 rgba(0,0,0,0.2),
+                inset 0 -2px 0 rgba(0,0,0,0.1),
+                inset 0 1px 0 rgba(255,255,255,0.2);
+}
+
+button:active {
+    transform: translateY(4px);
+    box-shadow: 0 1px 0 rgba(0,0,0,0.2);
+}
+
+button::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        to bottom,
+        rgba(255,255,255,0.3),
+        rgba(255,255,255,0)
+    );
+    pointer-events: none;
+}
+
+button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
 }
 
 /* مؤشر التحميل */
@@ -187,45 +395,18 @@ button {
     }
 }
 
-/* رسائل الخطأ */
-.error-message {
-    color: #ff0000;
-    font-size: 0.85rem;
-    margin-top: 5px;
-    padding: 8px;
-    border-radius: 4px;
-    background-color: rgba(255, 0, 0, 0.1);
-    display: none;
-}
-
-.error-message.show {
-    display: block;
-}
-
-.general-error {
-    color: #ff0000;
-    background-color: rgba(255, 0, 0, 0.1);
-    padding: 10px;
-    border-radius: 5px;
-    margin-bottom: 15px;
-    display: none;
-}
-
-.general-error.show {
-    display: block;
-}
-
-/* الروابط */
-.links {
-    text-align: center;
-    margin-top: 15px;
-}
-
-.links a {
-    color: var(--primary-color);
-    text-decoration: none;
-}
-
-.links a:hover {
-    text-decoration: underline;
+/* للهواتف */
+@media (max-width: 480px) {
+    .container {
+        padding: 1.8rem;
+        margin: 15px auto;
+    }
+    
+    h2 {
+        font-size: 1.6rem;
+    }
+    
+    .btn-google, .btn-apple {
+        font-size: 0.9rem;
+    }
 }

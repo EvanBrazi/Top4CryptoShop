@@ -15,7 +15,7 @@ const byId = (id) => document.getElementById(id); // ← يجب أن يكون ق
 
 // 🧭 روابط OAuth
 byId('googleSignIn').addEventListener('click', () => {
-  // ...
+    // ...
 });
 
 // 🔧 إعدادات الثيم
@@ -24,16 +24,16 @@ const THEME_KEY = 'theme';
 /**
  * تطبيق الثيم بناءً على قيمة من لوحة التحكم أو التخزين المحلي
  */
-function applyTheme() {
-    const themeValue = typeof window.dashboardTheme !== 'undefined'
-        ? Number(window.dashboardTheme)
-        : Number(localStorage.getItem(THEME_KEY) ?? 0);
-
+// ✅ تطبيق الثيم المحفوظ
+document.addEventListener('DOMContentLoaded', () => {
+    /**
+ * ✅ تطبيق الثيم المحفوظ في localStorage
+ * يضبط مظهر الصفحة حسب تفضيل المستخدم
+ **/
+    const savedTheme = localStorage.getItem('theme') || 'day';
     document.body.classList.remove('day-theme', 'night-theme');
-    document.body.classList.add(themeValue === 1 ? 'night-theme' : 'day-theme');
-}
-
-document.addEventListener('DOMContentLoaded', applyTheme);
+    document.body.classList.add(`${savedTheme}-theme`);
+});
 
 // 🧭 روابط OAuth
 byId('googleSignIn').addEventListener('click', () => {

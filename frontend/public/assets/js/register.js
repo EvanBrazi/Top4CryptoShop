@@ -1,25 +1,41 @@
 /**
  * @file register.js
- * @description نموذج التسجيل التقليدي مع دعم التحقق، الثيم، وOAuth
+ * @description نموذج التسجيل المحسن مع دعم الثيم الديناميكي، التحقق، وOAuth
  * @author Evan Brazi
- * @version 2.0.0
+ * @version 2.1.0
  * @created 2024-12-01
- * @updated 2025-08-22
+ * @updated 2025-08-24
  */
 
 import { register } from './auth.js'; // دالة التسجيل الموحدة عبر secureFetch
 
+// 🧰 أدوات مساعدة
+const digitsOnly = (s) => (s || '').replace(/[^\d]+/g, '');
+const byId = (id) => document.getElementById(id); // ← يجب أن يكون قبل أي استخدام
+
+// 🧭 روابط OAuth
+byId('googleSignIn').addEventListener('click', () => {
+  // ...
+});
+
 // 🔧 إعدادات الثيم
 const THEME_KEY = 'theme';
 
-// ✅ تطبيق الثيم عند تحميل الصفحة
-document.addEventListener('DOMContentLoaded', () => {
-    const savedTheme = Number(localStorage.getItem(THEME_KEY) ?? 0);
-    document.body.classList.remove('day-theme', 'night-theme');
-    document.body.classList.add(savedTheme === 1 ? 'night-theme' : 'day-theme');
-});
+/**
+ * تطبيق الثيم بناءً على قيمة من لوحة التحكم أو التخزين المحلي
+ */
+function applyTheme() {
+    const themeValue = typeof window.dashboardTheme !== 'undefined'
+        ? Number(window.dashboardTheme)
+        : Number(localStorage.getItem(THEME_KEY) ?? 0);
 
-// 🧭 روابط OAuth (Google و Apple)
+    document.body.classList.remove('day-theme', 'night-theme');
+    document.body.classList.add(themeValue === 1 ? 'night-theme' : 'day-theme');
+}
+
+document.addEventListener('DOMContentLoaded', applyTheme);
+
+// 🧭 روابط OAuth
 byId('googleSignIn').addEventListener('click', () => {
     window.location.href =
         'https://accounts.google.com/o/oauth2/auth?' +
@@ -40,24 +56,19 @@ byId('appleSignIn').addEventListener('click', () => {
         'response_mode=form_post';
 });
 
-// 🧰 أدوات مساعدة
-const digitsOnly = (s) => (s || '').replace(/[^\d]+/g, '');
-const byId = (id) => document.getElementById(id);
-
 /**
  * عرض رسالة خطأ في عنصر معين
- * @param {string} elementId - معرف العنصر
- * @param {string} message - نص الرسالة
  */
 function showError(elementId, message) {
     const element = byId(elementId);
     element.textContent = message;
     element.classList.add('show');
+    element.style.animation = 'shake 0.3s ease';
+    setTimeout(() => (element.style.animation = ''), 300);
 }
 
 /**
  * عرض رسالة خطأ عامة
- * @param {string} message - نص الرسالة
  */
 function showGeneralError(message) {
     const el = byId('generalError');
@@ -67,8 +78,6 @@ function showGeneralError(message) {
 
 /**
  * التحقق من صحة النموذج
- * @param {Object} data - بيانات النموذج
- * @returns {Object} - كائن يحتوي على الأخطاء
  */
 function validateForm(data) {
     const errors = {};
@@ -88,7 +97,7 @@ function validateForm(data) {
     if (!countryCode) errors.phoneError = 'يرجى اختيار رمز الدولة';
     else if (!phoneNumber) errors.phoneError = 'يرجى إدخال رقم الجوال';
     else if (!/^\+\d{8,15}$/.test(`${countryCode}${phoneNumber}`))
-        errors.phoneError = 'صيغة رقم الهاتف غير صحيحة';
+        errors.phoneError = 'يرجى إدخال رقم هاتف بصيغة دولية تبدأ بـ +';
 
     return errors;
 }
@@ -113,7 +122,9 @@ byId('registerForm').addEventListener('submit', async (e) => {
     const phoneNumberRaw = byId('phoneNumber').value;
     const phoneNumber = digitsOnly(phoneNumberRaw);
     const fullPhoneNumber = `${countryCode}${phoneNumber}`;
-    const themeRaw = localStorage.getItem(THEME_KEY);
+    const themeRaw = typeof window.dashboardTheme !== 'undefined'
+        ? window.dashboardTheme
+        : localStorage.getItem(THEME_KEY);
     const theme = !isNaN(themeRaw) ? Number(themeRaw) : 0;
 
     // ✅ التحقق من صحة البيانات

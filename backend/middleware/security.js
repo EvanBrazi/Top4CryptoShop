@@ -38,7 +38,8 @@ const securityHeaders = helmet({
         "https://www.gravatar.com",
         "https://ui-avatars.com",
         "https://lh3.googleusercontent.com",
-        "https://upload.wikimedia.org"
+        "https://upload.wikimedia.org",
+        "https://developers.google.com"
       ],
 
       fontSrc: [

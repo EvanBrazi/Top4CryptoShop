@@ -103,131 +103,141 @@ body {
     transition: background-color 0.4s ease, color 0.4s ease;
 }
 
+/* الحاوية */
 .container {
-    width: 90%;
-    max-width: 400px;
+    max-width: 420px;
+    margin: 60px auto;
     padding: 2rem;
-    background: var(--card-color);
+    background-color: var(--card-color);
     border-radius: 10px;
     box-shadow: 0 4px 15px var(--shadow-color);
     border: 1px solid var(--border-color);
-    position: relative;
 }
 
+/* العنوان */
 h2 {
-    color: var(--text-color);
     text-align: center;
     margin-bottom: 1.5rem;
+    color: var(--text-color);
+}
+
+.container:hover {
+  transform: rotateX(2deg) rotateY(-2deg);
 }
 
 .form-group {
-    margin-bottom: 1.2rem;
-    width: 100%;
+  margin-bottom: 1rem;
+  width: 100%;
 }
 
-input,
-select {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    font-size: 1rem;
-    background: var(--card-color);
-    color: var(--text-color);
+input {
+  width: 100%;
+  padding: var(--input-padding);
+  border-radius: var(--input-radius);
+  border: 1px solid var(--border-color);
+  background-color: var(--card-color);
+  color: var(--text-color);
+  font-size: 1rem;
+  box-sizing: border-box;
+  transition: border var(--transition-speed);
+}
+
+input:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-color);
 }
 
 .phone-input-group {
-    display: flex;
-    gap: 10px;
+  display: flex;
+  gap: 10px;
 }
 
 .country-code {
-    width: 30%;
-    min-width: 100px;
+  width: 30%;
+  min-width: 100px;
 }
 
 .phone-number {
-    flex: 1;
+  flex: 1;
+}
+
+.buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin: 25px 0;
+    position: relative;
+    z-index: 1;
 }
 
 button {
-    width: 100%;
-    padding: 12px;
+    padding: 12px 25px;
     border: none;
-    border-radius: 6px;
-    font-size: 1rem;
+    border-radius: var(--border-radius);
     cursor: pointer;
-    transition: all 0.3s;
     font-weight: bold;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.2),
+                inset 0 -2px 0 rgba(0,0,0,0.1),
+                inset 0 1px 0 rgba(255,255,255,0.2);
+    transform-style: preserve-3d;
 }
 
-.btn-primary {
-    background-color: var(--primary-color);
+button:hover {
+    transform: translateY(4px);
+    box-shadow: 0 1px 0 rgba(0,0,0,0.2);
+}
+
+button::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        to bottom,
+        rgba(255,255,255,0.3),
+        rgba(255,255,255,0)
+    );
+    pointer-events: none;
+}
+
+.primary {
+    background: var(--day-primary);
     color: white;
+    box-shadow: 0 5px 0 rgba(148, 108, 63, 0.8),
+                inset 0 -2px 0 rgba(0,0,0,0.2),
+                inset 0 1px 0 rgba(255,255,255,0.3);
 }
 
-.btn-google {
-    background-color: #DB4437;
+.night-mode .primary {
+    background: var(--night-primary);
+    box-shadow: 0 5px 0 rgba(42, 82, 128, 0.8);
+}
+
+.secondary {
+    background: #f0f0f0;
+    color: #333;
+    box-shadow: 0 5px 0 #ccc,
+                inset 0 -2px 0 rgba(0,0,0,0.1),
+                inset 0 1px 0 rgba(255,255,255,0.4);
+}
+
+.night-mode .secondary {
+    background: #2c3e50;
     color: white;
-    margin-top: 15px;
+    box-shadow: 0 5px 0 #1a2634
 }
 
-.btn-apple {
-    background-color: #000000;
-    color: white;
-    margin-top: 10px;
+button:hover {
+  background-color: var(--primary-hover);
 }
 
-.divider {
-    display: flex;
-    align-items: center;
-    margin: 20px 0;
-    color: var(--text-color);
-}
-
-.divider::before,
-.divider::after {
-    content: "";
-    flex: 1;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.divider::before {
-    margin-right: 10px;
-}
-
-.divider::after {
-    margin-left: 10px;
-}
-
-.error-message {
-    color: #ff0000;
-    font-size: 0.85rem;
-    margin-top: 5px;
-    padding: 8px;
-    border-radius: 4px;
-    background-color: rgba(255, 0, 0, 0.1);
-    display: none;
-}
-
-.error-message.show {
-    display: block;
-}
-
-/* تنسيق رسالة الخطأ العامة */
-.general-error {
-    color: #ff0000;
-    background-color: rgba(255, 0, 0, 0.1);
-    padding: 10px;
-    border-radius: 5px;
-    margin-bottom: 15px;
-    display: none;
-}
-
-.general-error.show {
-    display: block;
+button:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 6px var(--shadow-color);
 }

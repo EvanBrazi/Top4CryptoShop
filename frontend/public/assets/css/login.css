@@ -126,19 +126,20 @@ body {
     padding: 2.5rem;
     background-color: var(--card-color);
     border-radius: var(--border-radius);
-    box-shadow: 0 10px 30px var(--shadow-color), 
-                0 5px 15px rgba(0,0,0,0.1),
-                inset 0 1px 0 rgba(255,255,255,0.8);
+    box-shadow: 0 10px 30px var(--shadow-color),
+        0 5px 15px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
     margin: 20px auto;
     position: relative;
     overflow: hidden;
     border: 1px solid var(--border-color);
     transform: perspective(800px) rotateX(5deg);
+    animation: floatIn 0.6s ease-out;
 }
 
 .night-theme .container {
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3),
-                inset 0 1px 0 rgba(255,255,255,0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .container::before {
@@ -148,21 +149,17 @@ body {
     left: -50%;
     width: 200%;
     height: 200%;
-    background: linear-gradient(
-        to bottom right,
-        rgba(255,255,255,0.2),
-        rgba(255,255,255,0)
-    );
+    background: linear-gradient(to bottom right,
+            rgba(255, 255, 255, 0.2),
+            rgba(255, 255, 255, 0));
     transform: rotate(20deg);
     pointer-events: none;
 }
 
 .night-theme .container::before {
-    background: linear-gradient(
-        to bottom right,
-        rgba(255,255,255,0.05),
-        rgba(255,255,255,0)
-    );
+    background: linear-gradient(to bottom right,
+            rgba(255, 255, 255, 0.05),
+            rgba(255, 255, 255, 0));
 }
 
 .container:hover {
@@ -213,7 +210,8 @@ body {
     margin: 20px 0;
     position: relative;
     color: var(--text-color);
-    font-size: 0.9rem;
+    font-size: 1rem;
+    font-weight: bold;
 }
 
 .divider::before,
@@ -234,14 +232,45 @@ body {
     left: 0;
 }
 
+/* bottom الفاصل */
+.bottom-divider {
+    margin: 20px 0;
+    border-top: 1px solid var(--divider-color);
+    height: 1px;
+    margin-top: 15%;
+}
+
+@keyframes floatIn {
+    from {
+        transform: perspective(800px) rotateX(10deg) rotateY(-10deg);
+        opacity: 0;
+    }
+
+    to {
+        transform: perspective(800px) rotateX(0deg) rotateY(0deg);
+        opacity: 1;
+    }
+}
+
 @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-5px); }
-    75% { transform: translateX(5px); }
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-5px);
+    }
+
+    75% {
+        transform: translateX(5px);
+    }
 }
 
 /* أزرار OAuth */
-.btn-google, .btn-apple {
+.btn-google,
+.btn-apple {
     width: 100%;
     padding: 12px;
     margin-bottom: 15px;
@@ -258,15 +287,17 @@ body {
     transition: all 0.3s;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-.btn-google:hover, .btn-apple:hover {
+.btn-google:hover,
+.btn-apple:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-.btn-google:active, .btn-apple:active {
+.btn-google:active,
+.btn-apple:active {
     transform: translateY(1px);
 }
 
@@ -279,7 +310,8 @@ body {
     font-size: 0.9rem;
 }
 
-.links::before, .links::after {
+.links::before,
+.links::after {
     content: '';
     position: absolute;
     top: 50%;
@@ -301,7 +333,7 @@ body {
     position: relative;
     color: var(--text-color);
     font-size: 0.9rem;
-    margin-top: 10%;
+    margin-top: 1%;
 }
 
 .register:hover {
@@ -337,23 +369,23 @@ input {
     font-size: 1rem;
     box-sizing: border-box;
     transition: all var(--transition-speed);
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .night-theme input {
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 input:focus {
     border-color: var(--primary-color);
     outline: none;
     box-shadow: 0 0 0 3px rgba(212, 167, 106, 0.3),
-                inset 0 2px 4px rgba(0,0,0,0.05);
+        inset 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .night-theme input:focus {
     box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.3),
-                inset 0 2px 4px rgba(0,0,0,0.2);
+        inset 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 /* الأزرار */
@@ -369,9 +401,9 @@ button {
     transition: all 0.3s;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 4px 0 rgba(0,0,0,0.2),
-                inset 0 -2px 0 rgba(0,0,0,0.1),
-                inset 0 1px 0 rgba(255,255,255,0.2);
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2),
+        inset 0 -2px 0 rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
     transform-style: preserve-3d;
     margin-top: 10px;
     font-size: 1.1rem;
@@ -379,21 +411,21 @@ button {
 
 .night-theme button {
     box-shadow: 0 4px 0 rgba(42, 82, 128, 0.8),
-                inset 0 -2px 0 rgba(0,0,0,0.2),
-                inset 0 1px 0 rgba(255,255,255,0.1);
+        inset 0 -2px 0 rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 button:hover {
     background: var(--primary-hover);
     transform: translateY(-2px);
-    box-shadow: 0 6px 0 rgba(0,0,0,0.2),
-                inset 0 -2px 0 rgba(0,0,0,0.1),
-                inset 0 1px 0 rgba(255,255,255,0.2);
+    box-shadow: 0 6px 0 rgba(0, 0, 0, 0.2),
+        inset 0 -2px 0 rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 button:active {
     transform: translateY(4px);
-    box-shadow: 0 1px 0 rgba(0,0,0,0.2);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
 }
 
 button::after {
@@ -403,11 +435,9 @@ button::after {
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(
-        to bottom,
-        rgba(255,255,255,0.3),
-        rgba(255,255,255,0)
-    );
+    background: linear-gradient(to bottom,
+            rgba(255, 255, 255, 0.3),
+            rgba(255, 255, 255, 0));
     pointer-events: none;
 }
 
@@ -440,12 +470,13 @@ button:disabled {
         padding: 1.8rem;
         margin: 15px auto;
     }
-    
+
     h2 {
         font-size: 1.6rem;
     }
-    
-    .btn-google, .btn-apple {
+
+    .btn-google,
+    .btn-apple {
         font-size: 0.9rem;
     }
 }

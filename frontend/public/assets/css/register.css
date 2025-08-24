@@ -148,6 +148,7 @@ body {
     overflow: hidden;
     border: 1px solid var(--border-color);
     transform: perspective(800px) rotateX(5deg);
+    animation: floatIn 0.6s ease-out;
 }
 
 .night-theme .container {
@@ -227,6 +228,17 @@ h2 {
     display: block;
 }
 
+@keyframes floatIn {
+  from {
+    transform: perspective(800px) rotateX(10deg) rotateY(-10deg);
+    opacity: 0;
+  }
+  to {
+    transform: perspective(800px) rotateX(0deg) rotateY(0deg);
+    opacity: 1;
+  }
+}
+
 @keyframes shake {
 
     0%,
@@ -282,7 +294,8 @@ h2 {
     margin: 20px 0;
     position: relative;
     color: var(--text-color);
-    font-size: 0.9rem;
+    font-size: 1rem;
+    font-weight: bold;
 }
 
 .divider::before,
@@ -301,6 +314,14 @@ h2 {
 
 .divider::after {
     left: 0;
+}
+
+/* bottom الفاصل */
+.bottom-divider {
+    margin: 20px 0;
+    border-top: 1px solid var(--divider-color);
+    height: 1px;
+    margin-top: 10%;
 }
 
 /* الفاصل */
@@ -334,7 +355,7 @@ h2 {
     color: var(--primary-color);
     text-decoration: solid;
     transition: color 0.3s;
-    margin-top: 10%;
+    margin-top: 1%;
     text-align: start;
     position: relative;
 }

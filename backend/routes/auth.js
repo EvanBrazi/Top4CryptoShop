@@ -15,8 +15,8 @@ const { validateRegister, validateLogin, handleValidationErrors } = require('../
 const rateLimit = require('express-rate-limit');
 const { attachCsrfToken, doubleCsrfProtection } = require('../middlewares/csrfMiddleware');
 const { registerUser } = require('../controllers/authController');
-const { body, validationResult } = require('express-validator');
-const { verifyToken, checkAdmin, requireRole, checkSession } = require('../middlewares/auth');
+const { body } = require('express-validator');
+const { verifyToken, checkAdmin, checkSession } = require('../middlewares/auth');
 
 // =============================================
 // 🛡️ دالة موحدة للاستجابات
@@ -54,25 +54,58 @@ router.use(authLimiter);
 // =============================================
 // 📝 تسجيل مستخدم جديد
 // =============================================
-router.post('/register',
-  validateRegister,
-  handleValidationErrors,
+/**
+ * @route   POST /api/auth/register
+ * @desc    تسجيل مستخدم جديد مع تحقق من البيانات وتوليد رمز CSRF
+ * @access  Public
+ */
+router.post(
+  '/register',
+  validateRegister,           // ✅ تحقق من صحة البيانات
+  handleValidationErrors,     // ✅ التعامل مع أخطاء التحقق
+
   async (req, res) => {
     try {
-      const user = await registerUser(req.body); // تنفيذ التسجيل
-      req.session.userId = user._id; // تخزين معرف المستخدم في الجلسة
+      // ✅ تنفيذ التسجيل وإرجاع كائن المستخدم
+      const user = await registerUser(req.body);
+      // ✅ تخزين معرف المستخدم في الجلسة
+      req.session.userId = user._id;
+      // ✅ توليد رمز CSRF وإرساله
+      attachCsrfToken(req, res);
+      // ✅ الرد النهائي
+      res.status(201).json({
+        success: true,
+        message: 'تم إنشاء الحساب بنجاح',
+        user: {
+          id: user._id,
+          username: user.username,
+          email: user.email
+        }
+      });
 
-      attachCsrfToken(req, res); // ✅ توليد وإرسال رمز CSRF
-
-      res.status(201).json({ success: true, user });
     } catch (err) {
       console.error('❌ خطأ أثناء التسجيل:', err);
-      res.status(500).json({ error: 'حدث خطأ أثناء التسجيل' });
+      console.error('❌ خطأ أثناء التسجيل:', err);
+
+      let message = 'حدث خطأ أثناء التسجيل. يرجى المحاولة لاحقًا.';
+      let status = 500;
+
+      if (err.message === 'MISSING_FIELDS') {
+        message = 'يرجى تعبئة جميع الحقول المطلوبة';
+        status = 400;
+      } else if (err.message === 'USER_EXISTS') {
+        message = 'اسم المستخدم أو البريد الإلكتروني مستخدم مسبقًا';
+        status = 409;
+      }
+
+      res.status(status).json({
+        success: false,
+        error: err.message || 'SERVER_ERROR',
+        message
+      });
     }
   }
 );
-
-
 // =============================================
 // 🔐 تسجيل الدخول
 // =============================================

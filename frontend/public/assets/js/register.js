@@ -164,7 +164,6 @@ byId('registerForm').addEventListener('submit', async (e) => {
     }
 
     // ⏳ حالة تحميل مؤقتة
-    const submitBtn = byId('submitBtn');
     submitBtn.disabled = true;
     submitBtn.textContent = 'جاري التسجيل...';
 

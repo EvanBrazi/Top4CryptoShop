@@ -140,6 +140,7 @@ const userSchema = new Schema({
 // 🔐 تشفير كلمة المرور
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
+  if (this.password.startsWith('$2')) return next(); // حماية من التشفير المكرر
   const salt = await bcrypt.genSalt(12);
   this.password = await bcrypt.hash(this.password, salt);
   this.tokenVersion += 1;

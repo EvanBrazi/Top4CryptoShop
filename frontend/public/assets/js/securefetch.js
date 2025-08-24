@@ -17,8 +17,6 @@ function getCsrfTokenFromCookie() {
  */
 export async function secureFetch(url, options = {}) {
     const method = options.method?.toUpperCase() || 'GET';
-
-    // 🛡️ فقط أضف رمز CSRF للطلبات الحساسة
     const needsCsrf = ['POST', 'PUT', 'DELETE'].includes(method);
     const csrfToken = needsCsrf ? getCsrfTokenFromCookie() : null;
 
@@ -28,9 +26,22 @@ export async function secureFetch(url, options = {}) {
         ...(csrfToken ? { 'x-csrf-token': csrfToken } : {})
     };
 
-    return fetch(url, {
-        ...options,
-        headers,
-        credentials: 'include' // مهم جدًا لإرسال الكوكي
-    });
+    try {
+        const response = await fetch(url, {
+            ...options,
+            headers,
+            credentials: 'include'
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+
+        return response;
+    } catch (err) {
+        console.error("📛 فشل الطلب:", err.message);
+        throw err; // أعد إرسال الخطأ ليتم التعامل معه في register.js
+    }
 }
+

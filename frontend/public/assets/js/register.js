@@ -1,13 +1,20 @@
 /**
  * @file register.js
- * @description نموذج التسجيل المحسن مع دعم الثيم الديناميكي، التحقق، وOAuth
+ * @description نموذج التسجيل الموحد مع دعم الثيم الديناميكي، التحقق، التحميل، التنبيهات، و OAuth
  * @author Evan Brazi
- * @version 2.1.0
+ * @version 2.2.0
  * @created 2024-12-01
  * @updated 2025-08-24
  */
-
 import { register } from './auth.js'; // دالة التسجيل الموحدة عبر secureFetch
+
+function showAlert(icon, title, text) {
+    if (window.Swal) {
+        Swal.fire({ icon, title, text, confirmButtonText: 'حسنًا' });
+    } else {
+        alert(`${title}: ${text}`);
+    }
+}
 
 // 🧰 أدوات مساعدة
 const digitsOnly = (s) => (s || '').replace(/[^\d]+/g, '');
@@ -21,6 +28,10 @@ byId('googleSignIn').addEventListener('click', () => {
 // 🔧 إعدادات الثيم
 const THEME_KEY = 'theme';
 
+const spinner = byId('spinner');
+const btnText = byId('btnText');
+const submitBtn = byId('submitBtn');
+
 /**
  * تطبيق الثيم بناءً على قيمة من لوحة التحكم أو التخزين المحلي
  */
@@ -33,6 +44,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const savedTheme = localStorage.getItem('theme') || 'day';
     document.body.classList.remove('day-theme', 'night-theme');
     document.body.classList.add(`${savedTheme}-theme`);
+
+    document.getElementById("phoneNumber").addEventListener("input", function (e) {
+        let value = e.target.value;
+
+        // السماح فقط بـ + في البداية ثم أرقام
+        if (!/^\+?\d*$/.test(value)) {
+            e.target.value = value.replace(/[^+\d]/g, "").replace(/^([^+])/, "");
+        }
+    });
 });
 
 // 🧭 روابط OAuth
@@ -65,6 +85,11 @@ function showError(elementId, message) {
     element.classList.add('show');
     element.style.animation = 'shake 0.3s ease';
     setTimeout(() => (element.style.animation = ''), 300);
+}
+
+function saveSession(user, token) {
+    localStorage.setItem('user_id', user.id);
+    localStorage.setItem('user_token', token);
 }
 
 /**
@@ -106,6 +131,10 @@ function validateForm(data) {
 byId('registerForm').addEventListener('submit', async (e) => {
     e.preventDefault();
 
+    spinner.style.display = 'inline-block';
+    btnText.style.display = 'none';
+    submitBtn.disabled = true;
+
     // 🧹 تنظيف الأخطاء السابقة
     document.querySelectorAll('.error-message').forEach((el) => {
         el.classList.remove('show');
@@ -146,11 +175,18 @@ byId('registerForm').addEventListener('submit', async (e) => {
             const errorMessage = typeof result === 'string' ? result : result.error || 'حدث خطأ أثناء التسجيل';
             throw new Error(errorMessage);
         }
+        saveSession(result.user, result.token);
+        setTimeout(() => {
+            spinner.style.display = 'none';
+            btnText.style.display = 'inline';
+            submitBtn.disabled = false;
 
+            const redirectPath = '/homepage.html';
+            window.location.href = redirectPath;
+        }, 1500);
         // 🎉 نجاح التسجيل
         alert('تم تسجيل الحساب بنجاح!');
-        window.location.href = '/homepage.html';
-
+        showAlert('success', 'تم التسجيل', 'تم إنشاء الحساب بنجاح! سيتم تحويلك الآن...');
     } catch (err) {
         console.error('❌ خطأ أثناء التسجيل:', err);
         const msg = String(err.message || '');
@@ -169,5 +205,8 @@ byId('registerForm').addEventListener('submit', async (e) => {
     } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = 'تسجيل';
+        spinner.style.display = 'none';
+        btnText.style.display = 'inline';
+        submitBtn.disabled = false;
     }
 });

@@ -207,6 +207,33 @@ body {
     display: block;
 }
 
+/* الفاصل */
+.divider {
+    text-align: center;
+    margin: 20px 0;
+    position: relative;
+    color: var(--text-color);
+    font-size: 0.9rem;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 40%;
+    height: 1px;
+    background: var(--divider-color);
+}
+
+.divider::before {
+    right: 0;
+}
+
+.divider::after {
+    left: 0;
+}
+
 @keyframes shake {
     0%, 100% { transform: translateX(0); }
     25% { transform: translateX(-5px); }
@@ -269,15 +296,28 @@ body {
     left: 0;
 }
 
-.links a {
-    color: var(--primary-color);
-    text-decoration: none;
-    transition: color 0.3s;
+.register {
+    text-align: center;
+    position: relative;
+    color: var(--text-color);
+    font-size: 0.9rem;
+    margin-top: 10%;
 }
 
-.links a:hover {
+.register:hover {
     color: var(--primary-hover);
-    text-decoration: underline;
+    text-decoration: solid;
+}
+
+.register a {
+    width: 100%;
+    color: var(--primary-color);
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    overflow: hidden;
+    font-size: 0.8rem;
+    font-weight: bold;
 }
 
 /* مجموعة النموذج */
@@ -293,7 +333,6 @@ input {
     padding: var(--input-padding);
     border-radius: var(--input-radius);
     border: 1px solid var(--border-color);
-    background-color: var(--card-color);
     color: var(--text-color);
     font-size: 1rem;
     box-sizing: border-box;

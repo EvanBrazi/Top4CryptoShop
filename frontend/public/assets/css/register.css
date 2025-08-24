@@ -1,489 +1,575 @@
+/* ملف register.css */
+/* المتغيرات المحدثة */
+:root {
+    /* ألوان الثيم النهاري */
+    --day-bg: #f5f5f5;
+    --day-text: #333;
+    --day-primary: #d4a76a;
+    --day-primary-hover: #c29555;
+    --day-secondary: #e8d5b5;
+    --day-card: #fff9f0;
+    --day-border: #d8c8a8;
+    --day-navbar: #5d4a36;
+    --day-sidebar: #f1e8de;
+    --day-shadow: rgba(93, 74, 54, 0.15);
+    --day-accent: #e6b422;
+    --day-footer: #8B4513;
+    --day-navbar-text: #f5f5f5;
+    --day-sidebar-header: #d4a76a;
+    --day-sidebar-footer: #8B4513;
+    --day-sidebar-content: #f8f8f8;
+    --day-border-menu-link: 1px solid rgba(0, 0, 0, 0.1);
+    --day-background-menu-l: rgba(255, 255, 255, 0.7);
+    --day-border-left: 1px solid rgba(0, 0, 0, 0.1);
 
-        /* ملف register.css */
-        /* المتغيرات المحدثة */
-        :root {
-            /* ألوان الثيم النهاري */
-            --day-bg: #f5f5f5;
-            --day-text: #333;
-            --day-primary: #d4a76a;
-            --day-primary-hover: #c29555;
-            --day-secondary: #e8d5b5;
-            --day-card: #fff9f0;
-            --day-border: #d8c8a8;
-            --day-navbar: #5d4a36;
-            --day-sidebar: #f1e8de;
-            --day-shadow: rgba(93, 74, 54, 0.15);
-            --day-accent: #e6b422;
-            --day-footer: #8B4513;
-            --day-navbar-text: #f5f5f5;
-            --day-sidebar-header: #d4a76a;
-            --day-sidebar-footer: #8B4513;
-            --day-sidebar-content: #f8f8f8;
-            --day-border-menu-link: 1px solid rgba(0, 0, 0, 0.1);
-            --day-background-menu-l: rgba(255, 255, 255, 0.7);
-            --day-border-left: 1px solid rgba(0, 0, 0, 0.1);
+    /* ألوان الثيم الليلي */
+    --night-bg: #1a1a2e;
+    --night-text: #f0f0f0;
+    --night-primary: #4a90e2;
+    --night-primary-hover: #3a7bc8;
+    --night-secondary: #5c6bc0;
+    --night-card: #1e1e2a;
+    --night-border: #333344;
+    --night-navbar: #12121a;
+    --night-sidebar: #1a1a22;
+    --night-shadow: rgba(0, 0, 0, 0.4);
+    --night-accent: #8a7cff;
+    --night-footer: #0f3460;
+    --night-navbar-text: #e0e0e0;
+    --night-sidebar-header: #4a90e2;
+    --night-sidebar-footer: #0f3460;
+    --night-sidebar-content: #1e2a4a;
+    --night-border-menu-link: 1px solid rgba(255, 255, 255, 0.1);
+    --night-background-menu-l: rgba(0, 0, 0, 0.2);
+    --night-border-left: 1px solid rgba(255, 255, 255, 0.1);
 
-            /* ألوان الثيم الليلي */
-            --night-bg: #1a1a2e;
-            --night-text: #f0f0f0;
-            --night-primary: #4a90e2;
-            --night-primary-hover: #3a7bc8;
-            --night-secondary: #5c6bc0;
-            --night-card: #1e1e2a;
-            --night-border: #333344;
-            --night-navbar: #12121a;
-            --night-sidebar: #1a1a22;
-            --night-shadow: rgba(0, 0, 0, 0.4);
-            --night-accent: #8a7cff;
-            --night-footer: #0f3460;
-            --night-navbar-text: #e0e0e0;
-            --night-sidebar-header: #4a90e2;
-            --night-sidebar-footer: #0f3460;
-            --night-sidebar-content: #1e2a4a;
-            --night-border-menu-link: 1px solid rgba(255, 255, 255, 0.1);
-            --night-background-menu-l: rgba(0, 0, 0, 0.2);
-            --night-border-left: 1px solid rgba(255, 255, 255, 0.1);
+    /* زوايا دائرية */
+    --border-radius: 12px;
+    --input-radius: 8px;
+    --transition-speed: 0.3s;
+    --input-padding: 12px 15px;
+}
 
-            /* زوايا دائرية */
-            --border-radius: 12px;
-            --input-radius: 8px;
-            --transition-speed: 0.3s;
-            --input-padding: 12px 15px;
-        }
+/* الثيمات */
+.day-theme {
+    --bg-color: var(--day-bg);
+    --text-color: var(--day-text);
+    --primary-color: var(--day-primary);
+    --primary-hover: var(--day-primary-hover);
+    --secondary-color: var(--day-secondary);
+    --card-color: var(--day-card);
+    --border-color: var(--day-border);
+    --navbar-color: var(--day-navbar);
+    --sidebar-color: var(--day-sidebar);
+    --sidebar-header-color: var(--day-sidebar-header);
+    --sidebar-content-color: var(--day-sidebar-content);
+    --sidebar-footer-color: var(--day-sidebar-footer);
+    --shadow-color: var(--day-shadow);
+    --accent-color: var(--day-accent);
+    --bar-footer-color: var(--day-footer);
+    --navbar-text: var(--day-navbar-text);
+    --divider-color: rgba(0, 0, 0, 0.1);
+    --social-icon-color: white;
+    --border-menu-link: var(--day-border-menu-link);
+    --background-menu-link: var(--day-background-menu-l);
+    --sidebar-border-left: var(--day-border-left);
+    --country-bg: #4b2e1e;
+    /* شوكولا داكنة */
+    --country-text: #fff8e7;
+    /* كريمي فاتح */
+    --country-shadow: rgba(80, 40, 20, 0.3);
+    --country-inset-dark: rgba(60, 30, 10, 0.2);
+    --country-inset-light: rgba(255, 255, 255, 0.3);
+}
 
-        /* الثيمات */
-        .day-theme {
-            --bg-color: var(--day-bg);
-            --text-color: var(--day-text);
-            --primary-color: var(--day-primary);
-            --primary-hover: var(--day-primary-hover);
-            --secondary-color: var(--day-secondary);
-            --card-color: var(--day-card);
-            --border-color: var(--day-border);
-            --navbar-color: var(--day-navbar);
-            --sidebar-color: var(--day-sidebar);
-            --sidebar-header-color: var(--day-sidebar-header);
-            --sidebar-content-color: var(--day-sidebar-content);
-            --sidebar-footer-color: var(--day-sidebar-footer);
-            --shadow-color: var(--day-shadow);
-            --accent-color: var(--day-accent);
-            --bar-footer-color: var(--day-footer);
-            --navbar-text: var(--day-navbar-text);
-            --divider-color: rgba(0, 0, 0, 0.1);
-            --social-icon-color: white;
-            --border-menu-link: var(--day-border-menu-link);
-            --background-menu-link: var(--day-background-menu-l);
-            --sidebar-border-left: var(--day-border-left);
-        }
+.night-theme {
+    --bg-color: var(--night-bg);
+    --text-color: var(--night-text);
+    --primary-color: var(--night-primary);
+    --primary-hover: var(--night-primary-hover);
+    --secondary-color: var(--night-secondary);
+    --card-color: var(--night-card);
+    --border-color: var(--night-border);
+    --navbar-color: var(--night-navbar);
+    --sidebar-color: var(--night-sidebar);
+    --sidebar-header-color: var(--night-sidebar-header);
+    --sidebar-content-color: var(--night-sidebar-content);
+    --sidebar-footer-color: var(--night-sidebar-footer);
+    --shadow-color: var(--night-shadow);
+    --accent-color: var(--night-accent);
+    --bar-footer-color: var(--night-footer);
+    --navbar-text: var(--night-navbar-text);
+    --divider-color: rgba(255, 255, 255, 0.1);
+    --social-icon-color: white;
+    --border-menu-link: var(--night-border-menu-link);
+    --background-menu-link: var(--night-background-menu-l);
+    --sidebar-border-left: var(--night-border-left);
+    --country-bg: #2c2c2c;
+    /* فضي داكن */
+    --country-text: #dcdcdc;
+    /* فضي فاتح */
+    --country-shadow: rgba(0, 0, 0, 0.4);
+    --country-inset-dark: rgba(255, 255, 255, 0.05);
+    --country-inset-light: rgba(200, 200, 200, 0.1);
+}
 
-        .night-theme {
-            --bg-color: var(--night-bg);
-            --text-color: var(--night-text);
-            --primary-color: var(--night-primary);
-            --primary-hover: var(--night-primary-hover);
-            --secondary-color: var(--night-secondary);
-            --card-color: var(--night-card);
-            --border-color: var(--night-border);
-            --navbar-color: var(--night-navbar);
-            --sidebar-color: var(--night-sidebar);
-            --sidebar-header-color: var(--night-sidebar-header);
-            --sidebar-content-color: var(--night-sidebar-content);
-            --sidebar-footer-color: var(--night-sidebar-footer);
-            --shadow-color: var(--night-shadow);
-            --accent-color: var(--night-accent);
-            --bar-footer-color: var(--night-footer);
-            --navbar-text: var(--night-navbar-text);
-            --divider-color: rgba(255, 255, 255, 0.1);
-            --social-icon-color: white;
-            --border-menu-link: var(--night-border-menu-link);
-            --background-menu-link: var(--night-background-menu-l);
-            --sidebar-border-left: var(--night-border-left);
-        }
+/* الأساسيات */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    transition: all var(--transition-speed) ease;
+}
 
-        /* الأساسيات */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            transition: all var(--transition-speed) ease;
-        }
+body {
+    font-family: 'Tahoma', 'Arial', sans-serif;
+    background: var(--bg-color);
+    color: var(--text-color);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    transition: background-color 0.4s ease, color 0.4s ease;
+}
 
-        body {
-            font-family: 'Tahoma', 'Arial', sans-serif;
-            background: var(--bg-color);
-            color: var(--text-color);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            transition: background-color 0.4s ease, color 0.4s ease;
-        }
+/* الحاوية */
+.container {
+    max-width: 450px;
+    width: 100%;
+    padding: 2.5rem;
+    background-color: var(--card-color);
+    border-radius: var(--border-radius);
+    box-shadow: 0 10px 30px var(--shadow-color),
+        0 5px 15px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    margin: 20px auto;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    transform: perspective(800px) rotateX(5deg);
+}
 
-        /* الحاوية */
-        .container {
-            max-width: 450px;
-            width: 100%;
-            padding: 2.5rem;
-            background-color: var(--card-color);
-            border-radius: var(--border-radius);
-            box-shadow: 0 10px 30px var(--shadow-color), 
-                        0 5px 15px rgba(0,0,0,0.1),
-                        inset 0 1px 0 rgba(255,255,255,0.8);
-            margin: 20px auto;
-            position: relative;
-            overflow: hidden;
-            border: 1px solid var(--border-color);
-            transform: perspective(800px) rotateX(5deg);
-        }
+.night-theme .container {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
 
-        .night-theme .container {
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3),
-                        inset 0 1px 0 rgba(255,255,255,0.1);
-        }
+.container::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(to bottom right,
+            rgba(255, 255, 255, 0.2),
+            rgba(255, 255, 255, 0));
+    transform: rotate(20deg);
+    pointer-events: none;
+}
 
-        .container::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(
-                to bottom right,
-                rgba(255,255,255,0.2),
-                rgba(255,255,255,0)
-            );
-            transform: rotate(20deg);
-            pointer-events: none;
-        }
+.night-theme .container::before {
+    background: linear-gradient(to bottom right,
+            rgba(255, 255, 255, 0.05),
+            rgba(255, 255, 255, 0));
+}
 
-        .night-theme .container::before {
-            background: linear-gradient(
-                to bottom right,
-                rgba(255,255,255,0.05),
-                rgba(255,255,255,0)
-            );
-        }
+.container:hover {
+    transform: perspective(800px) rotateX(2deg) rotateY(-2deg);
+}
 
-        .container:hover {
-            transform: perspective(800px) rotateX(2deg) rotateY(-2deg);
-        }
+/* العنوان */
+.container h2 {
+    text-align: center;
+    margin-bottom: 1.8rem;
+    color: var(--primary-color);
+    position: relative;
+    z-index: 1;
+    font-size: 1.8rem;
+}
 
-        /* العنوان */
-        h2 {
-            text-align: center;
-            margin-bottom: 1.8rem;
-            color: var(--primary-color);
-            position: relative;
-            z-index: 1;
-            font-size: 1.8rem;
-        }
+/* العنوان */
+h2 {
+    text-align: center;
+    margin-bottom: 1.8rem;
+    color: var(--primary-color);
+    position: relative;
+    z-index: 1;
+    font-size: 1.8rem;
+}
 
-        /* رسائل الخطأ */
-        .general-error {
-            background: rgba(231, 76, 60, 0.1);
-            color: #e74c3c;
-            padding: 12px;
-            border-radius: var(--border-radius);
-            margin-bottom: 20px;
-            text-align: center;
-            display: none;
-            border: 1px solid rgba(231, 76, 60, 0.3);
-        }
+/* رسائل الخطأ */
+.general-error {
+    background: rgba(231, 76, 60, 0.1);
+    color: #e74c3c;
+    padding: 12px;
+    border-radius: var(--border-radius);
+    margin-bottom: 20px;
+    text-align: center;
+    display: none;
+    border: 1px solid rgba(231, 76, 60, 0.3);
+}
 
-        .general-error.show {
-            display: block;
-            animation: shake 0.3s ease;
-        }
+.general-error.show {
+    display: block;
+    animation: shake 0.3s ease;
+}
 
-        .error-message {
-            color: #e74c3c;
-            font-size: 0.85rem;
-            margin-top: 5px;
-            display: none;
-        }
+.error-message {
+    color: #e74c3c;
+    font-size: 0.85rem;
+    margin-top: 5px;
+    display: none;
+}
 
-        .error-message.show {
-            display: block;
-        }
+.error-message.show {
+    display: block;
+}
 
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
-        }
+@keyframes shake {
 
-        /* أزرار OAuth المحسنة */
-        .btn-google, .btn-apple {
-            width: 100%;
-            padding: 14px;
-            margin-bottom: 15px;
-            border-radius: var(--border-radius);
-            border: 1px solid var(--border-color);
-            background: var(--card-color);
-            color: var(--text-color);
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            transition: all 0.3s;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 4px 0 rgba(0,0,0,0.1),
-                        inset 0 -2px 0 rgba(0,0,0,0.05),
-                        inset 0 1px 0 rgba(255,255,255,0.3);
-            transform-style: preserve-3d;
-        }
+    0%,
+    100% {
+        transform: translateX(0);
+    }
 
-        .btn-google:hover, .btn-apple:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 0 rgba(0,0,0,0.1),
-                        inset 0 -2px 0 rgba(0,0,0,0.05),
-                        inset 0 1px 0 rgba(255,255,255,0.3);
-        }
+    25% {
+        transform: translateX(-5px);
+    }
 
-        .btn-google:active, .btn-apple:active {
-            transform: translateY(2px);
-            box-shadow: 0 2px 0 rgba(0,0,0,0.1);
-        }
+    75% {
+        transform: translateX(5px);
+    }
+}
 
-        .btn-google::after, .btn-apple::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(
-                to bottom,
-                rgba(255,255,255,0.3),
-                rgba(255,255,255,0)
-            );
-            pointer-events: none;
-        }
+/* أزرار OAuth */
+.btn-google,
+.btn-apple {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+    background: var(--card-color);
+    color: var(--text-color);
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
 
-        /* زر Google محدد */
-        .btn-google {
-            background: #fff;
-            color: #757575;
-            border: 1px solid #ddd;
-        }
+.btn-google:hover,
+.btn-apple:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
 
-        .btn-google:hover {
-            background: #f8f8f8;
-        }
+.btn-google:active,
+.btn-apple:active {
+    transform: translateY(1px);
+}
 
-        .night-theme .btn-google {
-            background: #2d2d2d;
-            color: #e0e0e0;
-            border-color: #444;
-        }
+/* الفاصل */
+.divider {
+    text-align: center;
+    margin: 20px 0;
+    position: relative;
+    color: var(--text-color);
+    font-size: 0.9rem;
+}
 
-        .night-theme .btn-google:hover {
-            background: #333;
-        }
+.divider::before,
+.divider::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 40%;
+    height: 1px;
+    background: var(--divider-color);
+}
 
-        /* زر Apple محدد */
-        .btn-apple {
-            background: #000;
-            color: #fff;
-            border: 1px solid #000;
-        }
+.divider::before {
+    right: 0;
+}
 
-        .btn-apple:hover {
-            background: #1a1a1a;
-        }
+.divider::after {
+    left: 0;
+}
 
-        .night-theme .btn-apple {
-            background: #f5f5f7;
-            color: #000;
-            border-color: #f5f5f7;
-        }
+/* الفاصل */
+.links {
+    text-align: center;
+    margin: 20px 0;
+    position: relative;
+    color: var(--text-color);
+    font-size: 0.9rem;
+}
 
-        .night-theme .btn-apple:hover {
-            background: #fff;
-        }
+.links::before,
+.links::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 40%;
+    height: 1px;
+    background: var(--divider-color);
+}
 
-        /* الفاصل */
-        .divider {
-            text-align: center;
-            margin: 20px 0;
-            position: relative;
-            color: var(--text-color);
-            font-size: 0.9rem;
-        }
+.links::before {
+    right: 0;
+}
 
-        .divider::before, .divider::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            width: 40%;
-            height: 1px;
-            background: var(--divider-color);
-        }
+.links::after {
+    left: 0;
+}
 
-        .divider::before {
-            right: 0;
-        }
+.login {
+    color: var(--primary-color);
+    text-decoration: solid;
+    transition: color 0.3s;
+    margin-top: 10%;
+    text-align: start;
+    position: relative;
+}
 
-        .divider::after {
-            left: 0;
-        }
+.login:hover {
+    color: var(--primary-hover);
+    text-decoration: solid;
+}
 
-        /* مجموعة النموذج */
-        .form-group {
-            margin-bottom: 1.5rem;
-            width: 100%;
-            position: relative;
-            z-index: 1;
-        }
+.login a {
+    width: 10%;
+    color: var(--primary-color);
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    overflow: hidden;
+    font-size: 0.8rem;
+}
+/* مجموعة النموذج */
+.form-group {
+    margin-bottom: 1.5rem;
+    width: 100%;
+    position: relative;
+    z-index: 1;
+}
 
-        input, select {
-            width: 100%;
-            padding: var(--input-padding);
-            border-radius: var(--input-radius);
-            border: 1px solid var(--border-color);
-            background-color: var(--card-color);
-            color: var(--text-color);
-            font-size: 1rem;
-            box-sizing: border-box;
-            transition: all var(--transition-speed);
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
-        }
+input {
+    width: 100%;
+    padding: var(--input-padding);
+    border-radius: var(--input-radius);
+    border: 1px solid var(--border-color);
+    color: fieldtext !important;
+    background-color: light-dark(rgb(232, 240, 254), rgba(70, 90, 126, 0.4)) !important;
+    font-size: 1.1rem;
+    font-weight: bold;
+    box-sizing: border-box;
+    transition: all var(--transition-speed);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+}
 
-        .night-theme input, .night-theme select {
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
-        }
+.night-theme input {
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
 
-        input:focus, select:focus {
-            border-color: var(--primary-color);
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(212, 167, 106, 0.3),
-                        inset 0 2px 4px rgba(0,0,0,0.05);
-        }
+input:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(212, 167, 106, 0.3),
+        inset 0 2px 4px rgba(0, 0, 0, 0.05);
+}
 
-        .night-theme input:focus, .night-theme select:focus {
-            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.3),
-                        inset 0 2px 4px rgba(0,0,0,0.2);
-        }
+.night-theme input:focus {
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.3),
+        inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
 
-        /* مجموعة إدخال الهاتف */
-        .phone-input-group {
-            display: flex;
-            gap: 10px;
-        }
+/* مجموعة إدخال الهاتف */
+.phone-input-group {
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+}
 
-        .country-code {
-            width: 35%;
-            min-width: 120px;
-        }
+.country-code {
+    width: 35%;
+    min-width: 120px;
+    padding: 14px;
+    background: var(--country-bg);
+    color: var(--country-text);
+    border: none;
+    border-radius: var(--border-radius);
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    transform-style: preserve-3d;
+    margin-top: 10px;
+    font-size: 1.1rem;
+    box-shadow:
+        0 4px 0 var(--country-shadow),
+        inset 0 -2px 0 var(--country-inset-dark),
+        inset 0 1px 0 var(--country-inset-light);
+}
 
-        .phone-number {
-            flex: 1;
-        }
+.phone-number {
+    flex: 1;
+    width: 100%;
+    height: 48%;
+    direction: ltr;
+    font-family: 'Courier New', monospace;
+    padding: var(--input-padding);
+    background: var(--country-bg);
+    color: var(--country-text);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    margin-top: 11px;
+    font-size: 1.1rem;
+}
 
-        /* الأزرار */
-        button[type="submit"] {
-            width: 100%;
-            padding: 14px;
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: var(--border-radius);
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 4px 0 rgba(0,0,0,0.2),
-                        inset 0 -2px 0 rgba(0,0,0,0.1),
-                        inset 0 1px 0 rgba(255,255,255,0.2);
-            transform-style: preserve-3d;
-            margin-top: 10px;
-            font-size: 1.1rem;
-        }
+/* الأزرار */
+button {
+    width: 100%;
+    padding: 14px;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius);
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2),
+        inset 0 -2px 0 rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    transform-style: preserve-3d;
+    margin-top: 10px;
+    font-size: 1.1rem;
+}
 
-        .night-theme button[type="submit"] {
-            box-shadow: 0 4px 0 rgba(42, 82, 128, 0.8),
-                        inset 0 -2px 0 rgba(0,0,0,0.2),
-                        inset 0 1px 0 rgba(255,255,255,0.1);
-        }
+.night-theme button {
+    box-shadow: 0 4px 0 rgba(42, 82, 128, 0.8),
+        inset 0 -2px 0 rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
 
-        button[type="submit"]:hover {
-            background: var(--primary-hover);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 0 rgba(0,0,0,0.2),
-                        inset 0 -2px 0 rgba(0,0,0,0.1),
-                        inset 0 1px 0 rgba(255,255,255,0.2);
-        }
+button:hover {
+    background: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 rgba(0, 0, 0, 0.2),
+        inset 0 -2px 0 rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
 
-        button[type="submit"]:active {
-            transform: translateY(4px);
-            box-shadow: 0 1px 0 rgba(0,0,0,0.2);
-        }
+button:active {
+    transform: translateY(4px);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+}
 
-        button[type="submit"]::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(
-                to bottom,
-                rgba(255,255,255,0.3),
-                rgba(255,255,255,0)
-            );
-            pointer-events: none;
-        }
+button::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom,
+            rgba(255, 255, 255, 0.3),
+            rgba(255, 255, 255, 0));
+    pointer-events: none;
+}
 
-        button[type="submit"]:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-            transform: none;
-        }
+button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
 
-        /* مؤشر التحميل */
-        .spinner {
-            display: none;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #fff;
-            border-top: 3px solid #999;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
+button[type="submit"]:hover {
+    background: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 rgba(0, 0, 0, 0.2),
+        inset 0 -2px 0 rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
 
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
+button[type="submit"]:active {
+    transform: translateY(4px);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+}
 
-        /* للهواتف */
-        @media (max-width: 480px) {
-            .container {
-                padding: 1.8rem;
-                margin: 15px auto;
-            }
-            
-            .phone-input-group {
-                flex-direction: column;
-                gap: 10px;
-            }
-            
-            .country-code {
-                width: 100%;
-            }
-            
-            h2 {
-                font-size: 1.6rem;
-            }
-            
-            .btn-google, .btn-apple {
-                font-size: 0.9rem;
-            }
-        }
+button[type="submit"]::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom,
+            rgba(255, 255, 255, 0.3),
+            rgba(255, 255, 255, 0));
+    pointer-events: none;
+}
+
+button[type="submit"]:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* مؤشر التحميل */
+.spinner {
+    display: none;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #fff;
+    border-top: 3px solid #999;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* للهواتف */
+@media (max-width: 480px) {
+    .container {
+        padding: 1.8rem;
+        margin: 15px auto;
+    }
+
+    .phone-input-group {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .country-code {
+        width: 100%;
+    }
+
+    h2 {
+        font-size: 1.6rem;
+    }
+
+    .btn-google,
+    .btn-apple {
+        font-size: 0.9rem;
+    }
+}

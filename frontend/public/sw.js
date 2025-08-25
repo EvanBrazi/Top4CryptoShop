@@ -129,11 +129,33 @@ async function handleNormalRequest(request) {
 }
 
 // تحديد نوع الطلب ومعالجته
-self.addEventListener('fetch', (event) => {
+self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
+
+  // إشعار ببدء التحميل
+  self.clients.matchAll().then(clients => {
+    clients.forEach(client => {
+      client.postMessage({ type: 'loading-start' });
+    });
+  });
+
+  // تحديد نوع الطلب
+  let responsePromise;
   if (url.pathname.startsWith('/cache/')) {
-    event.respondWith(handleIconRequest(event.request));
+    responsePromise = handleIconRequest(event.request);
   } else {
-    event.respondWith(handleNormalRequest(event.request));
+    responsePromise = handleNormalRequest(event.request);
   }
+
+  // تنفيذ الطلب وإشعار بانتهائه
+  event.respondWith(
+    Promise.resolve(responsePromise).then(response => {
+      self.clients.matchAll().then(clients => {
+        clients.forEach(client => {
+          client.postMessage({ type: 'loading-end' });
+        });
+      });
+      return response;
+    })
+  );
 });

@@ -29,7 +29,7 @@ const APP_CONFIG = {
 
 class HomePage {
     constructor() {
-        this.userManager = UserManager.getInstance(); 
+        this.userManager = UserManager.getInstance();
         this.domElements = {};
         this.eventListeners = {};
         this.components = {};
@@ -484,6 +484,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     window.homePage = new HomePage();
+    navigator.serviceWorker.addEventListener('message', event => {
+        if (event.data.type === 'loading-start') showLoader();
+        if (event.data.type === 'loading-end') hideLoader();
+    });
 });
 
 // تنظيف الذاكرة عند إغلاق الصفحة

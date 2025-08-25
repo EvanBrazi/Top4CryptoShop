@@ -180,7 +180,7 @@ byId('registerForm').addEventListener('submit', async (e) => {
             btnText.style.display = 'inline';
             submitBtn.disabled = false;
 
-            const redirectPath = '/homepage.html';
+            const redirectPath = '/login.html';
             window.location.href = redirectPath;
         }, 1500);
         // 🎉 نجاح التسجيل

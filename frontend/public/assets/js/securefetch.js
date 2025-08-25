@@ -27,7 +27,7 @@ export async function secureFetch(url, options = {}) {
     };
 
     try {
-        const response = await fetch(url, {
+        const response = await secureFetchWithLoader(url, {
             ...options,
             headers,
             credentials: 'include'
@@ -45,3 +45,12 @@ export async function secureFetch(url, options = {}) {
     }
 }
 
+async function secureFetchWithLoader(url, options = {}) {
+  try {
+    showLoader();
+    const response = await fetch(url, options);
+    return response;
+  } finally {
+    hideLoader();
+  }
+}

@@ -164,6 +164,27 @@ app.get('/api/apps', (req, res) => {
   });
 });
 
+app.get('/api/games', (req, res) => {
+  fs.readFile(path.join(__dirname, 'data/games.json'), 'utf8', (err, data) => {
+    if (err) return res.status(500).json({ error: 'فشل تحميل التطبيقات' });
+    res.json(JSON.parse(data));
+  });
+});
+
+app.get('/api/cryptos', (req, res) => {
+  fs.readFile(path.join(__dirname, 'data/cryptos.json'), 'utf8', (err, data) => {
+    if (err) return res.status(500).json({ error: 'فشل تحميل التطبيقات' });
+    res.json(JSON.parse(data));
+  });
+});
+
+app.get('/api/balances', (req, res) => {
+  fs.readFile(path.join(__dirname, 'data/balances.json'), 'utf8', (err, data) => {
+    if (err) return res.status(500).json({ error: 'فشل تحميل التطبيقات' });
+    res.json(JSON.parse(data));
+  });
+});
+
 app.get('/api/essential', (req, res) => {
   fs.readFile(path.join(__dirname, 'data/essential.json'), 'utf8', (err, data) => {
     if (err) return res.status(500).json({ error: 'فشل تحميل essential' });

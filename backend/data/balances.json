@@ -1,0 +1,7 @@
+[
+  { "id": 1, "name": "سيريافون", "icon": "syria_phone.png", "category": "دردشة", "price": "4.99", "available": true },
+  { "id": 2, "name": "MTN", "icon": "mtn.png", "category": "balances", "price": "3.99", "available": true },
+  { "id": 3, "name": "MTN Cash", "icon": "mtn.png", "category": "balances", "price": "5.99", "available": true },
+  { "id": 4, "name": "سيرياتيل", "icon": "syriatel.png", "category": "balances", "price": "4.49", "available": true },
+  { "id": 5, "name": "سيرياتيل كاش", "icon": "syriatel.png", "category": "balances", "price": "3.99", "available": true }
+]

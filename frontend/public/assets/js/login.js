@@ -142,8 +142,8 @@ async function loginUser(username, password) {
 
             const redirectPath = result.redirectTo || roleRedirects[result.user.role] || '/homepage.html';
             window.location.href = redirectPath;
-        }, 1500);
-        alert(`اهلاً بعودتك ${username} 👋`, 5000);
+            alert(`اهلاً بعودتك ${username} 👋`);
+        }, 300);
     } catch (err) {
         console.error("🚨 خطأ أثناء تسجيل الدخول:", err);
         showAlert('error', 'فشل تسجيل الدخول', err.message || 'حدث خطأ غير متوقع. حاول لاحقًا.');

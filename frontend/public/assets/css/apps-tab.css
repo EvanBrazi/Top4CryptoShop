@@ -1,6 +1,6 @@
 /* apps-tab.css */
 
-/* شبكة التطبيقات */
+/* شبكة البطاقات */
 .apps-grid {
   opacity: 1;
   visibility: visible;
@@ -73,13 +73,13 @@
 }
 
 /* الوضع الداكن */
-body.dark-mode .app-card {
+body.night-mode .app-card {
   background: #1e1e1e;
   color: #eee;
   box-shadow: 0 4px 12px rgba(255, 255, 255, 0.05);
 }
 
-body.dark-mode .app-card:hover {
+body.night-mode .app-card:hover {
   box-shadow: 0 8px 20px rgba(255, 255, 255, 0.1);
 }
 

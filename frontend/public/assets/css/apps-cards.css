@@ -1,10 +1,10 @@
-/* apps-cards.css */
+/* games-cards.css */
 :root {
   --theme-color: #6a5acd;
   --dialog-bg-color: #ffffff;
 }
 
-.apps-container {
+.games-container {
   max-width: 100%;
   margin: 0 auto;
   padding: 15px;
@@ -34,7 +34,7 @@
 }
 
 /* إعادة ضبط الشبكة والبطاقات */
-.apps-grid {
+.games-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr)); /* 4 بطاقات في الصف مع مراعاة الحجم */
   gap: 15px;
@@ -45,7 +45,7 @@
   box-sizing: border-box;
 }
 
-.app-card {
+.game-card {
   position: relative;
   width: 100%;
   aspect-ratio: 1/1;
@@ -63,7 +63,7 @@
   min-width: 0; /* إصلاح مشكلة تجاوز الحجم */
 }
 
-.app-card:after {
+.game-card:after {
   content: '';
   position: absolute;
   top: 0;
@@ -75,12 +75,12 @@
   pointer-events: none;
 }
 
-.app-card:hover {
+.game-card:hover {
   transform: translateY(-5px) rotateX(2deg);
   box-shadow: 0 8px 16px rgba(0,0,0,0.15);
 }
 
-.app-icon-container {
+.game-icon-container {
   width: 100%;
   height: 70%;
   display: flex;
@@ -100,7 +100,7 @@
   100% { background-position: 0% 50%; }
 }
 
-.app-icon {
+.game-icon {
   max-width: 60%;
   max-height: 60%;
   object-fit: contain;
@@ -109,11 +109,11 @@
   z-index: 2;
 }
 
-.app-card:hover .app-icon {
+.game-card:hover .game-icon {
   transform: scale(1.05);
 }
 
-.app-name {
+.game-name {
   padding: 8px;
   text-align: center;
   font-size: 0.75rem;
@@ -127,7 +127,7 @@
   overflow: hidden;
 }
 
-.app-logo {
+.game-logo {
   position: absolute;
   top: 5px;
   right: 5px;
@@ -140,7 +140,7 @@
   z-index: 3;
 }
 
-.app-footer {
+.game-footer {
   background: var(--theme-color);
   color: white;
   padding: 8px;
@@ -285,33 +285,33 @@
 
 /* تعديلات الاستجابة مع الحفاظ على 4 بطاقات */
 @media (max-width: 1200px) {
-  .apps-grid {
+  .games-grid {
     gap: 12px;
   }
   
-  .app-name {
+  .game-name {
     font-size: 0.7rem;
     padding: 6px;
   }
 }
 
 @media (max-width: 992px) {
-  .apps-grid {
+  .games-grid {
     gap: 10px;
   }
   
-  .app-icon {
+  .game-icon {
     max-width: 50%;
     max-height: 50%;
   }
 }
 
 @media (max-width: 768px) {
-  .apps-grid {
+  .games-grid {
     gap: 8px;
   }
   
-  .app-name {
+  .game-name {
     font-size: 0.65rem;
   }
   
@@ -321,15 +321,15 @@
 }
 
 @media (max-width: 576px) {
-  .apps-container {
+  .games-container {
     padding: 10px;
   }
   
-  .apps-grid {
+  .games-grid {
     gap: 6px;
   }
   
-  .app-name {
+  .game-name {
     font-size: 0.6rem;
     padding: 4px;
   }
@@ -341,15 +341,15 @@
 }
 
 @media (max-width: 400px) {
-  .apps-grid {
+  .games-grid {
     gap: 4px;
   }
   
-  .app-name {
+  .game-name {
     font-size: 0.55rem;
   }
   
-  .app-icon {
+  .game-icon {
     max-width: 45%;
     max-height: 45%;
   }

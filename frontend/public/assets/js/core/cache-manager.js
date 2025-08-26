@@ -53,7 +53,7 @@ export class CacheManager {
             console.warn('⚠️ Cannot save invalid blob to local cache');
             return;
         }
-        
+
         this.localCache.set(key, {
             blob,
             size: blob.size,
@@ -73,7 +73,7 @@ export class CacheManager {
             console.warn('⚠️ Cannot save invalid blob to SW cache');
             return;
         }
-        
+
         try {
             const response = new Response(blob, {
                 headers: {
@@ -82,7 +82,7 @@ export class CacheManager {
                     'X-Cache-Source': 'manager'
                 }
             });
-            
+
             const cache = await caches.open(this.cacheName);
             await cache.put(key, response);
         } catch (err) {
@@ -109,12 +109,12 @@ export class CacheManager {
         try {
             const cache = await caches.open(this.cacheName);
             const response = await cache.match(key);
-            
+
             if (!response || !response.ok) return null;
-            
+
             const blob = await response.blob();
             if (blob.size === 0) return null;
-            
+
             this.saveToLocalCache(key, blob, 'sw');
             return blob;
         } catch (err) {
@@ -133,15 +133,15 @@ export class CacheManager {
             // البحث في المسارات المختلفة للأيقونة
             const iconPath = await this._findIconPath(iconName);
             const response = await fetch(iconPath);
-            
+
             if (!response.ok) return null;
-            
+
             const blob = await response.blob();
             const key = this.generateCacheKey(iconName);
-            
+
             this.saveToLocalCache(key, blob, 'network');
             await this.saveToSWCache(key, blob);
-            
+
             return blob;
         } catch (err) {
             console.error(`🌐 Network Fetch Error: ${iconName}`, err);
@@ -156,36 +156,37 @@ export class CacheManager {
      * @private
      */
     async _findIconPath(iconName) {
-        const possiblePaths = [
-            `/icons/apps/${iconName}`,
-            `/icons/balances/${iconName}`,
-            `/icons/hometab/${iconName}`,
-            `/icons/games/${iconName}`,
-            `/icons/cryptos/${iconName}`,
+        console.warn('_findIconPath', iconName);
+        const categories = ['apps', 'balances', 'hometab', 'games', 'cryptos'];
+        const extraPaths = [
             `/frontend/public/assets/${iconName}`,
             `/backend/public/icons/${iconName}`,
             `/assets/images/${iconName}`,
             `/icons/${iconName}`
         ];
 
-        // التحقق من وجود الأيقونة في أي من المسارات
+        const possiblePaths = [
+            ...categories.map(cat => `/icons/${cat}/${iconName}`),
+            ...extraPaths
+        ];
+
         for (const path of possiblePaths) {
             try {
+                console.info(`🔍 Trying: ${path}`);
                 const response = await fetch(path, { method: 'HEAD' });
                 if (response.ok) {
                     console.log(`✅ Found icon at: ${path}`);
                     return path;
                 }
             } catch (err) {
-                // تجاهل الأخطاء والانتقال إلى المسار التالي
-                continue;
+                console.warn(`❌ Failed: ${path}`, err);
             }
         }
 
-        // استخدام الأيقونة الافتراضية إذا لم يتم العثور على الأيقونة
         console.warn(`⚠️ Icon not found, using default: ${iconName}`);
-        return '/icons/apps/default.png';
+        return `/icons/apps/default.png`;
     }
+
 
     /**
      * التحقق من وجود الأيقونة في أي مصدر
@@ -194,7 +195,7 @@ export class CacheManager {
      */
     async getIcon(iconName) {
         const key = this.generateCacheKey(iconName);
-        
+
         // 1. التحقق من الكاش المحلي
         const localBlob = this.getFromLocalCache(key);
         if (localBlob) return localBlob;
@@ -219,7 +220,7 @@ export class CacheManager {
     logIconInfo(iconName) {
         const key = this.generateCacheKey(iconName);
         const entry = this.localCache.get(key);
-        
+
         if (!entry) {
             console.log(`ℹ️ No cache data for ${iconName}`);
             return;
@@ -241,14 +242,14 @@ export class CacheManager {
     clearLocalCache(maxAge = 24 * 60 * 60 * 1000) {
         const now = Date.now();
         let removedCount = 0;
-        
+
         for (const [key, entry] of this.localCache.entries()) {
             if (now - entry.timestamp > maxAge) {
                 this.localCache.delete(key);
                 removedCount++;
             }
         }
-        
+
         console.log(`🧹 Removed ${removedCount} items from local cache`);
     }
 }

@@ -1,0 +1,153 @@
+:root {
+    --theme-color: #6a5acd;
+    --card-bg: #ffffff;
+    --text-color: #ffc583;
+}
+
+/* ============================
+   💠 الشبكة الموحدة
+============================= */
+.grid-layout {
+    opacity: 1;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
+    gap: 12px;
+    padding: 10px;
+    animation: fadeIn 0.6s ease-in;
+}
+
+/* ============================
+   💠 البطاقة الموحدة
+============================= */
+.card {
+    position: relative;
+    background: var(--card-bg);
+    border-radius: 15%;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    cursor: pointer;
+    text-align: center;
+    padding: 10px;
+    transition: transform 0.3s ease;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: linear-gradient(45deg,
+            #ff0000, #ff7f00, #ffff00, #00ff00,
+            #0000ff, #4b0082, #9400d3);
+    background-size: 400% 400%;
+    animation: gradientBG 8s ease infinite;
+}
+
+.card:hover {
+    transform: translateY(-5px) rotateX(2deg);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* ============================
+   💠 الأيقونة داخل البطاقة
+============================= */
+.icon {
+    position: relative;
+    width: 75%;
+    height: 75%;
+    margin-bottom: auto;
+    border-radius: 100%;
+    object-fit: cover;
+    margin: 0px auto 10px;
+    display: block;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+    transition: transform 0.3s ease;
+}
+
+.card:hover .icon {
+    transform: scale(1.05);
+}
+
+/* ============================
+   💠 اسم العنصر
+============================= */
+.title {
+    margin-top: auto;
+    object-fit: cover;
+    bottom: 0;
+    width: 100%;
+    height: 25%;
+    padding: 1%;
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: #ff5e00;
+    text-shadow: 0 0 5px #ff7300, 0 0 10px #ffee00, 0 0 20px #ff0000;
+    animation: pulseGlow 1.5s infinite alternate;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    word-break: break-word;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+/* ============================
+   💠 تخصيص حسب التبويب
+============================= */
+[data-tab-type="apps"] {
+    --card-bg: #f0f8ff;
+    --text-color: #003366;
+}
+
+[data-tab-type="games"] {
+    --card-bg: #fffbe6;
+    --text-color: #663300;
+}
+
+[data-tab-type="balances"] {
+    --card-bg: #e6f7ff;
+    --text-color: #005580;
+}
+
+[data-tab-type="cryptos"] {
+    --card-bg: #fefefe;
+    --text-color: #222;
+}
+
+/* ============================
+   💠 أنيميشن دخول
+============================= */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes gradientBG {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+@keyframes pulseGlow {
+    from {
+        text-shadow: 0 0 5px #6a5acd, 0 0 10px #6a5acd;
+    }
+
+    to {
+        text-shadow: 0 0 15px #6a5acd, 0 0 25px #6a5acd;
+    }
+}

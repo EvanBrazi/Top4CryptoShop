@@ -2,7 +2,7 @@
   { "id": 1, "name": "ببجي عالمي", "icon": "pubg.png", "category": "games", "price": "4.99", "available": true },
   { "id": 2, "name": "فري فاير", "icon": "freefire.webp", "category": "games", "price": "3.99", "available": true },
   { "id": 3, "name": "جواكر", "icon": "jawaker.png", "category": "games", "price": "5.99", "available": true },
-  { "id": 4, "name": "يالا لودو", "icon": "com_mico.png", "category": "games", "price": "4.49", "available": true },
+  { "id": 4, "name": "يالا لودو", "icon": "yalla_ludo.png", "category": "games", "price": "4.49", "available": true },
   { "id": 5, "name": "موبايل ليجيند", "icon": "mobile_legends.png", "category": "games", "price": "3.99", "available": true },
   { "id": 6, "name": "دلتا فورس", "icon": "delta_force.avif", "category": "games", "price": "5.49", "available": true },
   { "id": 7, "name": "ارينا بريك اوت", "icon": "arena_breakout.webp", "category": "games", "price": "5.99", "available": true },

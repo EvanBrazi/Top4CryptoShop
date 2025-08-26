@@ -108,10 +108,11 @@ export class IconLoader {
         this.system.getIconInfo(iconName);
     }
 }
-
+/**
 // إنشاء نسخة افتراضية للاستخدام العام
 const defaultIconLoader = new IconLoader();
 
 // تصدير المحمل الافتراضي والمكونات الأساسية
 export default defaultIconLoader;
 export { UnifiedIconSystem, IconRenderer };
+*/

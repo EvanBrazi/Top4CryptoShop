@@ -10,9 +10,13 @@
 
 import { HomeTab } from "./tabs/hometab.js";
 import { AppsTab } from "./tabs/appstab.js";
+import { GamesTab } from "./tabs/gamestab.js";
+import { CryptosTab } from "./tabs/cryptostab.js";
+import { BalancesTab } from "./tabs/balancestab.js";
 import { IconLoader } from "./core/icon-loader.js";
 import { UnifiedIconSystem } from './core/unified-icon-system.js';
 import { IconRenderer } from './core/icon-renderer.js';
+import { CardsService } from "./core/cards.js";
 
 /* ---------------------------------- */
 /* --------- إعدادات التطبيق -------- */
@@ -92,6 +96,21 @@ export class AppManager {
             fallback: this.config.fallbackIcon
         });
 
+        this.gamesTabIcons = new UnifiedIconSystem({
+            basePath: '/icons/games/',
+            fallback: '/icons/games/default.png'
+        });
+
+        this.cryptosTabIcons = new UnifiedIconSystem({
+            basePath: '/icons/cryptos/',
+            fallback: '/icons/cryptos/default.png'
+        });
+
+        this.balancesTabIcons = new UnifiedIconSystem({
+            basePath: '/icons/balances/',
+            fallback: '/icons/balances/default.png'
+        });
+
         // 🎨 وحدة عرض الأيقونات
         this.iconRenderer = new IconRenderer();
 
@@ -103,6 +122,21 @@ export class AppManager {
 
         this.appsIconLoader = new IconLoader({
             system: this.appsTabIcons,
+            renderer: this.iconRenderer
+        });
+
+        this.gamesIconLoader = new IconLoader({
+            system: this.gamesTabIcons,
+            renderer: this.iconRenderer
+        });
+
+        this.cryptosIconLoader = new IconLoader({
+            system: this.cryptosTabIcons,
+            renderer: this.iconRenderer
+        });
+
+        this.balancesIconLoader = new IconLoader({
+            system: this.balancesTabIcons,
             renderer: this.iconRenderer
         });
 
@@ -161,13 +195,13 @@ export class AppManager {
             'chat_saya.png',
             'com_taka_vhgyk.png'
         ];
-        
+
         // تحميل مسبق لأيقونات التبويب الرئيسي
         await this.homeTabIcons.preloadIcons(essentialIcons);
-        
+
         // تحميل مسبق لأيقونات تبويب التطبيقات
         await this.appsTabIcons.preloadIcons(essentialIcons);
-        
+
         console.log('✅ تم التحميل المسبق للأيقونات الأساسية');
     }
 
@@ -177,7 +211,10 @@ export class AppManager {
      */
     async initTabs() {
         this.cardsData = await fetchCards();
-        this.appsData = await _fetchAppsData();
+        this.appsData = await new CardsService('/api/apps', '/icons/apps/').fetchCards();
+        this.gamesData = await new CardsService('/api/games', '/icons/games/').fetchCards();
+        this.cryptosData = await new CardsService('/api/cryptos', '/icons/cryptos/').fetchCards();
+        this.balancesData = await new CardsService('/api/balances', '/icons/balances/').fetchCards();
 
         this.tabs = {
             home: new HomeTab({
@@ -198,6 +235,36 @@ export class AppManager {
                     appsIconLoader: this.appsIconLoader,
                     fallbackUrl: '/icons/apps/default.png',
                     onCardClick: (app) => this.handleAppsCardsClick(app),
+                    themeColor: this.config.themeColor
+                }
+            }),
+            games: new GamesTab({
+                containerId: 'games-tab-container',
+                options: {
+                    gamesData: this.gamesData,
+                    gamesIconLoader: this.gamesIconLoader,
+                    fallbackUrl: '/icons/games/default.png',
+                    onCardClick: (game) => this.handleAppsCardsClick(game),
+                    themeColor: this.config.themeColor
+                }
+            }),
+            cryptos: new CryptosTab({
+                containerId: 'cryptos-tab-container',
+                options: {
+                    cryptosData: this.cryptosData,
+                    cryptosIconLoader: this.cryptosIconLoader,
+                    fallbackUrl: '/icons/cryptos/default.png',
+                    onCardClick: (crypto) => this.handleAppsCardsClick(crypto),
+                    themeColor: this.config.themeColor
+                }
+            }),
+            balances: new BalancesTab({
+                containerId: 'balances-tab-container',
+                options: {
+                    balancesData: this.balancesData,
+                    balancesIconLoader: this.balancesIconLoader,
+                    fallbackUrl: '/icons/balances/default.png',
+                    onCardClick: (balance) => this.handleAppsCardsClick(balance),
                     themeColor: this.config.themeColor
                 }
             })
@@ -246,7 +313,7 @@ export class AppManager {
      */
     _whichCardClick(index, card) {
         console.log('🃏 نقر على بطاقة:', card.title, '، الفهرس:', index);
-        
+
         // تفعيل التبويب المحدد في البطاقة
         if (card.whichTab && this.taber) {
             this.taber.activateTab(card.whichTab);
@@ -271,11 +338,11 @@ export class AppManager {
         try {
             console.log('🔄 جاري تحديث بيانات التطبيقات...');
             this.appsData = await _fetchAppsData();
-            
+
             if (this.tabs.apps && typeof this.tabs.apps.refresh === 'function') {
                 this.tabs.apps.refresh(this.appsData);
             }
-            
+
             console.log('✅ تم تحديث بيانات التطبيقات بنجاح');
         } catch (error) {
             console.error('❌ فشل تحديث بيانات التطبيقات:', error);
@@ -301,7 +368,7 @@ export class AppManager {
                 </details>
             </div>
         `;
-        
+
         document.body.appendChild(errorContainer);
     }
 
@@ -312,10 +379,10 @@ export class AppManager {
         // تنظيف أنظمة الأيقونات
         this.homeTabIcons.clearCache();
         this.appsTabIcons.clearCache();
-        
+
         // إزالة مستمعات الأحداث
         document.removeEventListener('refreshData', this._eventHandlers.refreshData);
-        
+
         console.log('🧹 تم تنظيف موارد AppManager');
     }
 }

@@ -57,6 +57,7 @@
   color: #777;
   padding: 40px 0;
 }
+
 .empty-state img {
   width: 80px;
   opacity: 0.6;
@@ -195,11 +196,12 @@
 }
 
 .card-title {
-  color: white;
+  color: rgb(255, 102, 0);
   font-size: 1.3rem;
   margin: 0;
   font-weight: bold;
-  text-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+  text-shadow: 0 0 5px #ff7300, 0 0 10px #ffee00, 0 0 20px #ff0000;
+  animation: pulseGlow 1.5s infinite alternate;
   letter-spacing: 0.5px;
   transform: translateZ(50px);
 }
@@ -224,6 +226,16 @@
 .card:hover .card-light-effect {
   opacity: 0.5;
   transform: translate(10%, 10%);
+}
+
+@keyframes pulseGlow {
+  from {
+    text-shadow: 0 0 5px #6a5acd, 0 0 10px #6a5acd;
+  }
+
+  to {
+    text-shadow: 0 0 15px #6a5acd, 0 0 25px #6a5acd;
+  }
 }
 
 /* ======== تحسينات للاستجابة ======== */

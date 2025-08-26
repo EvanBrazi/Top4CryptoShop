@@ -2,11 +2,12 @@
  * @file appstab.js
  * @module AppsTab
  * @author Evan Brazi
- * @version 9.0.0
- * @description تبويب التطبيقات لعرض شبكة من البطاقات باستخدام نظام الأيقونات الموحد
+ * @version 9.1.0
+ * @description تبويب التطبيقات باستخدام نظام البطاقات الموحد (grid-layout + card + icon + title)
  * @license MIT
- * @updated 2025-08-22
+ * @updated 2025-08-26
  */
+
 export class AppsTab {
     /**
      * @constructor
@@ -15,11 +16,11 @@ export class AppsTab {
     constructor({ containerId, options = {} }) {
         this.container = document.getElementById(containerId);
         if (!this.container) throw new Error(`Container "${containerId}" not found`);
-        // ✅ لا تعرض الهيكل المؤقت إذا كانت البطاقات موجودة مسبقًا
-        const hasCards = this.container.querySelectorAll('.app-card').length > 0;
-        if (!hasCards) {
-            this._renderSkeleton();
-        }
+
+        // ✅ عرض هيكل مؤقت فقط إذا لم تكن هناك بطاقات مسبقًا
+        const hasCards = this.container.querySelectorAll('.card').length > 0;
+        if (!hasCards) this._renderSkeleton();
+
         this.config = {
             appsData: options.appsData || [],
             appsIconLoader: options.appsIconLoader,
@@ -27,26 +28,29 @@ export class AppsTab {
             themeColor: options.themeColor || '#6a5acd',
             onCardClick: typeof options.onCardClick === 'function'
                 ? options.onCardClick
-                : () => console.log('تم النقر على التطبيق')
+                : () => console.log('🖱️ تم النقر على التطبيق')
         };
+
         this.isInitialized = false;
         this.observer = null;
         this.init();
     }
 
     /**
-     * تهيئة التبويب
+     * تهيئة التبويب وتحميل الشبكة والستايل
      * @private
-     * @returns {Promise<void>}
      */
     async init() {
         if (this.isInitialized) return;
+
         this._injectStyles();
-        // ✅ تحقق من وجود شبكة التطبيقات مسبقًا
-        if (this.container.querySelector('.apps-grid')) {
+
+        // ✅ منع التهيئة إذا كانت الشبكة موجودة مسبقًا
+        if (this.container.querySelector('.grid-layout')) {
             console.log('⚠️ الشبكة موجودة مسبقًا، لن تتم إعادة التهيئة');
             return;
         }
+
         await this._renderAppsGrid();
         await this._setupLazyLoading();
 
@@ -67,67 +71,59 @@ export class AppsTab {
     }
 
     /**
-     * عرض شبكة التطبيقات
+     * عرض شبكة البطاقات باستخدام التنسيق الموحد
      * @private
-     * @returns {Promise<void>}
      */
     async _renderAppsGrid() {
         const grid = document.createElement('div');
-        grid.className = 'apps-grid';
+        grid.className = 'grid-layout'; // ✅ استخدام التنسيق الموحد
 
-        // إنشاء البطاقات
+        const fragment = document.createDocumentFragment();
+
         const cardElements = await Promise.all(
-            await this.config.appsData.map(async app => await this._createAppCard(app))
+            this.config.appsData.map(app => this._createAppCard(app))
         );
 
-        // إضافة البطاقات إلى الشبكة
-        const fragment = document.createDocumentFragment();
         cardElements.forEach(card => {
-            if (card instanceof HTMLElement) {
-                fragment.appendChild(card);
-            }
+            if (card instanceof HTMLElement) fragment.appendChild(card);
         });
+
         const skeleton = this.container.querySelector('.skeleton-grid');
         if (skeleton) skeleton.remove();
+
         grid.appendChild(fragment);
         this.container.appendChild(grid);
     }
 
     /**
-     * إنشاء بطاقة تطبيق واحدة
+     * إنشاء بطاقة تطبيق واحدة باستخدام الكلاسات الموحدة
      * @private
      * @param {Object} app - بيانات التطبيق
-     * @returns {Promise<HTMLElement>} عنصر بطاقة التطبيق
+     * @returns {Promise<HTMLElement>}
      */
     async _createAppCard(app) {
         const card = document.createElement('div');
-        card.className = 'app-card';
+        card.className = 'card'; // ✅ الكلاس الموحد
         card.dataset.appId = app.id || app.name;
         card.dataset.iconName = app.icon || 'default.png';
 
-        // حاوية الأيقونة
-        const iconContainer = document.createElement('div');
-        iconContainer.className = 'app-icon-container';
-
-        // عنصر الأيقونة
-        const iconElement = document.createElement('img');
-        iconElement.className = 'app-icon';
-        iconElement.alt = app.name;
-        iconElement.loading = 'lazy';
-        // عرض placeholder أولاً
-        iconElement.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNlZWVlZWUiLz48L3N2Zz4=';
-
-        iconContainer.appendChild(iconElement);
-        card.appendChild(iconContainer);
+        // أيقونة التطبيق
+        const icon = document.createElement('img');
+        icon.className = 'icon'; // ✅ الكلاس الموحد
+        icon.alt = app.name;
+        icon.loading = 'lazy';
+        icon.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNlZWVlZWUiLz48L3N2Zz4=';
 
         // اسم التطبيق
-        const nameElement = document.createElement('div');
-        nameElement.className = 'app-name';
-        nameElement.textContent = app.name;
-        card.appendChild(nameElement);
+        const title = document.createElement('div');
+        title.className = 'title'; // ✅ الكلاس الموحد
+        title.textContent = app.name;
 
-        // مستمع حدث النقر
+        card.appendChild(icon);
+        card.appendChild(title);
+
         card.addEventListener('click', () => this.config.onCardClick(app));
+
         return card;
     }
 
@@ -136,12 +132,8 @@ export class AppsTab {
      * @private
      */
     async _setupLazyLoading() {
-        // إيقاف المراقبة السابقة إذا كانت موجودة
-        if (this.observer) {
-            this.observer.disconnect();
-        }
+        if (this.observer) this.observer.disconnect();
 
-        // إنشاء مراقب جديد للتقاطع
         this.observer = new IntersectionObserver((entries) => {
             entries.forEach(async entry => {
                 if (entry.isIntersecting) {
@@ -152,37 +144,27 @@ export class AppsTab {
             });
         }, {
             threshold: 0.1,
-            rootMargin: '100px' // تحميل قبل الظهور بـ 50px
+            rootMargin: '50px'
         });
 
-        // بدء مراقبة جميع البطاقات
-        this.container.querySelectorAll('.app-card').forEach(async card => {
-            await this.observer.observe(card);
+        this.container.querySelectorAll('.card').forEach(card => {
+            this.observer.observe(card);
         });
     }
 
     /**
-     * تحميل أيقونة البطاقة
+     * تحميل أيقونة البطاقة باستخدام نظام الأيقونات الموحد
      * @private
-     * @param {HTMLElement} card - عنصر البطاقة
-     * @returns {Promise<void>}
+     * @param {HTMLElement} card
      */
     async _loadCardIcon(card) {
-        const img = card.querySelector('.app-icon');
+        const img = card.querySelector('.icon');
         const iconName = card.dataset.iconName;
-        //const appId = card.dataset.appId;
-        console.log('AppsTab :: _loadCardIcon(card) : ', img, iconName);
 
         if (!img || !iconName) return;
 
         try {
-            // استخدام نظام الأيقونات الموحد لتحميل وعرض الأيقونة
-            await this.config.appsIconLoader.render(
-                iconName,
-                img,
-                '!'
-            );
-
+            await this.config.appsIconLoader.render(iconName, img, '!');
             console.log('✅ تم تحميل الأيقونة:', iconName);
         } catch (error) {
             console.error('❌ خطأ أثناء تحميل الأيقونة:', iconName, error);
@@ -191,9 +173,9 @@ export class AppsTab {
     }
 
     /**
- * تحميل ملف CSS خارجي إذا لم يكن محمّلًا مسبقًا
- * @private
- */
+     * تحميل ملف CSS خارجي خاص بالتبويب
+     * @private
+     */
     _injectStyles() {
         const styleId = 'apps-tab-styles';
         if (document.getElementById(styleId)) return;
@@ -201,25 +183,25 @@ export class AppsTab {
         const link = document.createElement('link');
         link.id = styleId;
         link.rel = 'stylesheet';
-        link.href = '/assets/css/apps-tab.css'; // تأكد من المسار الصحيح حسب بنية مشروعك
+        link.href = '/assets/css/tabs-layout.css'; // ✅ استخدام ملف التنسيق الموحد
         document.head.appendChild(link);
     }
 
     /**
-     * تحديث بيانات التطبيقات
+     * تحديث بيانات التطبيقات وإعادة العرض
      * @public
-     * @param {Array} newAppsData - بيانات التطبيقات الجديدة
+     * @param {Array} newAppsData
      */
     async refresh(newAppsData) {
         if (Array.isArray(newAppsData)) {
             this.config.appsData = newAppsData;
             await this._renderAppsGrid();
-            this._setupLazyLoading();
+            await this._setupLazyLoading();
         }
     }
 
     /**
-     * تنظيف المراقب والموارد
+     * تنظيف الموارد والمراقب
      * @public
      */
     destroy() {

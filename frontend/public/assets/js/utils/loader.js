@@ -25,7 +25,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 9999; /* فوق كل العناصر */
+      z-index: 2; /* فوق كل العناصر */
       transition: opacity 0.3s ease;
     }
 

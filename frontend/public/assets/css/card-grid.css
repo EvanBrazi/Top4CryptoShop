@@ -1,3 +1,102 @@
+/* ملف card-grid.css */
+/* المتغيرات المحدثة */
+:root {
+    /* ألوان الثيم النهاري */
+    --day-bg: #f5f5f5;
+    --day-text: #333;
+    --day-primary: #d4a76a;
+    --day-primary-hover: #c29555;
+    --day-secondary: #e8d5b5;
+    --day-card: #fff9f0;
+    --day-border: #d8c8a8;
+    --day-navbar: #5d4a36;
+    --day-sidebar: #f1e8de;
+    --day-shadow: rgba(93, 74, 54, 0.15);
+    --day-accent: #e6b422;
+    --day-footer: #8B4513;
+    --day-navbar-text: #f5f5f5;
+    --day-sidebar-header: #d4a76a;
+    --day-sidebar-footer: #8B4513;
+    --day-sidebar-content: #f8f8f8;
+    --day-border-menu-link: 1px solid rgba(0, 0, 0, 0.1);
+    --day-background-menu-l: rgba(255, 255, 255, 0.7);
+    --day-border-left: 1px solid rgba(0, 0, 0, 0.1);
+
+    /* ألوان الثيم الليلي */
+    --night-bg: #1a1a2e;
+    --night-text: #f0f0f0;
+    --night-primary: #4a90e2;
+    --night-primary-hover: #3a7bc8;
+    --night-secondary: #5c6bc0;
+    --night-card: #1e1e2a;
+    --night-border: #333344;
+    --night-navbar: #12121a;
+    --night-sidebar: #1a1a22;
+    --night-shadow: rgba(0, 0, 0, 0.4);
+    --night-accent: #8a7cff;
+    --night-footer: #0f3460;
+    --night-navbar-text: #e0e0e0;
+    --night-sidebar-header: #4a90e2;
+    --night-sidebar-footer: #0f3460;
+    --night-sidebar-content: #1e2a4a;
+    --night-border-menu-link: 1px solid rgba(255, 255, 255, 0.1);
+    --night-background-menu-l: rgba(0, 0, 0, 0.2);
+    --night-border-left: 1px solid rgba(255, 255, 255, 0.1);
+
+    /* زوايا دائرية */
+    --border-radius: 12px;
+    --transition-speed: 0.3s;
+}
+
+/* الثيمات */
+.day-theme {
+    --bg-color: var(--day-bg);
+    --text-color: var(--day-text);
+    --primary-color: var(--day-primary);
+    --primary-hover: var(--day-primary-hover);
+    --secondary-color: var(--day-secondary);
+    --card-color: var(--day-card);
+    --border-color: var(--day-border);
+    --navbar-color: var(--day-navbar);
+    --sidebar-color: var(--day-sidebar);
+    --sidebar-header-color: var(--day-sidebar-header);
+    --sidebar-content-color: var(--day-sidebar-content);
+    --sidebar-footer-color: var(--day-sidebar-footer);
+    --shadow-color: var(--day-shadow);
+    --accent-color: var(--day-accent);
+    --bar-footer-color: var(--day-footer);
+    --navbar-text: var(--day-navbar-text);
+    --divider-color: rgba(0, 0, 0, 0.1);
+    --social-icon-color: white;
+    --border-menu-link: var(--day-border-menu-link);
+    --background-menu-link: var(--day-background-menu-l);
+    --sidebar-border-left: var(--day-border-left);
+}
+
+.night-theme {
+    --bg-color: var(--night-bg);
+    --text-color: var(--night-text);
+    --primary-color: var(--night-primary);
+    --primary-hover: var(--night-primary-hover);
+    --secondary-color: var(--night-secondary);
+    --card-color: var(--night-card);
+    --border-color: var(--night-border);
+    --navbar-color: var(--night-navbar);
+    --sidebar-color: var(--night-sidebar);
+    --sidebar-header-color: var(--night-sidebar-header);
+    --sidebar-content-color: var(--night-sidebar-content);
+    --sidebar-footer-color: var(--night-sidebar-footer);
+    --shadow-color: var(--night-shadow);
+    --accent-color: var(--night-accent);
+    --bar-footer-color: var(--night-footer);
+    --navbar-text: var(--night-navbar-text);
+    --divider-color: rgba(255, 255, 255, 0.1);
+    --social-icon-color: white;
+    --border-menu-link: var(--night-border-menu-link);
+    --background-menu-link: var(--night-background-menu-l);
+    --sidebar-border-left: var(--night-border-left);
+}
+
 /* ======== تحسينات شبكة البطاقات مع تأثير 3D قوي ======== */
 .card-grid-container {
   display: grid;
@@ -8,35 +107,62 @@
   max-width: 90%;
   min-height: 60vh;
   margin: 3rem auto 2rem;
-  /* زيادة الهامش العلوي لتحريك البطاقات للأسفل */
   padding: 5px;
   box-sizing: border-box;
   perspective: 100px;
-  /* زيادة منظور الرؤية 3D */
-  transition-property: all;
+  transition: all var(--transition-speed) ease;
   clip-path: center;
   filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.2));
 }
 
 .card {
   position: relative;
-  border-radius: 12px;
+  border-radius: var(--border-radius);
   overflow: hidden;
   transform-style: preserve-3d;
   transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 30px var(--shadow-color), 
+              0 5px 15px rgba(0,0,0,0.1),
+              inset 0 1px 0 rgba(255,255,255,0.8);
   aspect-ratio: 1/ 1;
   background: var(--card-color);
   transform: translateY(10px);
-  /* تحريك البطاقات للأسفل */
+  border: 1px solid var(--border-color);
+}
+
+.night-theme .card {
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3),
+              inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+      to bottom right,
+      rgba(255,255,255,0.2),
+      rgba(255,255,255,0)
+  );
+  transform: rotate(20deg);
+  pointer-events: none;
+}
+
+.night-theme .card::before {
+  background: linear-gradient(
+      to bottom right,
+      rgba(255,255,255,0.05),
+      rgba(255,255,255,0)
+  );
 }
 
 .loading-bar {
   width: 100%;
   height: 4px;
-  background: linear-gradient(90deg, #00c6ff, #0072ff);
+  background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
   animation: loadingAnim 1.2s infinite linear;
   border-radius: 2px;
   margin-bottom: 12px;
@@ -54,10 +180,9 @@
 
 .empty-state {
   text-align: center;
-  color: #777;
+  color: var(--text-color);
   padding: 40px 0;
 }
-
 .empty-state img {
   width: 80px;
   opacity: 0.6;
@@ -74,7 +199,6 @@
   opacity: 1;
   transform: translateY(0);
 }
-
 
 .card:hover {
   transform: translateY(10px) rotateX(8deg) rotateY(2deg) scale(1.02);
@@ -196,12 +320,11 @@
 }
 
 .card-title {
-  color: rgb(255, 102, 0);
+  color: white;
   font-size: 1.3rem;
   margin: 0;
   font-weight: bold;
-  text-shadow: 0 0 5px #ff7300, 0 0 10px #ffee00, 0 0 20px #ff0000;
-  animation: pulseGlow 1.5s infinite alternate;
+  text-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
   letter-spacing: 0.5px;
   transform: translateZ(50px);
 }
@@ -228,16 +351,6 @@
   transform: translate(10%, 10%);
 }
 
-@keyframes pulseGlow {
-  from {
-    text-shadow: 0 0 5px #6a5acd, 0 0 10px #6a5acd;
-  }
-
-  to {
-    text-shadow: 0 0 15px #6a5acd, 0 0 25px #6a5acd;
-  }
-}
-
 /* ======== تحسينات للاستجابة ======== */
 @media (max-width: 992px) {
   .card-grid-container {
@@ -262,5 +375,23 @@
 
   .card:hover {
     transform: translateY(5px) rotateX(5deg) scale(1.02);
+  }
+}
+
+/* للهواتف */
+@media (max-width: 480px) {
+  .card-grid-container {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    margin: 2rem auto;
+  }
+  
+  .card-logo {
+    width: 4rem;
+    height: 4rem;
+  }
+  
+  .card-title {
+    font-size: 1.1rem;
   }
 }

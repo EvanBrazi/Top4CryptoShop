@@ -412,8 +412,7 @@ class HomePage {
  *
  * @author: Evan Brazi
  */
-const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-const socket = new WebSocket(`${protocol}://${window.location.host}/ws`);
+const socket = new WebSocket('ws://localhost:10000');
 
 socket.addEventListener('open', () => {
     console.log('✅ WebSocket connected (user)');

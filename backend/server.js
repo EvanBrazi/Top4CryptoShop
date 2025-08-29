@@ -30,29 +30,21 @@ const rateLimit = require('express-rate-limit');
 const favicon = require('serve-favicon');
 const http = require('http');
 const { initNotifications } = require('./utils/notifications');
-const securityHeaders = require('./middleware/security');
-const { verifyToken, checkAdmin } = require('./middlewares/auth');
 
 // =======================
 // 🧠 الوظائف الداخلية
 // =======================
-const https = require('https');
-const WebSocket = require('ws');
+const securityHeaders = require('./middleware/security');
+const { WebSocketServer } = require('ws');
+const { verifyToken, checkAdmin } = require('./middlewares/auth');
 
 // =======================
 // 🚀 تهيئة التطبيق والخادم
 // =======================
 const app = express();
-const server = https.createServer(app);
-
-const wss = new WebSocket.Server({ server, path: "/ws" });
-
-wss.on('connection', socket => {
-  console.log("✅ WebSocket متصل");
-  socket.send("مرحبًا بك في Top4CryptoShop");
-});
-
-server.listen(process.env.PORT || 443);
+const server = http.createServer(app);
+//const { broadcast, sendToAdmins } = setupWebSocket(server);
+const wss = new WebSocketServer({ server });
 initNotifications(wss); // ✅ تهيئة الإشعارات
 
 // =======================

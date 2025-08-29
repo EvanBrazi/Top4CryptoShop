@@ -237,15 +237,42 @@ html {
 .profile-info {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  width: 100%;
-  margin-bottom: 5px;
+  align-items: center; /* ← تمركز أفقي */
+  justify-content: center; /* ← تمركز عمودي */
+  text-align: center;
 }
 
 .user-name {
-  font-size: 16px;
+  margin: 2px;
+  margin-bottom: 6px;
+  display: inline-block; /* ← بدل flex */
+  font-size: 1.9rem;
   font-weight: bold;
-  margin-bottom: 5px;
+  border-radius: 8px;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transform-style: preserve-3d;
+  /* 🌈 تأثير التدرج المتحرك */
+  background: linear-gradient(270deg, #ff0000, #ff9900, #33cc33, #3399ff, #9900cc, #ff0000);
+  background-size: 600% 600%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: rainbowText 6s ease infinite;
+}
+
+@keyframes rainbowText {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 .user-balance {
@@ -757,6 +784,61 @@ loading-screen {
   opacity: 0;
   animation: fadeInOut 3s ease-in-out forwards;
 }
+
+.toast-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  min-width: 260px;
+  padding: 12px 18px;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: bold;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 9999;
+  animation: fadeIn 0.4s ease, fadeOut 0.4s ease 4s;
+}
+
+.toast-success {
+  background-color: #27ae60;
+}
+
+.toast-error {
+  background-color: #e74c3c;
+}
+
+.toast-warning {
+  background-color: #f39c12;
+}
+
+.toast-info {
+  background-color: #3498db;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+
 
 @keyframes fadeInOut {
   0% {

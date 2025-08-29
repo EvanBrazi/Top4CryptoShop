@@ -44,7 +44,7 @@ export class WalletTab {
 
         socket.onmessage = (event) => {
             const data = JSON.parse(event.data);
-            if (data.type === 'balanceUpdate' && data.userId === this.userId) {
+            if (data.type === 'paymentAccepted' && data.userId === this.userId) {
                 this._updateBalanceDisplay(data.newAmount);
             }
         };
@@ -101,7 +101,6 @@ export class WalletTab {
             });
             const result = await res.json();
             if (result.status === 'success') {
-                alert('✅ تم إرسال الدفع بنجاح');
                 this._resetForm();
                 // ✅ استدعاء الدالة الممررة من المدير
                 if (typeof this.onPaymentSent === 'function') {
@@ -141,6 +140,6 @@ export class WalletTab {
      */
     _updateBalanceDisplay(amount) {
         if (!this.balanceDisplay) return;
-        this.balanceDisplay.innerHTML = `${parseFloat(amount).toFixed(2)} <span>ر.س</span>`;
+        this.balanceDisplay.innerHTML = `${parseFloat(amount).toFixed(2)} <span>$</span>`;
     }
 }

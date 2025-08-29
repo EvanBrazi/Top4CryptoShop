@@ -43,16 +43,13 @@ const WebSocket = require('ws');
 // 🚀 تهيئة التطبيق والخادم
 // =======================
 const app = express();
-const server = https.createServer({
-  cert: fs.readFileSync('cert.pem'),
-  key: fs.readFileSync('key.pem')
-}, app);
+const server = https.createServer(app);
 
 const wss = new WebSocket.Server({ server, path: "/ws" });
 
 wss.on('connection', socket => {
-  console.log("Client connected");
-  socket.send("Welcome!");
+  console.log("✅ WebSocket متصل");
+  socket.send("مرحبًا بك في Top4CryptoShop");
 });
 
 server.listen(process.env.PORT || 443);

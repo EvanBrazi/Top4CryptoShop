@@ -95,7 +95,7 @@ export class HomeTab {
     async render() {
         this.container.innerHTML = '';
         const grid = document.createElement('div');
-        grid.className = 'card-grid-container';
+        grid.className = 'big-card-grid-container';
 
         // إنشاء وعرض البطاقات
         const cardElements = await Promise.all(
@@ -125,7 +125,7 @@ export class HomeTab {
      */
     async _createCardElement(card, index) {
         const cardEl = document.createElement('div');
-        cardEl.className = 'card';
+        cardEl.className = 'big-card';
         cardEl.dataset.index = index;
         cardEl.setAttribute('role', 'button');
         cardEl.setAttribute('tabindex', '0');
@@ -156,10 +156,10 @@ export class HomeTab {
         if (!iconName) return;
 
         const iconContainer = document.createElement('div');
-        iconContainer.className = 'card-icon-container';
+        iconContainer.className = 'big-card-icon-container';
 
         const iconElement = document.createElement('img');
-        iconElement.className = 'card-icon';
+        iconElement.className = 'big-card-icon';
         iconElement.alt = card.title || 'Icon';
         iconElement.loading = 'lazy';
 
@@ -187,7 +187,7 @@ export class HomeTab {
      */
     _addCardTitle(card, cardEl) {
         const titleEl = document.createElement('h3');
-        titleEl.className = 'card-title';
+        titleEl.className = 'big-card-title';
         titleEl.textContent = card.title || 'بطاقة';
         cardEl.appendChild(titleEl);
     }
@@ -222,11 +222,11 @@ export class HomeTab {
      */
     _handleCardClick(index, card) {
         // إزالة النشط من جميع البطاقات
-        this.container.querySelectorAll('.card').forEach(c => 
+        this.container.querySelectorAll('.big-card').forEach(c => 
             c.classList.remove('active'));
         
         // إضافة النشط للبطاقة المختارة
-        const clickedCard = this.container.querySelector(`.card[data-index="${index}"]`);
+        const clickedCard = this.container.querySelector(`.big-card[data-index="${index}"]`);
         if (clickedCard) clickedCard.classList.add('active');
 
         // تفعيل التبويب المحدد
@@ -243,7 +243,7 @@ export class HomeTab {
      * @private
      */
     _adjustCardsToScreenSize() {
-        const cards = this.container.querySelectorAll('.card');
+        const cards = this.container.querySelectorAll('.big-card');
         if (cards.length === 0) return;
 
         const screenWidth = window.innerWidth;

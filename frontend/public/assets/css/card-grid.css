@@ -1,136 +1,161 @@
-/* 💠 شبكة البطاقات */
-.card-grid-container {
+/* الحاوية الرئيسية */
+.big-card-grid-container {
+  position: relative;
+  text-align: center;
+  justify-items: center;
+  opacity: 1;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-  width: 90%;
-  max-width: auto;
-  margin: 3rem auto;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 12px;
+  margin: 11% auto;
   padding: 10px;
+  padding-left: 8%;
   box-sizing: border-box;
-  justify-content: center;
-  align-items: start;
+  animation: fadeIn 0.6s ease-in;
 }
 
-/* 💠 البطاقة */
-.card {
-  position: relative;
+.big-card {
+  width: clamp(280px, 30vw, 400px);
+  height: clamp(300px, 30vw, 400px);
+  max-height: 400px;
+  border-radius: 15%;
+  overflow: hidden;
+  cursor: pointer;
+  text-align: center;
+  padding: 10px;
+  gap: 12px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   align-items: center;
-  background: var(--card-bg);
-  border-radius: 16px;
-  box-shadow: 0 4px 12px var(--shadow-light);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  padding: 16px;
-  max-width: 240px;
-  margin: auto;
-  aspect-ratio: 4 / 5;
-  overflow: hidden;
+  background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
+  background-size: 400% 400%;
+  animation: gradientBG 8s ease infinite, waveShadow 3s infinite ease-in-out;
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
 }
 
-.card:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 8px 20px var(--shadow-hover);
+/* تأثير عند التحويم */
+.big-card:hover {
+  transform: rotateY(5deg) rotateX(2deg) scale(1.02);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
 }
 
-/* 💠 صورة البطاقة */
-.card-icon {
+/* تأثير عند الضغط (تبعثر) */
+.big-card:active {
+  transform: rotateZ(8deg) scale(0.95);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* حاوية الصورة */
+.big-card-icon-container {
   width: 100%;
-  height: 80%;
-  object-fit: cover;
-  border-radius: 12px;
-  margin-bottom: 2rem;
-  transition: transform 0.3s ease;
-}
-
-.card:hover .card-icon {
-  transform: scale(1.03);
-}
-
-/* 💠 عنوان البطاقة */
-.card-title {
+  max-height: 75%;
   flex: 1;
-  width: 100%;
-  height: 20%;
-  font-size: 1.1rem;
-  font-weight: bold;
-  color: var(--primary-color);
-  margin: 0;
-  text-align: center;
-  margin-top: 4px;
+  overflow: hidden;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
 }
 
-/* 💠 وصف البطاقة */
-.card-description {
-  font-size: 0.85rem;
+.big-card-icon {
+  width: 100%;
+  height: auto;
+  max-height: 100%;
+  object-fit: fill; /* ✅ يظهر الصورة كاملة بدون قص */
+  border-radius: 12px;
+}
+
+/* العنوان */
+.big-card-title {
+  font-size: clamp(1.4rem, 2.5vw, 2rem); /* ✅ تقليل الحجم */
+  font-weight: bold;
+  color: #ffd1b7;
+  text-align: center;
+  animation: pulseGlow 2s infinite ease-in-out;
+  margin: 0;
+}
+
+/* الوصف */
+.big-card-description {
+  display: none;
+  font-size: clamp(0.9rem, 1.2vw, 1rem);
   color: #555;
   text-align: center;
-  line-height: 1.4;
-  margin-bottom: 8px;
 }
 
-/* 💠 تأثير خفيف للطيف */
-.card::after {
-  content: '';
-  position: absolute;
-  top: -40%;
-  left: -40%;
-  width: 180%;
-  height: 180%;
-  background: radial-gradient(circle, rgba(106, 90, 205, 0.05), transparent);
-  z-index: 0;
-  pointer-events: none;
-}
-
-/* 💠 استجابة للشاشات الصغيرة */
-@media (max-width: 768px) {
-  .card-grid-container {
+/* استجابة للشاشات */
+@media (max-width: 1024px) {
+  .big-card-grid-container {
     grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+    width: 90vw;
+    gap: 20px;
+    padding-left: 5%;
   }
+  .big-card-title {
+    font-size: clamp(1.2rem, 2.5vw, 1.6rem);
+  }
+  .big-card-description {
+    font-size: clamp(0.85rem, 2vw, 1rem);
+  }
+}
 
-  .card {
-    max-width: 150px;
+@media (max-width: 480px) {
+  .big-card-grid-container {
+    grid-template-columns: repeat(1, 1fr);
+    width: 95vw;
+    gap: 16px;
+    padding-left: 4%;
+  }
+  .big-card {
+    width: 90vw;
     padding: 12px;
   }
-
-  .card-icon {
-    height: 75%;
+  .big-card-title {
+    font-size: 1.4rem;
   }
-
-  .card-title {
-    font-size: 1.2rem;
-  }
-
-  .card-description {
-    font-size: 0.75rem;
+  .big-card-description {
+    font-size: 0.9rem;
   }
 }
 
-/* 💠 استجابة للشاشات الصغيرة */
 @media (max-width: 320px) {
-  .card-grid-container {
-    grid-template-columns: repeat(1, 1fr);
-    gap: 8px;
+  .big-card-grid-container {
+    grid-template-columns: 1fr;
+    padding-left: 2%;
   }
+  .big-card {
+    width: 70vw;
+  }
+}
 
-  .card {
-    max-width: 100%;
-    padding: 4px;
+/* الحركات */
+@keyframes fadeInSkew {
+  0% {
+    opacity: 0;
+    transform: translateY(40px) skewY(5deg);
   }
+  100% {
+    opacity: 1;
+    transform: translateY(0) skewY(0deg);
+  }
+}
 
-  .card-icon {
-    height: 75%;
-  }
+@keyframes gradientBG {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
 
-  .card-title {
-    font-size: 0.9rem;
-    margin-bottom: 6px;
-  }
+@keyframes waveShadow {
+  0% { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); }
+  50% { box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15); }
+  100% { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); }
+}
 
-  .card-description {
-    font-size: 0.75rem;
-  }
+@keyframes pulseGlow {
+  0% { text-shadow: 0 0 5px #ff5e00, 0 0 10px #ff5e00; }
+  50% { text-shadow: 0 0 15px #ff5e00, 0 0 25px #ff5e00; }
+  100% { text-shadow: 0 0 5px #ff5e00, 0 0 10px #ff5e00; }
 }

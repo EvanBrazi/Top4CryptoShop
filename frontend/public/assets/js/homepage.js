@@ -412,7 +412,8 @@ class HomePage {
  *
  * @author: Evan Brazi
  */
-const socket = new WebSocket('ws://top4cryptoshop.onrender.com:10000');
+const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+const socket = new WebSocket(`${protocol}://top4cryptoshop.onrender.com/ws`);
 
 socket.addEventListener('open', () => {
     console.log('✅ WebSocket connected (user)');

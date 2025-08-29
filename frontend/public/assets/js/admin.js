@@ -8,7 +8,8 @@
 import { STORAGE_KEYS } from "./utils/appUtils.js";
 
 // ✅ تهيئة WebSocket لاستقبال إشعارات لحظية من السيرفر
-const socket = new WebSocket('ws://top4cryptoshop.onrender.com:10000');
+const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+const socket = new WebSocket(`${protocol}://top4cryptoshop.onrender.com/ws`);
 
 socket.onopen = () => {
   const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);

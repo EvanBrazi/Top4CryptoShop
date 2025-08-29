@@ -31,6 +31,13 @@
   --topbar-height: 50px;
   --sidebar-width: 220px;
   --sidebar-header-height: 120px;
+
+  --primary-color: #6a5acd;
+  --accent-color: #ff6b6b;
+  --card-bg: #ffffff;
+  --text-color: #333;
+  --shadow-light: rgba(0, 0, 0, 0.08);
+  --shadow-hover: rgba(0, 0, 0, 0.15);
 }
 
 /* ======== التنسيقات العامة ======== */
@@ -51,28 +58,6 @@ body {
 
 html {
   scroll-behavior: smooth;
-}
-
-#loading-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
-}
-
-.spinner {
-  width: 50px;
-  height: 50px;
-  border: 5px solid #f3f3f3;
-  border-top: 5px solid #6a5acd;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
@@ -579,18 +564,18 @@ button:hover {
 }
 
 loading-screen {
-    position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    background: #fff;
-    z-index: 9999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    color: #444;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: #fff;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: #444;
 }
 
 
@@ -727,19 +712,6 @@ loading-screen {
   background-color: var(--primary-hover);
 }
 
-.empty-state {
-  text-align: center;
-  padding: 40px 20px;
-  color: var(--text-color);
-  opacity: 0.7;
-}
-
-.empty-state i {
-  font-size: 40px;
-  margin-bottom: 15px;
-  color: var(--primary-color);
-}
-
 .stat-card {
   background-color: var(--secondary-color);
   padding: 15px;
@@ -751,30 +723,6 @@ loading-screen {
   font-size: 24px;
   font-weight: bold;
   margin-top: 5px;
-}
-
-.orders-table table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.orders-table th,
-.orders-table td {
-  padding: 12px 15px;
-  text-align: right;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.orders-table th {
-  background-color: var(--secondary-color);
-  font-weight: bold;
-}
-
-.empty-row td {
-  text-align: center;
-  padding: 20px;
-  color: var(--text-color);
-  opacity: 0.7;
 }
 
 .setting-item {

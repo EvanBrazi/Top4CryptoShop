@@ -1,0 +1,46 @@
+.standard-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-family: 'Cairo', sans-serif;
+  background-color: var(--card-bg, #fff);
+  border-radius: var(--radius-md, 8px);
+  overflow: hidden;
+  box-shadow: 0 2px 8px var(--shadow-light, rgba(0,0,0,0.08));
+}
+
+.standard-table thead {
+  background-color: var(--primary-color, #6a5acd);
+  color: #fff;
+  text-align: left;
+}
+
+.standard-table th {
+  padding: 14px 20px;
+  font-size: 0.95rem;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border-color, #ddd);
+}
+
+.standard-table td {
+  padding: 12px 20px;
+  font-size: 0.9rem;
+  color: var(--text-color, #333);
+  border-bottom: 1px solid var(--border-color, #eee);
+  background-color: var(--card-bg, #fff);
+}
+
+.standard-table tr:hover td {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+.standard-table .empty-row td {
+  text-align: center;
+  color: #999;
+  font-style: italic;
+  background-color: transparent;
+}
+
+.status.pending { color: orange; font-weight: bold; }
+.status.accepted { color: green; font-weight: bold; }
+.status.rejected { color: red; font-weight: bold; }

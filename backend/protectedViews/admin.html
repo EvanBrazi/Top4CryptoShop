@@ -12,6 +12,7 @@
 
   <header>
     <h1>لوحة تحكم الأدمن</h1>
+    <div id="connectionStatus" class="status-bar">🟢 متصل</div>
     <div id="globalNotification" class="notification-bar"></div>
   </header>
 
@@ -66,26 +67,6 @@
         </tbody>
       </table>
     </section>
-
-    <!-- 🖼️ جدول مراقبة الأيقونات -->
-    <section class="card">
-      <h2>🖼️ مراقبة تحميل الأيقونات</h2>
-      <table id="iconsTable">
-        <thead>
-          <tr>
-            <th>رابط الأيقونة</th>
-            <th>الحالة</th>
-            <th>عدد المحاولات</th>
-            <th>المدة (ms)</th>
-            <th>معاينة</th>
-            <th>🔁 إعادة المحاولة</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </section>
-  </main>
-
   <script type="module" src="./assets/js/admin.js"></script>
 </body>
 </html>

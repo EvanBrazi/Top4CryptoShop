@@ -8,6 +8,7 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const RevokedToken = require('../models/RevokedToken');
@@ -17,6 +18,7 @@ const { attachCsrfToken, doubleCsrfProtection } = require('../middlewares/csrfMi
 const { registerUser } = require('../controllers/authController');
 const { body } = require('express-validator');
 const { verifyToken, checkAdmin, checkSession } = require('../middlewares/auth');
+const { activeSessions } = require('../socket');
 
 // =============================================
 // 🛡️ دالة موحدة للاستجابات
@@ -109,6 +111,19 @@ router.post(
 // =============================================
 // 🔐 تسجيل الدخول
 // =============================================
+/**
+ * @file auth.js
+ * @module AuthRoutes
+ * @description
+ *  - تسجيل الدخول للمستخدم أو الأدمن
+ *  - توليد sessionId وتخزينه في activeSessions
+ *  - إرسال sessionId و JWT ككوكي
+ *  - يدعم الحماية من المحاولات الزائدة والتعليق المؤقت
+ *
+ * @author Evan Brazi
+ * @lastModified 2025-08-28
+ */
+// 🔐 تسجيل الدخول
 router.post('/login',
   validateLogin,
   handleValidationErrors,
@@ -170,13 +185,19 @@ router.post('/login',
         });
       }
 
-      req.session.userId = user._id;
-      req.session.role = user.role;
-
+      // ✅ الجلسة ناجحة
       user.loginAttempts = 0;
       user.lastLogin = new Date();
       await user.save();
 
+      // 🧠 توليد sessionId وتسجيله في الذاكرة
+      const sessionId = crypto.randomBytes(16).toString('hex');
+      activeSessions.set(sessionId, {
+        userId: user._id.toString(),
+        role: user.role
+      });
+
+      // 🛡️ توليد JWT
       const issuer = user.role === 'admin' ? 'admin-panel' : 'your-app-api';
       const token = jwt.sign(
         { userId: user._id, role: user.role || 'user' },
@@ -184,15 +205,24 @@ router.post('/login',
         { expiresIn: '1h', issuer, algorithm: 'HS256' }
       );
 
+      // 🍪 إرسال الكوكيز
       res.cookie('session_token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        sameSite: 'Lax',
         maxAge: 3600000,
         path: '/'
       });
 
-      attachCsrfToken(req, res); // ✅ توليد رمز CSRF بعد نجاح الدخول
+      res.cookie('sessionId', sessionId, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'Lax',
+        maxAge: 3600000,
+        path: '/'
+      });
+
+      attachCsrfToken(req, res); // توليد رمز CSRF
 
       const userResponse = {
         id: user._id,

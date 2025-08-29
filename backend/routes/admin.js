@@ -9,7 +9,6 @@
 const express = require('express');
 const path = require('path');
 const router = express.Router();
-
 const User = require('../models/User');
 const { verifyToken, checkAdmin } = require('../middlewares/auth');
 const { doubleCsrfProtection } = require('../middlewares/csrfMiddleware');

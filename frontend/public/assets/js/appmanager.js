@@ -9,6 +9,9 @@
  */
 
 import { HomeTab } from "./tabs/hometab.js";
+import { WalletTab } from "./tabs/wallettab.js";
+import { OrdersTab } from "./tabs/orderstab.js";
+import { PaymentsTab } from "./tabs/paymentstab.js";
 import { AppsTab } from "./tabs/appstab.js";
 import { GamesTab } from "./tabs/gamestab.js";
 import { CryptosTab } from "./tabs/cryptostab.js";
@@ -17,6 +20,7 @@ import { IconLoader } from "./core/icon-loader.js";
 import { UnifiedIconSystem } from './core/unified-icon-system.js';
 import { IconRenderer } from './core/icon-renderer.js';
 import { CardsService } from "./core/cards.js";
+import { STORAGE_KEYS } from "./utils/appUtils.js";
 
 /* ---------------------------------- */
 /* --------- إعدادات التطبيق -------- */
@@ -215,7 +219,7 @@ export class AppManager {
         this.gamesData = await new CardsService('/api/games', '/icons/games/').fetchCards();
         this.cryptosData = await new CardsService('/api/cryptos', '/icons/cryptos/').fetchCards();
         this.balancesData = await new CardsService('/api/balances', '/icons/balances/').fetchCards();
-
+        this.userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
         this.tabs = {
             home: new HomeTab({
                 taber: this.taber,
@@ -267,10 +271,34 @@ export class AppManager {
                     onCardClick: (balance) => this.handleAppsCardsClick(balance),
                     themeColor: this.config.themeColor
                 }
-            })
+            }),
+            orders: new OrdersTab(
+                'orders-tab',
+                this.userId, {
+                themeColor: this.config.themeColor,
+                fallbackImage: '/icons/orders/default.png'
+            }),
+            payments: new PaymentsTab(
+                'payments-tab',
+                this.userId, {
+                themeColor: this.config.themeColor,
+                fallbackImage: '/icons/payments/default.png'
+            }),
+            wallet: new WalletTab(
+                'wallet-tab',
+                this.userId,
+                this._postPaymentMessage.bind(this)
+            )
         };
-
         console.log('✅ تم تهيئة التبويبات بنجاح');
+    }
+
+    _postOrderMessage() {
+        this.tabs.orders.loadOrders();
+    }
+
+    _postPaymentMessage() {
+        this.tabs.payments.loadPayments();
     }
 
     /**
@@ -294,14 +322,13 @@ export class AppManager {
      * @private
      */
     _handleTabChange(tabId) {
+        console.log('Clicked Tab : ', tabId);
         document.querySelector('.sidebar')?.classList.remove('active');
         document.querySelector('.overlay')?.classList.remove('active');
-
         const backBtn = document.getElementById('back-btn');
         if (backBtn) {
             backBtn.style.display = tabId === 'home' ? 'none' : 'block';
         }
-
         console.log(`🔀 تم تغيير التبويب إلى: ${tabId}`);
     }
 
@@ -379,10 +406,9 @@ export class AppManager {
         // تنظيف أنظمة الأيقونات
         this.homeTabIcons.clearCache();
         this.appsTabIcons.clearCache();
-
+        this.tabs.OrdersTab.stopAutoRefresh();
         // إزالة مستمعات الأحداث
         document.removeEventListener('refreshData', this._eventHandlers.refreshData);
-
         console.log('🧹 تم تنظيف موارد AppManager');
     }
 }

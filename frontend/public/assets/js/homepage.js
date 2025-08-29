@@ -15,6 +15,7 @@ import UserManager from "./usermanager.js";
 import { Taber } from "./core/taber.js";
 import { AppManager } from "./appmanager.js";
 import { checkSession } from './auth.js';
+import { STORAGE_KEYS } from "./utils/appUtils.js";
 
 // ثوابت التطبيق
 const APP_CONFIG = {
@@ -207,6 +208,7 @@ class HomePage {
         const toggleSidebar = () => {
             sidebar.classList.toggle('active');
             overlay.classList.toggle('active');
+            console.log('User Id window.currentUserId: ', window.currentUserId);
         };
 
         toggleBtn.addEventListener('click', toggleSidebar);
@@ -435,15 +437,19 @@ socket.addEventListener('message', event => {
 
         case 'paymentAccepted':
             showUserNotification(`✅ تم قبول دفعتك بنجاح!`);
+            this.components.appManager._postPaymentMessage(); // إعادة تحميل الطلبات
             break;
 
         case 'paymentRejected':
             showUserNotification(`❌ تم رفض دفعتك. يرجى التواصل مع الدعم.`);
+            this.components.appManager._postPaymentMessage(); // إعادة تحميل الطلبات
             break;
 
         case 'orderStatus':
-            showUserNotification(`📦 حالة طلبك: ${data.status}`);
+            showUserNotification(`📦 تحديث جديد لطلبك: ${data.status}`);
+            this.components.appManager._postOrderMessage(); // إعادة تحميل الطلبات
             break;
+
 
         default:
             console.log('📨 إشعار غير معروف:', data);
@@ -462,6 +468,15 @@ function showUserNotification(message) {
         alert(message);
     }
 }
+
+socket.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    if (data.type === 'newPayment' && data.userId === localStorage.getItem(STORAGE_KEYS.USER_ID)) {
+        alert('📥 تم تسجيل دفعة جديدة، سيتم عرضها الآن');
+        paymentsTab.loadPayments(); // ← إعادة تحميل الدفعات
+    }
+};
+
 
 // بدء التطبيق عند تحميل DOM
 document.addEventListener('DOMContentLoaded', () => {

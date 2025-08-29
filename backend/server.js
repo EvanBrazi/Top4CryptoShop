@@ -1,18 +1,19 @@
 /**
- * server.js - ملف التشغيل الرئيسي لتطبيق Top4CryptoShop
- * الإصدار: 2.2.0
- * الوصف: إعدادات الخادم، الأمان، الجلسات، WebSocket، المسارات، والملفات الثابتة
- * المؤلف: Evan Brazi
+ * Top4CryptoShop\backend\server.js
+ * ملف التشغيل الرئيسي لتطبيق Top4CryptoShop
+ *
+ * @author: Evan Brazi
+ * @version: 2.3.0
+ * @lastModified: 2025-08-28
+ * @description:
+ * - إعدادات الخادم، الأمان، الجلسات، WebSocket، المسارات، والملفات الثابتة
  */
 
 require('dotenv').config();
 
 // =======================
-// 📚 استيراد المكتبات
-// =======================
-require('dotenv').config();
-
 // 📚 استيراد المكتبات الأساسية
+// =======================
 const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');
@@ -28,22 +29,23 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const favicon = require('serve-favicon');
 const http = require('http');
+const { initNotifications } = require('./utils/notifications');
 
-// 🧠 استيراد الوظائف الداخلية
-const setupWebSocket = require('./socket');
+// =======================
+// 🧠 الوظائف الداخلية
+// =======================
+const securityHeaders = require('./middleware/security');
+const { WebSocketServer } = require('ws');
 const { verifyToken, checkAdmin } = require('./middlewares/auth');
 
 // =======================
-// 🚀 تهيئة التطبيق
+// 🚀 تهيئة التطبيق والخادم
 // =======================
 const app = express();
 const server = http.createServer(app);
-const { broadcast } = setupWebSocket(server);
-
-app.use((req, res, next) => {
-  console.log(`📡 طلب وارد: ${req.method} ${req.url}`);
-  next();
-});
+//const { broadcast, sendToAdmins } = setupWebSocket(server);
+const wss = new WebSocketServer({ server });
+initNotifications(wss); // ✅ تهيئة الإشعارات
 
 // =======================
 // 🔗 الاتصال بقاعدة البيانات
@@ -58,13 +60,7 @@ mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/Top4CryptoS
 // =======================
 // 🛡️ إعدادات الأمان
 // =======================
-// 1. تفعيل وسائط الأمان
-// استدعاء إعدادات الأمان
-const securityHeaders = require('./middleware/security');
-
-// تطبيق إعدادات الأمان
-app.use(securityHeaders);
-
+app.use(securityHeaders); // ✅ تفعيل إعدادات الحماية من ملف middleware/security.js
 app.set('trust proxy', 1);
 
 // =======================
@@ -76,7 +72,8 @@ const sessionStore = MongoStore.create({
   collectionName: 'sessions',
   ttl: 24 * 60 * 60,
   autoRemove: 'native'
-})
+});
+
 app.use(session({
   secret: process.env.SESSION_SECRET || 'dev-secret-key',
   store: sessionStore,
@@ -103,21 +100,12 @@ app.use(rateLimit({
 // =======================
 // 🔄 وسائط تحليل الطلبات
 // =======================
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 app.use(cookieParser());
 app.use(hpp());
 app.use(compression());
 app.use(morgan('dev'));
-
-app.post('/api/compare-token', (req, res) => {
-  const clientToken = req.body.clientToken;
-  const cookieToken = req.cookies.session_token;
-
-  const match = clientToken && cookieToken && clientToken === cookieToken;
-
-  res.json({ match });
-});
 
 // =======================
 // 🌐 إعداد CORS
@@ -134,62 +122,55 @@ app.use(cors({
 // 📁 الملفات الثابتة
 // =======================
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/images/payments', express.static(path.join(__dirname, 'uploads/payments')));
 const staticPath = path.join(__dirname, '../frontend/public');
 if (!fs.existsSync(staticPath)) fs.mkdirSync(staticPath, { recursive: true });
 
 app.use(favicon(path.join(staticPath, 'assets/images/favicon.ico')));
 app.use(express.static(staticPath, {
   maxAge: '1d',
-  setHeaders: res => res.set('Access-Control-Allow-Origin', '*')
+  setHeaders: res => {
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Cache-Control', 'public, max-age=86400');
+  }
 }));
 
 // =======================
 // 🔀 المسارات الديناميكية
 // =======================
-const authRouter = require('./routes/auth'); // أو حسب اسم الملف
-const adminRouter = require('./routes/admin');
-app.use('/api/auth', authRouter); // ✅ هذا يربط المسارات بشكل صحيح
-app.use('/api/admin', adminRouter); // ✅ تسجيل جميع مسارات الأدمن تحت /api/admin
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/admin', require('./routes/admin'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/icons', require('./routes/icons'));
 app.use('/api/cards', require('./routes/cards'));
+app.use('/api/orders', require('./routes/orders'));
+app.use('/api/payments', require('./routes/payments')); // ✅ يدعم رفع الصور + WebSocket
 
 // =======================
 // 📦 مسارات API إضافية
 // =======================
-app.get('/api/apps', (req, res) => {
-  fs.readFile(path.join(__dirname, 'data/apps.json'), 'utf8', (err, data) => {
-    if (err) return res.status(500).json({ error: 'فشل تحميل التطبيقات' });
-    res.json(JSON.parse(data));
+app.use((req, res, next) => {
+  console.log(`📡 طلب وارد: ${req.method} ${req.url}`);
+  next();
+});
+
+const dataRoutes = ['apps', 'games', 'cryptos', 'balances', 'essential'];
+dataRoutes.forEach(route => {
+  app.get(`/api/${route}`, (req, res) => {
+    fs.readFile(path.join(__dirname, `data/${route}.json`), 'utf8', (err, data) => {
+      if (err) return res.status(500).json({ error: `فشل تحميل ${route}` });
+      res.json(JSON.parse(data));
+    });
   });
 });
 
-app.get('/api/games', (req, res) => {
-  fs.readFile(path.join(__dirname, 'data/games.json'), 'utf8', (err, data) => {
-    if (err) return res.status(500).json({ error: 'فشل تحميل التطبيقات' });
-    res.json(JSON.parse(data));
-  });
-});
+app.post('/api/compare-token', (req, res) => {
+  const clientToken = req.body.clientToken;
+  const cookieToken = req.cookies.session_token;
 
-app.get('/api/cryptos', (req, res) => {
-  fs.readFile(path.join(__dirname, 'data/cryptos.json'), 'utf8', (err, data) => {
-    if (err) return res.status(500).json({ error: 'فشل تحميل التطبيقات' });
-    res.json(JSON.parse(data));
-  });
-});
+  const match = clientToken && cookieToken && clientToken === cookieToken;
 
-app.get('/api/balances', (req, res) => {
-  fs.readFile(path.join(__dirname, 'data/balances.json'), 'utf8', (err, data) => {
-    if (err) return res.status(500).json({ error: 'فشل تحميل التطبيقات' });
-    res.json(JSON.parse(data));
-  });
-});
-
-app.get('/api/essential', (req, res) => {
-  fs.readFile(path.join(__dirname, 'data/essential.json'), 'utf8', (err, data) => {
-    if (err) return res.status(500).json({ error: 'فشل تحميل essential' });
-    res.json(JSON.parse(data));
-  });
+  res.json({ match });
 });
 
 // =======================
@@ -199,9 +180,7 @@ app.put('/api/users/:id/balance', async (req, res) => {
   const userId = req.params.id;
   const newBalance = req.body.balance;
 
-  // تعديل الرصيد في قاعدة البيانات (معلق)
-  // await User.findByIdAndUpdate(userId, { balance: newBalance });
-  // ⚠️ تأكد من التحقق من صلاحيات الأدمن هنا لاحقًا
+  // ⚠️ تحقق من صلاحيات الأدمن لاحقًا
   broadcast({ type: 'balanceUpdate', userId, newBalance }, 'admin');
   res.json({ message: 'تم تعديل الرصيد بنجاح' });
 });
@@ -221,17 +200,13 @@ app.get('/register', servePage('register'));
 app.get('/login', servePage('login'));
 
 app.get('/homepage', (req, res) => {
-  if (!req.session || !req.session.isAdmin) {
-    return res.redirect('/login'); // أو صفحة مخصصة للأدمن
+  if (!req.session?.user || req.session.user.role !== 'admin') {
+    return res.redirect('/login');
   }
-
-  const filePath = path.join(staticPath, 'homepage.html');
-  res.sendFile(filePath);
+  res.sendFile(path.join(staticPath, 'homepage.html'));
 });
 
-// ✅ تقديم صفحة الأدمن فقط إذا كانت الجلسة صالحة
 app.get('/admin', verifyToken, checkAdmin, (req, res) => {
-  // ✅ السماح فقط للمستخدمين الذين لديهم دور "admin"
   res.sendFile(path.join(__dirname, 'protectedViews', 'admin.html'));
 });
 
@@ -243,7 +218,8 @@ app.get('/health', (req, res) => {
     status: 'UP',
     db: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
     memory: process.memoryUsage(),
-    uptime: process.uptime()
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -253,8 +229,6 @@ app.get('/health', (req, res) => {
 app.use((err, req, res, next) => {
   console.error('❌ خطأ في الخادم:', err.stack);
   res.status(500).json({ error: 'حدث خطأ في الخادم' });
-  console.log('Error::: ', req);
-  
 });
 
 // =======================

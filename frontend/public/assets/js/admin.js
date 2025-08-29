@@ -1,20 +1,46 @@
 /**
- * admin.js - Admin Dashboard Interface
- * Handles user and icon management via API integration
- * CSP-compliant: avoids inline event handlers and unsafe scripting
- *
- * admin.js - WebSocket client for admin dashboard
- * Receives real-time notifications from server
- * 
- * @author: Evan Brazi
- * @created: 2025-08-16
- * @license: MIT
+ * @file admin-panel.js
+ * @description لوحة تحكم الأدمن: إدارة المستخدمين والدفعات وتحديث الرصيد والحالة
+ * @version 2.1.0
+ * @author Evan Brazi
+ * @lastModified 2025-08-29
  */
-// ✅ Author: Evan Brazi | Last Updated: 2025-08-19
-// ✅ Author: Evan Brazi | Last Updated: 2025-08-19
-// 📄 هذا الملف مسؤول عن إدارة واجهة الأدمن: تعديل الرصيد، الحالة، تحميل المستخدمين، مراقبة الأيقونات، وإظهار الإشعارات
+import { STORAGE_KEYS } from "./utils/appUtils.js";
 
-// 🔔 عرض إشعار عام في أعلى الصفحة
+// ✅ تهيئة WebSocket لاستقبال إشعارات لحظية من السيرفر
+const socket = new WebSocket('ws://localhost:10000');
+
+socket.onopen = () => {
+  const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
+  if (userId) {
+    socket.send(JSON.stringify({ type: 'auth', role: 'admin', userId }));
+    updateConnectionStatus(true);
+  }
+};
+
+socket.onclose = () => updateConnectionStatus(false);
+
+socket.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  if (data.type === 'newPayment') {
+    renderPaymentNotification(data);
+  }
+};
+
+/**
+ * ✅ عرض حالة الاتصال في شريط الحالة
+ */
+function updateConnectionStatus(connected) {
+  const statusBar = document.getElementById('connectionStatus');
+  if (statusBar) {
+    statusBar.textContent = connected ? '🟢 متصل' : '🔴 غير متصل';
+    statusBar.style.color = connected ? 'green' : 'red';
+  }
+}
+
+/**
+ * ✅ عرض إشعار عام في أعلى الصفحة
+ */
 function showNotification(message, type = 'success') {
   const bar = document.getElementById('globalNotification');
   bar.textContent = message;
@@ -23,7 +49,98 @@ function showNotification(message, type = 'success') {
   setTimeout(() => bar.style.display = 'none', 3000);
 }
 
-// 💰 تحديث رصيد مستخدم
+/**
+ * ✅ تحميل المستخدمين من السيرفر وعرضهم في الجدول
+ */
+async function loadUsers() {
+  console.log('loadUsers ...');
+  const tbody = document.querySelector('#usersTable tbody');
+  tbody.innerHTML = '<tr><td colspan="10">⏳ جاري تحميل المستخدمين...</td></tr>';
+
+  try {
+    const res = await fetch('/api/users');
+    if (!res.ok) throw new Error('فشل في جلب المستخدمين');
+
+    const users = await res.json(); // ← مباشرة بدون json.users
+
+    tbody.innerHTML = ''; // تفريغ الجدول بعد التحميل
+
+    users.forEach(user => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${user._id}</td>
+        <td>${user.username}</td>
+        <td>${user.phone || '-'}</td>
+        <td>${parseFloat(user.balance).toFixed(2)}</td>
+        <td>${user.accountStatus === 'active' ? '🟢 نشط' : '🔴 محظور'}</td>
+        <td>${user.loginAttempts || 0}</td>
+        <td>${user.lastLogin ? new Date(user.lastLogin).toLocaleString('ar-EG') : '-'}</td>
+        <td><button class="edit-btn" data-id="${user._id}">✏️</button></td>
+        <td><button class="delete-btn" data-id="${user._id}">🗑️</button></td>
+        <td><button class="unban-btn" data-id="${user._id}">🔓</button></td>
+      `;
+      tbody.appendChild(row);
+    });
+  } catch (err) {
+    tbody.innerHTML = '<tr><td colspan="10">❌ فشل تحميل المستخدمين</td></tr>';
+    showNotification(err.message, 'error');
+  }
+}
+
+/**
+ * ✅ تحميل الدفعات المعلقة من السيرفر وعرضها في تبويب الأدمن
+ */
+async function loadPendingPayments() {
+  const container = document.getElementById('admin-notifications');
+  container.innerHTML = '';
+
+  try {
+    const res = await fetch('/api/payments/admin');
+    const payments = await res.json();
+
+    payments.forEach(data => renderPaymentNotification(data));
+  } catch (err) {
+    showNotification('فشل تحميل الدفعات المعلقة', 'error');
+  }
+}
+
+function getReceiptImageUrl(filename) {
+  console.log('📷 مسار الصورة:', filename);
+  if (!filename || typeof filename !== 'string') return '/assets/images/loading.png';
+  else if (filename.startsWith('/images/payments/')) return filename
+  else return `/images/payments/${filename}`;
+}
+
+/**
+ * ✅ عرض دفعة جديدة في واجهة الأدمن
+ */
+function renderPaymentNotification(data) {
+  const container = document.getElementById('admin-notifications'); // ✅ بدل admin-notes
+  if (container.querySelector(`[data-id="${data.paymentId}"]`)) return;
+
+  const box = document.createElement('div');
+  box.className = 'note-box';
+  box.innerHTML = `
+    <h4>دفعة جديدة من المستخدم ${data.userId}</h4>
+    <p><strong>الطريقة:</strong> ${data.method}</p>
+    <p><strong>المبلغ:</strong> ${data.amount} 💵</p>
+    ${data.note ? `<p><strong>ملاحظة:</strong> ${data.note}</p>` : ''}
+    <img src="${getReceiptImageUrl(data.receiptImage)}" style="max-width:100%; margin-top:10px;" />
+    <div class="payment-actions">
+      <button class="accept-btn" data-id="${data.paymentId}">✅ قبول</button>
+      <button class="reject-btn" data-id="${data.paymentId}">❌ رفض</button>
+    </div>
+  `;
+  if (data.status === 'accepted' || data.status === 'rejected') {
+    showNotification(`✅ تم ${data.status === 'accepted' ? 'قبول' : 'رفض'} الدفعة`);
+    box.closest('.note-box').remove(); // ← حذف العنصر من الواجهة
+  }
+  container.appendChild(box);
+}
+
+/**
+ * ✅ تعديل رصيد مستخدم معين
+ */
 document.getElementById('updateBalanceBtn').addEventListener('click', async () => {
   const userId = document.getElementById('userId').value.trim();
   const newBalance = document.getElementById('newBalance').value.trim();
@@ -44,7 +161,7 @@ document.getElementById('updateBalanceBtn').addEventListener('click', async () =
     if (res.ok) {
       result.textContent = '✅ تم تحديث الرصيد بنجاح';
       showNotification('تم تحديث الرصيد');
-      loadUsers(); // إعادة تحميل الجدول
+      loadUsers();
     } else {
       throw new Error('فشل التحديث');
     }
@@ -54,7 +171,9 @@ document.getElementById('updateBalanceBtn').addEventListener('click', async () =
   }
 });
 
-// 🔄 تغيير حالة المستخدم
+/**
+ * ✅ تغيير حالة مستخدم معين
+ */
 document.getElementById('updateStatusBtn').addEventListener('click', async () => {
   const userId = document.getElementById('statusUserId').value.trim();
   const newStatus = document.getElementById('newStatus').value;
@@ -85,63 +204,9 @@ document.getElementById('updateStatusBtn').addEventListener('click', async () =>
   }
 });
 
-// 👥 تحميل قائمة المستخدمين وعرضها في الجدول
-async function loadUsers() {
-  const tbody = document.querySelector('#usersTable tbody');
-  tbody.innerHTML = '';
-
-  try {
-    const res = await fetch('/api/users');
-    const users = await res.json();
-
-    users.forEach(user => {
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${user.id}</td>
-        <td>${user.username}</td>
-        <td>${user.phone}</td>
-        <td>${user.balance.toFixed(2)}</td>
-        <td>${user.accountStatus}</td>
-        <td>${user.loginAttempts}</td>
-        <td>${user.lastLogin}</td>
-        <td><button class="edit-btn" data-id="${user.id}">✏️</button></td>
-        <td><button class="delete-btn" data-id="${user.id}">🗑️</button></td>
-        <td><button class="unban-btn" data-id="${user.id}">🔓</button></td>
-      `;
-      tbody.appendChild(row);
-    });
-  } catch (err) {
-    showNotification('فشل تحميل المستخدمين', 'error');
-  }
-}
-
-// 🖼️ تحميل حالة الأيقونات
-async function loadIcons() {
-  const tbody = document.querySelector('#iconsTable tbody');
-  tbody.innerHTML = '';
-
-  try {
-    const res = await fetch('/api/icons');
-    const icons = await res.json();
-
-    icons.forEach(icon => {
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${icon.url}</td>
-        <td>${icon.status}</td>
-        <td>${icon.attempts}</td>
-        <td>${icon.duration}</td>
-        <td><img src="${icon.url}" alt="معاينة"></td>
-        <td><button class="retry-icon-btn" data-url="${icon.url}">🔁</button></td>
-      `;
-      tbody.appendChild(row);
-    });
-  } catch (err) {
-    showNotification('فشل تحميل الأيقونات', 'error');
-  }
-}
-
-// 🗑️ حذف مستخدم
+/**
+ * ✅ حذف مستخدم
+ */
 async function deleteUser(id) {
   if (!confirm('هل أنت متأكد من حذف هذا المستخدم؟')) return;
 
@@ -158,7 +223,9 @@ async function deleteUser(id) {
   }
 }
 
-// 🔓 فك الحظر عن مستخدم
+/**
+ * ✅ فك الحظر عن مستخدم
+ */
 async function unbanUser(id) {
   try {
     const res = await fetch(`/api/users/${id}/unban`, { method: 'POST' });
@@ -173,34 +240,61 @@ async function unbanUser(id) {
   }
 }
 
-// 🔁 إعادة محاولة تحميل أيقونة
-async function retryIcon(url) {
-  try {
-    const res = await fetch('/api/icons/retry', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url })
-    });
-
-    if (res.ok) {
-      showNotification('تمت إعادة المحاولة');
-      loadIcons();
-    } else {
-      throw new Error('فشل إعادة المحاولة');
-    }
-  } catch (err) {
-    showNotification(err.message, 'error');
-  }
-}
-
-// 🧠 ربط الأحداث بطريقة آمنة (بدون inline handlers)
+/**
+ * ✅ ربط الأحداث الديناميكية مثل قبول ورفض الدفعات وحذف المستخدم
+ */
 document.addEventListener('click', (e) => {
   const target = e.target;
 
-  if (target.classList.contains('edit-btn')) {
-    const id = target.dataset.id;
-    // يمكنك لاحقًا فتح نافذة تعديل أو تعبئة النموذج
-    showNotification(`تعديل المستخدم ${id}`);
+  // ✅ تحديد العنصر الذي يحتوي على الزر
+  const noteBox = target.closest('.note-box');
+
+  if (target.classList.contains('accept-btn')) {
+    const paymentId = target.dataset.id;
+
+    // ✅ منع التفاعل المكرر
+    target.disabled = true;
+
+    fetch(`/api/payments/${paymentId}/accept`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'accepted') {
+          showNotification('✅ تم قبول الدفعة');
+        } else {
+          showNotification('⚠️ لم يتم قبول الدفعة');
+        }
+      })
+      .catch(() => showNotification('❌ فشل في قبول الدفعة', 'error'))
+      .finally(() => {
+        if (noteBox) noteBox.remove(); // ✅ إزالة العنصر من الواجهة
+      });
+  }
+
+  if (target.classList.contains('reject-btn')) {
+    const paymentId = target.dataset.id;
+
+    // ✅ منع التفاعل المكرر
+    target.disabled = true;
+
+    fetch(`/api/payments/${paymentId}/reject`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'rejected') {
+          showNotification('❌ تم رفض الدفعة');
+        } else {
+          showNotification('⚠️ لم يتم رفض الدفعة');
+        }
+      })
+      .catch(() => showNotification('❌ فشل في رفض الدفعة', 'error'))
+      .finally(() => {
+        if (noteBox) noteBox.remove(); // ✅ إزالة العنصر من الواجهة
+      });
   }
 
   if (target.classList.contains('delete-btn')) {
@@ -211,13 +305,17 @@ document.addEventListener('click', (e) => {
     unbanUser(target.dataset.id);
   }
 
-  if (target.classList.contains('retry-icon-btn')) {
-    retryIcon(target.dataset.url);
+  if (target.classList.contains('edit-btn')) {
+    const userId = target.dataset.id;
+    showNotification(`🔧 تعديل المستخدم ${userId}`);
+    // يمكنك لاحقًا فتح نافذة تعديل أو تعبئة نموذج
   }
 });
 
-// 🚀 تحميل البيانات عند بدء الصفحة
+/**
+ * ✅ بدء التهيئة عند تحميل الصفحة
+ */
 window.addEventListener('DOMContentLoaded', () => {
-  loadUsers();
-  loadIcons();
+  loadUsers();              // تحميل المستخدمين
+  loadPendingPayments();    // تحميل الدفعات المعلقة
 });

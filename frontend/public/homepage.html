@@ -9,6 +9,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/brands.min.css">
     <link rel="stylesheet" href="./assets/css/themes.css">
+    <link rel="stylesheet" href="./assets/css/standard-table.css">
+    <link rel="stylesheet" href="./assets/css/orders-tab.css">
+    <link rel="stylesheet" href="./assets/css/payments-tab.css">
+    <link rel="stylesheet" href="./assets/css/wallet-tab.css">
     <link rel="stylesheet" href="./assets/css/tabs-layout.css">
     <link rel="stylesheet" href="./assets/css/card-grid.css">
     <link rel="stylesheet" href="./assets/css/homepage.css">
@@ -145,34 +149,62 @@
                 </div>
                 <div class="tab-pane" data-tab-type="balances" id="balances-tab">
                     <div class="grid-layout" id="balances-tab-container">
-
                     </div>
                 </div>
                 <div class="tab-pane" id="wallet-tab">
-                    <h2>إضافة رصيد</h2>
-                    <div class="wallet-content">
-                        <div class="balance-card">
-                            <h3>رصيدك الحالي</h3>
-                            <div class="balance-amount">0.00 <span>ر.س</span></div>
-                            <button class="add-funds-btn" type="button">إضافة رصيد</button>
-                        </div>
-                        <div class="payment-methods">
-                            <h3>طرق الدفع</h3>
-                            <!-- محتوى طرق الدفع -->
-                        </div>
+                    <div class="payment-form">
+                        <label for="payment-method-select">اختر طريقة الدفع:</label>
+                        <select id="payment-method-select">
+                            <option value="">-- اختر --</option>
+                            <option value="visa">فيزا</option>
+                            <option value="shamcash">شام كاش</option>
+                            <option value="syriatel">سيرياتيل كاش</option>
+                            <option value="mtn">MTN كاش</option>
+                            <option value="bank">حوالة بنكية</option>
+                            <option value="webmoney">ويب موني</option>
+                            <option value="usdt">USDT</option>
+                        </select>
+
+                        <label for="amount-input">المبلغ بالدولار:</label>
+                        <input type="number" id="amount-input" placeholder="أدخل المبلغ" />
+
+                        <label for="receipt-upload">تحميل إشعار الدفع:</label>
+                        <input type="file" id="receipt-upload" accept="image/*" />
+                        <img id="receipt-preview" class="preview-image" loading="lazy" style="display:none;" />
+                        <label for="note-input">ملاحظات إضافية (اختياري):</label>
+                        <textarea id="note-input" rows="3" placeholder="اكتب أي ملاحظة هنا..."></textarea>
+
+                        <button class="add-funds-btn" type="button">إضافة رصيد</button>
                     </div>
                 </div>
-
                 <div class="tab-pane" id="payments-tab">
                     <h2>دفعاتي</h2>
-                    <div class="payments-list">
-                        <div class="empty-state">
-                            <i class="fas fa-money-bill-wave"></i>
-                            <p>لا توجد دفعات سابقة</p>
-                        </div>
+                    <label for="payment-filter">فلترة حسب الحالة:</label>
+                    <select id="payment-filter">
+                        <option value="all">الكل</option>
+                        <option value="pending">قيد المعالجة</option>
+                        <option value="accepted">تم القبول</option>
+                        <option value="rejected">تم الرفض</option>
+                    </select>
+                    <div class="payments-table">
+                        <table class="standard-table">
+                            <thead>
+                                <tr>
+                                    <th>رقم الدفع</th>
+                                    <th>التاريخ</th>
+                                    <th>الحالة</th>
+                                    <th>المبلغ</th>
+                                    <th>تفاصيل</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="empty-row">
+                                    <td colspan="5">لا توجد دفعات سابقة</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-
                 <div class="tab-pane" id="portfolio-tab">
                     <h2>محفظتي</h2>
                     <div class="portfolio-stats">
@@ -186,19 +218,27 @@
 
                 <div class="tab-pane" id="orders-tab">
                     <h2>طلباتي</h2>
+                    <label for="order-filter">فلترة حسب الحالة:</label>
+                    <select id="order-filter">
+                        <option value="all">الكل</option>
+                        <option value="pending">قيد الانتظار</option>
+                        <option value="accepted">تم القبول</option>
+                        <option value="rejected">تم الرفض</option>
+                    </select>
                     <div class="orders-table">
-                        <table>
+                        <table class="standard-table">
                             <thead>
                                 <tr>
                                     <th>رقم الطلب</th>
                                     <th>التاريخ</th>
                                     <th>الحالة</th>
                                     <th>المبلغ</th>
+                                    <th>تفاصيل</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr class="empty-row">
-                                    <td colspan="4">لا توجد طلبات سابقة</td>
+                                    <td colspan="5">لا توجد طلبات سابقة</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -227,9 +267,37 @@
                 </div>
             </div>
         </div>
-    </div>
-    </div>
+        <!-- باقي الصفحة والتبويبات -->
+        <!-- نافذة تفاصيل الدفعات -->
+        <div id="payment-details-modal" class="payments-modal">
+            <div class="payments-modal-content">
+                <span class="payments-close-btn"
+                    onclick="document.getElementById('payment-details-modal').classList.remove('show')">&times;</span>
+                <div class="modal-body"></div>
+            </div>
+        </div>
+        <!--div id="payment-dialog" class="payment-modal">
+        <div class="payment-modal-content">
+            <span class="close-btn" onclick="closePaymentDialog()">&times;</span>
+            <h3 id="selected-method-title">طريقة الدفع</h3>
 
+            <label for="amount-input">المبلغ بالدولار:</label>
+            <input type="number" id="amount-input" placeholder="أدخل المبلغ" />
+
+            <label for="receipt-upload">تحميل إشعار الدفع:</label>
+            <input type="file" id="receipt-upload" accept="image/*" />
+
+            <button type="button" onclick="submitPayment()">إرسال</button>
+        </div>
+    </div-->
+        <div id="order-details-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-btn"
+                    onclick="document.getElementById('order-details-modal').classList.remove('show')">&times;</span>
+                <div class="modal-body"></div>
+            </div>
+        </div>
+    </div>
     <!-- طبقة التعتيم -->
     <div class="overlay"></div>
 

@@ -1,12 +1,3 @@
-:root {
-  --primary-color: #6a5acd;
-  --accent-color: #ff6b6b;
-  --card-bg: #ffffff;
-  --text-color: #333;
-  --shadow-light: rgba(0, 0, 0, 0.08);
-  --shadow-hover: rgba(0, 0, 0, 0.15);
-}
-
 /* 💠 شبكة البطاقات */
 .card-grid-container {
   display: grid;

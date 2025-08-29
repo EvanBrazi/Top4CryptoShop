@@ -1,0 +1,58 @@
+.payment-form {
+  background-color: var(--card-bg, #fff);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  max-width: 500px;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.payment-form label {
+  font-weight: bold;
+  color: var(--text-color, #333);
+  margin-bottom: 4px;
+}
+
+.payment-form select,
+.payment-form input[type="number"],
+.payment-form textarea,
+.payment-form input[type="file"] {
+  padding: 10px 14px;
+  border: 1px solid var(--border-color, #ccc);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background-color: #f9f9f9;
+  transition: border-color 0.3s;
+}
+
+.payment-form input:focus,
+.payment-form select:focus,
+.payment-form textarea:focus {
+  border-color: var(--primary-color, #6a5acd);
+  outline: none;
+}
+
+.payment-form .preview-image {
+  max-width: 100%;
+  border-radius: 8px;
+  box-shadow: 0 0 6px rgba(0,0,0,0.1);
+  margin-top: 8px;
+}
+
+.payment-form button {
+  background-color: var(--primary-color, #6a5acd);
+  color: white;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.payment-form button:hover {
+  background-color: var(--primary-hover, #5a4ac0);
+}

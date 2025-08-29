@@ -51,6 +51,7 @@ const securityHeaders = helmet({
       connectSrc: [
         "'self'", "'unsafe-inline'",
         "ws://localhost:10000/",
+        "ws://top4cryptoshop.onrender.com:10000",
         "https://api.ipify.org",
         "https://accounts.google.com",
         "https://www.googleapis.com",

@@ -412,7 +412,7 @@ class HomePage {
  *
  * @author: Evan Brazi
  */
-const socket = new WebSocket('ws://localhost:10000');
+const socket = new WebSocket('ws://top4cryptoshop.onrender.com:10000');
 
 socket.addEventListener('open', () => {
     console.log('✅ WebSocket connected (user)');

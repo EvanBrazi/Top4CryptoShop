@@ -30,21 +30,32 @@ const rateLimit = require('express-rate-limit');
 const favicon = require('serve-favicon');
 const http = require('http');
 const { initNotifications } = require('./utils/notifications');
+const securityHeaders = require('./middleware/security');
+const { verifyToken, checkAdmin } = require('./middlewares/auth');
 
 // =======================
 // 🧠 الوظائف الداخلية
 // =======================
-const securityHeaders = require('./middleware/security');
-const { WebSocketServer } = require('ws');
-const { verifyToken, checkAdmin } = require('./middlewares/auth');
+const https = require('https');
+const WebSocket = require('ws');
 
 // =======================
 // 🚀 تهيئة التطبيق والخادم
 // =======================
 const app = express();
-const server = http.createServer(app);
-//const { broadcast, sendToAdmins } = setupWebSocket(server);
-const wss = new WebSocketServer({ server });
+const server = https.createServer({
+  cert: fs.readFileSync('cert.pem'),
+  key: fs.readFileSync('key.pem')
+}, app);
+
+const wss = new WebSocket.Server({ server, path: "/ws" });
+
+wss.on('connection', socket => {
+  console.log("Client connected");
+  socket.send("Welcome!");
+});
+
+server.listen(process.env.PORT || 443);
 initNotifications(wss); // ✅ تهيئة الإشعارات
 
 // =======================

@@ -139,11 +139,11 @@ class UserManager {
   async updateUserProfile() {
     if (!this.#currentUser) return;
 
-    const { name, balance, theme } = this.#currentUser;
+    const { username, balance, theme } = this.#currentUser;
 
     const usernameDisplay = document.getElementById('username-display');
-    if (usernameDisplay) usernameDisplay.textContent = name;
-
+    if (usernameDisplay) usernameDisplay.textContent = username;
+    console.log('👤 اسم المستخدم:', username);
     const balanceElements = [
       document.getElementById('balance-display'),
       document.getElementById('top-balance-display')
@@ -166,7 +166,7 @@ class UserManager {
    */
   async updateUserAvatar(imgElement) {
     try {
-      const fallbackSrc = this.getDefaultAvatar(this.#currentUser.name);
+      const fallbackSrc = this.getDefaultAvatar(this.#currentUser.username);
       let hasFailedOnce = false;
 
       imgElement.onerror = () => {
@@ -183,7 +183,7 @@ class UserManager {
         imgElement.src = `https://www.gravatar.com/avatar/${emailHash}?d=404&s=160`;
       }
     } catch (error) {
-      imgElement.src = this.getDefaultAvatar(this.#currentUser?.name);
+      imgElement.src = this.getDefaultAvatar(this.#currentUser?.username);
     }
   }
 
@@ -319,7 +319,7 @@ class UserManager {
    * @returns {string}
    */
   getUserName() {
-    return this.#currentUser?.name || 'زائر';
+    return this.#currentUser?.username || 'زائر';
   }
 
   /**

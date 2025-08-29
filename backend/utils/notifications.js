@@ -80,8 +80,28 @@ function notifyAdmins(payload) {
  * إرسال إشعار موجه فقط للمستخدمين
  * @param {Object} payload
  */
-function notifyUsers(payload) {
-  notify(payload, 'user');
+function notifyUsers(payload, targetUserId = null) {
+  if (!wss) {
+    console.warn('⚠️ WebSocket غير مهيأ بعد');
+    return;
+  }
+
+  const message = JSON.stringify(payload);
+
+  wss.clients.forEach(client => {
+    if (
+      client.readyState === 1 &&
+      client.userType === 'user' &&
+      (!targetUserId || client.userId === targetUserId)
+    ) {
+      try {
+        client.send(message);
+        console.log(`📡 إرسال إشعار إلى المستخدم: ${targetUserId}`, message);
+      } catch (err) {
+        console.error(`❌ فشل إرسال الإشعار إلى ${client.userId}:`, err);
+      }
+    }
+  });
 }
 
 /**

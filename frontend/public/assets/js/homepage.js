@@ -208,7 +208,6 @@ class HomePage {
         const toggleSidebar = () => {
             sidebar.classList.toggle('active');
             overlay.classList.toggle('active');
-            console.log('User Id window.currentUserId: ', window.currentUserId);
         };
 
         toggleBtn.addEventListener('click', toggleSidebar);
@@ -413,7 +412,6 @@ class HomePage {
  *
  * @author: Evan Brazi
  */
-
 const socket = new WebSocket('ws://localhost:10000');
 
 socket.addEventListener('open', () => {
@@ -423,44 +421,67 @@ socket.addEventListener('open', () => {
     socket.send(JSON.stringify({
         type: 'auth',
         role: 'user',
-        userId: 'user-123' // يمكن تغييره حسب النظام
+        userId: localStorage.getItem(STORAGE_KEYS.USER_ID) // يمكن تغييره حسب النظام
     }));
 });
 
-socket.addEventListener('message', event => {
+socket.onmessage = async (event) => {
     const data = JSON.parse(event.data);
+    console.log('📨 إشعار WebSocket للمستخدم:', data);
+    if (data.userId !== localStorage.getItem(STORAGE_KEYS.USER_ID)) return;
 
     switch (data.type) {
         case 'welcome':
-            showUserNotification(data.message);
+            showToastNotification(data.message, 'success');
             break;
 
         case 'paymentAccepted':
-            showUserNotification(`✅ تم قبول دفعتك بنجاح!`);
-            this.components.appManager._postPaymentMessage(); // إعادة تحميل الطلبات
+            showToastNotification(`✅ تم قبول دفعتك بنجاح!`, 'success');
+            await window.homePage._loadUserData();
+            window.homePage.components.appManager._postPaymentMessage();
             break;
 
         case 'paymentRejected':
-            showUserNotification(`❌ تم رفض دفعتك. يرجى التواصل مع الدعم.`);
-            this.components.appManager._postPaymentMessage(); // إعادة تحميل الطلبات
+            showToastNotification(`❌ تم رفض دفعتك. يرجى التواصل مع الدعم.`, 'error');
+            window.homePage.components.appManager._postPaymentMessage();
+            break;
+
+        case 'newPayment':
+            showToastNotification('✅ تم إرسال الدفعة بنجاح', 'success')
+            showToastNotification('📥 تم تسجيل دفعة جديدة، يتم التحقق منها من قبل المسؤولين', 'info');
+            window.homePage.components.appManager._postPaymentMessage();
             break;
 
         case 'orderStatus':
-            showUserNotification(`📦 تحديث جديد لطلبك: ${data.status}`);
-            this.components.appManager._postOrderMessage(); // إعادة تحميل الطلبات
+            showToastNotification(`📦 حالة طلبك: ${data.status}`, 'info');
+            await window.homePage._loadUserData();
+            window.homePage.components.appManager._postOrderMessage();
             break;
 
+        case 'balanceUpdate':
+            showToastNotification(`💰 تم تحديث رصيدك: +${data.newAmount} دولار`, 'success');
+            break;
 
         default:
             console.log('📨 إشعار غير معروف:', data);
     }
-});
+};
 
-function showUserNotification(message) {
+function showToastNotification(message, type = 'info') {
+  const toast = document.createElement('div');
+  toast.className = `toast-notification toast-${type}`;
+  toast.textContent = message;
+
+  document.body.appendChild(toast);
+
+  setTimeout(() => toast.remove(), 5000);
+}
+
+function showUserNotification(message, type = 'success') {
     const container = document.getElementById('user-notifications');
     if (container) {
         const alert = document.createElement('div');
-        alert.className = 'alert alert-success';
+        alert.className = `alert alert-${type}`;
         alert.textContent = message;
         container.prepend(alert);
         setTimeout(() => alert.remove(), 10000);
@@ -468,15 +489,6 @@ function showUserNotification(message) {
         alert(message);
     }
 }
-
-socket.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    if (data.type === 'newPayment' && data.userId === localStorage.getItem(STORAGE_KEYS.USER_ID)) {
-        alert('📥 تم تسجيل دفعة جديدة، سيتم عرضها الآن');
-        paymentsTab.loadPayments(); // ← إعادة تحميل الدفعات
-    }
-};
-
 
 // بدء التطبيق عند تحميل DOM
 document.addEventListener('DOMContentLoaded', () => {

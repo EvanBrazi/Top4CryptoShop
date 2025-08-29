@@ -181,7 +181,7 @@ app.put('/api/users/:id/balance', async (req, res) => {
   const newBalance = req.body.balance;
 
   // ⚠️ تحقق من صلاحيات الأدمن لاحقًا
-  broadcast({ type: 'balanceUpdate', userId, newBalance }, 'admin');
+  broadcast({ type: 'paymentAccepted', userId, newBalance }, 'admin');
   res.json({ message: 'تم تعديل الرصيد بنجاح' });
 });
 

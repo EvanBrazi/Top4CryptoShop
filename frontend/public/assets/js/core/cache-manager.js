@@ -156,7 +156,6 @@ export class CacheManager {
      * @private
      */
     async _findIconPath(iconName) {
-        console.warn('_findIconPath', iconName);
         const categories = ['apps', 'balances', 'hometab', 'games', 'cryptos'];
         const extraPaths = [
             `/frontend/public/assets/${iconName}`,

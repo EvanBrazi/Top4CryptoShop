@@ -120,7 +120,7 @@ export class PaymentsTab {
                 <p><strong>🖼️ إشعار الدفع:</strong></p>
                 <img src="/images/payments/${payment.receiptImage || payment.paymentId + '.png'}"
                      alt="إشعار الدفع"
-                     style="max-width:220px; margin-top:10px; border-radius:8px; box-shadow:0 0 6px rgba(0,0,0,0.15);" />
+                     style="max-width:220px; margin-top:10px; justify-content: center; align-items: center; border-radius:8px; box-shadow:0 0 6px rgba(0,0,0,0.15);" />
             </div>
         `;
         if (payment.status === 'pending') {

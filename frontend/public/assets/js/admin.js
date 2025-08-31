@@ -106,7 +106,7 @@ async function loadPendingPayments() {
 
 function getReceiptImageUrl(filename) {
   console.log('📷 مسار الصورة:', filename);
-  if (!filename || typeof filename !== 'string') return '/assets/images/loading.png';
+  if (!filename || typeof filename !== 'string') return '/assets/images/loading.gif';
   else if (filename.startsWith('/images/payments/')) return filename
   else return `/images/payments/${filename}`;
 }

@@ -1,5 +1,5 @@
 [
-  { "id": 1, "name": "متجر الارقام", "icon": "com_arqam_store.png", "category": "apps", "price": "4.99", "available": true },
+  { "id": 1, "name": "متجر الارقام", "icon": "com_arqam_store.png", "category": "apps", "price": "4.99", "available": false },
   { "id": 2, "name": "Bigo Live", "icon": "sg_bigo_live.png", "category": "apps", "price": "3.99", "available": true },
   { "id": 3, "name": "Likee", "icon": "video_like.png", "category": "apps", "price": "5.99", "available": true },
   { "id": 4, "name": "MICO", "icon": "com_mico.png", "category": "apps", "price": "4.49", "available": true },

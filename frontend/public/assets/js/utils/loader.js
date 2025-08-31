@@ -45,8 +45,9 @@
    * يضمن عدم بقاء المؤشر ظاهرًا بعد انتهاء التحميل
    */
   window.addEventListener('load', () => {
-    const loader = document.getElementById('global-loader');
-    if (loader) loader.style.display = 'none';
+    setTimeout(() => {
+      window.hideLoader();
+    }, 500); // تأخير بسيط لتجنب الوميض
   });
 
   /**
@@ -54,13 +55,30 @@
    * showLoader(): لعرض المؤشر يدويًا
    * hideLoader(): لإخفائه يدويًا
    */
-  window.showLoader = () => {
-    const loader = document.getElementById('global-loader');
-    if (loader) loader.style.display = 'flex';
-  };
+  let loaderVisible = true;
 
+  window.showLoader = () => {
+    if (!loaderVisible) {
+      const loader = document.getElementById('global-loader');
+      if (loader) {
+        loader.style.display = 'flex';
+        requestAnimationFrame(() => {
+          loader.style.opacity = '1';
+        });
+        loaderVisible = true;
+      }
+    }
+  };
   window.hideLoader = () => {
-    const loader = document.getElementById('global-loader');
-    if (loader) loader.style.display = 'none';
+    if (loaderVisible) {
+      const loader = document.getElementById('global-loader');
+      if (loader) {
+        loader.style.opacity = '0';
+        setTimeout(() => {
+          loader.style.display = 'none';
+        }, 300);
+        loaderVisible = false;
+      }
+    }
   };
 })();

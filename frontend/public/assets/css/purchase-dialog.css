@@ -1,0 +1,264 @@
+/* ✅ ثيم النهار */
+.purchase-dialog.day {
+  --dialog-bg: rgba(255, 255, 255, 0.85);
+  --dialog-text: #1a1a1a;
+  --dialog-accent: #007bff;
+  --dialog-muted: #666;
+  --dialog-xbtn: #333;
+  --dialog-border: #ddd;
+  --dialog-shadow: rgba(0, 0, 0, 0.1);
+  --dialog-font: 'Segoe UI', 'Cairo', sans-serif;
+}
+
+/* ✅ ثيم الليل */
+.purchase-dialog.night {
+  --dialog-bg: rgba(20, 20, 20, 0.85);
+  --dialog-text: #f0f0f0;
+  --dialog-accent: #00bcd4;
+  --dialog-muted: #aaa;
+  --dialog-xbtn: #fff;
+  --dialog-border: #444;
+  --dialog-shadow: rgba(0, 0, 0, 0.4);
+  --dialog-font: 'Segoe UI', 'Cairo', sans-serif;
+}
+
+/* ✅ الغلاف العام */
+.purchase-dialog-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  background-color: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(15px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.purchase-dialog-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ✅ الحركات حسب الفئة */
+@keyframes slide-apps-in     { from {opacity:0;transform:translateY(40px) scale(0.95);} to {opacity:1;transform:translateY(0) scale(1);} }
+@keyframes slide-apps-out    { from {opacity:1;transform:translateY(0) scale(1);} to {opacity:0;transform:translateY(40px) scale(0.95);} }
+@keyframes slide-games-in    { from {opacity:0;transform:translateX(-40px) scale(0.95);} to {opacity:1;transform:translateX(0) scale(1);} }
+@keyframes slide-games-out   { from {opacity:1;transform:translateX(0) scale(1);} to {opacity:0;transform:translateX(-40px) scale(0.95);} }
+@keyframes slide-cryptos-in  { from {opacity:0;transform:scale(0.8);} to {opacity:1;transform:scale(1);} }
+@keyframes slide-cryptos-out { from {opacity:1;transform:scale(1);} to {opacity:0;transform:scale(0.8);} }
+@keyframes slide-balances-in { from {opacity:0;transform:translateY(-40px) scale(0.95);} to {opacity:1;transform:translateY(0) scale(1);} }
+@keyframes slide-balances-out{ from {opacity:1;transform:translateY(0) scale(1);} to {opacity:0;transform:translateY(-40px) scale(0.95);} }
+
+/* ✅ مربع الحوار */
+.purchase-dialog {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--dialog-bg);
+  backdrop-filter: blur(25px);
+  border: 1px solid var(--dialog-border);
+  color: var(--dialog-text);
+  font-family: var(--dialog-font);
+  border-radius: 16px;
+  padding: 24px;
+  width: 92%;
+  max-width: 440px;
+  box-shadow: 0 12px 32px var(--dialog-shadow);
+  animation-duration: 0.5s;
+  animation-fill-mode: both;
+  will-change: transform, opacity;
+}
+
+/* ✅ دخول وخروج حسب الفئة */
+.purchase-dialog.apps     { animation-name: slide-apps-in; }
+.purchase-dialog.games    { animation-name: slide-games-in; }
+.purchase-dialog.cryptos  { animation-name: slide-cryptos-in; }
+.purchase-dialog.balances { animation-name: slide-balances-in; }
+
+.purchase-dialog.apps.closing     { animation-name: slide-apps-out; }
+.purchase-dialog.games.closing    { animation-name: slide-games-out; }
+.purchase-dialog.cryptos.closing  { animation-name: slide-cryptos-out; }
+.purchase-dialog.balances.closing { animation-name: slide-balances-out; }
+
+/* ✅ رأس الحوار */
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+}
+
+.dialog-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--dialog-accent);
+  animation: pulseGlow 1.8s infinite;
+  text-shadow: 0 0 8px var(--dialog-accent);
+}
+
+.dialog-icon {
+  width: 40px;
+  height: 40px;
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 6px;
+  object-fit: contain;
+  box-shadow: 0 0 6px rgba(0,0,0,0.2);
+}
+
+@keyframes pulseGlow {
+  0%, 100% { text-shadow: 0 0 8px var(--dialog-accent); }
+  50% { text-shadow: 0 0 16px var(--dialog-accent); }
+}
+
+.dialog-orders-close-btn,
+.dialog-purchase-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.6rem;
+  color: var(--dialog-xbtn);
+  cursor: pointer;
+}
+
+.close-btn,
+.orders-close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+  background: transparent;
+  border: none;
+  font-size: 1.4rem;
+  color: #fff;
+  cursor: pointer;
+  display: none;
+}
+
+#order-details-modal.show .orders-close-btn {
+  display: block;
+}
+
+.purchase-dialog-overlay:not(.active) .dialog-purchase-close-btn {
+  display: none;
+}
+
+/* ✅ باقي التنسيقات */
+.dialog-content,
+.dialog-footer,
+.dialog-unavailable {
+  margin-top: 20px;
+}
+
+.input-group input,
+.quantity-input {
+  background-color: transparent;
+  border: 1px solid var(--dialog-border);
+  color: var(--dialog-text);
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.confirm-btn,
+.cancel-btn,
+.whatsapp-btn {
+  flex: 1;
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+  border-radius: 25px;
+}
+
+.confirm-btn {
+  background-color: var(--dialog-accent);
+  color: white;
+}
+
+.cancel-btn {
+  background-color: var(--dialog-muted);
+  color: white;
+}
+
+.whatsapp-btn {
+  background-color: #25d366;
+  color: white;
+}
+
+.dialog-total {
+  font-size: 1.4rem;
+  font-weight: bold;
+  margin-top: 10px;
+}
+
+.quantity-warning {
+  color: red;
+  font-size: 0.9rem;
+}
+
+.quantity-warning.hidden {
+  display: none;
+}
+
+.order-modal {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9998;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.order-modal.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.order-modal-content {
+  background-color: var(--dialog-bg, #fff);
+  color: var(--dialog-text, #000);
+  border-radius: 12px;
+  padding: 24px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 0 24px rgba(0,0,0,0.3);
+  animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.order-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.order-title {
+  font-size: 1.4rem;
+  font-weight: bold;
+}
+
+.order-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.6rem;
+  color: var(--dialog-xbtn, #333);
+  cursor: pointer;
+}
+

@@ -6,6 +6,8 @@
   --day-primary: #d4a76a;
   --day-primary-hover: #c29555;
   --day-secondary: #e8d5b5;
+  --day-dialog-bg: #ff7300;
+  --day-dialog-text: #1f0000;
   --day-card: #fff9f0;
   --day-border: #d8c8a8;
   --day-navbar: #5d4a36;
@@ -27,6 +29,8 @@
   --night-primary: #4a90e2;
   --night-primary-hover: #3a7bc8;
   --night-secondary: #5c6bc0;
+  --night-dialog-bg: #000744;
+  --night-dialog-text: #00c3ff;
   --night-card: #1e1e2a;
   --night-border: #333344;
   --night-navbar: #12121a;
@@ -50,6 +54,8 @@
   --primary-color: var(--day-primary);
   --primary-hover: var(--day-primary-hover);
   --secondary-color: var(--day-secondary);
+  --dialog-bg: var(--day-dialog-bg);
+  --dialog-text:var(--day-dialog-text);
   --card-color: var(--day-card);
   --border-color: var(--day-border);
   --navbar-color: var(--day-navbar);
@@ -74,6 +80,8 @@
   --primary-color: var(--night-primary);
   --primary-hover: var(--night-primary-hover);
   --secondary-color: var(--night-secondary);
+  --dialog-bg: var(--night-dialog-bg);
+  --dialog-text:var(--night-dialog-text);
   --card-color: var(--night-card);
   --border-color: var(--night-border);
   --navbar-color: var(--night-navbar);

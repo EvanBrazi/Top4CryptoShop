@@ -152,17 +152,14 @@ export class HomeTab {
      */
     async _addCardIcon(card, cardEl) {
         const iconName = card.icon || (Array.isArray(card.icons) ? card.icons[0] : null);
-        
         if (!iconName) return;
-
         const iconContainer = document.createElement('div');
         iconContainer.className = 'big-card-icon-container';
-
         const iconElement = document.createElement('img');
         iconElement.className = 'big-card-icon';
         iconElement.alt = card.title || 'Icon';
         iconElement.loading = 'lazy';
-
+        iconElement.src = '/assets/images/loading.gif';
         try {
             // استخدام نظام الأيقونات الموحد لتحميل وعرض الأيقونة
             await this.options.homeIconLoader.render(
@@ -174,7 +171,6 @@ export class HomeTab {
             console.warn('❌ فشل تحميل الأيقونة:', iconName, error);
             iconElement.src = this.options.fallbackUrl;
         }
-
         iconContainer.appendChild(iconElement);
         cardEl.appendChild(iconContainer);
     }

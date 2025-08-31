@@ -8,6 +8,9 @@
  * @updated 2025-08-26
  */
 
+import { DialogPurchase } from "../dialogs/purchaseDialog.js";
+import { SUPPORT_PHONE } from "../utils/appUtils.js";
+
 export class CryptosTab {
     /**
      * @constructor
@@ -104,7 +107,10 @@ export class CryptosTab {
     async _createCryptoCard(crypto) {
         const card = document.createElement('div');
         card.className = 'card'; // ✅ الكلاس الموحد
-        card.dataset.cryptoId = crypto.id || crypto.name;
+        card.dataset.cryptoId = crypto.id;
+        card.dataset.price = crypto.price;
+        card.dataset.isAvailable = crypto.available;
+        card.dataset.category = crypto.category;
         card.dataset.iconName = crypto.icon || 'default.png';
 
         // أيقونة العملة
@@ -112,8 +118,7 @@ export class CryptosTab {
         icon.className = 'icon'; // ✅ الكلاس الموحد
         icon.alt = crypto.name;
         icon.loading = 'lazy';
-        icon.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNlZWVlZWUiLz48L3N2Zz4=';
-
+        icon.src = '/assets/images/loading.gif';
         // اسم العملة
         const title = document.createElement('div');
         title.className = 'title'; // ✅ الكلاس الموحد
@@ -122,8 +127,14 @@ export class CryptosTab {
         card.appendChild(icon);
         card.appendChild(title);
 
-        card.addEventListener('click', () => this.config.onCardClick(crypto));
-
+        card.addEventListener('click', () => {
+            const dialogPurchase = new DialogPurchase(card, {
+                iconsBasePath: '/assets/images/',
+                cssPath: '/assets/css/purchase-dialog.css',
+                supportPhone: SUPPORT_PHONE
+            });
+            dialogPurchase.open();
+        });
         return card;
     }
 

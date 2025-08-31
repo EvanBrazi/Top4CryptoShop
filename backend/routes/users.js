@@ -121,4 +121,59 @@ router.delete('/:id', verifyToken, async (req, res) => {
   }
 });
 
+// 📤 جلب رصيد المستخدم فقط
+router.get('/:id/balance', verifyToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('balance');
+    if (!user) return res.status(404).json({ message: 'المستخدم غير موجود' });
+    res.json({ balance: user.balance });
+  } catch (err) {
+    res.status(500).json({ message: '❌ خطأ أثناء جلب الرصيد' });
+  }
+});
+
+// 💰 حجز رصيد مؤقت قبل تنفيذ الطلب
+router.post('/:id/reserve', verifyToken, async (req, res) => {
+  const amount = parseFloat(req.body.amount);
+  if (isNaN(amount) || amount <= 0) {
+    return res.status(400).json({ message: 'قيمة غير صالحة للحجز' });
+  }
+
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'المستخدم غير موجود' });
+
+    if (user.balance < amount) {
+      return res.status(400).json({ message: 'الرصيد غير كافٍ' });
+    }
+
+    user.balance -= amount;
+    await user.save();
+
+    res.json({ message: '✅ تم حجز الرصيد', balance: user.balance });
+  } catch (err) {
+    res.status(500).json({ message: '❌ خطأ أثناء الحجز' });
+  }
+});
+
+// ♻️ استرجاع الرصيد في حال فشل الطلب
+router.post('/:id/restore', verifyToken, async (req, res) => {
+  const amount = parseFloat(req.body.amount);
+  if (isNaN(amount) || amount <= 0) {
+    return res.status(400).json({ message: 'قيمة غير صالحة للاسترجاع' });
+  }
+
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'المستخدم غير موجود' });
+
+    user.balance += amount;
+    await user.save();
+
+    res.json({ message: '✅ تم استرجاع الرصيد', balance: user.balance });
+  } catch (err) {
+    res.status(500).json({ message: '❌ خطأ أثناء الاسترجاع' });
+  }
+});
+
 module.exports = router;

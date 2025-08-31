@@ -8,6 +8,9 @@
  * @updated 2025-08-26
  */
 
+import { DialogPurchase } from "../dialogs/purchaseDialog.js";
+import { SUPPORT_PHONE } from "../utils/appUtils.js";
+
 export class AppsTab {
     /**
      * @constructor
@@ -104,7 +107,10 @@ export class AppsTab {
     async _createAppCard(app) {
         const card = document.createElement('div');
         card.className = 'card'; // ✅ الكلاس الموحد
-        card.dataset.appId = app.id || app.name;
+        card.dataset.appId = app.id;
+        card.dataset.price = app.price;
+        card.dataset.isAvailable = app.available;
+        card.dataset.category = app.category;
         card.dataset.iconName = app.icon || 'default.png';
 
         // أيقونة التطبيق
@@ -112,8 +118,7 @@ export class AppsTab {
         icon.className = 'icon'; // ✅ الكلاس الموحد
         icon.alt = app.name;
         icon.loading = 'lazy';
-        icon.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNlZWVlZWUiLz48L3N2Zz4=';
-
+        icon.src = '/assets/images/loading.gif';
         // اسم التطبيق
         const title = document.createElement('div');
         title.className = 'title'; // ✅ الكلاس الموحد
@@ -122,7 +127,14 @@ export class AppsTab {
         card.appendChild(icon);
         card.appendChild(title);
 
-        card.addEventListener('click', () => this.config.onCardClick(app));
+        card.addEventListener('click', () => {
+            const dialogPurchase = new DialogPurchase(card, {
+                iconsBasePath: '/assets/images/',
+                cssPath: '/assets/css/purchase-dialog.css',
+                supportPhone: SUPPORT_PHONE
+            });
+            dialogPurchase.open();
+        });
 
         return card;
     }

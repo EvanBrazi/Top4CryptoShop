@@ -349,11 +349,17 @@ export class AppManager {
 
     /**
      * التعامل مع النقر على بطاقة تطبيق
-     * @param {Object} app - بيانات التطبيق
+     * @param {Object} card - بيانات التطبيق
      */
-    handleAppsCardsClick(app) {
-        console.log('📱 تم النقر على التطبيق:', app.name);
+    handleAppsCardsClick(card) {
+        console.log('📱 تم النقر على التطبيق:', card.name);
         // لاحقًا: this.dialogs.purchase.open(app) أو favoritesManager.add(app)
+        /**const dialogPurchase = new DialogPurchase(card, {
+            iconsBasePath: '/icons/apps/',
+            cssPath: '/assets/css/purchase-dialog.css',
+            supportPhone: SUPPORT_PHONE
+        });
+        dialogPurchase.open();*/
     }
 
     /**

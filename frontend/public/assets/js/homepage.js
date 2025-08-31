@@ -452,6 +452,23 @@ socket.onmessage = async (event) => {
             window.homePage.components.appManager._postPaymentMessage();
             break;
 
+        case 'newOrder':
+            showToastNotification('✅ تم إرسال الطلب بنجاح', 'success')
+            showToastNotification('📥 تم تسجيل طلب جديد، يتم التحقق منها من قبل المسؤولين', 'info');
+            window.homePage.components.appManager._postOrderMessage();
+            break;
+
+        case 'orderAccepted':
+            showToastNotification(`✅ تم قبول طلبك بنجاح!`, 'success');
+            await window.homePage._loadUserData();
+            window.homePage.components.appManager._postOrderMessage();
+            break;
+
+        case 'orderRejected':
+            showToastNotification(`❌ تم رفض طلبك. يرجى التواصل مع الدعم.`, 'error');
+            window.homePage.components.appManager._postOrderMessage();
+            break;
+
         case 'orderStatus':
             showToastNotification(`📦 حالة طلبك: ${data.status}`, 'info');
             await window.homePage._loadUserData();

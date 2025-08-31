@@ -3,6 +3,15 @@ export const STORAGE_KEYS = {
     USER_TOKEN: 'userToken',
 };
 
+const fullPathByCategoryMap = {
+  apps: '/icons/apps/',
+  games: '/icons/games/',
+  cryptos: '/icons/cryptos/',
+  balances: '/icons/balances/'
+};
+
+export const SUPPORT_PHONE = '+963980217649';
+
 export function clearBrowserData(withIndexedDB = false) {
     // حذف التخزين المحلي
     localStorage.clear();
@@ -51,4 +60,9 @@ export async function isValidToken(token) {
         console.error('❌ خطأ في التحقق من التوكن:', err);
         return false;
     }
+}
+
+export function getFullPathByCategory(category) {
+  console.log('getFullPathByCategory:', category);
+  return fullPathByCategoryMap[category] || '/assets/images/loader.gif';
 }

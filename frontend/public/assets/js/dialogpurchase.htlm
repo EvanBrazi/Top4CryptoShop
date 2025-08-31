@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نافذة حوار الشراء المحسنة</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ✅ ثيم النهار */
+        .purchase-dialog.day {
+            --dialog-bg: rgba(255, 255, 255, 0.95);
+            --dialog-text: #1a1a1a;
+            --dialog-accent: #007bff;
+            --dialog-muted: #666;
+            --dialog-xbtn: #333;
+            --dialog-border: #ddd;
+            --dialog-shadow: rgba(0, 0, 0, 0.1);
+            --dialog-font: 'Segoe UI', 'Cairo', sans-serif;
+            --input-bg: rgba(255, 255, 255, 0.7);
+            --error-color: #dc3545;
+            --success-color: #28a745;
+        }
+
+        /* ✅ ثيم الليل */
+        .purchase-dialog.night {
+            --dialog-bg: rgba(20, 20, 20, 0.95);
+            --dialog-text: #f0f0f0;
+            --dialog-accent: #00bcd4;
+            --dialog-muted: #aaa;
+            --dialog-xbtn: #fff;
+            --dialog-border: #444;
+            --dialog-shadow: rgba(0, 0, 0, 0.4);
+            --dialog-font: 'Segoe UI', 'Cairo', sans-serif;
+            --input-bg: rgba(0, 0, 0, 0.3);
+            --error-color: #ff6b6b;
+            --success-color: #51cf66;
+        }
+
+        /* ✅ الغلاف العام */
+        .purchase-dialog-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            background-color: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(15px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .purchase-dialog-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* ✅ الحركات حسب الفئة */
+        @keyframes slide-apps-in     { from {opacity:0;transform:translateY(40px) scale(0.95);} to {opacity:1;transform:translateY(0) scale(1);} }
+        @keyframes slide-apps-out    { from {opacity:1;transform:translateY(0) scale(1);} to {opacity:0;transform:translateY(40px) scale(0.95);} }
+        @keyframes slide-games-in    { from {opacity:0;transform:translateX(-40px) scale(0.95);} to {opacity:1;transform:translateX(0) scale(1);} }
+        @keyframes slide-games-out   { from {opacity:1;transform:translateX(0) scale(1);} to {opacity:0;transform:translateX(-40px) scale(0.95);} }
+        @keyframes slide-cryptos-in  { from {opacity:0;transform:scale(0.8);} to {opacity:1;transform:scale(1);} }
+        @keyframes slide-cryptos-out { from {opacity:1;transform:scale(1);} to {opacity:0;transform:scale(0.8);} }
+        @keyframes slide-balances-in { from {opacity:0;transform:translateY(-40px) scale(0.95);} to {opacity:1;transform:translateY(0) scale(1);} }
+        @keyframes slide-balances-out{ from {opacity:1;transform:translateY(0) scale(1);} to {opacity:0;transform:translateY(-40px) scale(0.95);} }
+
+        /* ✅ مربع الحوار */
+        .purchase-dialog {
+            display: flex;
+            flex-direction: column;
+            background-color: var(--dialog-bg);
+            backdrop-filter: blur(25px);
+            border: 1px solid var(--dialog-border);
+            color: var(--dialog-text);
+            font-family: var(--dialog-font);
+            border-radius: 16px;
+            padding: 24px;
+            width: 92%;
+            max-width: 440px;
+            box-shadow: 0 12px 32px var(--dialog-shadow);
+            animation-duration: 0.5s;
+            animation-fill-mode: both;
+            will-change: transform, opacity;
+        }
+
+        /* ✅ دخول وخروج حسب الفئة */
+        .purchase-dialog.apps     { animation-name: slide-apps-in; }
+        .purchase-dialog.games    { animation-name: slide-games-in; }
+        .purchase-dialog.cryptos  { animation-name: slide-cryptos-in; }
+        .purchase-dialog.balances { animation-name: slide-balances-in; }
+
+        .purchase-dialog.apps.closing     { animation-name: slide-apps-out; }
+        .purchase-dialog.games.closing    { animation-name: slide-games-out; }
+        .purchase-dialog.cryptos.closing  { animation-name: slide-cryptos-out; }
+        .purchase-dialog.balances.closing { animation-name: slide-balances-out; }
+
+        /* ✅ رأس الحوار */
+        .dialog-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 20px;
+        }
+
+        .dialog-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--dialog-accent);
+            animation: pulseGlow 1.8s infinite;
+            text-shadow: 0 0 8px var(--dialog-accent);
+        }
+
+        .dialog-icon {
+            width: 40px;
+            height: 40px;
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 6px;
+            object-fit: contain;
+            box-shadow: 0 0 6px rgba(0,0,0,0.2);
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { text-shadow: 0 0 8px var(--dialog-accent); }
+            50% { text-shadow: 0 0 16px var(--dialog-accent); }
+        }
+
+        .dialog-orders-close-btn,
+        .dialog-purchase-close-btn {
+            background: none;
+            border: none;
+            font-size: 1.6rem;
+            color: var(--dialog-xbtn);
+            cursor: pointer;
+        }
+
+        .close-btn,
+        .orders-close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background: transparent;
+            border: none;
+            font-size: 1.4rem;
+            color: #fff;
+            cursor: pointer;
+            display: none;
+        }
+
+        #order-details-modal.show .orders-close-btn {
+            display: block;
+        }
+
+        .purchase-dialog-overlay:not(.active) .dialog-purchase-close-btn {
+            display: none;
+        }
+
+        /* ✅ باقي التنسيقات */
+        .dialog-content,
+        .dialog-footer,
+        .dialog-unavailable {
+            margin-top: 20px;
+        }
+
+        .input-group {
+            margin-bottom: 16px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .input-group input,
+        .quantity-input {
+            background-color: var(--input-bg);
+            border: 1px solid var(--dialog-border);
+            color: var(--dialog-text);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            width: 100%;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus,
+        .quantity-input:focus {
+            outline: none;
+            border-color: var(--dialog-accent);
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+
+        .input-error {
+            border-color: var(--error-color) !important;
+            box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.25) !important;
+        }
+
+        .error-message {
+            color: var(--error-color);
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .confirm-btn,
+        .cancel-btn,
+        .whatsapp-btn {
+            flex: 1;
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            border-radius: 25px;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .confirm-btn {
+            background-color: var(--dialog-accent);
+            color: white;
+        }
+
+        .confirm-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .cancel-btn {
+            background-color: var(--dialog-muted);
+            color: white;
+        }
+
+        .cancel-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .whatsapp-btn {
+            background-color: #25d366;
+            color: white;
+        }
+
+        .whatsapp-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .dialog-total {
+            font-size: 1.4rem;
+            font-weight: bold;
+            margin-top: 10px;
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            background-color: var(--input-bg);
+        }
+
+        .quantity-warning {
+            color: var(--error-color);
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        .quantity-warning.hidden {
+            display: none;
+        }
+
+        .order-modal {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background-color: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9998;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .order-modal.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .order-modal-content {
+            background-color: var(--dialog-bg, #fff);
+            color: var(--dialog-text, #000);
+            border-radius: 12px;
+            padding: 24px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 0 24px rgba(0,0,0,0.3);
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to   { opacity: 1; transform: scale(1); }
+        }
+
+        .order-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .order-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+        }
+
+        .order-close-btn {
+            background: none;
+            border: none;
+            font-size: 1.6rem;
+            color: var(--dialog-xbtn, #333);
+            cursor: pointer;
+        }
+
+        .product-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .price-quantity {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .price-quantity label {
+            font-weight: 600;
+        }
+
+        .notes {
+            background-color: var(--input-bg);
+            padding: 12px;
+            border-radius: 8px;
+            margin: 16px 0;
+            font-size: 0.9rem;
+        }
+
+        .player-name-group {
+            position: relative;
+        }
+
+        .refresh-player-btn {
+            background: var(--dialog-accent);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .refresh-player-btn:hover {
+            opacity: 0.9;
+        }
+
+        .loading-spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .button-loading .loading-spinner {
+            display: inline-block;
+        }
+
+        .button-loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- نموذج بطاقة المنتج للمثال -->
+    <div class="product-card" data-price="10.99" data-category="apps" data-icon-name="app-icon.png" data-is-available="true" data-quantity="1">
+        <h3 class="title">تطبيق مميز</h3>
+        <p>السعر: $10.99</p>
+        <button class="buy-btn">شراء الآن</button>
+    </div>
+
+    <script>
+        // محاكاة للوظائف المساعدة
+        const STORAGE_KEYS = {
+            USER_ID: 'user_id',
+            USER_TOKEN: 'user_token'
+        };
+
+        const getFullPathByCategory = (category) => {
+            const paths = {
+                'apps': '/assets/images/apps/',
+                'games': '/assets/images/games/',
+                'cryptos': '/assets/images/cryptos/',
+                'balances': '/assets/images/balances/',
+                'default': '/assets/images/default/'
+            };
+            return paths[category] || paths['default'];
+        };
+
+        /**
+         * @class DialogPurchase
+         * @description نافذة حوار الشراء الديناميكية مع دعم الفئات والثيمات والتأثيرات
+         * @version 2.0
+         * @author فريق التطوير
+         */
+        class DialogPurchase {
+            /**
+             * إنشاء مثيل لنافذة حوار الشراء
+             * @param {HTMLElement} element - عنصر البطاقة الذي تم النقر عليه
+             * @param {Object} options - خيارات إضافية للتخصيص
+             * @param {string} options.iconsBasePath - المسار الأساسي للرموز
+             * @param {string} options.cssPath - مسار ملف CSS الإضافي
+             * @param {string} options.supportPhone - رقم الدعم الفني
+             */
+            constructor(element, options = {}) {
+                this.element = element;
+
+                // استخراج بيانات البطاقة من العنصر
+                this.cardName = element.querySelector('.title')?.textContent.trim() || 'غير معروف';
+                this.cardPrice = parseFloat(element.dataset.price || 0);
+                this.category = element.dataset.category || 'default';
+                this.cardIcon = `${getFullPathByCategory(this.category)}${element.dataset.iconName || 'default.png'}`;
+                this.cardAvailable = element.dataset.isAvailable === 'true';
+                this.initialQuantity = parseInt(element.dataset.quantity || '') || 1;
+
+                // بيانات المستخدم والثيم
+                this.userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
+                this.token = localStorage.getItem(STORAGE_KEYS.USER_TOKEN);
+                console.log('Theme : ', localStorage.getItem('theme'));
+                this.theme = localStorage.getItem('theme') === 'dark' ? 'night' : 'day';
+
+                // خيارات إضافية
+                this.options = {
+                    iconsBasePath: options.iconsBasePath ?? '/assets/images/',
+                    cssPath: options.cssPath ?? '/assets/css/purchase-dialog.css',
+                    supportPhone: options.supportPhone ?? '+349374836'
+                };
+
+                this._loadCSS();
+            }
+
+            /** تحميل ملف CSS */
+            _loadCSS() {
+                if (!document.getElementById('dialog-purchase-css')) {
+                    const link = document.createElement('link');
+                    link.id = 'dialog-purchase-css';
+                    link.rel = 'stylesheet';
+                    link.href = this.options.cssPath;
+                    document.head.appendChild(link);
+                }
+            }
+
+            /** فتح نافذة الحوار */
+            open() {
+                this.overlay = document.createElement('div');
+                this.overlay.className = `purchase-dialog-overlay active ${this.theme}`;
+                this.overlay.style.opacity = '0';
+                document.body.appendChild(this.overlay);
+                document.body.style.overflow = 'hidden';
+
+                this.overlay.innerHTML = this.cardAvailable
+                    ? this._getAvailableTemplateHTML()
+                    : this._getUnavailableTemplateHTML();
+
+                const dialog = this.overlay.querySelector('.purchase-dialog');
+                dialog.classList.add(this.category); // apps/games/cryptos/balances
+                dialog.classList.add(this.theme);    // day/night
+
+                requestAnimationFrame(() => {
+                    this.overlay.style.opacity = '1';
+                });
+
+                this.cardAvailable
+                    ? this._setupDialogEvents()
+                    : this._setupUnavailableEvents();
+
+                this._injectCardData();
+            }
+
+            /** إغلاق الحوار */
+            close() {
+                const dialog = this.overlay.querySelector('.purchase-dialog');
+                if (dialog) dialog.classList.add('closing');
+                this.overlay.style.opacity = '0';
+                document.body.style.overflow = '';
+                setTimeout(() => {
+                    this.overlay?.remove();
+                    this.overlay = null;
+                }, 500);
+            }
+
+            /** إعداد الأحداث للحوار المتاح */
+            _setupDialogEvents() {
+                const $ = (sel) => this.overlay.querySelector(sel);
+
+                $('.dialog-purchase-close-btn')?.addEventListener('click', () => this.close());
+                $('.cancel-btn')?.addEventListener('click', () => this.close());
+
+                $('.confirm-btn')?.addEventListener('click', async () => {
+                    if (!this._validateInputs()) return;
+                    
+                    const quantity = Math.max(1, parseInt($('.quantity-input')?.value || '1'));
+                    const playerId = $('#player-id')?.value.trim();
+                    const playerName = $('#player-name')?.value.trim();
+                    const totalAmount = (this.cardPrice * quantity).toFixed(2);
+
+                    // عرض حالة التحميل
+                    const confirmBtn = $('.confirm-btn');
+                    confirmBtn.classList.add('button-loading');
+
+                    try {
+                        const balance = await this._getUserBalance();
+                        if (balance < totalAmount) {
+                            alert('⚠️ رصيدك غير كافٍ، سيتم تحويلك إلى تبويب الدفع');
+                            return;
+                        }
+
+                        const reserveRes = await fetch(`/api/users/${this.userId}/reserve`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                Authorization: `Bearer ${this.token}`
+                            },
+                            body: JSON.stringify({ amount: totalAmount })
+                        });
+
+                        if (!reserveRes.ok) {
+                            alert('❌ فشل في حجز الرصيد');
+                            return;
+                        }
+
+                        const orderResult = await this._saveOrder({
+                            userId: this.userId,
+                            playerId,
+                            amount: totalAmount,
+                            method: 'wallet',
+                            service: this.cardName,
+                            playerName,
+                            quantity: quantity
+                        });
+
+                        if (orderResult?.status === 'success') {
+                            alert('✅ تم تنفيذ الطلب بنجاح');
+                            this.close();
+                        } else {
+                            await fetch(`/api/users/${this.userId}/restore`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    Authorization: `Bearer ${this.token}`
+                                },
+                                body: JSON.stringify({ amount: totalAmount })
+                            });
+                            alert('❌ فشل في تنفيذ الطلب، تم استرجاع الرصيد');
+                        }
+                    } catch (error) {
+                        console.error('خطأ أثناء المعالجة:', error);
+                        alert('❌ حدث خطأ غير متوقع أثناء المعالجة');
+                    } finally {
+                        confirmBtn.classList.remove('button-loading');
+                    }
+                });
+
+                $('.quantity-input')?.addEventListener('input', (e) => {
+                    this._validateQuantity(e.target.value);
+                    const qty = Math.max(1, parseInt(e.target.value) || 1);
+                    $('.dialog-total').textContent = `المجموع: $${(this.cardPrice * qty).toFixed(2)}`;
+                    $('.quantity-warning')?.classList.toggle('hidden', qty <= 1);
+                });
+
+                $('.refresh-player-btn')?.addEventListener('click', () => {
+                    const input = $('#player-name');
+                    input.value = this._generatePlayerName();
+                });
+
+                // إضافة تحقق أثناء الكتابة
+                $('#player-id')?.addEventListener('input', (e) => {
+                    this._validatePlayerId(e.target.value);
+                });
+            }
+
+            /**
+             * التحقق من صحة المدخلات
+             * @returns {boolean} صحة جميع المدخلات
+             */
+            _validateInputs() {
+                const $ = (sel) => this.overlay.querySelector(sel);
+                const quantityValid = this._validateQuantity($('.quantity-input')?.value);
+                const playerIdValid = this._validatePlayerId($('#player-id')?.value);
+                
+                return quantityValid && playerIdValid;
+            }
+
+            /**
+             * التحقق من صحة الكمية
+             * @param {string} value - قيمة الكمية المدخلة
+             * @returns {boolean} صحة الكمية
+             */
+            _validateQuantity(value) {
+                const $ = (sel) => this.overlay.querySelector(sel);
+                const quantity = parseInt(value);
+                const errorElement = $('.quantity-error');
+                
+                if (isNaN(quantity) || quantity < 1) {
+                    $('.quantity-input').classList.add('input-error');
+                    errorElement.textContent = 'الكمية يجب أن تكون رقمًا صحيحًا أكبر من الصفر';
+                    errorElement.classList.add('show');
+                    return false;
+                }
+                
+                $('.quantity-input').classList.remove('input-error');
+                errorElement.classList.remove('show');
+                return true;
+            }
+
+            /**
+             * التحقق من صحة معرف اللاعب
+             * @param {string} value - قيمة المعرف المدخلة
+             * @returns {boolean} صحة المعرف
+             */
+            _validatePlayerId(value) {
+                const $ = (sel) => this.overlay.querySelector(sel);
+                const errorElement = $('#player-id-error');
+                
+                if (!value || value.trim().length < 3) {
+                    $('#player-id').classList.add('input-error');
+                    errorElement.textContent = 'معرف اللاعب يجب أن يحتوي على 3 أحرف على الأقل';
+                    errorElement.classList.add('show');
+                    return false;
+                }
+                
+                $('#player-id').classList.remove('input-error');
+                errorElement.classList.remove('show');
+                return true;
+            }
+
+            /** إعداد الأحداث للحوار غير المتاح */
+            _setupUnavailableEvents() {
+                const $ = (sel) => this.overlay.querySelector(sel);
+                $('.dialog-purchase-close-btn')?.addEventListener('click', () => this.close());
+                $('.whatsapp-btn')?.addEventListener('click', () => {
+                    const phone = this.options.supportPhone.replace(/\D/g, '');
+                    window.open(`https://wa.me/${phone}`, '_blank');
+                });
+            }
+
+            /** حقن بيانات البطاقة */
+            _injectCardData() {
+                const $ = (sel) => this.overlay.querySelector(sel);
+                $('.dialog-title').textContent = this.cardName;
+                $('.product-name').textContent = this.cardName;
+                $('.price').textContent = `السعر: $${this.cardPrice.toFixed(2)}`;
+                $('.dialog-total').textContent = `المجموع: $${(this.cardPrice * this.initialQuantity).toFixed(2)}`;
+                $('.quantity-input').value = this.initialQuantity;
+
+                const icon = $('.dialog-icon');
+                if (icon) {
+                    icon.src = this.cardIcon;
+                    icon.onerror = () => {
+                        icon.src = `${this.options.iconsBasePath}loading.gif`;
+                    };
+                }
+
+                const playerNameInput = $('#player-name');
+                if (playerNameInput) {
+                    playerNameInput.value = this._generatePlayerName();
+                    playerNameInput.setAttribute('readonly', true);
+                }
+            }
+
+            _showOrderDetails(contentHTML = '') {
+                const modal = document.getElementById('order-details-modal');
+                const body = modal.querySelector('.order-modal-body');
+                body.innerHTML = contentHTML;
+                modal.classList.add('show');
+                document.body.style.overflow = 'hidden';
+
+                const closeBtn = modal.querySelector('.order-close-btn');
+                closeBtn.onclick = () => {
+                    modal.classList.remove('show');
+                    document.body.style.overflow = '';
+                };
+            }
+
+            /** توليد اسم لاعب عشوائي */
+            _generatePlayerName() {
+                const adjectives = ['سريع', 'ذكي', 'غامض', 'قوي'];
+                const nouns = ['نمر', 'صقر', 'ذئب', 'أسد'];
+                const rand = (arr) => arr[Math.floor(Math.random() * arr.length)];
+                return `${rand(adjectives)} ${rand(nouns)} ${Math.floor(Math.random() * 1000)}`;
+            }
+
+            /** جلب رصيد المستخدم */
+            async _getUserBalance() {
+                try {
+                    const res = await fetch(`/api/users/${this.userId}/balance`, {
+                        headers: { Authorization: `Bearer ${this.token}` }
+                    });
+                    const data = await res.json();
+                    return Number(data.balance) || 0;
+                } catch (err) {
+                    console.error('❌ فشل في جلب الرصيد:', err);
+                    return 0;
+                }
+            }
+
+            /** حفظ الطلب */
+            async _saveOrder(orderData) {
+                try {
+                    const res = await fetch('/api/orders', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${this.token}`
+                        },
+                        body: JSON.stringify(orderData)
+                    });
+                    return await res.json();
+                } catch (err) {
+                    console.error('❌ فشل في حفظ الطلب:', err);
+                    return null;
+                }
+            }
+
+            /** قالب HTML للحوار المتاح */
+            _getAvailableTemplateHTML() {
+                return `
+                    <div class="purchase-dialog">
+                        <div class="dialog-header">
+                            <h2 class="dialog-title">إتمام الشراء</h2>
+                            <button type="button" class="dialog-purchase-close-btn" title="إغلاق">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+
+                        <div class="dialog-content">
+                            <div class="product-info">
+                                <img class="dialog-icon" src="${this.cardIcon}" alt="رمز المنتج" />
+                                <span class="product-name">${this.cardName}</span>
+                            </div>
+
+                            <div class="price-quantity">
+                                <span class="price">السعر: $${this.cardPrice.toFixed(2)}</span>
+                                <label for="quantity">الكمية:</label>
+                                <input type="number" class="quantity-input" min="1" value="${this.initialQuantity}" />
+                                <span class="quantity-error error-message"></span>
+                                <span class="quantity-warning hidden">⚠️ الكمية يجب أن تكون 2 أو أكثر للحصول على خصم</span>
+                            </div>
+
+                            <div class="input-group">
+                                <label for="player-id">أدخل الـ ID:</label>
+                                <input type="text" id="player-id" />
+                                <span id="player-id-error" class="error-message"></span>
+                            </div>
+
+                            <div class="input-group player-name-group">
+                                <label for="player-name">اسم اللاعب:</label>
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <input type="text" id="player-name" placeholder="اسم اللاعب" readonly />
+                                    <button type="button" class="refresh-player-btn" title="تحديث الاسم">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="notes">
+                                <p id="product-description">
+                                    هذا المنتج يعمل خلال 24 ساعة بشكل أوتوماتيكي، الكمية الافتراضية 1000
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="dialog-footer">
+                            <span class="dialog-total">المجموع: $${(this.cardPrice * this.initialQuantity).toFixed(2)}</span>
+                            <button type="button" class="confirm-btn">
+                                <span class="loading-spinner"></span>
+                                شراء
+                            </button>
+                            <button type="button" class="cancel-btn">إلغاء</button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            _getUnavailableTemplateHTML() {
+                return `
+                <div class="purchase-dialog">
+                    <div class="dialog-header">
+                        <h2 class="dialog-title">غير متاح</h2>
+                        <button type="button" class="dialog-purchase-close-btn" title="إغلاق">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div class="dialog-unavailable">
+                        <p class="unavailable-message">❌ هذا المنتج غير متاح حالياً للشراء</p>
+                        <p class="unavailable-contact">
+                            📞 يمكنك التواصل مع الدعم عبر الرقم:
+                            <strong class="support-phone">${this.options.supportPhone}</strong>
+                        </p>
+                        <button class="whatsapp-btn">فتح واتساب</button>
+                    </div>
+                </div>
+            `;
+            }
+        }
+
+        // تهيئة المثال
+        document.addEventListener('DOMContentLoaded', () => {
+            // تخزين بيانات المستخدم للمثال
+            localStorage.setItem(STORAGE_KEYS.USER_ID, 'user123');
+            localStorage.setItem(STORAGE_KEYS.USER_TOKEN, 'token456');
+            localStorage.setItem('theme', 'light');
+            
+            const productCard = document.querySelector('.product-card');
+            const buyButton = document.querySelector('.buy-btn');
+            
+            buyButton.addEventListener('click', () => {
+                const dialog = new DialogPurchase(productCard);
+                dialog.open();
+            });
+        });
+    </script>
+</body>
+</html>

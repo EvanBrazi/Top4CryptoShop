@@ -1,10 +1,20 @@
-import { getFullPathByCategory, STORAGE_KEYS } from "../utils/appUtils.js";
+import { STORAGE_KEYS, getFullPathByCategory } from "../utils/appUtils.js";
 
 /**
- * @class DialogPurchase
- * @description نافذة حوار الشراء الديناميكية مع دعم الفئات والثيمات والتأثيرات
- */
+         * @class DialogPurchase
+         * @description نافذة حوار الشراء الديناميكية مع دعم الفئات والثيمات والتأثيرات
+         * @version 2.0
+         * @author فريق التطوير
+         */
 export class DialogPurchase {
+  /**
+   * إنشاء مثيل لنافذة حوار الشراء
+   * @param {HTMLElement} element - عنصر البطاقة الذي تم النقر عليه
+   * @param {Object} options - خيارات إضافية للتخصيص
+   * @param {string} options.iconsBasePath - المسار الأساسي للرموز
+   * @param {string} options.cssPath - مسار ملف CSS الإضافي
+   * @param {string} options.supportPhone - رقم الدعم الفني
+   */
   constructor(element, options = {}) {
     this.element = element;
 
@@ -90,47 +100,25 @@ export class DialogPurchase {
     $('.cancel-btn')?.addEventListener('click', () => this.close());
 
     $('.confirm-btn')?.addEventListener('click', async () => {
+      if (!this._validateInputs()) return;
+
       const quantity = Math.max(1, parseInt($('.quantity-input')?.value || '1'));
       const playerId = $('#player-id')?.value.trim();
       const playerName = $('#player-name')?.value.trim();
       const totalAmount = (this.cardPrice * quantity).toFixed(2);
 
-      if (!playerId) return alert('يرجى إدخال الـ ID الخاص بك');
+      // عرض حالة التحميل
+      const confirmBtn = $('.confirm-btn');
+      confirmBtn.classList.add('button-loading');
 
-      const balance = await this._getUserBalance();
-      if (balance < totalAmount) {
-        alert('⚠️ رصيدك غير كافٍ، سيتم تحويلك إلى تبويب الدفع');
-        return;
-      }
+      try {
+        const balance = await this._getUserBalance();
+        if (balance < totalAmount) {
+          alert('⚠️ رصيدك غير كافٍ، سيتم تحويلك إلى تبويب الدفع');
+          return;
+        }
 
-      const reserveRes = await fetch(`/api/users/${this.userId}/reserve`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.token}`
-        },
-        body: JSON.stringify({ amount: totalAmount })
-      });
-
-      if (!reserveRes.ok) {
-        alert('❌ فشل في حجز الرصيد');
-        return;
-      }
-
-      const orderResult = await this._saveOrder({
-        userId: this.userId,
-        playerId,
-        amount: totalAmount,
-        method: 'wallet',
-        service: this.cardName,
-        playerName
-      });
-
-      if (orderResult?.status === 'success') {
-        alert('✅ تم تنفيذ الطلب بنجاح');
-        this.close();
-      } else {
-        await fetch(`/api/users/${this.userId}/restore`, {
+        const reserveRes = await fetch(`/api/users/${this.userId}/reserve`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -138,20 +126,115 @@ export class DialogPurchase {
           },
           body: JSON.stringify({ amount: totalAmount })
         });
-        alert('❌ فشل في تنفيذ الطلب، تم استرجاع الرصيد');
+
+        if (!reserveRes.ok) {
+          alert('❌ فشل في حجز الرصيد');
+          return;
+        }
+
+        const orderResult = await this._saveOrder({
+          userId: this.userId,
+          playerId,
+          amount: totalAmount,
+          method: 'wallet',
+          service: this.cardName,
+          playerName,
+          quantity: quantity
+        });
+
+        if (orderResult?.status === 'success') {
+          alert('✅ تم تنفيذ الطلب بنجاح');
+          this.close();
+        } else {
+          await fetch(`/api/users/${this.userId}/restore`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${this.token}`
+            },
+            body: JSON.stringify({ amount: totalAmount })
+          });
+          alert('❌ فشل في تنفيذ الطلب، تم استرجاع الرصيد');
+        }
+      } catch (error) {
+        console.error('خطأ أثناء المعالجة:', error);
+        alert('❌ حدث خطأ غير متوقع أثناء المعالجة');
+      } finally {
+        confirmBtn.classList.remove('button-loading');
       }
     });
 
     $('.quantity-input')?.addEventListener('input', (e) => {
-      const qty = Math.max(1, parseInt(e.target.value));
+      this._validateQuantity(e.target.value);
+      const qty = Math.max(1, parseInt(e.target.value) || 1);
       $('.dialog-total').textContent = `المجموع: $${(this.cardPrice * qty).toFixed(2)}`;
-      $('.quantity-warning')?.classList.toggle('hidden', qty > 1);
+      $('.quantity-warning')?.classList.toggle('hidden', qty <= 1);
     });
 
     $('.refresh-player-btn')?.addEventListener('click', () => {
       const input = $('#player-name');
       input.value = this._generatePlayerName();
     });
+
+    // إضافة تحقق أثناء الكتابة
+    $('#player-id')?.addEventListener('input', (e) => {
+      this._validatePlayerId(e.target.value);
+    });
+  }
+
+  /**
+   * التحقق من صحة المدخلات
+   * @returns {boolean} صحة جميع المدخلات
+   */
+  _validateInputs() {
+    const $ = (sel) => this.overlay.querySelector(sel);
+    const quantityValid = this._validateQuantity($('.quantity-input')?.value);
+    const playerIdValid = this._validatePlayerId($('#player-id')?.value);
+
+    return quantityValid && playerIdValid;
+  }
+
+  /**
+   * التحقق من صحة الكمية
+   * @param {string} value - قيمة الكمية المدخلة
+   * @returns {boolean} صحة الكمية
+   */
+  _validateQuantity(value) {
+    const $ = (sel) => this.overlay.querySelector(sel);
+    const quantity = parseInt(value);
+    const errorElement = $('.quantity-error');
+
+    if (isNaN(quantity) || quantity < 1) {
+      $('.quantity-input').classList.add('input-error');
+      errorElement.textContent = 'الكمية يجب أن تكون رقمًا صحيحًا أكبر من الصفر';
+      errorElement.classList.add('show');
+      return false;
+    }
+
+    $('.quantity-input').classList.remove('input-error');
+    errorElement.classList.remove('show');
+    return true;
+  }
+
+  /**
+   * التحقق من صحة معرف اللاعب
+   * @param {string} value - قيمة المعرف المدخلة
+   * @returns {boolean} صحة المعرف
+   */
+  _validatePlayerId(value) {
+    const $ = (sel) => this.overlay.querySelector(sel);
+    const errorElement = $('#player-id-error');
+
+    if (!value || value.trim().length < 3) {
+      $('#player-id').classList.add('input-error');
+      errorElement.textContent = 'معرف اللاعب يجب أن يحتوي على 3 أحرف على الأقل';
+      errorElement.classList.add('show');
+      return false;
+    }
+
+    $('#player-id').classList.remove('input-error');
+    errorElement.classList.remove('show');
+    return true;
   }
 
   /** إعداد الأحداث للحوار غير المتاح */
@@ -169,8 +252,8 @@ export class DialogPurchase {
     const $ = (sel) => this.overlay.querySelector(sel);
     $('.dialog-title').textContent = this.cardName;
     $('.product-name').textContent = this.cardName;
-    $('.price').textContent = `السعر: $${this.cardPrice}`;
-    $('.dialog-total').textContent = `المجموع: $${this.cardPrice}`;
+    $('.price').textContent = `السعر: $${this.cardPrice.toFixed(2)}`;
+    $('.dialog-total').textContent = `المجموع: $${(this.cardPrice * this.initialQuantity).toFixed(2)}`;
     $('.quantity-input').value = this.initialQuantity;
 
     const icon = $('.dialog-icon');
@@ -245,77 +328,82 @@ export class DialogPurchase {
   /** قالب HTML للحوار المتاح */
   _getAvailableTemplateHTML() {
     return `
-      <div class="purchase-dialog">
-        <div class="dialog-header">
-          <h2 class="dialog-title">إتمام الشراء</h2>
-          <button type="button" class="dialog-purchase-close-btn" title="إغلاق">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
+                    <div class="purchase-dialog">
+                        <div class="dialog-header">
+                            <h2 class="dialog-title">إتمام الشراء</h2>
+                            <button type="button" class="dialog-purchase-close-btn" title="إغلاق">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
 
-        <div class="dialog-content">
-          <div class="product-info">
-            <img class="dialog-icon" src="${this.cardIcon}" alt="رمز المنتج" />
-            <span class="product-name">${this.cardName}</span>
-          </div>
+                        <div class="dialog-content">
+                            <div class="product-info">
+                                <img class="dialog-icon" src="${this.cardIcon}" alt="رمز المنتج" />
+                                <span class="product-name">${this.cardName}</span>
+                            </div>
 
-          <div class="price-quantity">
-            <span class="price">السعر: $${this.cardPrice}</span>
-            <label for="quantity">الكمية:</label>
-            <input type="number" class="quantity-input" min="1" value="${this.initialQuantity}" />
-            <span class="quantity-warning hidden">⚠️ الكمية يجب أن تكون 2 أو أكثر للحصول على خصم</span>
-          </div>
+                            <div class="price-quantity">
+                                <span class="price">السعر: $${this.cardPrice.toFixed(2)}</span>
+                                <label for="quantity">الكمية:</label>
+                                <input type="number" class="quantity-input" min="1" value="${this.initialQuantity}" />
+                                <span class="quantity-error error-message"></span>
+                                <span class="quantity-warning hidden">⚠️ الكمية يجب أن تكون 2 أو أكثر للحصول على خصم</span>
+                            </div>
 
-          <div class="input-group">
-            <label for="player-id">أدخل الـ ID:</label>
-            <input type="text" id="player-id" />
-          </div>
+                            <div class="input-group">
+                                <label for="player-id">أدخل الـ ID:</label>
+                                <input type="text" id="player-id" />
+                                <span id="player-id-error" class="error-message"></span>
+                            </div>
 
-          <div class="input-group player-name-group">
-            <label for="player-name">اسم اللاعب:</label>
-            <div style="display: flex; gap: 8px; align-items: center;">
-              <input type="text" id="player-name" placeholder="اسم اللاعب" readonly />
-              <button type="button" class="refresh-player-btn" title="تحديث الاسم">
-                <i class="fas fa-sync-alt"></i>
-              </button>
-            </div>
-          </div>
+                            <div class="input-group player-name-group">
+                                <label for="player-name">اسم اللاعب:</label>
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <input type="text" id="player-name" placeholder="اسم اللاعب" readonly />
+                                    <button type="button" class="refresh-player-btn" title="تحديث الاسم">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
 
-          <div class="notes">
-            <p id="product-description">
-              هذا المنتج يعمل خلال 24 ساعة بشكل أوتوماتيكي، الكمية الافتراضية 1000
-            </p>
-          </div>
-        </div>
+                            <div class="notes">
+                                <p id="product-description">
+                                    هذا المنتج يعمل خلال 24 ساعة بشكل أوتوماتيكي، الكمية الافتراضية 1000
+                                </p>
+                            </div>
+                        </div>
 
-        <div class="dialog-footer">
-          <span class="dialog-total">المجموع: $${this.cardPrice}</span>
-          <button type="button" class="confirm-btn">شراء</button>
-          <button type="button" class="cancel-btn">إلغاء</button>
-        </div>
-      </div>
-    `;
+                        <div class="dialog-footer">
+                            <span class="dialog-total">المجموع: $${(this.cardPrice * this.initialQuantity).toFixed(2)}</span>
+                            <button type="button" class="confirm-btn">
+                                <span class="loading-spinner"></span>
+                                شراء
+                            </button>
+                            <button type="button" class="cancel-btn">إلغاء</button>
+                        </div>
+                    </div>
+                `;
   }
 
   _getUnavailableTemplateHTML() {
     return `
-    <div class="purchase-dialog">
-      <div class="dialog-header">
-        <h2 class="dialog-title">غير متاح</h2>
-        <button type="button" class="dialog-purchase-close-btn" title="إغلاق">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
+                <div class="purchase-dialog">
+                    <div class="dialog-header">
+                        <h2 class="dialog-title">غير متاح</h2>
+                        <button type="button" class="dialog-purchase-close-btn" title="إغلاق">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
 
-      <div class="dialog-unavailable">
-        <p class="unavailable-message">❌ هذا المنتج غير متاح حالياً للشراء</p>
-        <p class="unavailable-contact">
-          📞 يمكنك التواصل مع الدعم عبر الرقم:
-          <strong class="support-phone">${this.options.supportPhone}</strong>
-        </p>
-        <button class="whatsapp-btn">فتح واتساب</button>
-      </div>
-    </div>
-  `;
+                    <div class="dialog-unavailable">
+                        <p class="unavailable-message">❌ هذا المنتج غير متاح حالياً للشراء</p>
+                        <p class="unavailable-contact">
+                            📞 يمكنك التواصل مع الدعم عبر الرقم:
+                            <strong class="support-phone">${this.options.supportPhone}</strong>
+                        </p>
+                        <button class="whatsapp-btn">فتح واتساب</button>
+                    </div>
+                </div>
+            `;
   }
 }

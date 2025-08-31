@@ -406,92 +406,15 @@ class HomePage {
     }
 }
 
-/**
- * homepage.js - WebSocket client for regular user
- * Receives real-time updates like payment status
- *
- * @author: Evan Brazi
- */
-const socket = new WebSocket('ws://localhost:10000');
-
-socket.addEventListener('open', () => {
-    console.log('✅ WebSocket connected (user)');
-
-    // تعريف المستخدم عند الاتصال
-    socket.send(JSON.stringify({
-        type: 'auth',
-        role: 'user',
-        userId: localStorage.getItem(STORAGE_KEYS.USER_ID) // يمكن تغييره حسب النظام
-    }));
-});
-
-socket.onmessage = async (event) => {
-    const data = JSON.parse(event.data);
-    console.log('📨 إشعار WebSocket للمستخدم:', data);
-    if (data.userId !== localStorage.getItem(STORAGE_KEYS.USER_ID)) return;
-
-    switch (data.type) {
-        case 'welcome':
-            showToastNotification(data.message, 'success');
-            break;
-
-        case 'paymentAccepted':
-            showToastNotification(`✅ تم قبول دفعتك بنجاح!`, 'success');
-            await window.homePage._loadUserData();
-            window.homePage.components.appManager._postPaymentMessage();
-            break;
-
-        case 'paymentRejected':
-            showToastNotification(`❌ تم رفض دفعتك. يرجى التواصل مع الدعم.`, 'error');
-            window.homePage.components.appManager._postPaymentMessage();
-            break;
-
-        case 'newPayment':
-            showToastNotification('✅ تم إرسال الدفعة بنجاح', 'success')
-            showToastNotification('📥 تم تسجيل دفعة جديدة، يتم التحقق منها من قبل المسؤولين', 'info');
-            window.homePage.components.appManager._postPaymentMessage();
-            break;
-
-        case 'newOrder':
-            showToastNotification('✅ تم إرسال الطلب بنجاح', 'success')
-            showToastNotification('📥 تم تسجيل طلب جديد، يتم التحقق منها من قبل المسؤولين', 'info');
-            window.homePage.components.appManager._postOrderMessage();
-            break;
-
-        case 'orderAccepted':
-            showToastNotification(`✅ تم قبول طلبك بنجاح!`, 'success');
-            await window.homePage._loadUserData();
-            window.homePage.components.appManager._postOrderMessage();
-            break;
-
-        case 'orderRejected':
-            showToastNotification(`❌ تم رفض طلبك. يرجى التواصل مع الدعم.`, 'error');
-            window.homePage.components.appManager._postOrderMessage();
-            break;
-
-        case 'orderStatus':
-            showToastNotification(`📦 حالة طلبك: ${data.status}`, 'info');
-            await window.homePage._loadUserData();
-            window.homePage.components.appManager._postOrderMessage();
-            break;
-
-        case 'balanceUpdate':
-            showToastNotification(`💰 تم تحديث رصيدك: +${data.newAmount} دولار`, 'success');
-            break;
-
-        default:
-            console.log('📨 إشعار غير معروف:', data);
-    }
-};
 
 function showToastNotification(message, type = 'info') {
-  const toast = document.createElement('div');
-  toast.className = `toast-notification toast-${type}`;
-  toast.textContent = message;
+    const toast = document.createElement('div');
+    toast.className = `toast-notification toast-${type}`;
+    toast.textContent = message;
 
-  document.body.appendChild(toast);
+    document.body.appendChild(toast);
 
-  setTimeout(() => toast.remove(), 5000);
+    setTimeout(() => toast.remove(), 5000);
 }
 
 function showUserNotification(message, type = 'success') {
@@ -512,6 +435,86 @@ document.addEventListener('DOMContentLoaded', () => {
     (async () => {
         const user = await checkSession(); // لا حاجة لدور معين
         if (!user) return;
+        /**
+         * homepage.js - WebSocket client for regular user
+         * Receives real-time updates like payment status
+         *
+         * @author: Evan Brazi
+         */
+        const socket = new WebSocket('ws://localhost:10000');
+        socket.addEventListener('open', () => {
+            console.log('✅ WebSocket connected (user)');
+
+            // تعريف المستخدم عند الاتصال
+            socket.send(JSON.stringify({
+                type: 'auth',
+                role: 'user',
+                userId: localStorage.getItem(STORAGE_KEYS.USER_ID) // يمكن تغييره حسب النظام
+            }));
+        });
+        socket.onmessage = async (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                console.log('📨 إشعار WebSocket للمستخدم:', data);
+                // التحقق من ان الرسالة موجهة لهذا المستخدم
+                if (data.userId !== localStorage.getItem(STORAGE_KEYS.USER_ID)) return;
+                switch (data.type) {
+                    case 'welcome':
+                        showToastNotification(data.message, 'success');
+                        break;
+
+                    case 'paymentAccepted':
+                        showToastNotification(`✅ تم قبول دفعتك بنجاح!`, 'success');
+                        await window.homePage._loadUserData();
+                        await window.homePage.components.appManager._postPaymentMessage();
+                        break;
+
+                    case 'paymentRejected':
+                        showToastNotification(`❌ تم رفض دفعتك. يرجى التواصل مع الدعم.`, 'error');
+                        await window.homePage.components.appManager._postPaymentMessage();
+                        break;
+
+                    case 'newPayment':
+                        showToastNotification('✅ تم إرسال الدفعة بنجاح', 'success')
+                        showToastNotification('📥 تم تسجيل دفعة جديدة، يتم التحقق منها من قبل المسؤولين', 'info');
+                        await window.homePage.components.appManager._postPaymentMessage();
+                        break;
+
+                    case 'newOrder':
+                        showToastNotification('✅ تم إرسال الطلب بنجاح', 'success')
+                        showToastNotification('📥 تم تسجيل طلب جديد، يتم التحقق منها من قبل المسؤولين', 'info');
+                        await window.homePage.components.appManager._postOrderMessage();
+                        break;
+
+                    case 'orderAccepted':
+                        showToastNotification(`✅ تم قبول طلبك بنجاح!`, 'success');
+                        await window.homePage._loadUserData();
+                        await window.homePage.components.appManager._postOrderMessage();
+                        break;
+
+                    case 'orderRejected':
+                        showToastNotification(`❌ تم رفض طلبك. يرجى التواصل مع الدعم.`, 'error');
+                        await window.homePage.components.appManager._postOrderMessage();
+                        break;
+
+                    case 'orderStatus':
+                        showToastNotification(`📦 حالة طلبك: ${data.status}`, 'info');
+                        await window.homePage._loadUserData();
+                        await window.homePage.components.appManager._postOrderMessage();
+                        break;
+
+                    case 'balanceUpdate':
+                        showToastNotification(`💰 تم تحديث رصيدك: +${data.newAmount} دولار`, 'success');
+                        await window.homePage._loadUserData();
+                        break;
+
+                    default:
+                        console.log('📨 إشعار غير معروف:', data);
+                }
+            } catch (error) {
+                console.error('Error while processing WebSocket message:', error);
+            }
+        };
     })();
 
     /**

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نافذة حوار الشراء المحسنة</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        
+    </style>
+</head>
+<body>
+    <!-- نموذج بطاقة المنتج للمثال -->
+    <div class="product-card" data-price="10.99" data-category="apps" data-icon-name="app-icon.png" data-is-available="true" data-quantity="1">
+        <h3 class="title">تطبيق مميز</h3>
+        <p>السعر: $10.99</p>
+        <button class="buy-btn">شراء الآن</button>
+    </div>
+
+    <script>
+        // محاكاة للوظائف المساعدة
+        const STORAGE_KEYS = {
+            USER_ID: 'user_id',
+            USER_TOKEN: 'user_token'
+        };
+
+        const getFullPathByCategory = (category) => {
+            const paths = {
+                'apps': '/assets/images/apps/',
+                'games': '/assets/images/games/',
+                'cryptos': '/assets/images/cryptos/',
+                'balances': '/assets/images/balances/',
+                'default': '/assets/images/default/'
+            };
+            return paths[category] || paths['default'];
+        };
+
+        
+    </script>
+</body>
+</html>

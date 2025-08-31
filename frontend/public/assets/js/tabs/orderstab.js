@@ -38,9 +38,9 @@ export class OrdersTab {
     /**
      * تحميل الطلبات من السيرفر
      */
-    loadOrders() {
-        fetch(`/api/orders?userId=${this.userId}`)
-            .then(res => res.json())
+    async loadOrders() {
+        await fetch(`/api/orders?userId=${this.userId}`)
+            .then(async res => await res.json())
             .then(data => {
                 this.orders = Array.isArray(data) ? data : [];
                 this.renderOrders();

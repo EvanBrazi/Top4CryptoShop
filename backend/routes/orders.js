@@ -121,7 +121,7 @@ router.put('/:id/accept', verifyToken, checkAdmin, async (req, res) => {
       orderId: order.orderId,
       service: order.service,
       amount: order.amount
-    });
+    }, order.userId);
 
     res.json({ status: 'accepted' });
   } catch (err) {

@@ -1,6 +1,6 @@
 /* ✅ ثيم النهار */
 .purchase-dialog.day {
-  --dialog-bg: rgba(255, 255, 255, 0.85);
+  --dialog-bg: rgba(255, 255, 255, 0.95);
   --dialog-text: #1a1a1a;
   --dialog-accent: #007bff;
   --dialog-muted: #666;
@@ -8,11 +8,14 @@
   --dialog-border: #ddd;
   --dialog-shadow: rgba(0, 0, 0, 0.1);
   --dialog-font: 'Segoe UI', 'Cairo', sans-serif;
+  --input-bg: rgba(255, 255, 255, 0.7);
+  --error-color: #dc3545;
+  --success-color: #28a745;
 }
 
 /* ✅ ثيم الليل */
 .purchase-dialog.night {
-  --dialog-bg: rgba(20, 20, 20, 0.85);
+  --dialog-bg: rgba(20, 20, 20, 0.95);
   --dialog-text: #f0f0f0;
   --dialog-accent: #00bcd4;
   --dialog-muted: #aaa;
@@ -20,18 +23,23 @@
   --dialog-border: #444;
   --dialog-shadow: rgba(0, 0, 0, 0.4);
   --dialog-font: 'Segoe UI', 'Cairo', sans-serif;
+  --input-bg: rgba(0, 0, 0, 0.3);
+  --error-color: #ff6b6b;
+  --success-color: #51cf66;
 }
 
 /* ✅ الغلاف العام */
 .purchase-dialog-overlay {
   position: fixed;
-  top: 0; left: 0;
-  width: 100vw; height: 100vh;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 9999;
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(15px);
   opacity: 0;
   pointer-events: none;
@@ -44,14 +52,101 @@
 }
 
 /* ✅ الحركات حسب الفئة */
-@keyframes slide-apps-in     { from {opacity:0;transform:translateY(40px) scale(0.95);} to {opacity:1;transform:translateY(0) scale(1);} }
-@keyframes slide-apps-out    { from {opacity:1;transform:translateY(0) scale(1);} to {opacity:0;transform:translateY(40px) scale(0.95);} }
-@keyframes slide-games-in    { from {opacity:0;transform:translateX(-40px) scale(0.95);} to {opacity:1;transform:translateX(0) scale(1);} }
-@keyframes slide-games-out   { from {opacity:1;transform:translateX(0) scale(1);} to {opacity:0;transform:translateX(-40px) scale(0.95);} }
-@keyframes slide-cryptos-in  { from {opacity:0;transform:scale(0.8);} to {opacity:1;transform:scale(1);} }
-@keyframes slide-cryptos-out { from {opacity:1;transform:scale(1);} to {opacity:0;transform:scale(0.8);} }
-@keyframes slide-balances-in { from {opacity:0;transform:translateY(-40px) scale(0.95);} to {opacity:1;transform:translateY(0) scale(1);} }
-@keyframes slide-balances-out{ from {opacity:1;transform:translateY(0) scale(1);} to {opacity:0;transform:translateY(-40px) scale(0.95);} }
+@keyframes slide-apps-in {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes slide-apps-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(40px) scale(0.95);
+  }
+}
+
+@keyframes slide-games-in {
+  from {
+    opacity: 0;
+    transform: translateX(-40px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes slide-games-out {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateX(-40px) scale(0.95);
+  }
+}
+
+@keyframes slide-cryptos-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slide-cryptos-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+
+@keyframes slide-balances-in {
+  from {
+    opacity: 0;
+    transform: translateY(-40px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes slide-balances-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(-40px) scale(0.95);
+  }
+}
 
 /* ✅ مربع الحوار */
 .purchase-dialog {
@@ -73,15 +168,37 @@
 }
 
 /* ✅ دخول وخروج حسب الفئة */
-.purchase-dialog.apps     { animation-name: slide-apps-in; }
-.purchase-dialog.games    { animation-name: slide-games-in; }
-.purchase-dialog.cryptos  { animation-name: slide-cryptos-in; }
-.purchase-dialog.balances { animation-name: slide-balances-in; }
+.purchase-dialog.apps {
+  animation-name: slide-apps-in;
+}
 
-.purchase-dialog.apps.closing     { animation-name: slide-apps-out; }
-.purchase-dialog.games.closing    { animation-name: slide-games-out; }
-.purchase-dialog.cryptos.closing  { animation-name: slide-cryptos-out; }
-.purchase-dialog.balances.closing { animation-name: slide-balances-out; }
+.purchase-dialog.games {
+  animation-name: slide-games-in;
+}
+
+.purchase-dialog.cryptos {
+  animation-name: slide-cryptos-in;
+}
+
+.purchase-dialog.balances {
+  animation-name: slide-balances-in;
+}
+
+.purchase-dialog.apps.closing {
+  animation-name: slide-apps-out;
+}
+
+.purchase-dialog.games.closing {
+  animation-name: slide-games-out;
+}
+
+.purchase-dialog.cryptos.closing {
+  animation-name: slide-cryptos-out;
+}
+
+.purchase-dialog.balances.closing {
+  animation-name: slide-balances-out;
+}
 
 /* ✅ رأس الحوار */
 .dialog-header {
@@ -107,12 +224,19 @@
   max-height: 100%;
   border-radius: 6px;
   object-fit: contain;
-  box-shadow: 0 0 6px rgba(0,0,0,0.2);
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.2);
 }
 
 @keyframes pulseGlow {
-  0%, 100% { text-shadow: 0 0 8px var(--dialog-accent); }
-  50% { text-shadow: 0 0 16px var(--dialog-accent); }
+
+  0%,
+  100% {
+    text-shadow: 0 0 8px var(--dialog-accent);
+  }
+
+  50% {
+    text-shadow: 0 0 16px var(--dialog-accent);
+  }
 }
 
 .dialog-orders-close-btn,
@@ -153,15 +277,50 @@
   margin-top: 20px;
 }
 
+.input-group {
+  margin-bottom: 16px;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
 .input-group input,
 .quantity-input {
-  background-color: transparent;
+  background-color: var(--input-bg);
   border: 1px solid var(--dialog-border);
   color: var(--dialog-text);
   padding: 10px;
   border-radius: 8px;
   font-size: 1rem;
   font-weight: 600;
+  width: 100%;
+  transition: border-color 0.3s;
+}
+
+.input-group input:focus,
+.quantity-input:focus {
+  outline: none;
+  border-color: var(--dialog-accent);
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.input-error {
+  border-color: var(--error-color) !important;
+  box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.25) !important;
+}
+
+.error-message {
+  color: var(--error-color);
+  font-size: 0.85rem;
+  margin-top: 5px;
+  display: none;
+}
+
+.error-message.show {
+  display: block;
 }
 
 .confirm-btn,
@@ -169,12 +328,14 @@
 .whatsapp-btn {
   flex: 1;
   width: 100%;
-  padding: 10px;
+  padding: 12px;
   border-radius: 8px;
   font-weight: bold;
   cursor: pointer;
   border: none;
   border-radius: 25px;
+  transition: all 0.3s;
+  margin-top: 10px;
 }
 
 .confirm-btn {
@@ -182,9 +343,21 @@
   color: white;
 }
 
+.confirm-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
 .cancel-btn {
   background-color: var(--dialog-muted);
   color: white;
+}
+
+.cancel-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .whatsapp-btn {
@@ -192,15 +365,26 @@
   color: white;
 }
 
+.whatsapp-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
 .dialog-total {
   font-size: 1.4rem;
   font-weight: bold;
   margin-top: 10px;
+  text-align: center;
+  padding: 10px;
+  border-radius: 8px;
+  background-color: var(--input-bg);
 }
 
 .quantity-warning {
-  color: red;
+  color: var(--error-color);
   font-size: 0.9rem;
+  margin-top: 5px;
 }
 
 .quantity-warning.hidden {
@@ -209,8 +393,10 @@
 
 .order-modal {
   position: fixed;
-  top: 0; left: 0;
-  width: 100vw; height: 100vh;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
   background-color: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(10px);
   display: flex;
@@ -234,13 +420,20 @@
   padding: 24px;
   width: 90%;
   max-width: 500px;
-  box-shadow: 0 0 24px rgba(0,0,0,0.3);
+  box-shadow: 0 0 24px rgba(0, 0, 0, 0.3);
   animation: fadeIn 0.4s ease;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to   { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .order-modal-header {
@@ -262,3 +455,72 @@
   cursor: pointer;
 }
 
+.product-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.price-quantity {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.price-quantity label {
+  font-weight: 600;
+}
+
+.notes {
+  background-color: var(--input-bg);
+  padding: 12px;
+  border-radius: 8px;
+  margin: 16px 0;
+  font-size: 0.9rem;
+}
+
+.player-name-group {
+  position: relative;
+}
+
+.refresh-player-btn {
+  background: var(--dialog-accent);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.refresh-player-btn:hover {
+  opacity: 0.9;
+}
+
+.loading-spinner {
+  display: none;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease infinite;
+  margin-right: 8px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.button-loading .loading-spinner {
+  display: inline-block;
+}
+
+.button-loading {
+  opacity: 0.7;
+  pointer-events: none;
+}

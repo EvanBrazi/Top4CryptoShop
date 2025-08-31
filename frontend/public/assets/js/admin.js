@@ -7,25 +7,44 @@
  */
 import { STORAGE_KEYS } from "./utils/appUtils.js";
 
-// ✅ تهيئة WebSocket لاستقبال إشعارات لحظية من السيرفر
-const socket = new WebSocket('ws://localhost:10000');
-
-socket.onopen = () => {
-  const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
-  if (userId) {
-    socket.send(JSON.stringify({ type: 'auth', role: 'admin', userId }));
-    updateConnectionStatus(true);
+function initAdminWebSocket() {
+  try {
+    // ✅ تهيئة WebSocket لاستقبال إشعارات لحظية من السيرفر
+    const adminSocket = new WebSocket('ws://localhost:10000');
+    adminSocket.onopen = () => {
+      const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
+      if (userId) {
+        adminSocket.send(JSON.stringify({ type: 'auth', role: 'admin', userId }));
+        updateConnectionStatus(true);
+      }
+    };
+    adminSocket.onclose = () => {
+      updateConnectionStatus(false);
+      setTimeout(initAdminWebSocket, 5000);
+    };
+    adminSocket.onerror = (error) => {
+      console.error('WebSocket error:', error);
+      updateConnectionStatus(false);
+    };
+    adminSocket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log('إشعار WebSocket للأدمن : ', data);
+        if(data.type === 'newOrder') {
+          renderOrderNotification(data);
+        } else if (data.type === 'newPayment') {
+          renderPaymentNotification(data);
+        } else {
+          console.warn('Unkown Admin WebSocket Notification!');
+        }
+      } catch (error) {
+        console.error('Error while handle WebSocket message:', error);
+      }
+    };
+  } catch (error) {
+    console.error('WebSocket initial failed!', error);
   }
-};
-
-socket.onclose = () => updateConnectionStatus(false);
-
-socket.onmessage = (event) => {
-  const data = JSON.parse(event.data);
-  if (data.type === 'newPayment') {
-    renderPaymentNotification(data);
-  }
-};
+}
 
 /**
  * ✅ عرض حالة الاتصال في شريط الحالة
@@ -316,6 +335,7 @@ document.addEventListener('click', (e) => {
  * ✅ بدء التهيئة عند تحميل الصفحة
  */
 window.addEventListener('DOMContentLoaded', () => {
+  initAdminWebSocket();
   loadUsers();              // تحميل المستخدمين
   loadPendingPayments();    // تحميل الدفعات المعلقة
 });

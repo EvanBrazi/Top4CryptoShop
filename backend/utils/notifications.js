@@ -79,6 +79,7 @@ function notifyAdmins(payload) {
 /**
  * إرسال إشعار موجه فقط للمستخدمين
  * @param {Object} payload
+ * @param {String} targetUserId - معرف المستخدم المستهدف (اختياري)
  */
 function notifyUsers(payload, targetUserId = null) {
   if (!wss) {
@@ -87,21 +88,21 @@ function notifyUsers(payload, targetUserId = null) {
   }
 
   const message = JSON.stringify(payload);
+  let sentCount = 0;
 
   wss.clients.forEach(client => {
-    if (
-      client.readyState === 1 &&
-      client.userType === 'user' &&
-      (!targetUserId || client.userId === targetUserId)
-    ) {
+    if (client.readyState === 1 && client.userType === 'user') {
+      if (targetUserId || client.userId !== targetUserId) return;
       try {
         client.send(message);
+        sentCount++;
         console.log(`📡 إرسال إشعار إلى المستخدم: ${targetUserId}`, message);
       } catch (err) {
         console.error(`❌ فشل إرسال الإشعار إلى ${client.userId}:`, err);
       }
     }
   });
+  console.log('تم إرسال ${sentCount} إشعارات للمستخدمين')
 }
 
 /**

@@ -293,12 +293,12 @@ export class AppManager {
         console.log('✅ تم تهيئة التبويبات بنجاح');
     }
 
-    _postOrderMessage() {
-        this.tabs.orders.loadOrders();
+    async _postOrderMessage() {
+        await this.tabs.orders.loadOrders();
     }
 
-    _postPaymentMessage() {
-        this.tabs.payments.loadPayments();
+    async _postPaymentMessage() {
+        await this.tabs.payments.loadPayments();
     }
 
     /**

@@ -162,7 +162,6 @@ html {
   height: 100%;
   width: 100%;
   background: var(--sidebar-content-color);
-  overflow-x: none;
 }
 
 .profile-header {
@@ -922,7 +921,112 @@ p {
   white-space: pre-line;
 }
 
-/* شريط التمرير */
+/* ============================
+   💠 تحسينات الاستجابة العامة
+============================= */
+@media (max-width: 320px),
+(max-width: 768px) {
+  body {
+    font-size: 0.95rem;
+  }
+
+  body.sidebar-open {
+    overflow-x: hidden;
+  }
+
+  .top-bar-content {
+    gap: 6px;
+    padding: 6px 10px;
+  }
+
+  .balance-amount {
+    font-size: 14px;
+  }
+
+  .add-balance-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+  }
+
+  .site-logo {
+    width: 50px;
+    height: 50px;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 60vw;
+    /* عرض مناسب لا يغطي الشاشة بالكامل */
+    max-width: 240px;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    transition: right 0.4s ease;
+    z-index: 1000;
+    border-radius: var(--border-radius);
+  }
+  
+  .dialog-title {
+    font-size: 1.3rem;
+  }
+
+  .dialog-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .dialog-purchase-close-btn {
+    font-size: 1.4rem;
+  }
+
+  .input-group input,
+  .quantity-input {
+    font-size: 0.9rem;
+    padding: 8px;
+  }
+
+  .confirm-btn,
+  .cancel-btn,
+  .whatsapp-btn {
+    font-size: 0.85rem;
+    padding: 10px;
+    border-radius: 20px;
+  }
+
+  .dialog-total {
+    font-size: 1.2rem;
+    padding: 8px;
+  }
+
+  .notes {
+    font-size: 0.85rem;
+    padding: 10px;
+  }
+
+  .refresh-player-btn {
+    font-size: 0.8rem;
+    padding: 6px;
+  }
+
+  .loading-spinner {
+    width: 16px;
+    height: 16px;
+    border-width: 2px;
+  }
+
+  .toast-message,
+  .toast-notification {
+    font-size: 0.85rem;
+    padding: 10px 14px;
+  }
+}
+
+/* ============================
+   💠 تحسينات التمرير
+============================= */
 ::-webkit-scrollbar {
   width: 1px;
 }
@@ -937,6 +1041,5 @@ p {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  color: var(--accent-color);
   background-color: var(--primary-hover);
 }

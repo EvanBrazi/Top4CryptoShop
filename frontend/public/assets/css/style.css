@@ -170,16 +170,16 @@ body.night-mode {
     border-left: 1px solid rgba(0,0,0,0.1);
 }
 
-.night-mode .sidebar {
+.night-mode .dash-sidebar {
     background: var(--night-sidebar-content);
     border-left-color: rgba(255,255,255,0.1);
 }
 
-.sidebar.active {
+.dash-sidebar.active {
     right: 0;
 }
 
-.sidebar-header {
+.dash-sidebar-header {
     padding: 20px;
     text-align: center;
     position: relative;
@@ -187,7 +187,7 @@ body.night-mode {
     color: white;
 }
 
-.night-mode .sidebar-header {
+.night-mode .dash-sidebar-header {
     background: var(--night-sidebar-header);
 }
 
@@ -210,18 +210,18 @@ body.night-mode {
     color: white;
 }
 
-.sidebar-content {
+.dash-sidebar-content {
     flex: 1;
     padding: 15px;
     overflow-y: auto;
     background: var(--day-sidebar-content);
 }
 
-.night-mode .sidebar-content {
+.night-mode .dash-sidebar-content {
     background: var(--night-sidebar-content);
 }
 
-.sidebar-menu {
+.dash-sidebar-menu {
     list-style: none;
 }
 
@@ -262,14 +262,14 @@ body.night-mode {
     color: var(--night-primary);
 }
 
-.sidebar-footer {
+.dash-sidebar-footer {
     padding: 15px;
     text-align: center;
     background: var(--day-sidebar-footer);
     color: white;
 }
 
-.night-mode .sidebar-footer {
+.night-mode .dash-sidebar-footer {
     background: var(--night-sidebar-footer);
 }
 

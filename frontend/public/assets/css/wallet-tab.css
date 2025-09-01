@@ -66,3 +66,35 @@
   color: var(--accent-color);
   background-color: var(--primary-hover);
 }
+@media (max-width: 480px) {
+  .payment-form {
+    padding: 16px;
+    max-width: 100%;
+    margin: 10px;
+    border-radius: 8px;
+    gap: 12px;
+  }
+
+  .payment-form label {
+    font-size: 0.9rem;
+    margin: 8px 0 4px;
+  }
+
+  .payment-form select,
+  .payment-form input[type="number"],
+  .payment-form textarea,
+  .payment-form input[type="file"] {
+    font-size: 0.9rem;
+    padding: 8px 12px;
+  }
+
+  .payment-form button {
+    font-size: 0.95rem;
+    padding: 10px;
+  }
+
+  .payment-form .preview-image {
+    max-width: 100%;
+    height: auto;
+  }
+}

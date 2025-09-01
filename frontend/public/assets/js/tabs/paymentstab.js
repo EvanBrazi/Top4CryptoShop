@@ -163,7 +163,7 @@ export class PaymentsTab {
             modal.classList.remove('show', 'exit');
             content.classList.remove('exit');
             modal.style.display = 'none'; // ضروري لإخفاء المودال فعليًا
-        }, 400); // نفس مدة الأنيميشن
+        }, 100); // نفس مدة الأنيميشن
     }
 
     /**

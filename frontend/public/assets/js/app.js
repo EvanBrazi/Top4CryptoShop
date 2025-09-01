@@ -11,7 +11,7 @@ function initApp() {
     // عناصر DOM
     const menuBtn = document.getElementById('menuBtn');
     const closeBtn = document.getElementById('closeBtn');
-    const sidebar = document.getElementById('sidebar');
+    const sidebar = document.getElementById('dash-sidebar');
     const overlay = document.getElementById('overlay');
     const themeBtn = document.getElementById('themeBtn');
     const aboutBtn = document.getElementById('aboutBtn');
@@ -68,7 +68,7 @@ function loadSettings() {
 
 // تبديل الدرج الجانبي
 function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
+    const sidebar = document.getElementById('dash-sidebar');
     const overlay = document.getElementById('overlay');
 
     AppState.isSidebarOpen = !AppState.isSidebarOpen;
@@ -84,7 +84,7 @@ function toggleSidebar() {
 
 // إغلاق كل شيء
 function closeAll() {
-    const sidebar = document.getElementById('sidebar');
+    const sidebar = document.getElementById('dash-sidebar');
     const overlay = document.getElementById('overlay');
     const dialogs = document.querySelectorAll('.dialog.active');
 

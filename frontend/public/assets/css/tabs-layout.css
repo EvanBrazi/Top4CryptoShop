@@ -145,3 +145,31 @@
         text-shadow: 0 0 15px #6a5acd, 0 0 25px #6a5acd;
     }
 }
+
+@media (max-width: 480px) {
+  .grid-layout {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .card {
+    padding: 8px;
+    border-radius: 12%;
+    aspect-ratio: 1 / 1;
+    font-size: 0.8rem;
+  }
+
+  .icon {
+    width: 70%;
+    height: 70%;
+  }
+
+  .title {
+    font-size: 0.7rem;
+    padding: 4px;
+    height: auto;
+    min-height: 40px;
+    word-break: break-word;
+  }
+}

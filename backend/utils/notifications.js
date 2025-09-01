@@ -11,113 +11,72 @@
  * @lastModified 2025-08-28
  */
 
+const Order = require('../models/Order');
+const Payment = require('../models/Payment');
+
 let wss = null;
 
-/**
- * تهيئة WebSocket عند بدء السيرفر
- * @param {WebSocket.Server} serverInstance - كائن WebSocket.Server
- */
 function initNotifications(serverInstance) {
   wss = serverInstance;
-
-  wss.on('connection', (ws, req) => {
-    // تعيين القيم الافتراضية
+  wss.on('connection', (ws) => {
     ws.userType = 'guest';
     ws.userId = null;
 
-    // استقبال بيانات المصادقة من العميل
-    ws.on('message', msg => {
+    ws.on('message', async msg => {
       try {
         const data = JSON.parse(msg);
         if (data.type === 'auth') {
-          ws.userType = data.role || 'guest';
-          ws.userId = data.userId || null;
+          ws.userType = data.role;
+          ws.userId = data.userId;
+          console.log(`✅ مصادقة ${ws.userType}: ${ws.userId}`);
+
+          if (ws.userType === 'admin') {
+            await sendPendingToAdmin(ws);
+          } else if (ws.userType === 'user') {
+            await sendPendingToUser(ws.userId, ws);
+          }
         }
       } catch (err) {
-        console.error('❌ خطأ في تحليل رسالة WebSocket:', err);
+        console.error('❌ رسالة غير صالحة:', msg);
       }
     });
-
-    // يمكن إضافة تسجيل العميل هنا إذا أردت تتبعهم لاحقًا
   });
 }
 
-/**
- * إرسال إشعار لجميع العملاء أو حسب الدور
- * @param {Object} payload - البيانات المرسلة
- * @param {String|null} targetRole - 'admin' أو 'user' أو null لإرسال للجميع
- */
-function notify(payload, targetRole = null) {
-  if (!wss) {
-    console.warn('⚠️ WebSocket غير مهيأ بعد');
-    return;
-  }
+async function sendPendingToAdmin(ws) {
+  const orders = await Order.find({ status: 'pending' }).sort({ createdAt: -1 });
+  orders.forEach(order => ws.send(JSON.stringify({ type: 'newOrder', ...order.toObject() })));
+
+  const payments = await Payment.find({ status: 'pending' });
+  payments.forEach(payment => ws.send(JSON.stringify({ type: 'newPayment', ...payment.toObject() })));
+
+  console.log(`📤 أُرسلت ${orders.length} طلبات و ${payments.length} دفعات للأدمن`);
+}
+
+async function sendPendingToUser(userId, ws) {
+  const orders = await Order.find({ userId, status: 'pending' });
+  orders.forEach(order => ws.send(JSON.stringify({ type: 'userOrder', ...order.toObject() })));
+
+  const payments = await Payment.find({ userId, status: 'pending' });
+  payments.forEach(payment => ws.send(JSON.stringify({ type: 'userPayment', ...payment.toObject() })));
+
+  console.log(`📤 أُرسلت ${orders.length} طلبات و ${payments.length} دفعات للمستخدم ${userId}`);
+}
+
+function notify(payload, targetRole = null, targetUserId = null) {
+  if (!wss) return;
 
   const message = JSON.stringify(payload);
-
   wss.clients.forEach(client => {
     if (client.readyState === 1) {
-      if (!targetRole || client.userType === targetRole) {
-        try {
-          client.send(message);
-        } catch (err) {
-          console.error(`❌ فشل إرسال الإشعار إلى ${client.userId}:`, err);
-        }
-      }
+      if (targetRole && client.userType !== targetRole) return;
+      if (targetUserId && client.userId !== targetUserId) return;
+      client.send(message);
     }
   });
-}
-
-/**
- * إرسال إشعار موجه فقط للأدمن
- * @param {Object} payload
- */
-function notifyAdmins(payload) {
-  notify(payload, 'admin');
-}
-
-/**
- * إرسال إشعار موجه فقط للمستخدمين
- * @param {Object} payload
- * @param {String} targetUserId - معرف المستخدم المستهدف (اختياري)
- */
-function notifyUsers(payload, targetUserId = null) {
-  if (!wss) {
-    console.warn('⚠️ WebSocket غير مهيأ بعد');
-    return;
-  }
-
-  const message = JSON.stringify(payload);
-  let sentCount = 0;
-
-  wss.clients.forEach(client => {
-    if (client.readyState === 1 && client.userType === 'user') {
-      if (targetUserId || client.userId !== targetUserId) return;
-      try {
-        client.send(message);
-        sentCount++;
-        console.log(`📡 إرسال إشعار إلى المستخدم: ${targetUserId}`, message);
-      } catch (err) {
-        console.error(`❌ فشل إرسال الإشعار إلى ${client.userId}:`, err);
-      }
-    }
-  });
-  console.log('تم إرسال ${sentCount} إشعارات للمستخدمين')
-}
-
-/**
- * تسجيل عميل WebSocket (اختياري للتوسع لاحقًا)
- * @param {WebSocket} ws - العميل المتصل
- */
-function registerClient(ws) {
-  // يمكن تخزين العملاء في قائمة أو ربطهم بجلسات لاحقًا
-  // هذه الدالة جاهزة للتوسع المستقبلي
 }
 
 module.exports = {
   initNotifications,
-  notify,
-  notifyAdmins,
-  notifyUsers,
-  registerClient
+  notify
 };

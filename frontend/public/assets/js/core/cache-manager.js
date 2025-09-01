@@ -171,10 +171,10 @@ export class CacheManager {
 
         for (const path of possiblePaths) {
             try {
-                console.info(`🔍 Trying: ${path}`);
+                //console.info(`🔍 Trying: ${path}`);
                 const response = await fetch(path, { method: 'HEAD' });
                 if (response.ok) {
-                    console.log(`✅ Found icon at: ${path}`);
+                    //console.log(`✅ Found icon at: ${path}`);
                     return path;
                 }
             } catch (err) {

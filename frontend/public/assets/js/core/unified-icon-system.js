@@ -63,7 +63,7 @@ export class UnifiedIconSystem {
                 const blob = await this.getIcon(iconName);
                 if (blob) {
                     loadedCount++;
-                    console.log(`✅ تم تحميل وتخزين "${iconName}"`);
+                    //console.log(`✅ تم تحميل وتخزين "${iconName}"`);
                 }
             } catch (err) {
                 console.warn(`❌ فشل تحميل "${iconName}":`, err);

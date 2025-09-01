@@ -176,7 +176,7 @@ export class CryptosTab {
 
         try {
             await this.config.cryptosIconLoader.render(iconName, img, '!');
-            console.log('✅ تم تحميل أيقونة العملة:', iconName);
+            //console.log('✅ تم تحميل أيقونة العملة:', iconName);
         } catch (error) {
             console.error('❌ خطأ أثناء تحميل الأيقونة:', iconName, error);
             img.src = this.config.fallbackUrl;

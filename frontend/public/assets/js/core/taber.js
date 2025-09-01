@@ -152,37 +152,63 @@ class Taber {
     }
 
     /**
-     * تفعيل تاب معين
-     * @param {string} tabId - فهرس التاب المراد تفعيله
-     */
+    * تفعيل تبويب معين مع تأثيرات دخول وخروج سلسة
+    * @param {string} tabId - معرف التبويب المراد تفعيله (مثل "orders" أو "payments")
+    */
     activateTab(tabId) {
-        // البحث عن التاب المطلوب
+        // البحث عن رابط التبويب (إن وجد)
         const targetLink = this.tabLinks.find(link => link.getAttribute('data-tab') === tabId);
+
+        // البحث عن عنصر التبويب نفسه
         const targetPane = this.tabPanes.find(pane => pane.id === `${tabId}-tab`);
 
-        if (!targetLink || !targetPane) {
-            if (targetPane) {
-                console.log('Catch outSideBar Tab: ' + tabId);
-                this.tabPanes.forEach(pane => pane.classList.remove(this.options.activeClass));
-                targetPane.classList.add(this.options.activeClass);
+        if (!targetPane) {
+            console.error(`❌ لم يتم العثور على تبويب بالمعرف "${tabId}"`);
+            return;
+        }
+
+        // تحديد التبويب النشط حاليًا (إن وجد)
+        const currentPane = this.tabPanes.find(pane => pane.classList.contains(this.options.activeClass));
+
+        // إزالة الحالة النشطة من جميع التبويبات
+        this.tabPanes.forEach(pane => pane.classList.remove(this.options.activeClass));
+
+        // إذا كان التبويب من خارج القائمة (مثل تبويب جانبي)
+        if (!targetLink) {
+            console.log(`📌 تبويب خارجي تم التقاطه: ${tabId}`);
+            if (currentPane && currentPane !== targetPane) {
+                currentPane.classList.add('hide');
+                setTimeout(() => {
+                    currentPane.classList.remove('active', 'hide');
+                    targetPane.classList.add(this.options.activeClass, 'active');
+                }, 300);
             } else {
-                console.error(`Tab with id "${tabId}" not found`);
-                return;
+                targetPane.classList.add(this.options.activeClass, 'active');
             }
         } else {
-            // إزالة الحالة النشطة للعناصر المحددة
+            // إزالة الحالة النشطة من جميع الروابط
             this.tabLinks.forEach(link => link.parentElement.classList.remove(this.options.activeClass));
-            this.tabPanes.forEach(pane => pane.classList.remove(this.options.activeClass));
 
-            // إضافة الحالة النشطة للعناصر المحددة
+            // تفعيل الرابط المستهدف
             targetLink.parentElement.classList.add(this.options.activeClass);
-            targetPane.classList.add(this.options.activeClass);
-        }
-        this.activeTabId = tabId;
 
-        // إطلاق حدث تغيير التاب
+            // التبديل بين التبويبات مع تأثير
+            if (currentPane && currentPane !== targetPane) {
+                currentPane.classList.add('hide');
+                setTimeout(() => {
+                    currentPane.classList.remove('active', 'hide');
+                    targetPane.classList.add(this.options.activeClass, 'active');
+                }, 300);
+            } else {
+                targetPane.classList.add(this.options.activeClass, 'active');
+            }
+        }
+        // تحديث معرف التبويب النشط
+        this.activeTabId = tabId;
+        // إطلاق حدث مخصص عند تغيير التبويب
         this._triggerTabChange(tabId, targetLink, targetPane);
     }
+
 
     /**
    * إضافة تاب جديد ديناميكياً

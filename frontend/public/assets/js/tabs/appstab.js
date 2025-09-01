@@ -177,7 +177,7 @@ export class AppsTab {
 
         try {
             await this.config.appsIconLoader.render(iconName, img, '!');
-            console.log('✅ تم تحميل الأيقونة:', iconName);
+            //console.log('✅ تم تحميل الأيقونة:', iconName);
         } catch (error) {
             console.error('❌ خطأ أثناء تحميل الأيقونة:', iconName, error);
             img.src = this.config.fallbackUrl;

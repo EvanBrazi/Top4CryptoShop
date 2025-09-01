@@ -38,9 +38,9 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 9999;
-  background-color: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(15px);
+  z-index: 1;
+  background-color: var(--background-menu-link);
+    backdrop-filter: blur(12px);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s ease;
@@ -152,8 +152,7 @@
 .purchase-dialog {
   display: flex;
   flex-direction: column;
-  background-color: var(--dialog-bg);
-  backdrop-filter: blur(25px);
+  backdrop-filter: blur(15px);
   border: 1px solid var(--dialog-border);
   color: var(--dialog-text);
   font-family: var(--dialog-font);
@@ -239,7 +238,6 @@
   }
 }
 
-.dialog-orders-close-btn,
 .dialog-purchase-close-btn {
   background: none;
   border: none;
@@ -248,8 +246,7 @@
   cursor: pointer;
 }
 
-.close-btn,
-.orders-close-btn {
+.close-btn {
   position: absolute;
   top: 10px;
   right: 10px;
@@ -260,10 +257,6 @@
   color: #fff;
   cursor: pointer;
   display: none;
-}
-
-#order-details-modal.show .orders-close-btn {
-  display: block;
 }
 
 .purchase-dialog-overlay:not(.active) .dialog-purchase-close-btn {
@@ -391,39 +384,6 @@
   display: none;
 }
 
-.order-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(10px);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9998;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-}
-
-.order-modal.show {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.order-modal-content {
-  background-color: var(--dialog-bg, #fff);
-  color: var(--dialog-text, #000);
-  border-radius: 12px;
-  padding: 24px;
-  width: 90%;
-  max-width: 500px;
-  box-shadow: 0 0 24px rgba(0, 0, 0, 0.3);
-  animation: fadeIn 0.4s ease;
-}
-
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -434,25 +394,6 @@
     opacity: 1;
     transform: scale(1);
   }
-}
-
-.order-modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.order-title {
-  font-size: 1.4rem;
-  font-weight: bold;
-}
-
-.order-close-btn {
-  background: none;
-  border: none;
-  font-size: 1.6rem;
-  color: var(--dialog-xbtn, #333);
-  cursor: pointer;
 }
 
 .product-info {

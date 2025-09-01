@@ -444,7 +444,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const socket = new WebSocket('ws://localhost:10000');
         socket.addEventListener('open', () => {
             console.log('✅ WebSocket connected (user)');
-
             // تعريف المستخدم عند الاتصال
             socket.send(JSON.stringify({
                 type: 'auth',
@@ -474,15 +473,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         await window.homePage.components.appManager._postPaymentMessage();
                         break;
 
+                    case 'userPayment':
                     case 'newPayment':
                         showToastNotification('✅ تم إرسال الدفعة بنجاح', 'success')
                         showToastNotification('📥 تم تسجيل دفعة جديدة، يتم التحقق منها من قبل المسؤولين', 'info');
                         await window.homePage.components.appManager._postPaymentMessage();
                         break;
 
+                    case 'userOrder':
                     case 'newOrder':
                         showToastNotification('✅ تم إرسال الطلب بنجاح', 'success')
-                        showToastNotification('📥 تم تسجيل طلب جديد، يتم التحقق منها من قبل المسؤولين', 'info');
+                        showToastNotification('📥 تم تسجيل طلب جديد، يتم التحقق منه من قبل المسؤولين', 'info');
                         await window.homePage.components.appManager._postOrderMessage();
                         break;
 

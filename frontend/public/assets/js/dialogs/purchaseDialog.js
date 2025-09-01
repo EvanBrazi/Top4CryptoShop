@@ -101,7 +101,6 @@ export class DialogPurchase {
 
     $('.confirm-btn')?.addEventListener('click', async () => {
       if (!this._validateInputs()) return;
-
       const quantity = Math.max(1, parseInt($('.quantity-input')?.value || '1'));
       const playerId = $('#player-id')?.value.trim();
       const playerName = $('#player-name')?.value.trim();
@@ -133,13 +132,14 @@ export class DialogPurchase {
         }
 
         const orderResult = await this._saveOrder({
+          type: 'newOrder',
           userId: this.userId,
-          playerId,
+          playerId: playerId,
+          quantity: quantity,
           amount: totalAmount,
-          method: 'wallet',
+          method: this.category,
           service: this.cardName,
-          playerName,
-          quantity: quantity
+          playerName: playerName,
         });
 
         if (orderResult?.status === 'success') {
@@ -161,6 +161,7 @@ export class DialogPurchase {
         alert('❌ حدث خطأ غير متوقع أثناء المعالجة');
       } finally {
         confirmBtn.classList.remove('button-loading');
+        this.close();
       }
     });
 
@@ -168,7 +169,7 @@ export class DialogPurchase {
       this._validateQuantity(e.target.value);
       const qty = Math.max(1, parseInt(e.target.value) || 1);
       $('.dialog-total').textContent = `المجموع: $${(this.cardPrice * qty).toFixed(2)}`;
-      $('.quantity-warning')?.classList.toggle('hidden', qty <= 1);
+      $('.quantity-warning')?.classList.toggle('hidden', qty >= 2);
     });
 
     $('.refresh-player-btn')?.addEventListener('click', () => {
@@ -270,21 +271,7 @@ export class DialogPurchase {
       playerNameInput.setAttribute('readonly', true);
     }
   }
-
-  _showOrderDetails(contentHTML = '') {
-    const modal = document.getElementById('order-details-modal');
-    const body = modal.querySelector('.order-modal-body');
-    body.innerHTML = contentHTML;
-    modal.classList.add('show');
-    document.body.style.overflow = 'hidden';
-
-    const closeBtn = modal.querySelector('.order-close-btn');
-    closeBtn.onclick = () => {
-      modal.classList.remove('show');
-      document.body.style.overflow = '';
-    };
-  }
-
+  
   /** توليد اسم لاعب عشوائي */
   _generatePlayerName() {
     const adjectives = ['سريع', 'ذكي', 'غامض', 'قوي'];

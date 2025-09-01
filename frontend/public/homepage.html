@@ -10,8 +10,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/brands.min.css">
     <link rel="stylesheet" href="./assets/css/themes.css">
     <link rel="stylesheet" href="./assets/css/standard-table.css">
-    <link rel="stylesheet" href="./assets/css/orders-tab.css">
-    <link rel="stylesheet" href="./assets/css/payments-tab.css">
     <link rel="stylesheet" href="./assets/css/wallet-tab.css">
     <link rel="stylesheet" href="./assets/css/tabs-layout.css">
     <link rel="stylesheet" href="./assets/css/card-grid.css">
@@ -194,6 +192,7 @@
                                     <th>التاريخ</th>
                                     <th>الحالة</th>
                                     <th>المبلغ</th>
+                                    <th>الشيك</th>
                                     <th>تفاصيل</th>
                                 </tr>
                             </thead>
@@ -269,15 +268,14 @@
         </div>
         <!-- باقي الصفحة والتبويبات -->
         <!-- نافذة تفاصيل الدفعات -->
-        <div id="payment-details-modal" class="payments-modal">
-            <div class="payments-modal-content">
-                <button class="payments-close-btn" type="button"
-                    onclick="document.getElementById('payment-details-modal').classList.remove('show')">&times;</button>
+        <div id="payment-details-modal" class="modal">
+            <div class="modal-content" draggable="true">
+                <button type="button" class="payments-close-btn">✖</button>
                 <div class="modal-body"></div>
             </div>
         </div>
         <!--div id="payment-dialog" class="payment-modal">
-        <div class="payment-modal-content">
+            <div class="payment-modal-content">
             <span class="close-btn" onclick="closePaymentDialog()">&times;</span>
             <h3 id="selected-method-title">طريقة الدفع</h3>
 
@@ -288,16 +286,14 @@
             <input type="file" id="receipt-upload" accept="image/*" />
 
             <button type="button" onclick="submitPayment()">إرسال</button>
-        </div>
-    </div-->
-        <!--div id="order-details-modal" class="orders-modal">
-            <div class="orders-modal-content">
-                <button class="orders-close-btn" type="button"
-                    onclick="document.getElementById('order-details-modal').classList.remove('show')">&times;</button>
+            </div>
+        </div-->
+        <div id="order-details-modal" class="modal">
+            <div class="modal-content" draggable="true">
+                <button type="button" class="orders-close-btn">✖</button>
                 <div class="modal-body"></div>
             </div>
         </div>
-    </div-->
         <!-- طبقة التعتيم -->
         <div class="overlay"></div>
 
@@ -400,10 +396,10 @@
         </div>
     </div>
 
-        <script src="assets/js/utils/loader.js" defer></script>
-        <script type="module" src="./assets/js/appmanager.js"></script>
-        <script type="module" src="./assets/js/usermanager.js"></script>
-        <script type="module" src="./assets/js/homepage.js"></script>
+    <script src="assets/js/utils/loader.js" defer></script>
+    <script type="module" src="./assets/js/appmanager.js"></script>
+    <script type="module" src="./assets/js/usermanager.js"></script>
+    <script type="module" src="./assets/js/homepage.js"></script>
 
 </body>
 

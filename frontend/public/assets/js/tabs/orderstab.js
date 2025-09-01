@@ -11,7 +11,7 @@ export class OrdersTab {
     constructor(containerId, userId, options = {}) {
         this.container = document.getElementById(containerId);
         if (!this.container) throw new Error(`Container "${containerId}" غير موجود`);
-        
+
         this.tbody = this.container.querySelector('tbody');
         this.filterSelect = this.container.querySelector('#order-filter');
         this.userId = userId;
@@ -68,6 +68,7 @@ export class OrdersTab {
         }
 
         filtered.forEach(order => {
+            console.log('render new Order: ', order);
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${order.orderId}</td>
@@ -102,9 +103,13 @@ export class OrdersTab {
      */
     showDetailsModal(order) {
         const modal = document.getElementById('order-details-modal');
-        const closeBtn = modal.querySelector('.close-btn');
-        closeBtn.onclick = () => modal.classList.remove('show');
-
+        const modalContent = modal.querySelector('.modal-content');
+        const closeBtn = modal.querySelector('.orders-close-btn');
+        // إعادة تعيين المودال قبل الفتح
+        modal.style.display = 'flex';
+        modal.classList.remove('exit');
+        modalContent.classList.remove('exit');
+        // تعبئة البيانات
         modal.querySelector('.modal-body').innerHTML = `
             <p><strong>الخدمة:</strong> ${order.service}</p>
             <p><strong>المبلغ:</strong> ${order.amount} 💵</p>
@@ -112,7 +117,45 @@ export class OrdersTab {
             <p><strong>الحالة:</strong> ${this.translateStatus(order.status)}</p>
             <p><strong>التاريخ:</strong> ${this.formatDate(order.createdAt)}</p>
         `;
-        modal.classList.add('show');
+        // إظهار المودال
+        setTimeout(() => modal.classList.add('show'), 10);
+        // إغلاق بزر الإغلاق
+        closeBtn.onclick = () => this._closeModal(modal);
+        // إغلاق بالضغط خارج المحتوى
+        modal.onclick = (e) => { if (e.target === modal) this._closeModal(modal); };
+        // إغلاق بزر Escape
+        document.onkeydown = (e) => { if (e.key === 'Escape') this._closeModal(modal); };
+        // دعم السحب
+        let isDragging = false, offsetX = 0, offsetY = 0;
+        modalContent.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            offsetX = e.clientX - modalContent.offsetLeft;
+            offsetY = e.clientY - modalContent.offsetTop;
+            modalContent.style.position = 'absolute';
+            modalContent.style.margin = '0';
+        });
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                modalContent.style.left = `${e.clientX - offsetX}px`;
+                modalContent.style.top = `${e.clientY - offsetY}px`;
+            }
+        });
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+    }
+
+    _closeModal(modal) {
+        const content = modal.querySelector('.modal-content');
+        // أضف كلاس الخروج
+        content.classList.add('exit');
+        modal.classList.add('exit');
+        // بعد انتهاء الأنيميشن، أخفِ المودال فعليًا
+        setTimeout(() => {
+            modal.classList.remove('show', 'exit');
+            content.classList.remove('exit');
+            modal.style.display = 'none'; // ضروري لإخفاء المودال فعليًا
+        }, 400); // نفس مدة الأنيميشن
     }
 
     /**

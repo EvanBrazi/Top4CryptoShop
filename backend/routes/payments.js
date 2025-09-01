@@ -20,7 +20,7 @@ const fs = require('fs');
 const User = require('../models/User'); // تأكد من وجود النموذج
 const Payment = require('../models/Payment');
 const { verifyToken, checkAdmin } = require('../middlewares/auth');
-const { notifyAdmins, notifyUsers } = require('../utils/notifications');// ✅ دالة إرسال موجهة للأدمن فقط
+const { notify } = require('../utils/notifications');// ✅ دالة إرسال موجهة للأدمن فقط
 
 // 🧠 توليد معرف فريد للدفعة
 function generatePaymentId() {
@@ -88,22 +88,8 @@ router.post('/', upload.single('receipt'), async (req, res) => {
     await payment.save();
 
     // 📡 إرسال إشعار لحظي إلى الأدمن عبر WebSocket
-    notifyAdmins({
-      type: 'newPayment',
-      paymentId,
-      userId,
-      amount,
-      method,
-      note,
-      receiptImage: `/images/payments/${receiptImage}`
-    });
-    // إرسال إشعار لحظي للمستخدم
-    notifyUsers({
-      type: 'newPayment',
-      userId: payment.userId,
-      newAmount: payment.amount
-    });
-
+    notify({ type: 'newPayment', ...payment.toObject() }, 'admin');
+    notify({ type: 'userPayment', ...payment.toObject() }, 'user', userId);
     res.json({ status: 'success', paymentId });
   } catch (err) {
     console.error('❌ خطأ في إنشاء دفعة:', err);
@@ -140,6 +126,11 @@ router.get('/', async (req, res) => {
   }
 });
 
+/**
+ * @route GET /api/payments/admin
+ * @desc جلب الدفعات المعلقة للأدمن
+ * @access خاص بالأدمن
+ */
 router.get('/admin', verifyToken, checkAdmin, async (req, res) => {
   try {
     const payments = await Payment.find({ status: 'pending' }).sort({ createdAt: -1 });
@@ -165,12 +156,7 @@ router.put('/:id/accept', async (req, res) => {
     });
 
     // إرسال إشعار لحظي للمستخدم
-    notifyUsers({
-      type: 'paymentAccepted',
-      userId: payment.userId,
-      newAmount: payment.amount
-    });
-
+    notify({ type: 'paymentAccepted', ...payment.toObject() }, 'user', payment.userId);
     res.json({ status: 'accepted' });
   } catch (err) {
     console.error('❌ خطأ في قبول الدفعة:', err);
@@ -186,11 +172,7 @@ router.put('/:id/reject', async (req, res) => {
       { new: true }
     );
     if (!payment) return res.status(404).json({ error: 'الدفعة غير موجودة' });
-    notifyUsers({
-      type: 'paymentRejected',
-      userId: payment.userId,
-      paymentId: payment.paymentId
-    }, payment.userId); // ← إذا كنت تستخدم التوجيه حسب المستخدم
+    notify({ type: 'paymentRejected', ...payment.toObject() }, 'user', payment.userId); // ← إذا كنت تستخدم التوجيه حسب المستخدم
     res.json({ status: 'rejected' });
   } catch (err) {
     console.error('❌ خطأ في رفض الدفعة:', err);

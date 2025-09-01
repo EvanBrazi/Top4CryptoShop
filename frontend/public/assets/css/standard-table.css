@@ -14,10 +14,12 @@
   min-width: 600px;
   border-collapse: collapse;
   font-family: 'Cairo', sans-serif;
-  background-color: rgba(255, 255, 255, 0.85); /* شفافية */
+  background-color: rgba(255, 255, 255, 0.85);
+  /* شفافية */
   backdrop-filter: blur(6px);
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15); /* ثلاثي الأبعاد */
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  /* ثلاثي الأبعاد */
   overflow: hidden;
   transition: all 0.3s ease;
 }
@@ -53,9 +55,20 @@
   background-color: transparent;
 }
 
-.status.pending { color: orange; font-weight: bold; }
-.status.accepted { color: green; font-weight: bold; }
-.status.rejected { color: red; font-weight: bold; }
+.status.pending {
+  color: orange;
+  font-weight: bold;
+}
+
+.status.accepted {
+  color: green;
+  font-weight: bold;
+}
+
+.status.rejected {
+  color: red;
+  font-weight: bold;
+}
 
 .details-btn {
   padding: 6px 12px;
@@ -97,5 +110,131 @@
   .details-btn {
     font-size: 0.75rem;
     padding: 4px 8px;
+  }
+}
+
+:root {
+  --modal-bg-light: rgba(255, 255, 255, 0.95);
+  --modal-bg-dark: rgba(30, 30, 30, 0.95);
+  --modal-text-light: #222;
+  --modal-text-dark: #eee;
+  --modal-shadow: 0 0 30px rgba(0, 0, 0, 0.3);
+}
+
+body.day-theme {
+  --modal-bg: var(--modal-bg-light);
+  --modal-text: var(--modal-text-light);
+}
+
+body.night-theme {
+  --modal-bg: var(--modal-bg-dark);
+  --modal-text: var(--modal-text-dark);
+}
+
+.modal {
+  position: fixed;
+  padding: 30px;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(25px);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.modal.show {
+  display: flex;
+  animation: fadeIn 0.4s ease-out;
+}
+
+.modal-content {
+  padding: 30px;
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  color: var(--modal-text);
+  padding: 20px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 420px;
+  box-shadow: var(--modal-shadow);
+  transform: perspective(800px) rotateX(0deg);
+  animation: popIn 0.4s ease-out;
+  position: relative;
+  transition: transform 0.3s ease;
+}
+
+.modal.hide {
+  animation: fadeOut 0.3s ease-out forwards;
+}
+
+.modal-content.hide {
+  animation: popOut 0.3s ease-out forwards;
+}
+
+.payments-close-btn,
+.orders-close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  color: inherit;
+  cursor: pointer;
+}
+
+.payments-close-btn:hover,
+.orders-close-btn:hover {
+  transform: scale(1.2);
+}
+
+.modal-body img {
+  display: block;
+  margin: 10px auto;
+  max-width: 220px;
+  border-radius: 8px;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.15);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes popIn {
+  from {
+    transform: perspective(800px) rotateX(-20deg) scale(0.8);
+    opacity: 0;
+  }
+
+  to {
+    transform: perspective(800px) rotateX(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes popOut {
+  from {
+    transform: perspective(800px) rotateX(0deg) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: perspective(800px) rotateX(-20deg) scale(0.8);
+    opacity: 0;
   }
 }

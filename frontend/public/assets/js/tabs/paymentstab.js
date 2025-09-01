@@ -107,28 +107,63 @@ export class PaymentsTab {
      */
     showDetailsModal(payment) {
         const modal = document.getElementById('payment-details-modal');
+        const modalContent = modal.querySelector('.modal-content');
         const closeBtn = modal.querySelector('.payments-close-btn');
-        closeBtn.onclick = () => modal.classList.remove('show');
-
+        // إعادة تعيين المودال قبل الفتح
+        modal.style.display = 'flex';
+        modal.classList.remove('exit');
+        modalContent.classList.remove('exit');
         modal.querySelector('.modal-body').innerHTML = `
-            <div style="font-family: 'Cairo', sans-serif; line-height: 1.6;">
-                <p><strong>💵 المبلغ:</strong> ${payment.amount}</p>
-                <p><strong>💳 الطريقة:</strong> ${payment.method}</p>
-                <p><strong>📌 الحالة:</strong> ${this.translateStatus(payment.status)}</p>
-                <p><strong>📅 التاريخ:</strong> ${this.formatDate(payment.createdAt)}</p>
+            <p><strong>💵 المبلغ:</strong> ${payment.amount}</p>
+            <p><strong>💳 الطريقة:</strong> ${payment.method}</p>
+            <p><strong>📌 الحالة:</strong> ${this.translateStatus(payment.status)}</p>
+            <p><strong>📅 التاريخ:</strong> ${this.formatDate(payment.createdAt)}</p>
                 ${payment.note ? `<p><strong>📝 ملاحظة:</strong> ${payment.note}</p>` : ''}
-                <p><strong>🖼️ إشعار الدفع:</strong></p>
-                <img src="/images/payments/${payment.receiptImage || payment.paymentId + '.png'}"
-                     alt="إشعار الدفع"
-                     style="max-width:220px; margin-top:10px; justify-content: center; align-items: center; border-radius:8px; box-shadow:0 0 6px rgba(0,0,0,0.15);" />
-            </div>
+            <p><strong>🖼️ إشعار الدفع:</strong></p>
+            <img src="/images/payments/${payment.receiptImage || payment.paymentId + '.png'}" alt="إشعار الدفع" />
+                ${payment.status === 'pending' ? `<p style="color: orange; font-weight: bold;">⚠️ هذه الدفعة بانتظار مراجعة الأدمن</p>` : ''}
         `;
-        if (payment.status === 'pending') {
-            modal.querySelector('.modal-body').innerHTML += `
-    <p style="color: orange; font-weight: bold;">⚠️ هذه الدفعة بانتظار مراجعة الأدمن</p>
-  `;
-        }
-        modal.classList.add('show');
+        // إظهار المودال
+        setTimeout(() => modal.classList.add('show'), 10);
+        // إغلاق بزر الإغلاق
+        closeBtn.onclick = () => this._closeModal(modal);
+        // إغلاق بالضغط خارج المحتوى
+        modal.onclick = (e) => { if (e.target === modal) this._closeModal(modal); };
+        // إغلاق بزر Escape
+        document.onkeydown = (e) => { if (e.key === 'Escape') this._closeModal(modal); };
+        // دعم السحب
+        let isDragging = false, offsetX = 0, offsetY = 0;
+        modalContent.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            offsetX = e.clientX - modalContent.offsetLeft;
+            offsetY = e.clientY - modalContent.offsetTop;
+            modalContent.style.position = 'absolute';
+            modalContent.style.margin = '0';
+        });
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                modalContent.style.left = `${e.clientX - offsetX}px`;
+                modalContent.style.top = `${e.clientY - offsetY}px`;
+            }
+        });
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+    }
+
+    _closeModal(modal) {
+        const content = modal.querySelector('.modal-content');
+
+        // أضف كلاس الخروج
+        content.classList.add('exit');
+        modal.classList.add('exit');
+
+        // بعد انتهاء الأنيميشن، أخفِ المودال فعليًا
+        setTimeout(() => {
+            modal.classList.remove('show', 'exit');
+            content.classList.remove('exit');
+            modal.style.display = 'none'; // ضروري لإخفاء المودال فعليًا
+        }, 400); // نفس مدة الأنيميشن
     }
 
     /**

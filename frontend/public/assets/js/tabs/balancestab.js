@@ -176,7 +176,7 @@ export class BalancesTab {
 
         try {
             await this.config.balancesIconLoader.render(iconName, img, '!');
-            console.log('✅ تم تحميل أيقونة الرصيد:', iconName);
+            //console.log('✅ تم تحميل أيقونة الرصيد:', iconName);
         } catch (error) {
             console.error('❌ خطأ أثناء تحميل الأيقونة:', iconName, error);
             img.src = this.config.fallbackUrl;

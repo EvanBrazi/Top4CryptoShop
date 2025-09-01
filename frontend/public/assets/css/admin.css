@@ -111,3 +111,109 @@ img {
     text-align: right;
   }
 }
+
+
+.order-box {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border: 1px solid #dee2e6;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 15px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.order-box.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.order-box.accepted {
+  border-left: 4px solid #28a745;
+  background: linear-gradient(135deg, #f0fff4 0%, #e6f7e9 100%);
+}
+
+.order-box.rejected {
+  border-left: 4px solid #dc3545;
+  background: linear-gradient(135deg, #fff5f5 0%, #ffe6e6 100%);
+}
+
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.order-header h4 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 16px;
+}
+
+.order-time {
+  font-size: 12px;
+  color: #6c757d;
+}
+
+.order-details {
+  margin-bottom: 15px;
+}
+
+.order-details p {
+  margin: 5px 0;
+  font-size: 14px;
+}
+
+.order-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.accept-order-btn, .reject-order-btn {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.accept-order-btn {
+  background-color: #28a745;
+  color: white;
+}
+
+.accept-order-btn:hover {
+  background-color: #218838;
+}
+
+.reject-order-btn {
+  background-color: #dc3545;
+  color: white;
+}
+
+.reject-order-btn:hover {
+  background-color: #c82333;
+}
+
+.status-badge {
+  padding: 5px 10px;
+  border-radius: 15px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.status-badge.accepted {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.status-badge.rejected {
+  background-color: #f8d7da;
+  color: #721c24;
+}

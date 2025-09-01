@@ -8,9 +8,13 @@
 import { STORAGE_KEYS } from "./utils/appUtils.js";
 
 function initAdminWebSocket() {
+  console.log('initAdminWebSocket');
   try {
     // ✅ تهيئة WebSocket لاستقبال إشعارات لحظية من السيرفر
     const adminSocket = new WebSocket('ws://localhost:10000');
+    adminSocket.addEventListener('message', (event) => {
+      console.log('📡 رسالة WebSocket وصلت:', event.data);
+    });
     adminSocket.onopen = () => {
       const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
       if (userId) {
@@ -30,7 +34,7 @@ function initAdminWebSocket() {
       try {
         const data = JSON.parse(event.data);
         console.log('إشعار WebSocket للأدمن : ', data);
-        if(data.type === 'newOrder') {
+        if (data.type === 'newOrder') {
           renderOrderNotification(data);
         } else if (data.type === 'newPayment') {
           renderPaymentNotification(data);
@@ -155,6 +159,126 @@ function renderPaymentNotification(data) {
     box.closest('.note-box').remove(); // ← حذف العنصر من الواجهة
   }
   container.appendChild(box);
+}
+
+/**
+ * عرض إشعار طلب جديد في واجهة الأدمن
+ * @param {Object} data - بيانات الطلب
+ * @param {string} data.orderId - معرف الطلب
+ * @param {string} data.userId - معرف المستخدم
+ * @param {string} data.playerId - معرف اللاعب
+ * @param {number} data.amount - المبلغ
+ * @param {string} data.method - طريقة الدفع
+ * @param {string} data.service - الخدمة المطلوبة
+ * @param {string} data.status - حالة الطلب (اختياري)
+ * @param {string} data.createdAt - تاريخ الإنشاء (اختياري)
+ */
+function renderOrderNotification(data) {
+  console.log('📥 تنفيذ renderOrderNotification:', data);
+  const container = document.getElementById('admin-notifications');
+  // التحقق من وجود الحاوية
+  if (!container) {
+    console.error('❌ عنصر admin-notifications غير موجود في DOM');
+    return;
+  }
+
+  // التحقق من عدم وجود الإشعار مسبقاً
+  if (container.querySelector(`[data-order-id="${data.orderId}"]`)) {
+    console.log('⚠️ تم عرض هذا الطلب مسبقاً');
+    return;
+  }
+
+  // إنصراف العنصر
+  const orderBox = document.createElement('div');
+  orderBox.className = 'order-box';
+  orderBox.dataset.orderId = data.orderId;
+
+  // تنسيق التاريخ
+  const orderDate = data.createdAt ? new Date(data.createdAt).toLocaleString('ar-EG') : new Date().toLocaleString('ar-EG');
+
+  // إنشاء محتوى الإشعار
+  orderBox.innerHTML = `
+    <div class="order-header">
+      <h4>طلب جديد #${data.orderId}</h4>
+      <span class="order-time">${orderDate}</span>
+    </div>
+    <div class="order-details">
+      <p><strong>المستخدم:</strong> ${data.userId}</p>
+      <p><strong>اللاعب:</strong> ${data.playerId}</p>
+      <p><strong>الخدمة:</strong> ${data.service}</p>
+      <p><strong>المبلغ:</strong> ${data.amount} $</p>
+      <p><strong>الطريقة:</strong> ${data.method}</p>
+    </div>
+    <div class="order-actions">
+      <button class="accept-order-btn" data-order-id="${data.orderId}">✅ قبول</button>
+      <button class="reject-order-btn" data-order-id="${data.orderId}">❌ رفض</button>
+    </div>
+  `;
+
+  // إضافة الإشعار إلى الحاوية
+  container.appendChild(orderBox);
+
+  // إضافة تأثير ظهور
+  setTimeout(() => {
+    orderBox.classList.add('visible');
+  }, 10);
+
+  // إضافة مستمعي الأحداث للأزرار
+  const acceptBtn = orderBox.querySelector('.accept-order-btn');
+  const rejectBtn = orderBox.querySelector('.reject-order-btn');
+
+  acceptBtn.addEventListener('click', () => handleOrderAction(data.orderId, 'accept'));
+  rejectBtn.addEventListener('click', () => handleOrderAction(data.orderId, 'reject'));
+
+  console.log(`✅ تم عرض إشعار الطلب: ${data.orderId}`);
+}
+
+/**
+ * معالجة قبول أو رفض الطلب
+ * @param {string} orderId - معرف الطلب
+ * @param {string} action - الإجراء (accept/reject)
+ */
+async function handleOrderAction(orderId, action) {
+  try {
+    const response = await fetch(`/api/orders/${orderId}/${action}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem(STORAGE_KEYS.USER_TOKEN)}`
+      }
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+
+      // تحديث واجهة المستخدم
+      const orderBox = document.querySelector(`[data-order-id="${orderId}"]`);
+      if (orderBox) {
+        orderBox.classList.add(action === 'accept' ? 'accepted' : 'rejected');
+
+        // إخفاء أزرار القبول/الرفض
+        const actionsDiv = orderBox.querySelector('.order-actions');
+        if (actionsDiv) {
+          actionsDiv.innerHTML = action === 'accept'
+            ? '<span class="status-badge accepted">تم القبول</span>'
+            : '<span class="status-badge rejected">تم الرفض</span>';
+        }
+
+        // إخفاء العنصر بعد فترة
+        setTimeout(() => {
+          orderBox.style.opacity = '0';
+          setTimeout(() => orderBox.remove(), 500);
+        }, 3000);
+      }
+
+      console.log(`✅ تم ${action === 'accept' ? 'قبول' : 'رفض'} الطلب: ${orderId}`);
+    } else {
+      throw new Error(`فشل في ${action === 'accept' ? 'قبول' : 'رفض'} الطلب`);
+    }
+  } catch (error) {
+    console.error(`❌ خطأ في معالجة الطلب:`, error);
+    alert(`❌ حدث خطأ أثناء معالجة الطلب: ${error.message}`);
+  }
 }
 
 /**

@@ -1,45 +1,3 @@
-/* ======== المتغيرات الجديدة ======== */
-:root {
-  /* أحجام الخطوط */
-  --text-xs: 0.75rem;
-  --text-sm: 0.875rem;
-  --text-base: 1rem;
-  --text-lg: 1.125rem;
-  --text-xl: 1.25rem;
-  --text-2xl: 1.5rem;
-
-  /* مسافات */
-  --space-xs: 0.25rem;
-  --space-sm: 0.5rem;
-  --space-md: 1rem;
-  --space-lg: 1.5rem;
-  --space-xl: 2rem;
-
-  /* أنصاف أقطار */
-  --radius-sm: 0.25rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 1rem;
-  --radius-full: 9999px;
-  --border-radius: 12px;
-
-  /* ظلال */
-  --shadow-sm: 0 1px 3px 0 var(--shadow-color);
-  --shadow-md: 0 4px 6px -1px var(--shadow-color);
-  --shadow-lg: 0 10px 15px -3px var(--shadow-color);
-
-  /* ثوابت التنسيق المعدلة */
-  --topbar-height: 50px;
-  --sidebar-width: 220px;
-  --sidebar-header-height: 120px;
-
-  --primary-color: #6a5acd;
-  --accent-color: #ff6b6b;
-  --card-bg: #ffffff;
-  --text-color: #333;
-  --shadow-light: rgba(0, 0, 0, 0.08);
-  --shadow-hover: rgba(0, 0, 0, 0.15);
-}
-
 /* ======== التنسيقات العامة ======== */
 body {
   font-family: 'Arial', sans-serif;
@@ -84,7 +42,7 @@ html {
   /* تأكد أن هذه القيمة عالية كفاية */
   display: flex;
   align-items: center;
-  color: var(--navbar-text);
+  color: var(--text-color);
 }
 
 /* إزالة padding-top من body */
@@ -109,7 +67,7 @@ html {
 
 .add-balance-btn {
   background-color: var(--primary-color);
-  color: white;
+  color: var(--text-color);
   border: none;
   width: 30px;
   height: 30px;
@@ -122,6 +80,7 @@ html {
 }
 
 .add-balance-btn:hover {
+  color: var(--accent-color);
   background-color: var(--primary-hover);
   transform: scale(1.1);
 }
@@ -133,7 +92,7 @@ html {
 }
 
 .back-btn {
-  color: var(--navbar-text);
+  color: var(--text-color);
   font-size: 18px;
   display: none;
 }
@@ -309,7 +268,7 @@ html {
   border-radius: 50%;
   border: none;
   background-color: var(--primary-color);
-  color: white;
+  color: var(--text-color);
   cursor: pointer;
   transition: all 0.3s;
   display: flex;
@@ -319,6 +278,7 @@ html {
 }
 
 .profile-btn:hover {
+  color: var(--accent-color);
   background-color: var(--primary-hover);
   transform: scale(1.1);
 }
@@ -367,12 +327,15 @@ html {
 }
 
 .menu-link:hover {
-  background: rgba(0, 0, 0, 0.05);
+  color: var(--accent-color);
+  background-color: var(--primary-hover);
   transform: translateX(-5px);
 }
 
 .night-mode .menu-link:hover {
-  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(-5px);
+  color: var(--accent-color);
+  background-color: var(--primary-hover);
 }
 
 .menu-link i {
@@ -380,7 +343,7 @@ html {
 }
 
 .night-mode .menu-link i {
-  color: var(--night-primary);
+  color: var(--text-color);
 }
 
 .sidebar-menu-container {
@@ -412,7 +375,8 @@ html {
 }
 
 .sidebar-menu li:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--accent-color);
+  background-color: var(--primary-hover);
 }
 
 
@@ -449,7 +413,7 @@ html {
 
 .theme-toggle {
   background-color: var(--primary-color);
-  color: white;
+  color: var(--text-color);
   border: none;
   padding: 4px 8px;
   border-radius: 20px;
@@ -462,6 +426,7 @@ html {
 }
 
 .theme-toggle:hover {
+  color: var(--accent-color);
   background-color: var(--primary-hover);
 }
 
@@ -494,8 +459,8 @@ html {
 
 .social-link:hover {
   transform: translateY(-3px);
-  background-color: var(--primary-color);
-  color: white;
+  color: var(--accent-color);
+  background-color: var(--primary-hover);
 }
 
 /* ======== المحتوى الرئيسي ======== */
@@ -521,7 +486,7 @@ html {
 
 .toggle-sidebar {
   background-color: transparent;
-  color: var(--navbar-text);
+  color: var(--text-color);
   border: none;
   font-size: 20px;
   cursor: pointer;
@@ -530,6 +495,7 @@ html {
 
 .toggle-sidebar:hover {
   color: var(--accent-color);
+  background-color: var(--primary-hover);
 }
 
 .overlay {
@@ -589,6 +555,8 @@ button:active {
 }
 
 button:hover {
+  color: var(--accent-color);
+  background-color: var(--primary-hover);
   opacity: 0.9;
   transform: translateY(-2px);
 }
@@ -605,7 +573,7 @@ loading-screen {
   align-items: center;
   justify-content: center;
   font-size: 20px;
-  color: #444;
+  color: var(--text-color);
 }
 
 
@@ -616,7 +584,7 @@ loading-screen {
   left: 0;
   right: 0;
   background-color: var(--bar-footer-color);
-  color: wheat;
+  color: var(--text-color);
   padding: 5px 0;
   text-align: center;
   z-index: 100;
@@ -637,11 +605,11 @@ loading-screen {
 }
 
 .footer-link {
-  width: 150px;
+  width: 160px;
   height: 40px;
   box-sizing: border-box;
   background: transparent;
-  color: var(--navbar-text);
+  color: var(--text-color);
   border: none;
   cursor: pointer;
   font-size: 15px;
@@ -652,6 +620,7 @@ loading-screen {
 
 .footer-link:hover {
   color: var(--accent-color);
+  background-color: var(--primary-hover);
   text-decoration: underline;
 }
 
@@ -666,7 +635,7 @@ loading-screen {
 
 /* ======== التبويبات المعدلة ======== */
 .tabs-container {
-  margin-top: 20px;
+  margin-top: var(--space-md);
 }
 
 .tabs-header {
@@ -679,30 +648,53 @@ loading-screen {
 
 .tab-pane {
   display: none;
+  opacity: 0;
   background-color: var(--card-color);
-  padding: 5px;
+  padding: var(--space-sm);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
-  margin-top: 0 auto;
-  animation: fadeIn 0.3s ease;
-  align-items: center;
-  align-content: center;
-  justify-content: center;
+  animation: fadeIn 0.3s ease forwards;
+  transition: opacity 0.3s ease;
 }
 
+/* عند التفعيل */
 .tab-pane.active {
   display: block;
+  opacity: 1;
+  animation: fadeIn 0.3s ease forwards;
 }
 
+/* تأثير الدخول */
 @keyframes fadeIn {
   from {
     opacity: 0;
+    transform: scale(0.95);
   }
 
   to {
     opacity: 1;
+    transform: scale(1);
   }
 }
+
+/* تأثير الخروج */
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+/* عند الإخفاء (يمكن إضافته ديناميكيًا عبر JS) */
+.tab-pane.hide {
+  animation: fadeOut 0.3s ease forwards;
+}
+
 
 /* أنماط المحتوى داخل التبويبات */
 .wallet-content,
@@ -730,7 +722,7 @@ loading-screen {
 
 .add-funds-btn {
   background-color: var(--primary-color);
-  color: white;
+  color: var(--text-color);
   border: none;
   padding: 10px 20px;
   border-radius: var(--radius-md);
@@ -739,6 +731,7 @@ loading-screen {
 }
 
 .add-funds-btn:hover {
+  color: var(--accent-color);
   background-color: var(--primary-hover);
 }
 
@@ -765,7 +758,7 @@ loading-screen {
 
 .change-password-btn {
   background-color: var(--primary-color);
-  color: white;
+  color: var(--text-color);
   border: none;
   padding: 8px 15px;
   border-radius: var(--radius-sm);
@@ -778,7 +771,7 @@ loading-screen {
   left: 50%;
   transform: translateX(-50%);
   background-color: #323232;
-  color: #fff;
+  color: var(--text-color);
   padding: 12px 20px;
   border-radius: 8px;
   font-size: 14px;
@@ -795,7 +788,7 @@ loading-screen {
   min-width: 260px;
   padding: 12px 18px;
   border-radius: 8px;
-  color: #fff;
+  color: var(--text-color);
   font-weight: bold;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   z-index: 9999;
@@ -817,31 +810,6 @@ loading-screen {
 .toast-info {
   background-color: #3498db;
 }
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeOut {
-  from {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  to {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-}
-
 
 @keyframes fadeInOut {
   0% {
@@ -892,15 +860,15 @@ loading-screen {
   width: 90%;
   max-width: 600px;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(25px);
-  -webkit-backdrop-filter: blur(25px);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
 }
 
 @supports (backdrop-filter: blur(8px)) or (-webkit-backdrop-filter: blur(8px)) {
 
   .payments-modal,
   .modal {
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: var(--background-menu-link);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
   }
@@ -917,9 +885,10 @@ loading-screen {
 }
 
 .payments-modal-header h2,
-.modal-header h2, p {
+.modal-header h2,
+p {
   margin: 0;
-  color: #fff;
+  color: var(--text-color);
 }
 
 .payments-modal.show,
@@ -934,7 +903,7 @@ loading-screen {
   font-size: 1rem;
   font-weight: bold;
   cursor: pointer;
-  color: #fff;
+  color: var(--text-color);
 }
 
 .payments-body,
@@ -942,7 +911,7 @@ loading-screen {
   line-height: 1.6;
   font-size: 1.2rem;
   font-weight: bold;
-  color: #fff;
+  color: var(--text-color);
   padding: 20px;
   /* 120px = رأس المودال + هامش */
 }
@@ -959,7 +928,7 @@ loading-screen {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.1);
+  background: var(--divider-color);
 }
 
 ::-webkit-scrollbar-thumb {
@@ -968,5 +937,6 @@ loading-screen {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--primary-hover);
+  color: var(--accent-color);
+  background-color: var(--primary-hover);
 }

@@ -253,8 +253,8 @@ async function loginUser(username, password) {
 
             const redirectPath = result.redirectTo || roleRedirects[result.user.role] || '/homepage.html';
             window.location.href = redirectPath;
-        }, 300);
-        showToastNotification(`👋 أهلاً بعودتك يا ${username} 🌟`, 'success', 5000);
+        }, 600);
+        showToastNotification(`👋 أهلاً بعودتك يا ${username} 🌟`, 'success', 500);
     } catch (err) {
         const msg = extractErrorMessage(err.message || err);
         console.error("🚨 خطأ أثناء تسجيل الدخول:", msg);

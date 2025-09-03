@@ -436,12 +436,14 @@
   pointer-events: none;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 760px) {
   .purchase-dialog {
     padding: 16px;
     max-width: 95%;
+    width: 100%;
     border-radius: 12px;
     font-size: 0.9rem;
+    box-sizing: border-box;
   }
 
   .dialog-header {
@@ -469,6 +471,7 @@
   .quantity-input {
     font-size: 0.9rem;
     padding: 8px;
+    width: 100%;
   }
 
   .confirm-btn,
@@ -477,6 +480,7 @@
     font-size: 0.85rem;
     padding: 10px;
     border-radius: 20px;
+    width: 100%;
   }
 
   .dialog-total {
@@ -497,6 +501,95 @@
   .loading-spinner {
     width: 16px;
     height: 16px;
+    border-width: 2px;
+  }
+
+  .dialog-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 320px) {
+  body {
+    font-size: 0.85rem;
+    overflow-x: hidden;
+  }
+
+  .big-card {
+    width: 100%;
+    padding: 12px;
+    font-size: 0.9rem;
+    border-radius: 10px;
+  }
+
+  .big-card-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .card-title {
+    font-size: 1rem;
+    margin-bottom: 6px;
+  }
+
+  .card-description {
+    font-size: 0.85rem;
+  }
+
+  .header,
+  .navbar {
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .navbar a {
+    font-size: 0.85rem;
+    padding: 6px 10px;
+  }
+
+  .confirm-btn,
+  .cancel-btn,
+  .whatsapp-btn {
+    font-size: 0.8rem;
+    padding: 8px;
+    border-radius: 16px;
+    width: 100%;
+  }
+
+  .purchase-dialog {
+    padding: 8px;
+    max-width: 80%;
+    width: 60%;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    box-sizing: border-box;
+  }
+
+  .dialog-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 6px;
+  }
+
+  .dialog-total,
+  .notes {
+    font-size: 0.85rem;
+    padding: 4px;
+  }
+
+  .refresh-player-btn {
+    font-size: 0.5rem;
+    padding: 46px;
+  }
+
+  .loading-spinner {
+    width: 10px;
+    height: 10px;
     border-width: 2px;
   }
 }

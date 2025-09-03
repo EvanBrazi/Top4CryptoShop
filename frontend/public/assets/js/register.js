@@ -102,10 +102,10 @@ function showGeneralError(message) {
 }
 
 function shakeElement(id) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.classList.add('shake');
-  setTimeout(() => el.classList.remove('shake'), 500);
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.add('shake');
+    setTimeout(() => el.classList.remove('shake'), 500);
 }
 
 /**
@@ -132,6 +132,55 @@ function validateForm(data) {
         errors.phoneError = 'يرجى إدخال رقم هاتف بصيغة دولية تبدأ بـ +';
 
     return errors;
+}
+
+/**
+ * عرض إشعار توست جذاب في أعلى الشاشة
+ * @param {String} message - نص الرسالة
+ * @param {'success'|'error'|'info'|'warning'} type - نوع الرسالة
+ * @param {Number} duration - مدة العرض بالميلي ثانية (افتراضي 3000)
+ */
+function showToastNotification(message, type = 'info', duration = 3000) {
+    const toast = document.createElement('div');
+    toast.className = `toast-notification toast-${type}`;
+    toast.textContent = message;
+
+    // تنسيق أساسي
+    toast.style.position = 'fixed';
+    toast.style.top = '20px';
+    toast.style.left = '50%';
+    toast.style.transform = 'translateX(-50%)';
+    toast.style.padding = '12px 20px';
+    toast.style.borderRadius = '8px';
+    toast.style.fontSize = '16px';
+    toast.style.fontWeight = '500';
+    toast.style.color = '#fff';
+    toast.style.zIndex = '9999';
+    toast.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+    toast.style.opacity = '0';
+    toast.style.transition = 'opacity 0.3s ease';
+
+    // ألوان حسب النوع
+    const colors = {
+        success: '#4CAF50',
+        error: '#F44336',
+        info: '#2196F3',
+        warning: '#FF9800'
+    };
+    toast.style.backgroundColor = colors[type] || '#333';
+
+    document.body.appendChild(toast);
+
+    // إظهار تدريجي
+    setTimeout(() => {
+        toast.style.opacity = '1';
+    }, 100);
+
+    // إزالة بعد المدة المحددة
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, duration);
 }
 
 // 📝 التعامل مع نموذج التسجيل
@@ -177,6 +226,7 @@ byId('registerForm').addEventListener('submit', async (e) => {
         const result = await register(username, password, email, fullPhoneNumber, theme);
         if (!result.success) {
             const msg = result.error || 'حدث خطأ أثناء التسجيل';
+            showToastNotification(msg, 'error', 1500);
             switch (result.type) {
                 case 'invalid_username':
                     showError('usernameError', msg);
@@ -208,7 +258,8 @@ byId('registerForm').addEventListener('submit', async (e) => {
 
             const redirectPath = '/login.html';
             window.location.href = redirectPath;
-        }, 1500);
+        }, 1600);
+        showToastNotification(`👋 تم إنشاء الحساب بنجاح! سيتم تحويلك الآن... 🌟`, 'success', 1500);
         showAlert('success', 'تم التسجيل', 'تم إنشاء الحساب بنجاح! سيتم تحويلك الآن...');
     } catch (err) {
         console.error('❌ خطأ غير متوقع أثناء التسجيل:', err);

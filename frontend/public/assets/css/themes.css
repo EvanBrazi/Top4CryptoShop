@@ -49,6 +49,7 @@
   --dialog-xbtn: #333;
   --dialog-border: #ddd;
   --dialog-shadow: rgba(0, 0, 0, 0.1);
+  --modal-text-color:#411f00;
   --input-bg: rgba(255, 255, 255, 0.7);
   --error-color: #dc3545;
   --success-color: #28a745;
@@ -86,6 +87,7 @@
   --dialog-xbtn: #fff;
   --dialog-border: #444;
   --dialog-shadow: rgba(0, 0, 0, 0.4);
+  --modal-text-color:#ffc400;
   --input-bg: rgba(0, 0, 0, 0.3);
   --error-color: #ff6b6b;
   --success-color: #51cf66;

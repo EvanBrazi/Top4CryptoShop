@@ -10,7 +10,6 @@ import { logout } from './auth.js';
 import { toggleDBTheme } from './theme.js';
 import { showToast } from './utils/toast.js';
 import { clearBrowserData } from './utils/appUtils.js';
-import { secureFetch } from './securefetch.js';
 
 // مفاتيح التخزين المحلي
 const STORAGE_KEYS = {
@@ -236,32 +235,43 @@ class UserManager {
   }
 
   /**
-   * تنفيذ عملية تسجيل الخروج وتنظيف الواجهة
-   * @returns {Promise<void>}
-   */
-  async handleLogout() {
+ * ✅ تنفيذ عملية تسجيل الخروج وتنظيف الواجهة بطريقة متوافقة مع secureFetch
+ * @returns {Promise<void>}
+ */
+  async _handleLogout() {
     const token = localStorage.getItem(STORAGE_KEYS.USER_TOKEN);
-    if (!token) throw new Error('ليس لديك صلاحيات لتسجيل الخروج');
+    if (!token) {
+      showToast('ليس لديك صلاحيات لتسجيل الخروج', 'error');
+      return;
+    }
 
     try {
-      if (!confirm('هل أنت متأكد من تسجيل الخروج؟')) return;
+      const confirmed = confirm('هل أنت متأكد من تسجيل الخروج؟');
+      if (!confirmed) return;
 
       const result = await logout();
-      console.log('Logout: ', result);
+      console.log('Logout:', result);
 
       if (!result.success) {
         showToast(result.error || 'فشل تسجيل الخروج', 'error');
-        alert(error.message);
+        clearBrowserData(false);
         return;
       }
 
+      // ✅ تنظيف المستخدم من الذاكرة
       UserManager.getInstance().#currentUser = null;
+
       showToast(result.message || 'تم تسجيل الخروج بنجاح', 'success');
       clearBrowserData(false);
-      setTimeout(() => window.location.replace(result.redirectTo || '/logout.html'), 100);
+
+      setTimeout(() => {
+        window.location.replace(result.redirectTo || '/logout.html');
+      }, 100);
     } catch (error) {
-      showToast(error.message || 'حدث خطأ أثناء تسجيل الخروج', 'error');
-      alert(error.message);
+      const msg = error?.message || 'حدث خطأ أثناء تسجيل الخروج';
+      console.error('❌ خطأ أثناء تسجيل الخروج:', msg);
+      showToast(msg, 'error');
+      clearBrowserData(false);
     }
   }
 

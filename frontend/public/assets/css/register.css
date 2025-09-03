@@ -229,14 +229,15 @@ h2 {
 }
 
 @keyframes floatIn {
-  from {
-    transform: perspective(800px) rotateX(10deg) rotateY(-10deg);
-    opacity: 0;
-  }
-  to {
-    transform: perspective(800px) rotateX(0deg) rotateY(0deg);
-    opacity: 1;
-  }
+    from {
+        transform: perspective(800px) rotateX(10deg) rotateY(-10deg);
+        opacity: 0;
+    }
+
+    to {
+        transform: perspective(800px) rotateX(0deg) rotateY(0deg);
+        opacity: 1;
+    }
 }
 
 @keyframes shake {
@@ -374,6 +375,7 @@ h2 {
     overflow: hidden;
     font-size: 0.8rem;
 }
+
 /* مجموعة النموذج */
 .form-group {
     margin-bottom: 1.5rem;
@@ -561,6 +563,32 @@ button[type="submit"]:disabled {
     border-top: 3px solid #999;
     border-radius: 50%;
     animation: spin 1s linear infinite;
+}
+
+.shake {
+    animation: shake 0.4s ease;
+}
+
+@keyframes shake {
+    0% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-5px);
+    }
+
+    50% {
+        transform: translateX(5px);
+    }
+
+    75% {
+        transform: translateX(-5px);
+    }
+
+    100% {
+        transform: translateX(0);
+    }
 }
 
 @keyframes spin {

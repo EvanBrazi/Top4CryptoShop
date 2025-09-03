@@ -138,7 +138,6 @@ self.addEventListener('fetch', event => {
       client.postMessage({ type: 'loading-start' });
     });
   });
-
   // تحديد نوع الطلب
   let responsePromise;
   if (url.pathname.startsWith('/cache/')) {

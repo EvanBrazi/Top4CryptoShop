@@ -51,8 +51,8 @@ function doubleCsrfProtection(req, res, next) {
 
   // ✅ تسجيل الرموز للمراقبة أثناء التطوير
   if (process.env.NODE_ENV !== 'production') {
-    console.log('🔐 رمز CSRF من الهيدر:', headerToken);
-    console.log('🔐 رمز CSRF من الجلسة:', sessionToken);
+    //console.log('🔐 رمز CSRF من الهيدر:', headerToken);
+    //console.log('🔐 رمز CSRF من الجلسة:', sessionToken);
   }
 
   // ✅ التحقق من تطابق الرمزين

@@ -25,7 +25,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 2; /* فوق كل العناصر */
+      z-index: 99; /* فوق كل العناصر */
       transition: opacity 0.3s ease;
     }
 
@@ -76,7 +76,7 @@
         loader.style.opacity = '0';
         setTimeout(() => {
           loader.style.display = 'none';
-        }, 300);
+        }, 500);
         loaderVisible = false;
       }
     }

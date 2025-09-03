@@ -19,78 +19,94 @@ const path = require('path');
 const fs = require('fs');
 const User = require('../models/User'); // تأكد من وجود النموذج
 const Payment = require('../models/Payment');
+const upload = require('../middlewares/upload');
 const { verifyToken, checkAdmin } = require('../middlewares/auth');
-const { notify } = require('../utils/notifications');// ✅ دالة إرسال موجهة للأدمن فقط
+const { markNotificationSent, notify } = require('../utils/notifications');// ✅ دالة إرسال موجهة للأدمن فقط
 
-// 🧠 توليد معرف فريد للدفعة
-function generatePaymentId() {
-  return 'pay-' + Math.random().toString(36).substr(2, 9);
+function multerErrorHandler(err, req, res, next) {
+  if (err instanceof multer.MulterError) {
+    console.error('❌ خطأ في multer:', err.message);
+    return res.status(400).json({ error: 'فشل في رفع الملف: ' + err.message });
+  } else if (err) {
+    console.error('❌ خطأ غير متوقع في رفع الملف:', err);
+    return res.status(500).json({ error: 'خطأ داخلي أثناء رفع الملف' });
+  }
+  next();
 }
 
+// 🧠 توليد معرف فريد للدفعة
+//function generatePaymentId() {
+//  return 'pay-' + Math.random().toString(36).substr(2, 9);
+//}
+
 // 📦 إعداد تخزين الصور باستخدام multer
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const userId = req.body.userId;
-    if (!userId || typeof userId !== 'string') {
-      return cb(new Error('معرف المستخدم مفقود أو غير صالح'), null);
-    }
+//const storage = multer.diskStorage({
+//  destination: (req, file, cb) => {
+//    const userId = req.body.userId;
+//    if (!userId || typeof userId !== 'string') {
+//      return cb(new Error('معرف المستخدم مفقود أو غير صالح'), null);
+//    }
 
-    const userFolder = path.join('uploads/payments', userId);
-    if (!fs.existsSync(userFolder)) {
-      fs.mkdirSync(userFolder, { recursive: true });
-    }
+//    const userFolder = path.join('uploads/payments', userId);
+//    if (!fs.existsSync(userFolder)) {
+//      fs.mkdirSync(userFolder, { recursive: true });
+//    }
 
-    cb(null, userFolder);
-  },
-  filename: (req, file, cb) => {
-    const uniqueName = 'receipt-' + Date.now() + path.extname(file.originalname);
-    cb(null, uniqueName);
-  }
-});
+//    cb(null, userFolder);
+//  },
+//  filename: (req, file, cb) => {
+//    const uniqueName = 'receipt-' + Date.now() + path.extname(file.originalname);
+//    cb(null, uniqueName);
+//  }
+//});
 
 // ✅ إعداد رفع الملفات مع التحقق من النوع والحجم
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // الحد الأقصى 5MB
-  fileFilter: (req, file, cb) => {
-    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
-    cb(null, allowed.includes(file.mimetype));
-  }
-});
+//const upload = multer({
+//  storage,
+//  limits: { fileSize: 5 * 1024 * 1024 }, // الحد الأقصى 5MB
+//  fileFilter: (req, file, cb) => {
+//    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+//    cb(null, allowed.includes(file.mimetype));
+//  }
+//});
 
 /**
  * @route POST /api/payments
  * @desc إنشاء دفعة جديدة مع صورة إشعار وملاحظة
  * @access عام (مع تحقق لاحق من المستخدم)
  */
-router.post('/', upload.single('receipt'), async (req, res) => {
+router.post('/', upload.single('receipt'), multerErrorHandler, async (req, res) => {
   try {
     const { userId, amount, method, note } = req.body;
     console.log('@desc إنشاء دفعة جديدة مع صورة إشعار وملاحظة : ', userId);
-    const receiptImage = `${userId}/${req.file?.filename}`;
 
     // ✅ تحقق من البيانات الأساسية
-    if (!userId || typeof userId !== 'string' || userId.trim() === '' || !amount || !method || !receiptImage) {
+    if (!userId || typeof userId !== 'string' || userId.trim() === '' || !amount || !method || !req.file?.path) {
       return res.status(400).json({ error: 'البيانات غير مكتملة أو لم يتم رفع الصورة' });
     }
-    const paymentId = generatePaymentId();
-
+    console.log('📥 بيانات الطلب:', req.body);
+    console.log('📷 ملف الصورة:', req.file);
     // 🧾 إنشاء كائن الدفع وتخزينه في قاعدة البيانات
     const payment = new Payment({
-      paymentId,
+      paymentId: `pay-${Date.now().toString(36)}`, // أو استخدم _id فقط
       userId,
       amount,
       method,
-      receiptImage,
+      receiptImage: req.file.path, // ← رابط Cloudinary
       note,
-      status: 'pending' // ← مهم لعرضها لاحقًا
+      status: 'pending'
     });
+
     await payment.save();
 
-    // 📡 إرسال إشعار لحظي إلى الأدمن عبر WebSocket
+    // 📡 إرسال إشعار لحظي إلى الأدمن والمستخدم
     notify({ type: 'newPayment', ...payment.toObject() }, 'admin');
-    notify({ type: 'userPayment', ...payment.toObject() }, 'user', userId);
-    res.json({ status: 'success', paymentId });
+    notify({ type: 'newPayment', ...payment.toObject() }, 'user', userId);
+
+    // ✅ تحديث حالة الإشعار
+    await markNotificationSent('Payment', payment._id);
+
+    res.json({ status: 'success', paymentId: payment.paymentId });
   } catch (err) {
     console.error('❌ خطأ في إنشاء دفعة:', err);
     res.status(500).json({
@@ -157,6 +173,7 @@ router.put('/:id/accept', async (req, res) => {
 
     // إرسال إشعار لحظي للمستخدم
     notify({ type: 'paymentAccepted', ...payment.toObject() }, 'user', payment.userId);
+    await markNotificationSent('Payment', payment._id);
     res.json({ status: 'accepted' });
   } catch (err) {
     console.error('❌ خطأ في قبول الدفعة:', err);
@@ -173,6 +190,7 @@ router.put('/:id/reject', async (req, res) => {
     );
     if (!payment) return res.status(404).json({ error: 'الدفعة غير موجودة' });
     notify({ type: 'paymentRejected', ...payment.toObject() }, 'user', payment.userId); // ← إذا كنت تستخدم التوجيه حسب المستخدم
+    await markNotificationSent('Payment', payment._id);
     res.json({ status: 'rejected' });
   } catch (err) {
     console.error('❌ خطأ في رفض الدفعة:', err);

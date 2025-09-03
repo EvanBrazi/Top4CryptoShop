@@ -9,7 +9,10 @@ const orderSchema = new mongoose.Schema({
     amount: { type: Number, required: true },
     method: { type: String, required: true },
     service: { type: String, required: true },
-    status: { type: String, default: 'pending' },
+    status: { type: String, enum: ['pending', 'processing', 'completed', 'cancelled'], default: 'pending' },
+    notified: {type: Boolean, default: false},
+    notificationSentAt: Date,
+    notificationAttempts: {type: Number, default: 0},
     createdAt: { type: Date, default: Date.now }
 });
 

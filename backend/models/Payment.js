@@ -5,7 +5,10 @@ const paymentSchema = new mongoose.Schema({
   userId: { type: String, required: true },
   amount: { type: Number, required: true },
   method: { type: String, required: true },
-  status: { type: String, default: 'pending' },
+  status: { type: String, enum: ['pending', 'processing', 'completed', 'cancelled'], default: 'pending' },
+  notified: { type: Boolean, default: false },
+  notificationSentAt: Date,
+  notificationAttempts: { type: Number, default: 0 },
   receiptImage: { type: String }, // اسم أو مسار الصورة
   createdAt: { type: Date, default: Date.now }
 });

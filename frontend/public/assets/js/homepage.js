@@ -300,7 +300,9 @@ class HomePage {
      */
     _setupLogoutHandler() {
         if (this.domElements.logoutBtn) {
-            this.domElements.logoutBtn.addEventListener('click', this.userManager.handleLogout);
+            this.domElements.overlay.classList.remove('active');
+            this.domElements.sidebar.classList.remove('active');
+            this.domElements.logoutBtn.addEventListener('click', this.userManager._handleLogout);
         }
     }
 
@@ -406,15 +408,44 @@ class HomePage {
     }
 }
 
+/**
+ * 🔔 Notification Queue System
+ * - يعرض الإشعارات واحدة تلو الأخرى (طابور)
+ * - يدعم ألوان الحالة: success, error, info
+ * - لا يُغلق الإشعار تلقائيًا، بل ينتظر ضغط المستخدم على زر ✖
+ * - يُعرض الإشعار في وسط الشاشة بشكل أنيق
+ *
+ * @author: Evan Brazi
+ */
+const notificationQueue = [];
+let isShowingNotification = false;
+function enqueueNotification(message, type = 'info') {
+    if (!message || typeof message !== 'string') return;
+    notificationQueue.push({ message, type });
+    processNotificationQueue();
+}
+function processNotificationQueue() {
+    if (isShowingNotification || notificationQueue.length === 0) return;
 
-function showToastNotification(message, type = 'info') {
+    const { message, type } = notificationQueue.shift();
+    renderToast(message, type);
+    isShowingNotification = true;
+}
+function renderToast(message, type = 'info') {
     const toast = document.createElement('div');
     toast.className = `toast-notification toast-${type}`;
-    toast.textContent = message;
+    toast.innerHTML = `
+    <span class="toast-message">${message}</span>
+    <button class="toast-close-btn" aria-label="إغلاق الإشعار">✖</button>
+  `;
 
     document.body.appendChild(toast);
 
-    setTimeout(() => toast.remove(), 5000);
+    toast.querySelector('.toast-close-btn').addEventListener('click', () => {
+        toast.remove();
+        isShowingNotification = false;
+        processNotificationQueue();
+    });
 }
 
 function showUserNotification(message, type = 'success') {
@@ -430,8 +461,44 @@ function showUserNotification(message, type = 'success') {
     }
 }
 
+/**
+ * @function generateNotificationMessage
+ * @description
+ * توليد رسالة إشعار مخصصة حسب نوع العملية (طلب أو دفعة) وحالتها (قبول أو رفض).
+ * تُستخدم لعرض إشعارات واضحة ومباشرة للمستخدم داخل الواجهة الأمامية.
+ *
+ * توليد رسالة إشعار حسب نوع الرسالة الكامل من السيرفر
+ * @param {string} type - نوع الرسالة مثل 'paymentAccepted' أو 'orderRejected'
+ * @returns {{ text: string, level: 'success'|'error'|'info' }} - رسالة الإشعار ونوعها
+ */
+function generateNotificationMessage(type) {
+    const messages = {
+        paymentAccepted: {
+            text: '💰 تم قبول دفعتك بنجاح! تم تحديث رصيدك ويمكنك متابعة استخدام الخدمات.✅',
+            level: 'success'
+        },
+        paymentRejected: {
+            text: '❌ لم يتم قبول دفعتك. يرجى التأكد من معلومات الدفع أو التواصل مع المسؤولين.⚠️',
+            level: 'error'
+        },
+        orderAccepted: {
+            text: '📦 تم تنفيذ طلبك بنجاح! شكراً لاختيارك منصتنا، ونتمنى لك تجربة مميزة.✅',
+            level: 'success'
+        },
+        orderRejected: {
+            text: '🚫 للأسف، تم رفض طلبك. نوصي بمراجعة التفاصيل أو التواصل مع فريق الدعم.⚠️',
+            level: 'error'
+        }
+    };
+    return messages[type] || {
+        text: '📭 إشعار غير معروف. يرجى مراجعة التفاصيل أو إعادة المحاولة لاحقًا.⚠️',
+        level: 'info'
+    };
+}
+
 // بدء التطبيق عند تحميل DOM
 document.addEventListener('DOMContentLoaded', () => {
+    //showLoader();
     (async () => {
         const user = await checkSession(); // لا حاجة لدور معين
         if (!user) return;
@@ -442,74 +509,62 @@ document.addEventListener('DOMContentLoaded', () => {
          * @author: Evan Brazi
          */
         const socket = new WebSocket('ws://localhost:10000');
+        const sessionId = localStorage.getItem(STORAGE_KEYS.SESSION_ID) || `session_${Date.now()}`;
+        console.log('Session_Id: ', sessionId);
+        if (!localStorage.getItem(STORAGE_KEYS.SESSION_ID)) localStorage.setItem(STORAGE_KEYS.SESSION_ID, sessionId);
         socket.addEventListener('open', () => {
             console.log('✅ WebSocket connected (user)');
             // تعريف المستخدم عند الاتصال
             socket.send(JSON.stringify({
                 type: 'auth',
                 role: 'user',
-                userId: localStorage.getItem(STORAGE_KEYS.USER_ID) // يمكن تغييره حسب النظام
+                userId: localStorage.getItem(STORAGE_KEYS.USER_ID), // يمكن تغييره حسب النظام
+                sessionId: sessionId
             }));
         });
         socket.onmessage = async (event) => {
             try {
                 const data = JSON.parse(event.data);
-                console.log('📨 إشعار WebSocket للمستخدم:', data);
                 // التحقق من ان الرسالة موجهة لهذا المستخدم
                 if (data.userId !== localStorage.getItem(STORAGE_KEYS.USER_ID)) return;
+                console.log('📨 إشعار WebSocket للمستخدم:', data);
+                if (data.status === 'accepted' || data.status === 'rejected') {
+                    console.log('Catch new status: ', data.status);
+                    const { text, level } = generateNotificationMessage(data.type);
+                    showUserNotification(text, level);
+                    enqueueNotification(text, level);
+                    await window.homePage._loadUserData();
+                    await window.homePage.components.appManager._postOrderMessage();
+                    await window.homePage.components.appManager._postPaymentMessage();
+                    return;
+                }
                 switch (data.type) {
                     case 'welcome':
-                        showToastNotification(data.message, 'success');
+                        enqueueNotification("✅ تم إرسال الطلب بنجاح", "success");
+                        showUserNotification("✅ تم إرسال الطلب بنجاح", "success");
                         break;
-
-                    case 'paymentAccepted':
-                        showToastNotification(`✅ تم قبول دفعتك بنجاح!`, 'success');
-                        await window.homePage._loadUserData();
-                        await window.homePage.components.appManager._postPaymentMessage();
-                        break;
-
-                    case 'paymentRejected':
-                        showToastNotification(`❌ تم رفض دفعتك. يرجى التواصل مع الدعم.`, 'error');
-                        await window.homePage.components.appManager._postPaymentMessage();
-                        break;
-
-                    case 'userPayment':
                     case 'newPayment':
-                        showToastNotification('✅ تم إرسال الدفعة بنجاح', 'success')
-                        showToastNotification('📥 تم تسجيل دفعة جديدة، يتم التحقق منها من قبل المسؤولين', 'info');
+                        enqueueNotification('✅ تم إرسال الدفعة بنجاح', 'success');
+                        enqueueNotification('📥 تم تسجيل دفعة جديدة، يتم التحقق منها من قبل المسؤولين', 'info');
+                        showUserNotification('✅ تم إرسال الدفعة بنجاح', 'success');
                         await window.homePage.components.appManager._postPaymentMessage();
                         break;
 
-                    case 'userOrder':
                     case 'newOrder':
-                        showToastNotification('✅ تم إرسال الطلب بنجاح', 'success')
-                        showToastNotification('📥 تم تسجيل طلب جديد، يتم التحقق منه من قبل المسؤولين', 'info');
-                        await window.homePage.components.appManager._postOrderMessage();
-                        break;
-
-                    case 'orderAccepted':
-                        showToastNotification(`✅ تم قبول طلبك بنجاح!`, 'success');
+                        showUserNotification('✅ تم إرسال الطلب بنجاح', 'success');
+                        enqueueNotification('✅ تم إرسال الطلب بنجاح', 'success');
+                        enqueueNotification('📥 تم تسجيل طلب جديد، يتم التحقق منه من قبل المسؤولين', 'info');
                         await window.homePage._loadUserData();
                         await window.homePage.components.appManager._postOrderMessage();
                         break;
-
-                    case 'orderRejected':
-                        showToastNotification(`❌ تم رفض طلبك. يرجى التواصل مع الدعم.`, 'error');
-                        await window.homePage.components.appManager._postOrderMessage();
-                        break;
-
-                    case 'orderStatus':
-                        showToastNotification(`📦 حالة طلبك: ${data.status}`, 'info');
-                        await window.homePage._loadUserData();
-                        await window.homePage.components.appManager._postOrderMessage();
-                        break;
-
                     case 'balanceUpdate':
-                        showToastNotification(`💰 تم تحديث رصيدك: +${data.newAmount} دولار`, 'success');
+                        showUserNotification(`💰 تم تحديث رصيدك: +${data.newAmount} دولار`, 'success');
+                        enqueueNotification(`💰 تم تحديث رصيدك: +${data.newAmount} دولار`, 'success');
                         await window.homePage._loadUserData();
                         break;
 
                     default:
+                        showUserNotification('📨 إشعار غير معروف:', data);
                         console.log('📨 إشعار غير معروف:', data);
                 }
             } catch (error) {
@@ -530,15 +585,51 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('❌ فشل تسجيل Service Worker:', err);
         }
     }
-
     window.homePage = new HomePage();
-    navigator.serviceWorker.addEventListener('message', event => {
-        if (event.data.type === 'loading-start') showLoader();
-        if (event.data.type === 'loading-end') hideLoader();
-    });
+    //setTimeout(async () => await hideLoader(), 3000);
+});
+
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        const loader = document.getElementById('pageLoader');
+        if (loader) {
+            loader.style.opacity = '0';
+            setTimeout(() => loader.remove(), 500);
+        }
+    }, 5000); // يمكنك تعديل المدة حسب سرعة تحميل الصفحة
 });
 
 // تنظيف الذاكرة عند إغلاق الصفحة
 window.addEventListener('beforeunload', () => {
     window.homePage?.destroy();
 });
+
+//case 'paymentAccepted':
+//enqueueNotification(`✅ تم قبول دفعتك بنجاح!`, 'success');
+//await window.homePage._loadUserData();
+//await window.homePage.components.appManager._postPaymentMessage();
+//break;
+//case 'paymentRejected':
+//enqueueNotification(`❌ تم رفض دفعتك. يرجى التواصل مع الدعم.`, 'error');
+//await window.homePage.components.appManager._postPaymentMessage();
+//break;
+//case 'orderAccepted':
+//enqueueNotification(`✅ تم قبول طلبك بنجاح!`, 'success');
+//await window.homePage._loadUserData();
+//await window.homePage.components.appManager._postOrderMessage();
+//break;
+
+//case 'orderRejected':
+//enqueueNotification(`❌ تم رفض طلبك. يرجى التواصل مع الدعم.`, 'error');
+//await window.homePage.components.appManager._postOrderMessage();
+//break;
+
+//case 'orderStatus':
+//enqueueNotification(`📦 حالة طلبك: ${data.status}`, 'info');
+//await window.homePage._loadUserData();
+//await window.homePage.components.appManager._postOrderMessage();
+//break;
+//navigator.serviceWorker.addEventListener('message', event => {
+//if (event.data.type === 'loading-start') showLoader();
+//if (event.data.type === 'loading-end') hideLoader();
+//});

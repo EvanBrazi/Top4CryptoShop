@@ -41,7 +41,7 @@ function handleAuthResponse(req, res, data) {
 // =============================================
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: 100,
   handler: (req, res) => {
     return handleAuthResponse(req, res, {
       status: 429,
@@ -87,8 +87,7 @@ router.post(
 
     } catch (err) {
       console.error('❌ خطأ أثناء التسجيل:', err);
-      console.error('❌ خطأ أثناء التسجيل:', err);
-
+      
       let message = 'حدث خطأ أثناء التسجيل. يرجى المحاولة لاحقًا.';
       let status = 500;
 
@@ -147,7 +146,7 @@ router.post('/login',
         return handleAuthResponse(req, res, {
           status: 401,
           success: false,
-          error: 'بيانات الدخول غير صحيحة',
+          error: 'اسم المستخدم غير صحيح',
           type: 'invalid_credentials'
         });
       }
@@ -223,7 +222,6 @@ router.post('/login',
       });
 
       attachCsrfToken(req, res); // توليد رمز CSRF
-
       const userResponse = {
         id: user._id,
         username: user.username,
@@ -232,7 +230,8 @@ router.post('/login',
         theme: user.theme,
         balance: user.balance,
         lastLogin: user.lastLogin,
-        role: user.role
+        role: user.role,
+        sessionId: sessionId
       };
 
       return handleAuthResponse(req, res, {
@@ -258,9 +257,8 @@ router.post('/login',
 // 🔓 تسجيل الخروج
 // =============================================
 router.post('/logout', doubleCsrfProtection, async (req, res) => {
-  console.log('🔐 CSRF من الهيدر:', req.headers['x-csrf-token']);
-  console.log('🔐 CSRF من الجلسة:', req.session?.csrfToken);
-
+  //console.log('🔐 CSRF من الهيدر:', req.headers['x-csrf-token']);
+  //console.log('🔐 CSRF من الجلسة:', req.session?.csrfToken);
   try {
     const token = req.cookies.session_token || req.headers.authorization?.split(' ')[1];
     if (!token) {

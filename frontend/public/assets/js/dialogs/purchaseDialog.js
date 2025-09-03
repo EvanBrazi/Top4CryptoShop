@@ -143,7 +143,7 @@ export class DialogPurchase {
         });
 
         if (orderResult?.status === 'success') {
-          alert('✅ تم تنفيذ الطلب بنجاح');
+          //alert('✅ تم تنفيذ الطلب بنجاح');
           this.close();
         } else {
           await fetch(`/api/users/${this.userId}/restore`, {

@@ -78,7 +78,7 @@ export class PaymentsTab {
                 <td>${this.formatDate(payment.createdAt)}</td>
                 <td><span class="status ${payment.status}">${this.translateStatus(payment.status)}</span></td>
                 <td>${payment.amount} 💵</td>
-                <td><img src="/images/payments/${payment.receiptImage}" style="width:40px; border-radius:4px;" /></td>
+                <td><img src="${payment.receiptImage}" style="width:40px; border-radius:4px;" /></td>
                 <td><button class="details-btn" data-id="${payment.paymentId}">عرض التفاصيل</button></td>
             `;
             this.tbody.appendChild(row);
@@ -114,15 +114,20 @@ export class PaymentsTab {
         modal.classList.remove('exit');
         modalContent.classList.remove('exit');
         modal.querySelector('.modal-body').innerHTML = `
-            <p><strong>💵 المبلغ:</strong> ${payment.amount}</p>
-            <p><strong>💳 الطريقة:</strong> ${payment.method}</p>
-            <p><strong>📌 الحالة:</strong> ${this.translateStatus(payment.status)}</p>
-            <p><strong>📅 التاريخ:</strong> ${this.formatDate(payment.createdAt)}</p>
-                ${payment.note ? `<p><strong>📝 ملاحظة:</strong> ${payment.note}</p>` : ''}
-            <p><strong>🖼️ إشعار الدفع:</strong></p>
-            <img src="/images/payments/${payment.receiptImage || payment.paymentId + '.png'}" alt="إشعار الدفع" />
-                ${payment.status === 'pending' ? `<p style="color: orange; font-weight: bold;">⚠️ هذه الدفعة بانتظار مراجعة الأدمن</p>` : ''}
-        `;
+  <div class="modal-info-grid">
+    <div><span>💵 المبلغ:</span><strong>${payment.amount}</strong></div>
+    <div><span>💳 الطريقة:</span><strong>${payment.method}</strong></div>
+    <div><span>📌 الحالة:</span><strong class="status ${payment.status}">${this.translateStatus(payment.status)}</strong></div>
+    <div><span>📅 التاريخ:</span><strong>${this.formatDate(payment.createdAt)}</strong></div>
+    ${payment.note ? `<div><span>📝 ملاحظة:</span><strong>${payment.note}</strong></div>` : ''}
+    ${payment.status === 'pending' ? `<div class="pending-warning">⚠️ هذه الدفعة بانتظار مراجعة الأدمن</div>` : ''}
+    <div class="receipt-image-container">
+      <span>🖼️ إشعار الدفع:</span>
+      <img src="${payment.receiptImage || payment.paymentId + '.png'}" alt="إشعار الدفع" />
+    </div>
+  </div>
+`;
+
         // إظهار المودال
         setTimeout(() => modal.classList.add('show'), 10);
         // إغلاق بزر الإغلاق

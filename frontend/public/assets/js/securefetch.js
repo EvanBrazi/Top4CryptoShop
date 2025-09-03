@@ -1,9 +1,16 @@
+function inferErrorType(message = '') {
+  if (message.includes('اسم المستخدم')) return 'invalid_credentials';
+  if (message.includes('كلمة المرور')) return 'invalid_password';
+  if (message.includes('رمز الجلسة')) return 'missing_session';
+  if (message.includes('تم تعليق الحساب')) return 'too_many_attempts';
+  return 'server_error';
+}
+
 /**
  * @file secureFetch.js
  * @description 🛡️ وحدة إرسال الطلبات مع حماية CSRF تلقائية
  * @version 1.0.0
  */
-
 function getCsrfTokenFromCookie() {
     const match = document.cookie.match(/(?:^|;\s*)x-csrf-token=([^;]+)/);
     return match ? decodeURIComponent(match[1]) : null;
@@ -33,24 +40,42 @@ export async function secureFetch(url, options = {}) {
             credentials: 'include'
         });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`HTTP ${response.status}: ${errorText}`);
+        let data;
+        try {
+            data = await response.json();
+        } catch {
+            data = { error: await response.text() };
         }
 
-        return response;
+        if (!response.ok) {
+            return {
+                remainingAttempts: data.remainingAttempts,
+                success: false,
+                status: response.status,
+                error: data.error || 'فشل في تنفيذ الطلب',
+                type: data.type || inferErrorType(data.error)
+            };
+        }
+
+        return {
+            success: true,
+            data
+        };
     } catch (err) {
-        console.error("📛 فشل الطلب:", err.message);
-        throw err; // أعد إرسال الخطأ ليتم التعامل معه في register.js
+        return {
+            success: false,
+            error: err.message || 'خطأ في الاتصال',
+            type: 'network_error'
+        };
     }
 }
 
 async function secureFetchWithLoader(url, options = {}) {
-  try {
-    showLoader();
-    const response = await fetch(url, options);
-    return response;
-  } finally {
-    hideLoader();
-  }
+    try {
+        showLoader();
+        const response = await fetch(url, options);
+        return response;
+    } finally {
+        hideLoader();
+    }
 }

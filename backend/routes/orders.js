@@ -17,7 +17,7 @@ const router = express.Router();
 const Order = require('../models/Order');
 const User = require('../models/User');
 const { verifyToken, checkAdmin } = require('../middlewares/auth');
-const { notify } = require('../utils/notifications');
+const { markNotificationSent, notify } = require('../utils/notifications');
 
 // 🧠 توليد معرف فريد للطلب
 function generateOrderId() {
@@ -52,7 +52,8 @@ router.post('/', async (req, res) => {
         // 📡 إشعار لحظي للأدمن بوجود طلب جديد
         // في الخادم (orders.js)
         notify({ type: 'newOrder', ...order.toObject() }, 'admin');
-        notify({ type: 'userOrder', ...order.toObject() }, 'user', userId);
+        notify({ type: 'newOrder', ...order.toObject() }, 'user', userId);
+        await markNotificationSent('Order', order._id);
         res.json({ status: 'success', orderId });
     } catch (err) {
         console.error('❌ خطأ في إنشاء الطلب:', err);
@@ -110,6 +111,7 @@ router.put('/:id/accept', verifyToken, checkAdmin, async (req, res) => {
 
         // 📡 إشعار لحظي للمستخدم بقبول الطلب
         notify({ type: 'orderAccepted', ...order.toObject() }, 'user', order.userId);
+        await markNotificationSent('Order', order._id);
         res.json({ status: 'accepted' });
     } catch (err) {
         console.error('❌ خطأ في قبول الطلب:', err);
@@ -134,6 +136,7 @@ router.put('/:id/reject', verifyToken, checkAdmin, async (req, res) => {
 
         // 📡 إشعار لحظي للمستخدم برفض الطلب
         notify({ type: 'orderRejected', ...order.toObject() }, 'user', order.userId);
+        await markNotificationSent('Order', order._id);
         res.json({ status: 'rejected' });
     } catch (err) {
         console.error('❌ خطأ في رفض الطلب:', err);

@@ -148,7 +148,7 @@ function renderPaymentNotification(data) {
     <p><strong>الطريقة:</strong> ${data.method}</p>
     <p><strong>المبلغ:</strong> ${data.amount} 💵</p>
     ${data.note ? `<p><strong>ملاحظة:</strong> ${data.note}</p>` : ''}
-    <img src="${getReceiptImageUrl(data.receiptImage)}" style="max-width:100%; margin-top:10px;" />
+    <img src="${data.receiptImage}" style="max-width:100%; margin-top:10px;" />
     <div class="payment-actions">
       <button class="accept-btn" data-id="${data.paymentId}">✅ قبول</button>
       <button class="reject-btn" data-id="${data.paymentId}">❌ رفض</button>
@@ -234,9 +234,10 @@ function renderOrderNotification(data) {
 }
 
 /**
- * معالجة قبول أو رفض الطلب
+ * 🔄 معالجة قبول أو رفض الطلب من لوحة التحكم
  * @param {string} orderId - معرف الطلب
- * @param {string} action - الإجراء (accept/reject)
+ * @param {'accept'|'reject'} action - الإجراء المطلوب
+ * @returns {Promise<void>}
  */
 async function handleOrderAction(orderId, action) {
   try {
@@ -455,6 +456,38 @@ document.addEventListener('click', (e) => {
   }
 });
 
+function sendTestNotification() {
+  const type = document.getElementById('notification-type').value;
+  const userId = document.getElementById('target-user-id').value;
+
+  const payload = {
+    status: type.includes('Accepted') ? 'accepted' : 'rejected',
+    amount: 100,
+    service: 'اختبار',
+    paymentId: 'test-pay-id',
+    orderId: 'test-order-id'
+  };
+
+  fetch('/dev/simulate-notification', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      type,
+      payload,
+      targetRole: 'user',
+      targetUserId: userId
+    })
+  })
+    .then(res => res.json())
+    .then(data => {
+      alert(data.message);
+    })
+    .catch(err => {
+      alert('❌ فشل إرسال الإشعار التجريبي');
+      console.error(err);
+    });
+}
+
 /**
  * ✅ بدء التهيئة عند تحميل الصفحة
  */
@@ -462,4 +495,5 @@ window.addEventListener('DOMContentLoaded', () => {
   initAdminWebSocket();
   loadUsers();              // تحميل المستخدمين
   loadPendingPayments();    // تحميل الدفعات المعلقة
+  document.getElementById('test-button').addEventListener('click', sendTestNotification);
 });

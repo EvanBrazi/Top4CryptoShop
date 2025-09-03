@@ -1,3 +1,25 @@
+.status {
+  font-weight: bold;
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+.status.pending {
+  background-color: rgba(255, 165, 0, 0.1);
+  color: orange;
+}
+
+.status.accepted {
+  background-color: rgba(0, 128, 0, 0.1);
+  color: green;
+}
+
+.status.rejected {
+  background-color: rgba(255, 0, 0, 0.1);
+  color: red;
+}
+
 .orders-table,
 .payments-table {
   display: flex;
@@ -163,8 +185,6 @@ body.night-theme {
 }
 
 .modal-content {
-  padding: 20px 20px 20px 20px;
-  padding-top: 48px; /* مساحة كافية لزر الإغلاق */
   backdrop-filter: blur(25px);
   -webkit-backdrop-filter: blur(25px);
   color: var(--modal-text);
@@ -207,6 +227,93 @@ body.night-theme {
 .modal-body img {
   display: block;
   margin: 10px auto;
+  max-width: 220px;
+  border-radius: 8px;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.15);
+}
+
+.modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 12px;
+  margin-top: 10px;
+  color: var(--modal-text); /* أو لون ثابت مثل #555 */
+}
+
+.modal-grid-content {
+  color: var(--modal-text);
+}
+
+.modal-grid div {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.95rem;
+  border-bottom: 1px solid var(--divider-color);
+  padding: 6px 0;
+  color: var(--modal-text);
+}
+
+.modal-grid span {
+  color: var(--text-color);
+  font-weight: bold;
+}
+
+.modal-grid strong {
+  color: var(--modal-text-color);
+  font-weight: 600;
+}
+
+.modal-info-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 0.95rem;
+  margin-top: 10px;
+  color: var(--modal-text); /* أو لون ثابت مثل #555 */
+}
+
+.modal-info-grid-content {
+  color: var(--modal-text);
+}
+
+.modal-info-grid div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--divider-color);
+  padding: 6px 0;
+  color: var(--modal-text);
+}
+
+.modal-info-grid span {
+  color: var(--text-color);
+  font-weight: bold;
+}
+
+.modal-info-grid strong {
+  color: var(--modal-text-color);
+  font-weight: 600;
+  text-align: end;
+}
+
+.pending-warning {
+  color: orange;
+  font-weight: bold;
+  text-align: center;
+  padding: 8px;
+  border-radius: 6px;
+  background-color: rgba(255, 165, 0, 0.1);
+}
+
+.receipt-image-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.receipt-image-container img {
   max-width: 220px;
   border-radius: 8px;
   box-shadow: 0 0 6px rgba(0, 0, 0, 0.15);
@@ -285,5 +392,18 @@ body.night-theme {
     font-size: 18px;
     top: 8px;
     right: 8px;
+  }
+
+  .modal-info-grid {
+    font-size: 0.85rem;
+  }
+
+  .modal-info-grid div {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .receipt-image-container img {
+    max-width: 180px;
   }
 }

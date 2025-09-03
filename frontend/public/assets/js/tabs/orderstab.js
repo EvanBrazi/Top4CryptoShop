@@ -111,12 +111,16 @@ export class OrdersTab {
         modalContent.classList.remove('exit');
         // تعبئة البيانات
         modal.querySelector('.modal-body').innerHTML = `
-            <p><strong>الخدمة:</strong> ${order.service}</p>
-            <p><strong>المبلغ:</strong> ${order.amount} 💵</p>
-            <p><strong>طريقة الدفع:</strong> ${order.method}</p>
-            <p><strong>الحالة:</strong> ${this.translateStatus(order.status)}</p>
-            <p><strong>التاريخ:</strong> ${this.formatDate(order.createdAt)}</p>
-        `;
+  <div class="modal-grid">
+    <div><span>رقم العملية:</span><strong>${order.orderId}</strong></div>
+    <div><span>الخدمة:</span><strong>${order.service}</strong></div>
+    <div><span>الكمية:</span><strong>${order.quantity}</strong></div>
+    <div><span>السعر الإجمالي:</span><strong>${order.amount} 💵</strong></div>
+    <div><span>ايدي اللاعب:</span><strong>${order.playerId}</strong></div>
+    <div><span>📌 الحالة:</span><strong class="status ${order.status}">${this.translateStatus(order.status)}</strong></div>
+    <div><span>📅 التاريخ:</span><strong>${this.formatDate(order.createdAt)}</strong></div>
+  </div>
+`;
         // إظهار المودال
         setTimeout(() => modal.classList.add('show'), 10);
         // إغلاق بزر الإغلاق

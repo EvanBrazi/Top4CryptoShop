@@ -101,6 +101,13 @@ function showGeneralError(message) {
     el.classList.add('show');
 }
 
+function shakeElement(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.add('shake');
+  setTimeout(() => el.classList.remove('shake'), 500);
+}
+
 /**
  * التحقق من صحة النموذج
  */
@@ -166,14 +173,33 @@ byId('registerForm').addEventListener('submit', async (e) => {
     // ⏳ حالة تحميل مؤقتة
     submitBtn.disabled = true;
     submitBtn.textContent = 'جاري التسجيل...';
-
     try {
         const result = await register(username, password, email, fullPhoneNumber, theme);
-
-        if (result?.success === false || result?.error) {
-            const errorMessage = typeof result === 'string' ? result : result.error || 'حدث خطأ أثناء التسجيل';
-            throw new Error(errorMessage);
+        if (!result.success) {
+            const msg = result.error || 'حدث خطأ أثناء التسجيل';
+            switch (result.type) {
+                case 'invalid_username':
+                    showError('usernameError', msg);
+                    shakeElement('username');
+                    break;
+                case 'invalid_password':
+                    showError('passwordError', msg);
+                    shakeElement('password');
+                    break;
+                case 'invalid_email':
+                    showError('emailError', msg);
+                    shakeElement('email');
+                    break;
+                case 'invalid_phone':
+                    showError('phoneError', msg);
+                    shakeElement('phoneNumber');
+                    break;
+                default:
+                    showGeneralError(msg);
+            }
+            return;
         }
+
         saveSession(result.user, result.token);
         setTimeout(() => {
             spinner.style.display = 'none';
@@ -183,24 +209,11 @@ byId('registerForm').addEventListener('submit', async (e) => {
             const redirectPath = '/login.html';
             window.location.href = redirectPath;
         }, 1500);
-        // 🎉 نجاح التسجيل
-        alert('تم تسجيل الحساب بنجاح!');
         showAlert('success', 'تم التسجيل', 'تم إنشاء الحساب بنجاح! سيتم تحويلك الآن...');
     } catch (err) {
-        console.error('❌ خطأ أثناء التسجيل:', err);
-        const msg = String(err.message || '');
-
-        if (msg.includes('اسم المستخدم')) {
-            showError('usernameError', msg);
-        } else if (msg.includes('كلمة المرور')) {
-            showError('passwordError', msg);
-        } else if (msg.includes('الهاتف') || msg.includes('رقم')) {
-            showError('phoneError', msg);
-        } else if (msg.includes('البريد')) {
-            showError('emailError', msg);
-        } else {
-            showGeneralError(msg);
-        }
+        console.error('❌ خطأ غير متوقع أثناء التسجيل:', err);
+        const msg = extractErrorMessage(err.message || err);
+        showGeneralError(msg);
     } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = 'تسجيل';

@@ -99,7 +99,7 @@ export class HomeTab {
 
         // إنشاء وعرض البطاقات
         const cardElements = await Promise.all(
-            this.options.cardsData.map(async (card, index) => 
+            this.options.cardsData.map(async (card, index) =>
                 await this._createCardElement(card, index))
         );
 
@@ -112,7 +112,7 @@ export class HomeTab {
 
         this.container.appendChild(grid);
         this._adjustCardsToScreenSize();
-        
+
         console.log('✅ تم عرض بطاقات الصفحة الرئيسية');
     }
 
@@ -153,26 +153,25 @@ export class HomeTab {
     async _addCardIcon(card, cardEl) {
         const iconName = card.icon || (Array.isArray(card.icons) ? card.icons[0] : null);
         if (!iconName) return;
+
         const iconContainer = document.createElement('div');
         iconContainer.className = 'big-card-icon-container';
+
         const iconElement = document.createElement('img');
         iconElement.className = 'big-card-icon';
         iconElement.alt = card.title || 'Icon';
         iconElement.loading = 'lazy';
-        iconElement.src = '/assets/images/loading.gif';
-        try {
-            // استخدام نظام الأيقونات الموحد لتحميل وعرض الأيقونة
-            await this.options.homeIconLoader.render(
-                iconName, 
-                iconElement, 
-                '!'
-            );
-        } catch (error) {
-            console.warn('❌ فشل تحميل الأيقونة:', iconName, error);
-            iconElement.src = this.options.fallbackUrl;
-        }
+        iconElement.src = '/assets/images/loading.gif'; // ⏳ صورة مؤقتة
+
         iconContainer.appendChild(iconElement);
-        cardEl.appendChild(iconContainer);
+        cardEl.appendChild(iconContainer); // ✅ عرض البطاقة فورًا
+
+        // 🎯 تحميل الأيقونة لاحقًا بدون تأخير العرض
+        this.options.homeIconLoader.render(iconName, iconElement, '!')
+            .catch(error => {
+                console.warn('❌ فشل تحميل الأيقونة:', iconName, error);
+                iconElement.src = this.options.fallbackUrl;
+            });
     }
 
     /**
@@ -197,10 +196,10 @@ export class HomeTab {
      */
     _addCardEventListeners(cardEl, index, card) {
         cardEl.style.cursor = 'pointer';
-        
+
         // النقر بالماوس
         cardEl.addEventListener('click', () => this._handleCardClick(index, card));
-        
+
         // النقر بلوحة المفاتيح
         cardEl.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
@@ -218,9 +217,9 @@ export class HomeTab {
      */
     _handleCardClick(index, card) {
         // إزالة النشط من جميع البطاقات
-        this.container.querySelectorAll('.big-card').forEach(c => 
+        this.container.querySelectorAll('.big-card').forEach(c =>
             c.classList.remove('active'));
-        
+
         // إضافة النشط للبطاقة المختارة
         const clickedCard = this.container.querySelector(`.big-card[data-index="${index}"]`);
         if (clickedCard) clickedCard.classList.add('active');
@@ -277,7 +276,7 @@ export class HomeTab {
                 <button class="retry-button">إعادة المحاولة</button>
             </div>
         `;
-        
+
         this.container.querySelector('.retry-button').addEventListener('click', () => {
             this._initializeComponent();
         });

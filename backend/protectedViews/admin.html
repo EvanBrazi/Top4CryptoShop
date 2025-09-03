@@ -1,6 +1,7 @@
 <!-- \Top4CryptoShop\backend\protectedViews\admin.html -->
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,14 +9,28 @@
   <link rel="stylesheet" href="./assets/css/admin.css">
   <!-- Author: Evan Brazi | Last Updated: 2025-08-19 -->
 </head>
-<body>
 
+<body>
   <header>
     <h1>لوحة تحكم الأدمن</h1>
     <div id="connectionStatus" class="status-bar">🟢 متصل</div>
     <div id="globalNotification" class="notification-bar"></div>
   </header>
+  <div class="notification-tester">
+    <h3>🧪 اختبار الإشعارات</h3>
+    <label>نوع الإشعار:</label>
+    <select id="notification-type">
+      <option value="orderAccepted">طلب مقبول</option>
+      <option value="orderRejected">طلب مرفوض</option>
+      <option value="paymentAccepted">دفعة مقبولة</option>
+      <option value="paymentRejected">دفعة مرفوضة</option>
+    </select>
 
+    <label>معرف المستخدم:</label>
+    <input type="text" id="target-user-id" placeholder="مثال: 68b663f8fab68380fedce1f9">
+
+    <button type="button" id="test-button">📤 إرسال إشعار تجريبي</button>
+  </div>
   <main>
     <!-- 🧾 نموذج تعديل رصيد مستخدم -->
     <section class="card">
@@ -67,6 +82,7 @@
         </tbody>
       </table>
     </section>
-  <script type="module" src="./assets/js/admin.js"></script>
+    <script type="module" src="./assets/js/admin.js"></script>
 </body>
+
 </html>

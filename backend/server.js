@@ -118,6 +118,7 @@ app.use(cors({
   maxAge: 86400
 }));
 
+require('./jobs/scheduler');
 // =======================
 // 📁 الملفات الثابتة
 // =======================
@@ -145,6 +146,7 @@ app.use('/api/icons', require('./routes/icons'));
 app.use('/api/cards', require('./routes/cards'));
 app.use('/api/orders', require('./routes/orders'));
 app.use('/api/payments', require('./routes/payments')); // ✅ يدعم رفع الصور + WebSocket
+app.use('/dev', require('./routes/dev'));
 
 // =======================
 // 📦 مسارات API إضافية

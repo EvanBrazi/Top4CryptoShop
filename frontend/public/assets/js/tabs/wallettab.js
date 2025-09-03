@@ -7,6 +7,8 @@
  * تاريخ التحديث: 2025-08-28
  */
 
+import { isValidImage } from "../utils/appUtils.js";
+
 export class WalletTab {
     constructor(containerId, userId, onPaymentSent) {
         this.container = document.getElementById(containerId);
@@ -78,8 +80,8 @@ export class WalletTab {
         const file = this.fileInput.files[0];
         const note = this.noteInput.value;
 
-        if (!method || !amount || !file) {
-            alert('يرجى اختيار طريقة الدفع، إدخال المبلغ، وتحميل إشعار الدفع');
+        if (!method || !amount || !file || !isValidImage(file)) {
+            alert('يرجى اختيار طريقة الدفع، إدخال المبلغ، وتحميل إشعار صالح للدفع');
             return;
         }
 

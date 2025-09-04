@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مربع حوار الشراء المحسن</title>
+    <style>
+        :root {
+            --background-menu-link: rgba(0, 0, 0, 0.6);
+            --dialog-border: rgba(255, 255, 255, 0.2);
+            --dialog-text: #f0f0f0;
+            --dialog-font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --dialog-shadow: rgba(0, 0, 0, 0.3);
+            --dialog-accent: #4e8cff;
+            --dialog-xbtn: #ff6b6b;
+            --input-bg: rgba(255, 255, 255, 0.1);
+            --dialog-muted: #6c757d;
+            --error-color: #ff4757;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--dialog-font);
+            background: linear-gradient(135deg, #2c3e50, #1a1a2e);
+            color: var(--dialog-text);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* ✅ الغلاف العام - محسن */
+        .purchase-dialog-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            background-color: var(--background-menu-link);
+            backdrop-filter: blur(12px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .purchase-dialog-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* ✅ الحركات حسب الفئة - محسنة */
+        @keyframes slide-apps-in {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.97);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes slide-apps-out {
+            from {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(30px) scale(0.97);
+            }
+        }
+
+        /* ✅ مربع الحوار - مصغر ومحسن */
+        .purchase-dialog {
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--dialog-border);
+            color: var(--dialog-text);
+            font-family: var(--dialog-font);
+            border-radius: 14px;
+            padding: 20px;
+            width: 90%;
+            max-width: 380px;
+            box-shadow: 0 8px 24px var(--dialog-shadow);
+            animation-duration: 0.4s;
+            animation-fill-mode: both;
+            will-change: transform, opacity;
+            background: rgba(35, 35, 50, 0.85);
+        }
+
+        /* ✅ دخول وخروج حسب الفئة */
+        .purchase-dialog.apps {
+            animation-name: slide-apps-in;
+        }
+
+        .purchase-dialog.apps.closing {
+            animation-name: slide-apps-out;
+        }
+
+        /* ✅ رأس الحوار - محسن */
+        .dialog-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--dialog-border);
+        }
+
+        .dialog-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--dialog-accent);
+            animation: pulseGlow 1.8s infinite;
+            text-shadow: 0 0 8px var(--dialog-accent);
+        }
+
+        .dialog-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            object-fit: contain;
+            box-shadow: 0 0 6px rgba(0, 0, 0, 0.2);
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% {
+                text-shadow: 0 0 8px var(--dialog-accent);
+            }
+            50% {
+                text-shadow: 0 0 16px var(--dialog-accent);
+            }
+        }
+
+        /* ✅ زر الإغلاق - تم تحسين موقعه */
+        .dialog-purchase-close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--dialog-xbtn);
+            cursor: pointer;
+            padding: 5px;
+            margin: -5px -5px 0 0;
+            align-self: flex-start;
+        }
+
+        /* ✅ محتوى الحوار - محسن */
+        .dialog-content {
+            margin-bottom: 20px;
+        }
+
+        .product-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #ddd;
+            font-size: 0.9rem;
+        }
+
+        .input-group input,
+        .quantity-input {
+            background-color: var(--input-bg);
+            border: 1px solid var(--dialog-border);
+            color: var(--dialog-text);
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.3s;
+        }
+
+        .input-group input:focus,
+        .quantity-input:focus {
+            outline: none;
+            border-color: var(--dialog-accent);
+            box-shadow: 0 0 0 2px rgba(78, 140, 255, 0.25);
+        }
+
+        /* ✅ تباين محسن بين الأسماء والقيم */
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding: 6px 0;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #ccc;
+        }
+
+        .info-value {
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .dialog-total {
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-align: center;
+            padding: 12px;
+            border-radius: 8px;
+            background-color: var(--input-bg);
+            margin: 15px 0;
+            color: #fff;
+        }
+
+        /* ✅ أزرار الحوار - موزعة على عرض المربع */
+        .dialog-footer {
+            display: flex;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .confirm-btn,
+        .cancel-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s;
+            font-size: 0.95rem;
+        }
+
+        .confirm-btn {
+            background-color: var(--dialog-accent);
+            color: white;
+        }
+
+        .confirm-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .cancel-btn {
+            background-color: var(--dialog-muted);
+            color: white;
+        }
+
+        .cancel-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* ✅ تحسينات الاستجابة للشاشات الصغيرة */
+        @media (max-width: 480px) {
+            .purchase-dialog {
+                padding: 16px;
+                max-width: 92%;
+                border-radius: 12px;
+            }
+
+            .dialog-header {
+                margin-bottom: 12px;
+            }
+
+            .dialog-title {
+                font-size: 1.2rem;
+            }
+
+            .dialog-icon {
+                width: 32px;
+                height: 32px;
+            }
+
+            .dialog-purchase-close-btn {
+                font-size: 1.4rem;
+            }
+
+            .input-group input,
+            .quantity-input {
+                padding: 8px 10px;
+                font-size: 0.9rem;
+            }
+
+            .info-row {
+                font-size: 0.9rem;
+            }
+
+            .dialog-total {
+                font-size: 1.1rem;
+                padding: 10px;
+            }
+
+            .dialog-footer {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .confirm-btn,
+            .cancel-btn {
+                padding: 10px;
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 320px) {
+            .purchase-dialog {
+                padding: 12px;
+                border-radius: 10px;
+            }
+
+            .dialog-title {
+                font-size: 1.1rem;
+            }
+
+            .dialog-icon {
+                width: 28px;
+                height: 28px;
+            }
+
+            .input-group label {
+                font-size: 0.85rem;
+            }
+
+            .input-group input,
+            .quantity-input {
+                padding: 7px 9px;
+                font-size: 0.85rem;
+            }
+
+            .info-row {
+                font-size: 0.85rem;
+            }
+
+            .dialog-total {
+                font-size: 1rem;
+                padding: 8px;
+            }
+        }
+
+        /* ✅ زر العرض للتوضيح (إزالة في التطبيق الفعلي) */
+        .show-dialog-btn {
+            background: var(--dialog-accent);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .show-dialog-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+        }
+    </style>
+</head>
+<body>
+    <button class="show-dialog-btn" onclick="showDialog()">عرض مربع الحوار</button>
+
+    <!-- ✅ مربع الحوار المحسن -->
+    <div class="purchase-dialog-overlay" id="dialogOverlay">
+        <div class="purchase-dialog apps">
+            <div class="dialog-header">
+                <h2 class="dialog-title">شراء العملات</h2>
+                <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="رمز اللعبة" class="dialog-icon">
+                <button class="dialog-purchase-close-btn" onclick="closeDialog()">×</button>
+            </div>
+
+            <div class="dialog-content">
+                <div class="product-info">
+                    <div>
+                        <div class="info-row">
+                            <span class="info-label">المنتج:</span>
+                            <span class="info-value">حزمة العملات الذهبية</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">السعر:</span>
+                            <span class="info-value">25.00 ر.س</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="quantity">الكمية</label>
+                    <input type="number" id="quantity" class="quantity-input" value="1" min="1" max="10">
+                </div>
+
+                <div class="input-group">
+                    <label for="player-name">اسم اللاعب</label>
+                    <input type="text" id="player-name" placeholder="أدخل اسم اللاعب">
+                </div>
+
+                <div class="dialog-total">
+                    الإجمالي: <span id="total-amount">25.00 ر.س</span>
+                </div>
+            </div>
+
+            <div class="dialog-footer">
+                <button class="cancel-btn" onclick="closeDialog()">إلغاء</button>
+                <button class="confirm-btn" onclick="confirmPurchase()">شراء</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ✅ دالة لعرض مربع الحوار
+        function showDialog() {
+            const overlay = document.getElementById('dialogOverlay');
+            const dialog = overlay.querySelector('.purchase-dialog');
+            
+            dialog.classList.remove('closing');
+            overlay.classList.add('active');
+        }
+
+        // ✅ دالة لإغلاق مربع الحوار
+        function closeDialog() {
+            const overlay = document.getElementById('dialogOverlay');
+            const dialog = overlay.querySelector('.purchase-dialog');
+            
+            dialog.classList.add('closing');
+            
+            setTimeout(() => {
+                overlay.classList.remove('active');
+            }, 400); // يتناسب مع مدة animation
+        }
+
+        // ✅ دالة للمعالجة عند التأكيد
+        function confirmPurchase() {
+            alert('تم محاكاة عملية الشراء بنجاح!');
+            closeDialog();
+        }
+
+        // ✅ تحديث الإجمالي عند تغيير الكمية
+        document.getElementById('quantity').addEventListener('input', function() {
+            const quantity = parseInt(this.value) || 1;
+            const price = 25;
+            const total = quantity * price;
+            document.getElementById('total-amount').textContent = total.toFixed(2) + ' ر.س';
+        });
+
+        // ✅ إغلاق الحوار عند النقر خارج المحتوى
+        document.getElementById('dialogOverlay').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDialog();
+            }
+        });
+    </script>
+</body>
+</html>

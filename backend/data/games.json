@@ -1,15 +1,15 @@
 [
-  { "id": 1, "name": "ببجي عالمي", "icon": "pubg.png", "category": "games", "price": "4.99", "available": true },
-  { "id": 2, "name": "فري فاير", "icon": "freefire.webp", "category": "games", "price": "3.99", "available": true },
-  { "id": 3, "name": "جواكر", "icon": "jawaker.png", "category": "games", "price": "5.99", "available": true },
-  { "id": 4, "name": "يالا لودو", "icon": "yalla_ludo.png", "category": "games", "price": "4.49", "available": true },
-  { "id": 5, "name": "موبايل ليجيند", "icon": "mobile_legends.png", "category": "games", "price": "3.99", "available": true },
-  { "id": 6, "name": "دلتا فورس", "icon": "delta_force.avif", "category": "games", "price": "5.49", "available": true },
-  { "id": 7, "name": "ارينا بريك اوت", "icon": "arena_breakout.webp", "category": "games", "price": "5.99", "available": true },
-  { "id": 8, "name": "انتقام لاسلاطين", "icon": "slateen.png", "category": "games", "price": "6.99", "available": true },
-  { "id": 9, "name": "بلياردو", "icon": "belyardo.webp", "category": "games", "price": "4.49", "available": true },
-  { "id": 10, "name": "كلاش اوف كلانس", "icon": "clash_of_clans.webp", "category": "games", "price": "5.49", "available": true },
-  { "id": 11, "name": "براول ستار", "icon": "brawl_stars.webp", "category": "games", "price": "3.99", "available": true },
-  { "id": 12, "name": "كلاش رويال", "icon": "clash_royale.png", "category": "games", "price": "5.99", "available": true },
-  { "id": 13, "name": "يوم النهاية - آخر الناجين", "icon": "doomsday_last_survivors.jpg", "category": "games", "price": "4.49", "available": true }
+  { "id": 1, "name": "ببجي عالمي", "icon": "pubg.png", "category": "games", "price": [0.99, 4.99, 9.99, 19.9, 49.9, 99.9], "menuPrice": true, "available": true },
+  { "id": 2, "name": "فري فاير", "icon": "freefire.webp", "category": "games", "price": [0.99, 4.99, 9.99, 19.9, 49.9, 99.9], "menuPrice": true, "available": true },
+  { "id": 3, "name": "جواكر", "icon": "jawaker.png", "category": "games", "price": [0.99, 4.99, 9.99, 19.9, 49.9, 99.9], "menuPrice": true, "available": true },
+  { "id": 4, "name": "يالا لودو", "icon": "yalla_ludo.png", "category": "games", "price": [0.99, 4.99, 9.99, 19.9, 49.9, 99.9], "menuPrice": true, "available": true },
+  { "id": 5, "name": "موبايل ليجيند", "icon": "mobile_legends.png", "category": "games", "price": [0.99, 4.99, 9.99, 19.9, 49.9, 99.9], "menuPrice": true, "available": true },
+  { "id": 6, "name": "دلتا فورس", "icon": "delta_force.avif", "category": "games", "price": [0.99, 4.99, 9.99, 19.9, 49.9, 99.9], "menuPrice": true, "available": true },
+  { "id": 7, "name": "ارينا بريك اوت", "icon": "arena_breakout.webp", "category": "games", "price": [0.99, 4.99, 9.99, 19.9, 49.9, 99.9], "menuPrice": true, "available": true },
+  { "id": 8, "name": "انتقام لاسلاطين", "icon": "slateen.png", "category": "games", "price": [0.99, 4.99, 9.99, 19.9, 49.9, 99.9], "menuPrice": true, "available": true },
+  { "id": 9, "name": "بلياردو", "icon": "belyardo.webp", "category": "games", "price": [0.99, 4.99, 9.99, 19.9, 49.9, 99.9], "menuPrice": true, "available": true },
+  { "id": 10, "name": "كلاش اوف كلانس", "icon": "clash_of_clans.webp", "category": "games", "price": [0.99, 4.99, 9.99, 19.9, 49.9, 99.9], "menuPrice": true, "available": true },
+  { "id": 11, "name": "براول ستار", "icon": "brawl_stars.webp", "category": "games", "price": [0.99, 4.99, 9.99, 19.9, 49.9, 99.9], "menuPrice": true, "available": true },
+  { "id": 12, "name": "كلاش رويال", "icon": "clash_royale.png", "category": "games", "price": [0.99, 4.99, 9.99, 19.9, 49.9, 99.9], "menuPrice": true, "available": true },
+  { "id": 13, "name": "يوم النهاية - آخر الناجين", "icon": "doomsday_last_survivors.jpg", "category": "games", "price": [0.99, 4.99, 9.99, 19.9, 49.9, 99.9], "menuPrice": true, "available": true }
 ]

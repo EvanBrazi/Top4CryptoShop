@@ -185,7 +185,7 @@ async function loginUser(username, password) {
 
     try {
         const result = await login(username, password); // ⬅️ استخدام الدالة الموحدة
-        console.log('Result: ', result, '\nUser: ', result.user);
+        //console.log('Result: ', result, '\nUser: ', result.user);
         // ✅ معالجة الأخطاء المعروفة
         if (result.error === "يجب توفير رمز الجلسة") {
             showAlert('error', 'رمز الجلسة مفقود', 'يرجى إعادة تحميل الصفحة أو تسجيل الدخول من جديد.');
@@ -253,8 +253,8 @@ async function loginUser(username, password) {
 
             const redirectPath = result.redirectTo || roleRedirects[result.user.role] || '/homepage.html';
             window.location.href = redirectPath;
-        }, 600);
-        showToastNotification(`👋 أهلاً بعودتك يا ${username} 🌟`, 'success', 500);
+        }, 2100);
+        showToastNotification(`👋 أهلاً بعودتك يا ${username} 🌟`, 'success', 2000);
     } catch (err) {
         const msg = extractErrorMessage(err.message || err);
         console.error("🚨 خطأ أثناء تسجيل الدخول:", msg);

@@ -162,7 +162,6 @@ export class HomeTab {
         iconElement.alt = card.title || 'Icon';
         iconElement.loading = 'lazy';
         iconElement.src = '/assets/images/loading.gif'; // ⏳ صورة مؤقتة
-
         iconContainer.appendChild(iconElement);
         cardEl.appendChild(iconContainer); // ✅ عرض البطاقة فورًا
 

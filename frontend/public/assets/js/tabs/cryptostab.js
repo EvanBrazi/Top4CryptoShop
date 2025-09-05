@@ -108,9 +108,6 @@ export class CryptosTab {
         const card = document.createElement('div');
         card.className = 'card'; // ✅ الكلاس الموحد
         card.dataset.cryptoId = crypto.id;
-        card.dataset.price = crypto.price;
-        card.dataset.isAvailable = crypto.available;
-        card.dataset.category = crypto.category;
         card.dataset.iconName = crypto.icon || 'default.png';
 
         // أيقونة العملة
@@ -128,7 +125,7 @@ export class CryptosTab {
         card.appendChild(title);
 
         card.addEventListener('click', () => {
-            const dialogPurchase = new DialogPurchase(card, {
+            const dialogPurchase = new DialogPurchase(crypto, {
                 iconsBasePath: '/assets/images/',
                 cssPath: '/assets/css/purchase-dialog.css',
                 supportPhone: SUPPORT_PHONE

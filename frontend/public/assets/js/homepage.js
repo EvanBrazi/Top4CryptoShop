@@ -82,6 +82,7 @@ class HomePage {
             usernameDisplay: document.getElementById('username-display'),
             balanceDisplay: document.getElementById('balance-display'),
             topBalanceDisplay: document.getElementById('top-balance-display'),
+            editProfileBtn: document.getElementById('profile-edit-btn'),
             termsBtn: document.getElementById('terms-btn'),
             privacyBtn: document.getElementById('privacy-btn'),
             termsModal: document.getElementById('terms-modal'),
@@ -111,7 +112,7 @@ class HomePage {
         );
 
         // مدير التطبيقات
-        this.components.appManager = new AppManager(this.components.taber);
+        this.components.appManager = new AppManager(this.components.taber, this.userManager);
 
         // تهيئة السمة
         // th.initTheme();
@@ -124,6 +125,10 @@ class HomePage {
  */
     async _loadUserData() {
         try {
+            if (!this.userManager) {
+                console.warn('HomePage lost UserManager#instance, We most defined again!');
+                this.userManager = UserManager.getInstance();
+            }
             await this.userManager.loadUser(); // يفترض أن um.user يحتوي على البيانات الآن
             //this._updateUserUI();
         } catch (err) {
@@ -182,6 +187,8 @@ class HomePage {
         // أحداث المحفظة
         this._setupWalletEvents();
 
+        this._setupSettingsEvents();
+
         // أحداث العودة
         this._setupBackButtonEvents();
 
@@ -223,6 +230,12 @@ class HomePage {
     _setupWalletEvents() {
         this.domElements.addBalanceBtn.addEventListener('click', () => {
             this.components.taber.activateTab('wallet');
+        });
+    }
+
+    _setupSettingsEvents() {
+        this.domElements.editProfileBtn.addEventListener('click', () => {
+            this.components.taber.activateTab('settings');
         });
     }
 
@@ -302,7 +315,7 @@ class HomePage {
         if (this.domElements.logoutBtn) {
             this.domElements.overlay.classList.remove('active');
             this.domElements.sidebar.classList.remove('active');
-            this.domElements.logoutBtn.addEventListener('click', this.userManager._handleLogout);
+            this.domElements.logoutBtn.addEventListener('click', () => this.userManager._handleLogout()); // ✅
         }
     }
 

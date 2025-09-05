@@ -7,11 +7,12 @@
  * @license MIT
  * @updated 2025-08-22
  */
-
 import { HomeTab } from "./tabs/hometab.js";
 import { WalletTab } from "./tabs/wallettab.js";
+import { PortfolioTab } from "./tabs/portfoliotab.js"
 import { OrdersTab } from "./tabs/orderstab.js";
 import { PaymentsTab } from "./tabs/paymentstab.js";
+import { SettingsTab } from "./tabs/settingstab.js";
 import { AppsTab } from "./tabs/appstab.js";
 import { GamesTab } from "./tabs/gamestab.js";
 import { CryptosTab } from "./tabs/cryptostab.js";
@@ -82,10 +83,11 @@ export class AppManager {
      * @param {Object} taberInstance - كائن إدارة التبويبات
      * @param {Object} config - إعدادات التهيئة
      */
-    constructor(taberInstance, config = {}) {
+    constructor(taberInstance, userManager, config = {}) {
         if (!taberInstance) throw new Error('Taber instance is required');
         this.taber = taberInstance;
-
+        if (!userManager) throw new Error('No user found!')
+        this.userManager = userManager;
         // دمج الإعدادات المخصصة مع الإعدادات الافتراضية
         this.config = { ...DEFAULT_CONFIG, ...config };
 
@@ -288,6 +290,16 @@ export class AppManager {
                 'wallet-tab',
                 this.userId,
                 this._postPaymentMessage.bind(this)
+            ),
+            portfolio: new PortfolioTab(
+                'portfolio-tab',
+                this.userId, {
+                    themeColor: this.config.themeColor,
+                }
+            ),
+            settings: new SettingsTab(
+                'settings-tab',
+                this.userManager
             )
         };
         console.log('✅ تم تهيئة التبويبات بنجاح');

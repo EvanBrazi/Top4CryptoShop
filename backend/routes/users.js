@@ -10,6 +10,9 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const { verifyToken } = require('../middlewares/auth');
+const upload = require('../middlewares/upload'); // نفس إعداد multer الذي تستخدمه
+const cloudinary = require('../config/cloudinary');
+
 
 // 📥 جلب جميع المستخدمين (للوحة التحكم)
 router.get('/', verifyToken, async (req, res) => {
@@ -173,6 +176,58 @@ router.post('/:id/restore', verifyToken, async (req, res) => {
     res.json({ message: '✅ تم استرجاع الرصيد', balance: user.balance });
   } catch (err) {
     res.status(500).json({ message: '❌ خطأ أثناء الاسترجاع' });
+  }
+});
+
+/**
+ * @route POST /api/users/:id/avatar
+ * @desc رفع صورة شخصية للمستخدم وتحديث رابطها
+ * @access خاص بالمستخدم
+ */
+router.post('/:id/avatar', verifyToken, upload.single('avatar'), async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const imageUrl = req.file?.path;
+
+    if (!imageUrl) return res.status(400).json({ error: 'لم يتم رفع الصورة' });
+
+    const user = await User.findByIdAndUpdate(userId, { avatar: imageUrl }, { new: true });
+    if (!user) return res.status(404).json({ error: 'المستخدم غير موجود' });
+
+    res.json({ message: '✅ تم تحديث الصورة الشخصية', avatar: user.avatar });
+  } catch (err) {
+    console.error('❌ خطأ في رفع الصورة الشخصية:', err);
+    res.status(500).json({ error: 'فشل رفع الصورة الشخصية' });
+  }
+});
+
+/**
+ * @route POST /api/users/:id/avatar/remove
+ * @desc إزالة الصورة الشخصية من قاعدة البيانات وCloudinary
+ * @access خاص بالمستخدم
+ */
+router.post('/:id/avatar/remove', verifyToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: 'المستخدم غير موجود' });
+
+    // ✅ استخراج public_id من رابط Cloudinary
+    const avatarUrl = user.avatar;
+    if (avatarUrl && avatarUrl.includes('cloudinary.com')) {
+      const parts = avatarUrl.split('/');
+      const publicIdWithExtension = parts.slice(-1)[0]; // مثل receipt-abc123.jpg
+      const publicId = publicIdWithExtension.split('.')[0]; // إزالة الامتداد
+
+      await cloudinary.uploader.destroy(`payments_receipts/${publicId}`);
+    }
+
+    user.avatar = '';
+    await user.save();
+
+    res.json({ message: '✅ تم إزالة الصورة الشخصية', avatar: '' });
+  } catch (err) {
+    console.error('❌ خطأ في إزالة الصورة من Cloudinary:', err);
+    res.status(500).json({ error: 'فشل إزالة الصورة الشخصية' });
   }
 });
 

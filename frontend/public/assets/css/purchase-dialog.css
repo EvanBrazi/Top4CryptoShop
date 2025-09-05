@@ -10,7 +10,7 @@
   align-items: center;
   z-index: 1;
   background-color: var(--background-menu-link);
-    backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s ease;
@@ -119,6 +119,7 @@
 }
 
 /* ✅ مربع الحوار */
+/* ✅ مربع الحوار - مصغر ومحسن */
 .purchase-dialog {
   display: flex;
   flex-direction: column;
@@ -126,14 +127,15 @@
   border: 1px solid var(--dialog-border);
   color: var(--dialog-text);
   font-family: var(--dialog-font);
-  border-radius: 16px;
-  padding: 24px;
-  width: 92%;
-  max-width: 440px;
-  box-shadow: 0 12px 32px var(--dialog-shadow);
-  animation-duration: 0.5s;
+  border-radius: 1px;
+  padding: 2px;
+  width: 90%;
+  max-width: 380px;
+  box-shadow: 0 8px 24px var(--dialog-shadow);
+  animation-duration: 0.4s;
   animation-fill-mode: both;
   will-change: transform, opacity;
+  background: rgba(35, 35, 50, 0.85);
 }
 
 /* ✅ دخول وخروج حسب الفئة */
@@ -169,17 +171,35 @@
   animation-name: slide-balances-out;
 }
 
-/* ✅ رأس الحوار */
+/* ✅ رأس مربع الحوار - مبسط ومضغوط */
 .dialog-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 12px;
-  padding: 20px;
+  justify-content: space-between;
+  margin: 0 5px;
+  padding-bottom: 1px;
+  border-bottom: 1px solid var(--dialog-border);
+}
+
+.dialog-price {
+  display: flex;
+  gap: 2px;
+  margin-top: 5px;
+}
+
+.price,
+.dialog-total {
+  flex: 1;
+  padding: 8px;
+  border-radius: 2px;
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+  transition: all 0.3s;
 }
 
 .dialog-title {
-  font-size: 1.6rem;
+  font-size: 1.3rem;
   font-weight: 700;
   color: var(--dialog-accent);
   animation: pulseGlow 1.8s infinite;
@@ -189,9 +209,7 @@
 .dialog-icon {
   width: 40px;
   height: 40px;
-  max-width: 100%;
-  max-height: 100%;
-  border-radius: 6px;
+  border-radius: 12px;
   object-fit: contain;
   box-shadow: 0 0 6px rgba(0, 0, 0, 0.2);
 }
@@ -208,25 +226,47 @@
   }
 }
 
+/* ✅ زر الإغلاق - تم تحسين موقعه */
 .dialog-purchase-close-btn {
   background: none;
   border: none;
-  font-size: 1.6rem;
+  font-size: 1.3rem;
   color: var(--dialog-xbtn);
   cursor: pointer;
+  padding: 0;
 }
 
-.close-btn {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 1000;
-  background: transparent;
-  border: none;
-  font-size: 1.4rem;
-  color: #fff;
+/* ✅ محتوى مربع الحوار */
+.dialog-content {
+  margin: 5px;
+}
+
+/* ✅ أزرار الشراء والإلغاء - صف واحد */
+.dialog-footer {
+  display: flex;
+  gap: 2px;
+  margin-top: 2px;
+}
+
+.confirm-btn,
+.cancel-btn {
+  flex: 1;
+  padding: 8px;
+  border-radius: 2px;
+  font-weight: bold;
   cursor: pointer;
-  display: none;
+  border: none;
+  transition: all 0.3s;
+}
+
+.confirm-btn {
+  background-color: var(--dialog-accent);
+  color: white;
+}
+
+.cancel-btn {
+  background-color: var(--dialog-muted);
+  color: white;
 }
 
 .purchase-dialog-overlay:not(.active) .dialog-purchase-close-btn {
@@ -234,23 +274,17 @@
 }
 
 /* ✅ باقي التنسيقات */
-.dialog-content,
-.dialog-footer,
 .dialog-unavailable {
-  margin-top: 20px;
+  margin: 20px;
 }
 
-.input-group {
-  margin-bottom: 16px;
+/* ✅ حاوية إدخال الكمية */
+.quantity-container {
+  margin-top: 8px;
+  margin-bottom: 12px;
 }
 
-.input-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 600;
-}
-
-.input-group input,
+/* ✅ مربع إدخال رقمي */
 .quantity-input {
   background-color: var(--input-bg);
   border: 1px solid var(--dialog-border);
@@ -259,12 +293,101 @@
   border-radius: 8px;
   font-size: 1rem;
   font-weight: 600;
-  width: 100%;
   transition: border-color 0.3s;
 }
 
-.input-group input:focus,
 .quantity-input:focus {
+  outline: none;
+  border-color: var(--dialog-accent);
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+/* ✅ قائمة منسدلة للكمية */
+.quantity-select {
+  background-color: var(--input-bg);
+  border: 1px solid var(--dialog-border);
+  color: var(--dialog-text);
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.3s;
+}
+
+.quantity-select:focus {
+  outline: none;
+  border-color: var(--dialog-accent);
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+/* ✅ قائمة اختيار السعر */
+.price-select {
+  background-color: var(--input-bg);
+  border: 1px solid var(--dialog-border);
+  color: var(--dialog-text);
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  transition: border-color 0.3s;
+}
+
+.price-select:focus {
+  outline: none;
+  border-color: var(--dialog-accent);
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+/* ✅ إدخال السعر اليدوي */
+.price-input {
+  background-color: var(--input-bg);
+  border: 1px solid var(--dialog-border);
+  color: var(--dialog-text);
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  transition: border-color 0.3s;
+}
+
+.price-input:focus {
+  outline: none;
+  border-color: var(--dialog-accent);
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+/* ✅ حاوية الكمية والسعر */
+.quantity-container {
+  margin-top: 8px;
+  margin-bottom: 16px;
+}
+
+.input-group {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 2px;
+  font-weight: 600;
+}
+
+.input-group input {
+  background-color: var(--input-bg);
+  border: 1px solid var(--dialog-border);
+  color: var(--dialog-text);
+  padding: 8px;
+  border-radius: 1px;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: border-color 0.3s;
+}
+
+.input-group input:focus {
   outline: none;
   border-color: var(--dialog-accent);
   box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
@@ -278,7 +401,7 @@
 .error-message {
   color: var(--error-color);
   font-size: 0.85rem;
-  margin-top: 5px;
+  margin-top: 2px;
   display: none;
 }
 
@@ -286,8 +409,6 @@
   display: block;
 }
 
-.confirm-btn,
-.cancel-btn,
 .whatsapp-btn {
   flex: 1;
   width: 100%;
@@ -299,33 +420,24 @@
   border-radius: 25px;
   transition: all 0.3s;
   margin-top: 10px;
-}
-
-.confirm-btn {
-  background-color: var(--dialog-accent);
+  background-color: #25d366;
   color: white;
 }
 
 .confirm-btn:hover {
   opacity: 0.9;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.cancel-btn {
-  background-color: var(--dialog-muted);
   color: white;
+  transform: translateY(-2px);
+  background-color: green;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .cancel-btn:hover {
   opacity: 0.9;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.whatsapp-btn {
-  background-color: #25d366;
   color: white;
+  transform: translateY(-2px);
+  background-color: red;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .whatsapp-btn:hover {
@@ -334,20 +446,10 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-.dialog-total {
-  font-size: 1.4rem;
-  font-weight: bold;
-  margin-top: 10px;
-  text-align: center;
-  padding: 10px;
-  border-radius: 8px;
-  background-color: var(--input-bg);
-}
-
 .quantity-warning {
   color: var(--error-color);
   font-size: 0.9rem;
-  margin-top: 5px;
+  margin-top: 2px;
 }
 
 .quantity-warning.hidden {
@@ -366,18 +468,11 @@
   }
 }
 
-.product-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
 .price-quantity {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 1px;
+  margin-bottom: 2px;
 }
 
 .price-quantity label {
@@ -385,10 +480,11 @@
 }
 
 .notes {
+  color: violet;
   background-color: var(--input-bg);
-  padding: 12px;
-  border-radius: 8px;
-  margin: 16px 0;
+  padding: 8px;
+  border-radius: 1px;
+  margin: 1px 0;
   font-size: 0.9rem;
 }
 
@@ -400,8 +496,8 @@
   background: var(--dialog-accent);
   color: white;
   border: none;
-  border-radius: 4px;
-  padding: 8px;
+  border-radius: 2px;
+  padding: 1px;
   cursor: pointer;
   transition: background 0.3s;
 }
@@ -434,162 +530,4 @@
 .button-loading {
   opacity: 0.7;
   pointer-events: none;
-}
-
-@media (max-width: 760px) {
-  .purchase-dialog {
-    padding: 16px;
-    max-width: 95%;
-    width: 100%;
-    border-radius: 12px;
-    font-size: 0.9rem;
-    box-sizing: border-box;
-  }
-
-  .dialog-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-    padding: 12px;
-  }
-
-  .dialog-title {
-    font-size: 1.3rem;
-    text-align: left;
-  }
-
-  .dialog-icon {
-    width: 32px;
-    height: 32px;
-  }
-
-  .dialog-purchase-close-btn {
-    font-size: 1.4rem;
-  }
-
-  .input-group input,
-  .quantity-input {
-    font-size: 0.9rem;
-    padding: 8px;
-    width: 100%;
-  }
-
-  .confirm-btn,
-  .cancel-btn,
-  .whatsapp-btn {
-    font-size: 0.85rem;
-    padding: 10px;
-    border-radius: 20px;
-    width: 100%;
-  }
-
-  .dialog-total {
-    font-size: 1.2rem;
-    padding: 8px;
-  }
-
-  .notes {
-    font-size: 0.85rem;
-    padding: 10px;
-  }
-
-  .refresh-player-btn {
-    font-size: 0.8rem;
-    padding: 6px;
-  }
-
-  .loading-spinner {
-    width: 16px;
-    height: 16px;
-    border-width: 2px;
-  }
-
-  .dialog-footer {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-}
-
-@media (max-width: 320px) {
-  body {
-    font-size: 0.85rem;
-    overflow-x: hidden;
-  }
-
-  .big-card {
-    width: 100%;
-    padding: 12px;
-    font-size: 0.9rem;
-    border-radius: 10px;
-  }
-
-  .big-card-icon {
-    width: 28px;
-    height: 28px;
-  }
-
-  .card-title {
-    font-size: 1rem;
-    margin-bottom: 6px;
-  }
-
-  .card-description {
-    font-size: 0.85rem;
-  }
-
-  .header,
-  .navbar {
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    padding: 10px;
-  }
-
-  .navbar a {
-    font-size: 0.85rem;
-    padding: 6px 10px;
-  }
-
-  .confirm-btn,
-  .cancel-btn,
-  .whatsapp-btn {
-    font-size: 0.8rem;
-    padding: 8px;
-    border-radius: 16px;
-    width: 100%;
-  }
-
-  .purchase-dialog {
-    padding: 8px;
-    max-width: 80%;
-    width: 60%;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    box-sizing: border-box;
-  }
-
-  .dialog-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
-    padding: 6px;
-  }
-
-  .dialog-total,
-  .notes {
-    font-size: 0.85rem;
-    padding: 4px;
-  }
-
-  .refresh-player-btn {
-    font-size: 0.5rem;
-    padding: 46px;
-  }
-
-  .loading-spinner {
-    width: 10px;
-    height: 10px;
-    border-width: 2px;
-  }
 }

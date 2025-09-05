@@ -1,104 +1,95 @@
-/**
- * @file UserManager.js
- * @description إدارة بيانات المستخدم باستخدام نمط Singleton، مع حماية الخصائص، تحميل وتحديث وتوثيق الجلسة، وتحديث الواجهة
- * @version 4.0.0
- * @license MIT
- * @author Evan Brazi
- */
-
 import { logout } from './auth.js';
 import { toggleDBTheme } from './theme.js';
 import { showToast } from './utils/toast.js';
-import { clearBrowserData } from './utils/appUtils.js';
-
-// مفاتيح التخزين المحلي
-const STORAGE_KEYS = {
-  USER_ID: 'userId',
-  USER_TOKEN: 'userToken'
-};
+import { clearBrowserData, STORAGE_KEYS } from './utils/appUtils.js';
 
 class UserManager {
-  // 🛡️ الخصائص الخاصة
   static #instance = null;
-  #currentUser = null;
+  #user = null;
 
   /**
-   * إنشاء كائن واحد فقط من UserManager
+   * إنشاء نسخة واحدة فقط من UserManager
    * @returns {UserManager}
    */
   static getInstance() {
-    if (!UserManager.#instance) {
-      UserManager.#instance = new UserManager();
-    }
-    return UserManager.#instance;
+    return UserManager.#instance ??= new UserManager();
+  }
+
+  /**
+   * الحصول على نسخة آمنة من بيانات المستخدم
+   * @returns {Object}
+   */
+  getUser() {
+    return { ...this.#user };
+  }
+
+  /**
+   * الحصول على الرصيد من الكاش
+   * @returns {number}
+   */
+  getCachedBalance() {
+    return this.#user?.balance || 0;
+  }
+
+  /**
+   * إعادة تحميل وتحديث بيانات المستخدم من السيرفر
+   * @returns {Promise<void>}
+   */
+  async refresh() {
+    await this.loadUser();
+    await this.updateUserProfile();
+  }
+
+  getUserName() {
+    return this.#user?.username || 'زائر';
+  }
+
+  getUserBalance() {
+    return this.#user?.balance || 0;
   }
 
   _getToken() {
     return localStorage.getItem(STORAGE_KEYS.USER_TOKEN);
   }
 
-  _setUser(newUser) {
-    this.#currentUser = newUser;
-  }
-
-  /**
-   * التحقق من صحة التوكن
-   * @param {string} token
-   * @returns {Promise<boolean>}
-   */
   async isValidToken(token) {
-    if (typeof token !== 'string' || token.length < 16) return false;
-
+    if (!token || token.length < 16) return false;
     try {
       const res = await fetch('/api/compare-token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`
         },
         credentials: 'include',
         body: JSON.stringify({ clientToken: token })
       });
-
       const data = await res.json();
       return data.match === true;
-    } catch (err) {
-      console.error('❌ خطأ في التحقق من التوكن:', err);
+    } catch {
       return false;
     }
   }
 
   /**
-   * تحميل بيانات المستخدم من السيرفر
+   * تحميل بيانات المستخدم من السيرفر والتحقق منها
    * @returns {Promise<void>}
    */
   async loadUser() {
     const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
-    const token = localStorage.getItem(STORAGE_KEYS.USER_TOKEN);
-
-    if (!userId || !(await this.isValidToken(token))) {
-      console.warn('⚠️ لا يوجد توكن صالح أو معرف مستخدم');
-      return;
-    }
-
+    const token = this._getToken();
+    if (!userId || !(await this.isValidToken(token))) return;
     try {
       const res = await fetch(`/api/users/${userId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      if (!res.ok) throw new Error();
 
-      if (!res.ok) throw new Error('فشل تحميل بيانات المستخدم');
-
-      const userData = await res.json();
-      const validation = this.validateUser(userData);
-
-      if (validation.valid) {
-        this.#currentUser = userData;
-        await this.updateUserProfile();
-      } else {
-        throw new Error(validation.errors.join(', '));
-      }
-    } catch (error) {
-      console.error('❌ خطأ في تحميل المستخدم:', error.message);
+      const user = await res.json();
+      if (!this.validateUser(user).valid) throw new Error();
+      this.#user = user;
+      this.updateUserProfile();
+    } catch {
       showToast('تعذر تحميل بيانات المستخدم', 'error');
     }
   }
@@ -110,24 +101,12 @@ class UserManager {
    */
   validateUser(user) {
     const errors = [];
-
-    if (!user || typeof user !== 'object') {
-      errors.push('المدخل ليس كائنًا صالحًا');
-      return { valid: false, errors };
-    }
-
-    const name = user.name || user.username;
-    if (typeof name !== 'string' || name.trim() === '') errors.push('الاسم غير صالح');
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(user.email || '')) errors.push('البريد الإلكتروني غير صالح');
-
+    if (!user || typeof user !== 'object') errors.push('كائن غير صالح');
+    if (!user.username?.trim()) errors.push('الاسم غير صالح');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.email || '')) errors.push('البريد غير صالح');
     if (typeof user.balance !== 'number' || user.balance < 0) errors.push('الرصيد غير صالح');
-
-    if (![0, 1].includes(user.theme)) errors.push('قيمة الثيم غير مدعومة');
-
+    if (![0, 1].includes(user.theme)) errors.push('الثيم غير صالح');
     if (user.phone && !/^\+?\d{7,15}$/.test(user.phone)) errors.push('رقم الهاتف غير صالح');
-
     return { valid: errors.length === 0, errors };
   }
 
@@ -136,73 +115,44 @@ class UserManager {
    * @returns {Promise<void>}
    */
   async updateUserProfile() {
-    if (!this.#currentUser) return;
+    if (!this.#user) return;
+    const { username, balance, theme } = this.#user;
 
-    const { username, balance, theme } = this.#currentUser;
-
-    const usernameDisplay = document.getElementById('username-display');
-    if (usernameDisplay) usernameDisplay.textContent = username;
-    console.log('👤 اسم المستخدم:', username);
-    const balanceElements = [
-      document.getElementById('balance-display'),
-      document.getElementById('top-balance-display')
-    ].filter(Boolean);
-
-    balanceElements.forEach(el => {
-      el.textContent = balance.toFixed(2);
+    document.getElementById('username-display').textContent = username;
+    ['balance-display', 'top-balance-display'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = balance.toFixed(2);
     });
 
-    const userAvatar = document.getElementById('user-avatar');
-    if (userAvatar) await this.updateUserAvatar(userAvatar);
+    const avatar = document.getElementById('user-avatar');
+    if (avatar) this.updateUserAvatar(avatar);
 
     toggleDBTheme(theme === 1 ? 'night' : 'day');
   }
 
   /**
    * تحديث صورة الملف الشخصي
-   * @param {HTMLImageElement} imgElement
-   * @returns {Promise<void>}
+   * @param {HTMLImageElement} img
    */
-  async updateUserAvatar(imgElement) {
-    try {
-      const fallbackSrc = this.getDefaultAvatar(this.#currentUser.username);
-      let hasFailedOnce = false;
+  async updateUserAvatar(img) {
+    const fallback = this.getDefaultAvatar(this.#user.username);
+    img.onerror = () => (img.src = fallback);
 
-      imgElement.onerror = () => {
-        if (!hasFailedOnce) {
-          hasFailedOnce = true;
-          imgElement.src = fallbackSrc;
-        }
-      };
-
-      if (this.#currentUser.avatar?.startsWith('http')) {
-        imgElement.src = this.#currentUser.avatar;
-      } else {
-        const emailHash = this.generateEmailHash(this.#currentUser.email);
-        imgElement.src = `https://www.gravatar.com/avatar/${emailHash}?d=404&s=160`;
-      }
-    } catch (error) {
-      imgElement.src = this.getDefaultAvatar(this.#currentUser?.username);
+    if (this.#user.avatar?.startsWith('http')) {
+      img.src = this.#user.avatar;
+    } else {
+      const hash = md5(this.#user.email.trim().toLowerCase());
+      img.src = `https://www.gravatar.com/avatar/${hash}?d=404&s=160`;
     }
   }
 
   /**
-   * إنشاء هاش MD5 للبريد الإلكتروني
-   * @param {string} email
-   * @returns {string}
-   */
-  generateEmailHash(email) {
-    return md5(email.trim().toLowerCase());
-  }
-
-  /**
-   * الحصول على صورة افتراضية باسم المستخدم
+   * توليد صورة افتراضية باسم المستخدم
    * @param {string} name
    * @returns {string}
    */
   getDefaultAvatar(name) {
-    const encoded = encodeURIComponent(name || 'زائر');
-    return `https://ui-avatars.com/api/?name=${encoded}&background=random&size=160`;
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'زائر')}&background=random&size=160`;
   }
 
   /**
@@ -211,66 +161,66 @@ class UserManager {
    */
   async saveUser() {
     const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
-    const token = localStorage.getItem(STORAGE_KEYS.USER_TOKEN);
-
-    if (!userId || !(await this.isValidToken(token))) {
-      showToast('لا يمكن حفظ البيانات بدون توكن صالح', 'error');
-      return false;
-    }
+    const token = this._getToken();
+    if (!userId || !(await this.isValidToken(token))) return false;
 
     try {
       const res = await fetch(`/api/users/${userId}`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}` },
-        body: JSON.stringify(this.#currentUser)
+        body: JSON.stringify(this.#user)
       });
-
-      if (!res.ok) throw new Error('فشل حفظ البيانات');
+      if (!res.ok) throw new Error();
       showToast('✅ تم حفظ البيانات بنجاح', 'success');
       return true;
-    } catch (error) {
-      showToast('حدث خطأ أثناء حفظ البيانات', 'error');
+    } catch {
+      showToast('❌ فشل حفظ البيانات', 'error');
       return false;
     }
   }
 
   /**
- * ✅ تنفيذ عملية تسجيل الخروج وتنظيف الواجهة بطريقة متوافقة مع secureFetch
- * @returns {Promise<void>}
- */
-  async _handleLogout() {
-    const token = localStorage.getItem(STORAGE_KEYS.USER_TOKEN);
-    if (!token) {
-      showToast('ليس لديك صلاحيات لتسجيل الخروج', 'error');
-      return;
-    }
+   * تغيير الثيم الخاص بالمستخدم
+   * @param {number} theme
+   */
+  async setUserTheme(theme) {
+    if (![0, 1].includes(theme)) return;
+    this.#user.theme = theme;
+    await this.saveUser();
 
     try {
-      const confirmed = confirm('هل أنت متأكد من تسجيل الخروج؟');
-      if (!confirmed) return;
+      await fetch(`/api/users/${this.#user._id}/theme`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this._getToken()}`
+        },
+        body: JSON.stringify({ theme })
+      });
+    } catch (err) {
+      console.error('فشل تحديث الثيم في السيرفر', err);
+    }
+  }
 
+  /**
+   * تنفيذ عملية تسجيل الخروج وتنظيف الواجهة
+   */
+  async _handleLogout() {
+    const token = this._getToken();
+    if (!token) return showToast('ليس لديك صلاحيات لتسجيل الخروج', 'error');
+
+    if (!confirm('هل أنت متأكد من تسجيل الخروج؟')) return;
+
+    try {
       const result = await logout();
-      console.log('Logout:', result);
+      if (!result.success) throw new Error(result.error);
 
-      if (!result.success) {
-        showToast(result.error || 'فشل تسجيل الخروج', 'error');
-        clearBrowserData(false);
-        return;
-      }
-
-      // ✅ تنظيف المستخدم من الذاكرة
-      UserManager.getInstance().#currentUser = null;
-
+      this.#user = null;
       showToast(result.message || 'تم تسجيل الخروج بنجاح', 'success');
       clearBrowserData(false);
-
-      setTimeout(() => {
-        window.location.replace(result.redirectTo || '/logout.html');
-      }, 100);
-    } catch (error) {
-      const msg = error?.message || 'حدث خطأ أثناء تسجيل الخروج';
-      console.error('❌ خطأ أثناء تسجيل الخروج:', msg);
-      showToast(msg, 'error');
+      setTimeout(() => window.location.replace(result.redirectTo || '/logout.html'), 100);
+    } catch (err) {
+      showToast(err.message || '❌ حدث خطأ أثناء تسجيل الخروج', 'error');
       clearBrowserData(false);
     }
   }
@@ -279,66 +229,14 @@ class UserManager {
    * تنظيف واجهة المستخدم بعد تسجيل الخروج
    */
   clearUserUI() {
-    const usernameDisplay = document.getElementById('username-display');
-    if (usernameDisplay) usernameDisplay.textContent = 'زائر';
-
-    const balanceElements = [
-      document.getElementById('balance-display'),
-      document.getElementById('top-balance-display')
-    ].filter(Boolean);
-
-    balanceElements.forEach(el => {
-      el.textContent = '0.00';
+    document.getElementById('username-display').textContent = 'زائر';
+    ['balance-display', 'top-balance-display'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = '0.00';
     });
-
-    const userAvatar = document.getElementById('user-avatar');
-    if (userAvatar) userAvatar.src = this.getDefaultAvatar('زائر');
-
+    const avatar = document.getElementById('user-avatar');
+    if (avatar) avatar.src = this.getDefaultAvatar('زائر');
     toggleDBTheme('day');
   }
-
-
-  /**
-   * تعيين الرصيد
-   * @param {number} balance
-   * @returns {boolean}
-   */
-  async setUserTheme(theme) {
-    console.log('Set New Theme : User Id : ', theme, this.#currentUser._id, this.#currentUser.id);
-    if ([0, 1].includes(theme)) {
-      this.#currentUser.theme = theme;
-      this.saveUser();
-
-      try {
-        await fetch(`/api/users/${this.#currentUser._id}/theme`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${this._getToken()}`
-          },
-          body: JSON.stringify({ theme })
-        });
-      } catch (err) {
-        console.error('فشل تحديث الثيم في السيرفر', err);
-      }
-    }
-  }
-
-  /**
-   * الحصول على اسم المستخدم
-   * @returns {string}
-   */
-  getUserName() {
-    return this.#currentUser?.username || 'زائر';
-  }
-
-  /**
-   * الحصول على الرصيد
-   * @returns {number}
-   */
-  getUserBalance() {
-    return this.#currentUser?.balance || 0.00;
-  }
 }
-
 export default UserManager;

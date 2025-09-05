@@ -108,9 +108,6 @@ export class AppsTab {
         const card = document.createElement('div');
         card.className = 'card'; // ✅ الكلاس الموحد
         card.dataset.appId = app.id;
-        card.dataset.price = app.price;
-        card.dataset.isAvailable = app.available;
-        card.dataset.category = app.category;
         card.dataset.iconName = app.icon || 'default.png';
 
         // أيقونة التطبيق
@@ -128,7 +125,7 @@ export class AppsTab {
         card.appendChild(title);
 
         card.addEventListener('click', () => {
-            const dialogPurchase = new DialogPurchase(card, {
+            const dialogPurchase = new DialogPurchase(app, {
                 iconsBasePath: '/assets/images/',
                 cssPath: '/assets/css/purchase-dialog.css',
                 supportPhone: SUPPORT_PHONE

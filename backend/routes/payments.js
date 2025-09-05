@@ -198,4 +198,40 @@ router.put('/:id/reject', async (req, res) => {
   }
 });
 
+/**
+ * @route GET /api/payments/summary?userId=...
+ * @desc جلب ملخص الدفعات لمستخدم معين (إجمالي المبلغ وعدد الحالات)
+ * @access عام
+ */
+router.get('/summary', async (req, res) => {
+  try {
+    const userId = req.query.userId;
+    if (!userId) return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
+
+    const payments = await Payment.find({ userId });
+
+    const summary = {
+      totalAmount: 0,
+      totalAccepted: 0,
+      totalPending: 0,
+      totalRejected: 0
+    };
+
+    payments.forEach(payment => {
+      summary.totalAmount += parseFloat(payment.amount) || 0;
+
+      if (payment.status === 'accepted') summary.totalAccepted++;
+      else if (payment.status === 'pending') summary.totalPending++;
+      else if (payment.status === 'rejected') summary.totalRejected++;
+    });
+
+    summary.totalAmount = parseFloat(summary.totalAmount.toFixed(2));
+
+    res.json(summary);
+  } catch (err) {
+    console.error('❌ خطأ في جلب ملخص الدفعات:', err);
+    res.status(500).json({ error: 'فشل في جلب ملخص الدفعات' });
+  }
+});
+
 module.exports = router;

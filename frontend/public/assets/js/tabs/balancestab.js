@@ -108,9 +108,6 @@ export class BalancesTab {
         const card = document.createElement('div');
         card.className = 'card'; // ✅ الكلاس الموحد
         card.dataset.balanceId = balance.id;
-        card.dataset.price = balance.price;
-        card.dataset.isAvailable = balance.available;
-        card.dataset.category = balance.category;
         card.dataset.iconName = balance.icon || 'default.png';
 
         // أيقونة الرصيد
@@ -128,7 +125,7 @@ export class BalancesTab {
         card.appendChild(title);
 
         card.addEventListener('click', () => {
-            const dialogPurchase = new DialogPurchase(card, {
+            const dialogPurchase = new DialogPurchase(balance, {
                 iconsBasePath: '/assets/images/',
                 cssPath: '/assets/css/purchase-dialog.css',
                 supportPhone: SUPPORT_PHONE

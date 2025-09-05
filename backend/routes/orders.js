@@ -144,4 +144,42 @@ router.put('/:id/reject', verifyToken, checkAdmin, async (req, res) => {
     }
 });
 
+/**
+ * @route GET /api/orders/summary?userId=...
+ * @desc جلب ملخص الطلبات لمستخدم معين (إجمالي الدفع والكمية والحالات)
+ * @access عام
+ */
+router.get('/summary', async (req, res) => {
+    try {
+        const userId = req.query.userId;
+        if (!userId) return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
+
+        const orders = await Order.find({ userId });
+
+        const summary = {
+            totalAmount: 0,
+            totalQuantity: 0,
+            totalAccepted: 0,
+            totalPending: 0,
+            totalRejected: 0
+        };
+
+        orders.forEach(order => {
+            summary.totalAmount += parseFloat(order.amount) || 0;
+            summary.totalQuantity += parseInt(order.quantity) || 0;
+
+            if (order.status === 'accepted') summary.totalAccepted++;
+            else if (order.status === 'pending') summary.totalPending++;
+            else if (order.status === 'rejected') summary.totalRejected++;
+        });
+
+        summary.totalAmount = parseFloat(summary.totalAmount.toFixed(2));
+
+        res.json(summary);
+    } catch (err) {
+        console.error('❌ خطأ في جلب ملخص الطلبات:', err);
+        res.status(500).json({ error: 'فشل في جلب ملخص الطلبات' });
+    }
+});
+
 module.exports = router;

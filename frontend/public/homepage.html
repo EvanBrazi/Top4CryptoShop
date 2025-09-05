@@ -11,9 +11,12 @@
     <link rel="stylesheet" href="./assets/css/themes.css">
     <link rel="stylesheet" href="./assets/css/standard-table.css">
     <link rel="stylesheet" href="./assets/css/wallet-tab.css">
+    <link rel="stylesheet" href="./assets/css/portfolio-tab.css">
+    <link rel="stylesheet" href="./assets/css/settings-tab.css">
     <link rel="stylesheet" href="./assets/css/tabs-layout.css">
     <link rel="stylesheet" href="./assets/css/card-grid.css">
     <link rel="stylesheet" href="./assets/css/homepage.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.19.0/js/md5.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -38,7 +41,6 @@
                     <i class="fas fa-plus"></i>
                 </button>
             </div>
-
             <div class="logo-back-container">
                 <div class="site-logo">
                     <img src="./assets/images/logo.png" loading="lazy" alt="شعار الموقع" class="logo-img">
@@ -70,7 +72,7 @@
                     <button class="profile-btn favorite-btn" title="المفضلة" type="button">
                         <i class="fas fa-star"></i>
                     </button>
-                    <button class="profile-btn edit-btn" title="تعديل البروفايل" type="button">
+                    <button class="profile-btn edit-btn" id="profile-edit-btn" title="تعديل البروفايل" type="button">
                         <i class="fas fa-user-edit"></i>
                     </button>
                     <button class="profile-btn logout-btn" title="تسجيل الخروج" id="logoutBtn" type="button">
@@ -93,6 +95,8 @@
                             aria-hidden="true"></i>محفظتي</a></li>
                 <li><a href="#" class="menu-link" data-tab="orders"><i class="fas fa-list"
                             aria-hidden="true"></i>طلباتي</a></li>
+                <li><a href="#" class="menu-link" data-tab="settings"><i class="fas fa-list"
+                            aria-hidden="true"></i>الأعدادات</a></li>
                 <li><a href="#" class="menu-link" data-tab="security"><i class="fas fa-shield-alt"
                             aria-hidden="true"></i>الحماية</a></li>
                 <li><a href="#" class="menu-link" data-tab="about"><i class="fas fa-info-circle"
@@ -208,13 +212,33 @@
                     </div>
                 </div>
                 <div class="tab-pane" id="portfolio-tab">
-                    <h2>محفظتي</h2>
-                    <div class="portfolio-stats">
-                        <div class="stat-card">
-                            <h3>القيمة الإجمالية</h3>
-                            <div class="stat-value">0.00 <span>ر.س</span></div>
+                    <div class="portfolio-tab">
+                        <h2>📊 محفظتي</h2>
+                        <div class="wallet-metrics">
+                            <div class="metric-box">
+                                <h4>الرصيد الحالي</h4>
+                                <p id="balance-amount">$0.00</p>
+                            </div>
+                            <div class="metric-box">
+                                <h4>إجمالي الدفع</h4>
+                                <p id="total-payments">$0.00</p>
+                            </div>
+                            <div class="metric-box">
+                                <h4>إجمالي الشراء</h4>
+                                <p id="total-purchases">$0.00</p>
+                            </div>
                         </div>
-                        <!-- المزيد من البطاقات الإحصائية -->
+                        <div class="wallet-filter">
+                            <label>عرض البيانات حسب:</label>
+                            <select id="time-filter">
+                                <option value="7">آخر أسبوع</option>
+                                <option value="30">آخر شهر</option>
+                                <option value="365">آخر سنة</option>
+                            </select>
+                        </div>
+                        <div class="wallet-chart">
+                            <canvas id="interactionChart" width="600" height="300"></canvas>
+                        </div>
                     </div>
                 </div>
 
@@ -246,7 +270,35 @@
                         </table>
                     </div>
                 </div>
+                <div class="tab-pane" id="settings-tab">
+                    <template id="settings-template">
+                        <div class="settings-tab">
+                            <h2>⚙️ إعدادات الحساب</h2>
+                            <form id="settings-form">
+                                <div class="avatar-section">
+                                    <img id="avatar-preview" src="" alt="الصورة الشخصية" />
+                                    <input type="file" id="avatar-input" accept="image/*" />
+                                    <button type="button" id="remove-avatar-btn">🗑️ إزالة الصورة</button>
+                                </div>
+                                <label>الاسم الكامل:</label>
+                                <input type="text" id="user-name" required />
 
+                                <label>البريد الإلكتروني:</label>
+                                <input type="email" id="user-email" required />
+
+                                <label>رقم الهاتف:</label>
+                                <input type="tel" id="user-phone" placeholder="+963..." />
+
+                                <label>كلمة المرور الجديدة:</label>
+                                <input type="password" id="user-password" autocomplete="current-password"
+                                    placeholder="اتركه فارغًا إن لم ترغب بالتغيير" />
+
+                                <button type="submit" class="save-btn">💾 حفظ التغييرات</button>
+                            </form>
+                        </div>
+                    </template>
+
+                </div>
                 <div class="tab-pane" id="security-tab">
                     <h2>الحماية</h2>
                     <div class="security-settings">
@@ -400,8 +452,8 @@
     </div>
 
     <script src="assets/js/utils/loader.js" defer></script>
-    <script type="module" src="./assets/js/appmanager.js"></script>
     <script type="module" src="./assets/js/usermanager.js"></script>
+    <script type="module" src="./assets/js/appmanager.js"></script>
     <script type="module" src="./assets/js/homepage.js"></script>
 
 </body>

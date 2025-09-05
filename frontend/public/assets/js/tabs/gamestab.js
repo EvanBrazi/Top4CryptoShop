@@ -108,9 +108,6 @@ export class GamesTab {
         const card = document.createElement('div');
         card.className = 'card'; // ✅ الكلاس الموحد
         card.dataset.gameId = game.id;
-        card.dataset.price = game.price;
-        card.dataset.isAvailable = game.available;
-        card.dataset.category = game.category;
         card.dataset.iconName = game.icon || 'default.png';
 
         // أيقونة اللعبة
@@ -129,7 +126,7 @@ export class GamesTab {
         card.appendChild(title);
 
         card.addEventListener('click', () => {
-            const dialogPurchase = new DialogPurchase(card, {
+            const dialogPurchase = new DialogPurchase(game, {
                 iconsBasePath: '/assets/images/',
                 cssPath: '/assets/css/purchase-dialog.css',
                 supportPhone: SUPPORT_PHONE

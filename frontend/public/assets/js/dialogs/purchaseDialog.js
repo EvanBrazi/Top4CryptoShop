@@ -9,30 +9,39 @@ import { STORAGE_KEYS, getFullPathByCategory } from "../utils/appUtils.js";
 export class DialogPurchase {
   /**
    * إنشاء مثيل لنافذة حوار الشراء
-   * @param {HTMLElement} element - عنصر البطاقة الذي تم النقر عليه
+   * @param {Object} card - كائن يمثل بيانات البطاقة (name, price, category, icon, ...)
    * @param {Object} options - خيارات إضافية للتخصيص
    * @param {string} options.iconsBasePath - المسار الأساسي للرموز
    * @param {string} options.cssPath - مسار ملف CSS الإضافي
    * @param {string} options.supportPhone - رقم الدعم الفني
    */
-  constructor(element, options = {}) {
-    this.element = element;
+  constructor(card, options = {}) {
+    this.card = card;
 
-    // استخراج بيانات البطاقة من العنصر
-    this.cardName = element.querySelector('.title')?.textContent.trim() || 'غير معروف';
-    this.cardPrice = parseFloat(element.dataset.price || 0);
-    this.category = element.dataset.category || 'default';
-    this.cardIcon = `${getFullPathByCategory(this.category)}${element.dataset.iconName || 'default.png'}`;
-    this.cardAvailable = element.dataset.isAvailable === 'true';
-    this.initialQuantity = parseInt(element.dataset.quantity || '') || 1;
+    // ✅ استخراج البيانات الأساسية من الكائن
+    this.cardName = card.name || 'غير معروف';
 
-    // بيانات المستخدم والثيم
+    // ✅ تحويل السعر إلى مصفوفة آمنة
+    if (Array.isArray(card.price)) {
+      this.cardPrices = card.price.map(p => parseFloat(p)).filter(p => !isNaN(p));
+    } else {
+      const singlePrice = parseFloat(card.price || 0);
+      this.cardPrices = isNaN(singlePrice) ? [0] : [singlePrice];
+    }
+
+    this.cardPrice = this.cardPrices[0]; // السعر الافتراضي
+    this.category = card.category || 'default';
+    this.cardIcon = `${getFullPathByCategory(this.category)}${card.icon || 'default.png'}`;
+    this.cardMenuPrice = card.menuPrice === true;
+    this.cardAvailable = card.available === true;
+    this.initialQuantity = parseInt(card.initialQuantity || 1);
+
+    // ✅ بيانات المستخدم والثيم
     this.userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
     this.token = localStorage.getItem(STORAGE_KEYS.USER_TOKEN);
-    console.log('Theme : ', localStorage.getItem('theme'));
-    this.theme = localStorage.getItem('theme') === 'dark' ? 'night' : 'day';
+    this.theme = localStorage.getItem('theme') === 'night' ? 'night' : 'day';
 
-    // خيارات إضافية
+    // ✅ خيارات إضافية
     this.options = {
       iconsBasePath: options.iconsBasePath ?? '/assets/images/',
       cssPath: options.cssPath ?? '/assets/css/purchase-dialog.css',
@@ -42,9 +51,13 @@ export class DialogPurchase {
     this._loadCSS();
   }
 
-  /** تحميل ملف CSS */
+  /**
+   * ✅ تحميل ملف CSS الخاص بالحوار
+   * @description يمنع التكرار ويضمن تحميل الملف مرة واحدة فقط
+   */
   _loadCSS() {
-    if (!document.getElementById('dialog-purchase-css')) {
+    const existing = document.querySelector(`link[href="${this.options.cssPath}"]`);
+    if (!existing) {
       const link = document.createElement('link');
       link.id = 'dialog-purchase-css';
       link.rel = 'stylesheet';
@@ -53,8 +66,16 @@ export class DialogPurchase {
     }
   }
 
-  /** فتح نافذة الحوار */
+  /**
+ * ✅ فتح نافذة الحوار
+ * @description ينشئ نافذة الشراء ويحقن البيانات ويمنع التكرار
+ */
   open() {
+    if (this.overlay) {
+      console.warn('⚠️ مربع الحوار مفتوح بالفعل');
+      return;
+    }
+
     this.overlay = document.createElement('div');
     this.overlay.className = `purchase-dialog-overlay active ${this.theme}`;
     this.overlay.style.opacity = '0';
@@ -73,40 +94,53 @@ export class DialogPurchase {
       this.overlay.style.opacity = '1';
     });
 
-    this.cardAvailable
-      ? this._setupDialogEvents()
-      : this._setupUnavailableEvents();
-
-    this._injectCardData();
+    if (this.cardAvailable) {
+      this._setupDialogEvents();
+      this._injectCardData();
+    } else {
+      this._setupUnavailableEvents();
+    }
   }
 
-  /** إغلاق الحوار */
+  /**
+   * ✅ إغلاق نافذة الحوار
+   * @description يزيل مربع الحوار ويعيد التحكم في التمرير
+   */
   close() {
+    if (!this.overlay) return;
+
     const dialog = this.overlay.querySelector('.purchase-dialog');
     if (dialog) dialog.classList.add('closing');
+
     this.overlay.style.opacity = '0';
     document.body.style.overflow = '';
+
     setTimeout(() => {
       this.overlay?.remove();
       this.overlay = null;
     }, 500);
   }
 
-  /** إعداد الأحداث للحوار المتاح */
+  /**
+   * ✅ إعداد الأحداث للحوار المتاح
+   * @description يربط الأحداث بالأزرار والمدخلات داخل مربع الحوار
+   */
   _setupDialogEvents() {
     const $ = (sel) => this.overlay.querySelector(sel);
+    const $$ = (sel) => this.overlay.querySelectorAll(sel);
 
     $('.dialog-purchase-close-btn')?.addEventListener('click', () => this.close());
     $('.cancel-btn')?.addEventListener('click', () => this.close());
 
     $('.confirm-btn')?.addEventListener('click', async () => {
       if (!this._validateInputs()) return;
-      const quantity = Math.max(1, parseInt($('.quantity-input')?.value || '1'));
+
+      const quantity = parseInt($('.quantity-input')?.value || $('.quantity-select')?.value || '1');
+      const price = parseFloat($('.price-select')?.value || $('.price-input')?.value || this.cardPrice);
+      const totalAmount = (price * quantity).toFixed(2);
+
       const playerId = $('#player-id')?.value.trim();
       const playerName = $('#player-name')?.value.trim();
-      const totalAmount = (this.cardPrice * quantity).toFixed(2);
-
-      // عرض حالة التحميل
       const confirmBtn = $('.confirm-btn');
       confirmBtn.classList.add('button-loading');
 
@@ -134,16 +168,15 @@ export class DialogPurchase {
         const orderResult = await this._saveOrder({
           type: 'newOrder',
           userId: this.userId,
-          playerId: playerId,
-          quantity: quantity,
+          playerId,
+          quantity,
           amount: totalAmount,
           method: this.category,
           service: this.cardName,
-          playerName: playerName,
+          playerName,
         });
 
         if (orderResult?.status === 'success') {
-          //alert('✅ تم تنفيذ الطلب بنجاح');
           this.close();
         } else {
           await fetch(`/api/users/${this.userId}/restore`, {
@@ -165,11 +198,14 @@ export class DialogPurchase {
       }
     });
 
-    $('.quantity-input')?.addEventListener('input', (e) => {
-      this._validateQuantity(e.target.value);
-      const qty = Math.max(1, parseInt(e.target.value) || 1);
-      $('.dialog-total').textContent = `المجموع: $${(this.cardPrice * qty).toFixed(2)}`;
-      $('.quantity-warning')?.classList.toggle('hidden', qty >= 2);
+    // ✅ تحديث المجموع عند تغيير الكمية أو السعر
+    $$('.quantity-input, .quantity-select, .price-select, .price-input').forEach((el) => {
+      el.addEventListener('input', () => {
+        this._validateQuantity();
+        const quantity = parseInt($('.quantity-input')?.value || $('.quantity-select')?.value || '1');
+        const price = parseFloat($('.price-select')?.value || $('.price-input')?.value || this.cardPrice);
+        $('.dialog-total').textContent = `المجموع: $${(price * quantity).toFixed(2)}`;
+      });
     });
 
     $('.refresh-player-btn')?.addEventListener('click', () => {
@@ -177,85 +213,23 @@ export class DialogPurchase {
       input.value = this._generatePlayerName();
     });
 
-    // إضافة تحقق أثناء الكتابة
     $('#player-id')?.addEventListener('input', (e) => {
       this._validatePlayerId(e.target.value);
     });
   }
 
   /**
-   * التحقق من صحة المدخلات
-   * @returns {boolean} صحة جميع المدخلات
+   * ✅ حقن بيانات البطاقة داخل مربع الحوار
+   * @description يملأ العناوين والأسعار والأيقونات والكمية
    */
-  _validateInputs() {
-    const $ = (sel) => this.overlay.querySelector(sel);
-    const quantityValid = this._validateQuantity($('.quantity-input')?.value);
-    const playerIdValid = this._validatePlayerId($('#player-id')?.value);
-
-    return quantityValid && playerIdValid;
-  }
-
-  /**
-   * التحقق من صحة الكمية
-   * @param {string} value - قيمة الكمية المدخلة
-   * @returns {boolean} صحة الكمية
-   */
-  _validateQuantity(value) {
-    const $ = (sel) => this.overlay.querySelector(sel);
-    const quantity = parseInt(value);
-    const errorElement = $('.quantity-error');
-
-    if (isNaN(quantity) || quantity < 1) {
-      $('.quantity-input').classList.add('input-error');
-      errorElement.textContent = 'الكمية يجب أن تكون رقمًا صحيحًا أكبر من الصفر';
-      errorElement.classList.add('show');
-      return false;
-    }
-
-    $('.quantity-input').classList.remove('input-error');
-    errorElement.classList.remove('show');
-    return true;
-  }
-
-  /**
-   * التحقق من صحة معرف اللاعب
-   * @param {string} value - قيمة المعرف المدخلة
-   * @returns {boolean} صحة المعرف
-   */
-  _validatePlayerId(value) {
-    const $ = (sel) => this.overlay.querySelector(sel);
-    const errorElement = $('#player-id-error');
-
-    if (!value || value.trim().length < 3) {
-      $('#player-id').classList.add('input-error');
-      errorElement.textContent = 'معرف اللاعب يجب أن يحتوي على 3 أحرف على الأقل';
-      errorElement.classList.add('show');
-      return false;
-    }
-
-    $('#player-id').classList.remove('input-error');
-    errorElement.classList.remove('show');
-    return true;
-  }
-
-  /** إعداد الأحداث للحوار غير المتاح */
-  _setupUnavailableEvents() {
-    const $ = (sel) => this.overlay.querySelector(sel);
-    $('.dialog-purchase-close-btn')?.addEventListener('click', () => this.close());
-    $('.whatsapp-btn')?.addEventListener('click', () => {
-      const phone = this.options.supportPhone.replace(/\D/g, '');
-      window.open(`https://wa.me/${phone}`, '_blank');
-    });
-  }
-
-  /** حقن بيانات البطاقة */
   _injectCardData() {
     const $ = (sel) => this.overlay.querySelector(sel);
+
     $('.dialog-title').textContent = this.cardName;
-    $('.product-name').textContent = this.cardName;
     $('.price').textContent = `السعر: $${this.cardPrice.toFixed(2)}`;
     $('.dialog-total').textContent = `المجموع: $${(this.cardPrice * this.initialQuantity).toFixed(2)}`;
-    $('.quantity-input').value = this.initialQuantity;
+
+    this._generateQuantityInput(this.card); // تمرير الكائن مباشرة
 
     const icon = $('.dialog-icon');
     if (icon) {
@@ -265,13 +239,102 @@ export class DialogPurchase {
       };
     }
 
-    const playerNameInput = $('#player-name');
+    const playerNameInput = $('.player-name');
     if (playerNameInput) {
       playerNameInput.value = this._generatePlayerName();
       playerNameInput.setAttribute('readonly', true);
     }
   }
-  
+
+  /**
+ * ✅ توليد إدخال السعر والكمية حسب خصائص البطاقة
+ * @description إذا كانت menuPrice مفعّلة، يتم عرض قائمة أسعار فقط ويُمنع تعديل الكمية. وإذا كانت غير مفعّلة، يتم عرض إدخال للكمية فقط والسعر يكون ثابتًا.
+ * @param {Object} card - كائن يمثل بيانات البطاقة
+ */
+  _generateQuantityInput(card) {
+    const container = this.overlay.querySelector('.quantity-container');
+    if (!container) {
+      console.warn('❌ quantity-container غير موجود في القالب');
+      return;
+    }
+
+    container.innerHTML = ''; // تنظيف المحتوى السابق
+
+    const errorElement = document.createElement('span');
+    errorElement.className = 'quantity-error error-message';
+    container.appendChild(errorElement);
+
+    // ✅ الحالة 1: menuPrice مفعّلة والسعر مصفوفة → عرض قائمة أسعار فقط، الكمية غير قابلة للتعديل
+    if (card.menuPrice === true && Array.isArray(card.price)) {
+      const priceSelect = document.createElement('select');
+      priceSelect.className = 'price-select';
+
+      card.price.forEach((val) => {
+        const option = document.createElement('option');
+        option.value = val;
+        option.textContent = `$${parseFloat(val).toFixed(2)}`;
+        priceSelect.appendChild(option);
+      });
+
+      container.appendChild(priceSelect);
+
+      // ✅ عرض الكمية كـ input غير قابل للتعديل
+      const quantityInput = document.createElement('input');
+      quantityInput.type = 'number';
+      quantityInput.className = 'quantity-input';
+      quantityInput.value = card.initialQuantity || 1;
+      quantityInput.readOnly = true;
+      quantityInput.disabled = true;
+      container.appendChild(quantityInput);
+
+      // ✅ تحديث المجموع عند تغيير السعر
+      const updateTotal = () => {
+        const price = parseFloat(priceSelect.value);
+        const quantity = parseInt(quantityInput.value, 10);
+        const total = price * quantity;
+
+        const totalElement = this.overlay.querySelector('.dialog-total');
+        totalElement.textContent = `المجموع: $${total.toFixed(2)}`;
+      };
+
+      priceSelect.addEventListener('change', updateTotal);
+      updateTotal(); // أول تحديث
+    }
+
+    // ✅ الحالة 2: menuPrice غير مفعّلة أو خاطئة → عرض إدخال الكمية فقط، السعر ثابت
+    else {
+      const quantityInput = document.createElement('input');
+      quantityInput.type = 'number';
+      quantityInput.className = 'quantity-input';
+      quantityInput.min = 1;
+      quantityInput.step = 1;
+      quantityInput.value = card.initialQuantity || 1;
+      container.appendChild(quantityInput);
+
+      const updateTotal = () => {
+        const price = parseFloat(card.price || 0);
+        const quantity = parseInt(quantityInput.value, 10);
+        const total = price * quantity;
+
+        const totalElement = this.overlay.querySelector('.dialog-total');
+        totalElement.textContent = `المجموع: $${total.toFixed(2)}`;
+
+        if (isNaN(quantity) || quantity < 1 || total > 1000) {
+          errorElement.textContent = '⚠️ تحقق من الكمية، المجموع يجب أن يكون أقل من 1000$';
+          errorElement.classList.add('show');
+          quantityInput.classList.add('input-error');
+        } else {
+          errorElement.textContent = '';
+          errorElement.classList.remove('show');
+          quantityInput.classList.remove('input-error');
+        }
+      };
+
+      quantityInput.addEventListener('input', updateTotal);
+      updateTotal(); // أول تحديث
+    }
+  }
+
   /** توليد اسم لاعب عشوائي */
   _generatePlayerName() {
     const adjectives = ['سريع', 'ذكي', 'غامض', 'قوي'];
@@ -312,85 +375,105 @@ export class DialogPurchase {
     }
   }
 
-  /** قالب HTML للحوار المتاح */
+  /**
+ * ✅ توليد قالب HTML للحوار المتاح حسب نوع البطاقة
+ * @returns {string} HTML
+ */
   _getAvailableTemplateHTML() {
+    const defaultPrice = this.cardPrices?.[0] || this.cardPrice || 0;
+    const total = (defaultPrice * this.initialQuantity).toFixed(2);
+
     return `
-                    <div class="purchase-dialog">
-                        <div class="dialog-header">
-                            <h2 class="dialog-title">إتمام الشراء</h2>
-                            <button type="button" class="dialog-purchase-close-btn" title="إغلاق">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
+    <div class="purchase-dialog ${this.category}">
+      <!-- ✅ رأس الحوار -->
+      <div class="dialog-header">
+        <img class="dialog-icon" src="${this.cardIcon}" alt="رمز المنتج" />
+        <h2 class="dialog-title">إتمام الشراء</h2>
+        <button type="button" class="dialog-purchase-close-btn" title="إغلاق">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
 
-                        <div class="dialog-content">
-                            <div class="product-info">
-                                <img class="dialog-icon" src="${this.cardIcon}" alt="رمز المنتج" />
-                                <span class="product-name">${this.cardName}</span>
-                            </div>
+      <!-- ✅ محتوى الحوار -->
+      <div class="dialog-content">
+        <!-- ✅ السعر والكمية -->
+        <div class="price-quantity">
+          <div class="dialog-price">
+            <span class="price">السعر: $${defaultPrice.toFixed(2)}</span>
+            <span class="dialog-total">المجموع: $${total}</span>
+          </div>
 
-                            <div class="price-quantity">
-                                <span class="price">السعر: $${this.cardPrice.toFixed(2)}</span>
-                                <label for="quantity">الكمية:</label>
-                                <input type="number" class="quantity-input" min="1" value="${this.initialQuantity}" />
-                                <span class="quantity-error error-message"></span>
-                                <span class="quantity-warning hidden">⚠️ الكمية يجب أن تكون 2 أو أكثر للحصول على خصم</span>
-                            </div>
+          <label for="quantity">الكمية:</label>
+          <div class="quantity-container">
+            <!-- ✅ سيتم حقن input أو select حسب نوع البطاقة -->
+          </div>
 
-                            <div class="input-group">
-                                <label for="player-id">أدخل الـ ID:</label>
-                                <input type="text" id="player-id" />
-                                <span id="player-id-error" class="error-message"></span>
-                            </div>
+          <span class="quantity-error error-message"></span>
+          <span class="quantity-warning hidden">⚠️ الكمية يجب أن تكون ${defaultPrice} أو أكثر</span>
+        </div>
 
-                            <div class="input-group player-name-group">
-                                <label for="player-name">اسم اللاعب:</label>
-                                <div style="display: flex; gap: 8px; align-items: center;">
-                                    <input type="text" id="player-name" placeholder="اسم اللاعب" readonly />
-                                    <button type="button" class="refresh-player-btn" title="تحديث الاسم">
-                                        <i class="fas fa-sync-alt"></i>
-                                    </button>
-                                </div>
-                            </div>
+        <!-- ✅ إدخال ID اللاعب -->
+        <div class="input-group">
+          <label for="player-id">أدخل الـ ID:</label>
+          <input type="text" id="player-id" />
+          <span id="player-id-error" class="error-message"></span>
+        </div>
 
-                            <div class="notes">
-                                <p id="product-description">
-                                    هذا المنتج يعمل خلال 24 ساعة بشكل أوتوماتيكي، الكمية الافتراضية 1000
-                                </p>
-                            </div>
-                        </div>
+        <!-- ✅ اسم اللاعب وتحديثه -->
+        <div class="input-group player-name-group">
+          <label for="player-name">اسم اللاعب:</label>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <input type="text" id="player-name" placeholder="اسم اللاعب" readonly />
+            <button type="button" class="refresh-player-btn" title="تحديث الاسم">
+              <i class="fas fa-sync-alt"></i>
+            </button>
+          </div>
+        </div>
 
-                        <div class="dialog-footer">
-                            <span class="dialog-total">المجموع: $${(this.cardPrice * this.initialQuantity).toFixed(2)}</span>
-                            <button type="button" class="confirm-btn">
-                                <span class="loading-spinner"></span>
-                                شراء
-                            </button>
-                            <button type="button" class="cancel-btn">إلغاء</button>
-                        </div>
-                    </div>
-                `;
+        <!-- ✅ وصف المنتج -->
+        <div class="notes">
+          <p id="product-description">
+            هذا المنتج يعمل خلال 24 ساعة بشكل أوتوماتيكي، الكمية الافتراضية ${defaultPrice}
+          </p>
+        </div>
+      </div>
+
+      <!-- ✅ أزرار التأكيد والإلغاء -->
+      <div class="dialog-footer dialog-actions">
+        <button type="button" class="confirm-btn">
+          <span class="loading-spinner"></span>
+          شراء
+        </button>
+        <button type="button" class="cancel-btn">إلغاء</button>
+      </div>
+    </div>
+  `;
   }
-
+  /**
+   * ✅ توليد قالب HTML للحوار غير المتاح
+   * @returns {string} HTML
+   */
   _getUnavailableTemplateHTML() {
-    return `
-                <div class="purchase-dialog">
-                    <div class="dialog-header">
-                        <h2 class="dialog-title">غير متاح</h2>
-                        <button type="button" class="dialog-purchase-close-btn" title="إغلاق">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
+    const supportPhone = this.options.supportPhone || '+000000000';
 
-                    <div class="dialog-unavailable">
-                        <p class="unavailable-message">❌ هذا المنتج غير متاح حالياً للشراء</p>
-                        <p class="unavailable-contact">
-                            📞 يمكنك التواصل مع الدعم عبر الرقم:
-                            <strong class="support-phone">${this.options.supportPhone}</strong>
-                        </p>
-                        <button class="whatsapp-btn">فتح واتساب</button>
-                    </div>
-                </div>
-            `;
+    return `
+    <div class="purchase-dialog">
+      <div class="dialog-header">
+        <h2 class="dialog-title">غير متاح</h2>
+        <button type="button" class="dialog-purchase-close-btn" title="إغلاق">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="dialog-unavailable">
+        <p class="unavailable-message">❌ هذا المنتج غير متاح حالياً للشراء</p>
+        <p class="unavailable-contact">
+          📞 يمكنك التواصل مع الدعم عبر الرقم:
+          <strong class="support-phone">${supportPhone}</strong>
+        </p>
+        <button class="whatsapp-btn">فتح واتساب</button>
+      </div>
+    </div>
+  `;
   }
 }

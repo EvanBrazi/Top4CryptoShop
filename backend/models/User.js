@@ -109,6 +109,27 @@ const userSchema = new Schema({
     index: true
   },
 
+  // 🔐 المصادقة الثنائية (2FA)
+  // - twoFASecret: مفتاح التشفير المستخدم في Google Authenticator
+  // - twoFAStatus: حالة الحماية (disabled, pending, enabled)
+  // - twoFAActivatedAt: تاريخ التفعيل
+  // 🔐 المصادقة الثنائية
+  twoFASecret: {
+    type: String,
+    select: false // لا يتم إرجاعه في الاستعلامات العامة
+  },
+
+  twoFAStatus: {
+    type: String,
+    enum: ['disabled', 'pending', 'enabled'],
+    default: 'disabled',
+    index: true
+  },
+
+  twoFAActivatedAt: {
+    type: Date
+  },
+
   tokenVersion: {
     type: Number,
     default: 0
@@ -172,8 +193,8 @@ userSchema.statics.findByIdentifier = function (identifier) {
   const query = validator.isEmail(identifier)
     ? { email: identifier.trim().toLowerCase() }
     : validator.isMobilePhone(identifier, 'any', { strictMode: true })
-    ? { phone: identifier.trim() }
-    : { username: new RegExp(`^${identifier}$`, 'i') };
+      ? { phone: identifier.trim() }
+      : { username: new RegExp(`^${identifier}$`, 'i') };
 
   return this.findOne(query).select('+password +loginAttempts +accountStatus +lastLogin');
 };

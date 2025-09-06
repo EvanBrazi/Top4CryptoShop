@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="./assets/css/wallet-tab.css">
     <link rel="stylesheet" href="./assets/css/portfolio-tab.css">
     <link rel="stylesheet" href="./assets/css/settings-tab.css">
+    <link rel="stylesheet" href="./assets/css/security-tab.css">
     <link rel="stylesheet" href="./assets/css/tabs-layout.css">
     <link rel="stylesheet" href="./assets/css/card-grid.css">
     <link rel="stylesheet" href="./assets/css/homepage.css">
@@ -297,18 +298,38 @@
                             </form>
                         </div>
                     </template>
-
                 </div>
+                <!-- تبويب الحماية داخل homepage.html -->
                 <div class="tab-pane" id="security-tab">
                     <h2>الحماية</h2>
                     <div class="security-settings">
                         <div class="setting-item">
-
+                            <!-- زر التفعيل -->
+                            <button id="enable-2fa-btn" class="btn primary">🔐 تفعيل الحماية</button>
+                            <!-- رمز QR -->
+                            <div id="qr-container"></div>
+                            <!-- إدخال رمز التحقق -->
+                            <input type="text" id="token-input" placeholder="أدخل رمز التحقق من التطبيق" />
+                            <!-- خيار التفعيل عبر البريد -->
+                            <div id="email-2fa-section">
+                                <button id="send-2fa-email-btn" class="btn primary">📧 تفعيل عبر البريد
+                                    الإلكتروني</button>
+                                <input type="text" id="email-token-input" placeholder="أدخل رمز التحقق من التطبيق" />
+                                <button id="verify-2fa-email-btn" class="btn success">✅ تحقق من الرمز</button>
+                            </div>
+                            <!-- زر التحقق -->
+                            <button id="verify-2fa-btn" class="btn success">✅ تحقق</button>
+                            <!-- قسم تعطيل الحماية -->
+                            <div id="disable-section" style="display: none;">
+                                <input type="text" id="auth-confirm-input"
+                                    placeholder="أدخل كلمة المرور أو رمز المصادقة" />
+                                <button id="confirm-disable-btn" class="btn danger">❌ حذف الحماية</button>
+                            </div>
+                            <!-- حالة التحقق -->
+                            <div id="status-message"></div>
                         </div>
-                        <!-- المزيد من إعدادات الحماية -->
                     </div>
                 </div>
-
                 <div class="tab-pane" id="about-tab">
                     <h2>من نحن</h2>
                     <div class="about-content">

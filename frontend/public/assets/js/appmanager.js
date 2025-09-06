@@ -13,6 +13,7 @@ import { PortfolioTab } from "./tabs/portfoliotab.js"
 import { OrdersTab } from "./tabs/orderstab.js";
 import { PaymentsTab } from "./tabs/paymentstab.js";
 import { SettingsTab } from "./tabs/settingstab.js";
+import SecurityTab from "./tabs/securitytab.js";
 import { AppsTab } from "./tabs/appstab.js";
 import { GamesTab } from "./tabs/gamestab.js";
 import { CryptosTab } from "./tabs/cryptostab.js";
@@ -294,13 +295,19 @@ export class AppManager {
             portfolio: new PortfolioTab(
                 'portfolio-tab',
                 this.userId, {
-                    themeColor: this.config.themeColor,
-                }
+                themeColor: this.config.themeColor,
+            }
             ),
             settings: new SettingsTab(
                 'settings-tab',
                 this.userManager
-            )
+            ),
+            // ✅ تبويب الحماية الجديد
+            security: new SecurityTab(
+                'security-tab',
+                this.userId, {
+                themeColor: this.config.themeColor
+            })
         };
         console.log('✅ تم تهيئة التبويبات بنجاح');
     }

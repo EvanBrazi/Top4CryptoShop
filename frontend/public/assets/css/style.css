@@ -1,78 +1,5 @@
-/* المتغيرات */
-/* المتغيرات المحدثة */
-:root {
-    /* ألوان الثيم النهاري */
-    --day-bg: #f5f5f5;
-    --day-text: #333;
-    --day-primary: #d4a76a;
-    --day-primary-hover: #c29555;
-    --day-secondary: #e8d5b5;
-    --day-card: #fff9f0;
-    --day-border: #d8c8a8;
-    --day-navbar: #5d4a36;
-    --day-sidebar: #f1e8de;
-    --day-shadow: rgba(93, 74, 54, 0.15);
-    --day-accent: #e6b422;
-    --day-footer: #8B4513;
-    --day-navbar-text: #f5f5f5;
-    --day-sidebar-header: #d4a76a;
-    --day-sidebar-footer: #8B4513;
-    --day-sidebar-content: #f8f8f8;
-    --day-border-menu-link: 1px solid rgba(0, 0, 0, 0.1);
-    --day-background-menu-l: rgba(255, 255, 255, 0.7);
-    --day-border-left: 1px solid rgba(0, 0, 0, 0.1);
-
-    /* ألوان الثيم الليلي */
-    --night-bg: #1a1a2e;
-    --night-text: #f0f0f0;
-    --night-primary: #4a90e2;
-    --night-primary-hover: #3a7bc8;
-    --night-secondary: #5c6bc0;
-    --night-card: #1e1e2a;
-    --night-border: #333344;
-    --night-navbar: #12121a;
-    --night-sidebar: #1a1a22;
-    --night-shadow: rgba(0, 0, 0, 0.4);
-    --night-accent: #8a7cff;
-    --night-footer: #0f3460;
-    --night-navbar-text: #e0e0e0;
-    --night-sidebar-header: #4a90e2;
-    --night-sidebar-footer: #0f3460;
-    --night-sidebar-content: #1e2a4a;
-    --night-border-menu-link: 1px solid rgba(255, 255, 255, 0.1);
-    --night-background-menu-l: rgba(0, 0, 0, 0.2);
-    --night-border-left: 1px solid rgba(255, 255, 255, 0.1);
-
-    /* زوايا دائرية */
-    --border-radius: 12px;
-    --input-radius: 8px;
-    --transition-speed: 0.3s;
-    --input-padding: 12px 15px;
-}
-
 /* الثيمات */
 .day-theme {
-    --bg-color: var(--day-bg);
-    --text-color: var(--day-text);
-    --primary-color: var(--day-primary);
-    --primary-hover: var(--day-primary-hover);
-    --secondary-color: var(--day-secondary);
-    --card-color: var(--day-card);
-    --border-color: var(--day-border);
-    --navbar-color: var(--day-navbar);
-    --sidebar-color: var(--day-sidebar);
-    --sidebar-header-color: var(--day-sidebar-header);
-    --sidebar-content-color: var(--day-sidebar-content);
-    --sidebar-footer-color: var(--day-sidebar-footer);
-    --shadow-color: var(--day-shadow);
-    --accent-color: var(--day-accent);
-    --bar-footer-color: var(--day-footer);
-    --navbar-text: var(--day-navbar-text);
-    --divider-color: rgba(0, 0, 0, 0.1);
-    --social-icon-color: white;
-    --border-menu-link: var(--day-border-menu-link);
-    --background-menu-link: var(--day-background-menu-l);
-    --sidebar-border-left: var(--day-border-left);
     --country-bg: #4b2e1e;
     /* شوكولا داكنة */
     --country-text: #fff8e7;
@@ -83,27 +10,6 @@
 }
 
 .night-theme {
-    --bg-color: var(--night-bg);
-    --text-color: var(--night-text);
-    --primary-color: var(--night-primary);
-    --primary-hover: var(--night-primary-hover);
-    --secondary-color: var(--night-secondary);
-    --card-color: var(--night-card);
-    --border-color: var(--night-border);
-    --navbar-color: var(--night-navbar);
-    --sidebar-color: var(--night-sidebar);
-    --sidebar-header-color: var(--night-sidebar-header);
-    --sidebar-content-color: var(--night-sidebar-content);
-    --sidebar-footer-color: var(--night-sidebar-footer);
-    --shadow-color: var(--night-shadow);
-    --accent-color: var(--night-accent);
-    --bar-footer-color: var(--night-footer);
-    --navbar-text: var(--night-navbar-text);
-    --divider-color: rgba(255, 255, 255, 0.1);
-    --social-icon-color: white;
-    --border-menu-link: var(--night-border-menu-link);
-    --background-menu-link: var(--night-background-menu-l);
-    --sidebar-border-left: var(--night-border-left);
     --country-bg: #2c2c2c;
     /* فضي داكن */
     --country-text: #dcdcdc;
@@ -123,15 +29,10 @@
 
 body {
     font-family: 'Arial', sans-serif;
-    background: var(--day-bg);
-    color: var(--day-text);
+    background: var(--bg-color);
+    color: var(--text-color);
     min-height: 100vh;
     position: relative;
-}
-
-body.night-mode {
-    background: var(--night-bg);
-    color: var(--night-text);
 }
 
 /* زر القائمة */
@@ -139,7 +40,7 @@ body.night-mode {
     position: fixed;
     top: 20px;
     right: 20px;
-    background: var(--day-primary);
+    background: var(--primary-color);
     color: white;
     border: none;
     width: 50px;
@@ -148,11 +49,7 @@ body.night-mode {
     font-size: 20px;
     cursor: pointer;
     z-index: 100;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-}
-
-.night-mode .menu-btn {
-    background: var(--night-primary);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* الدرج الجانبي */
@@ -162,17 +59,12 @@ body.night-mode {
     right: -320px;
     width: 300px;
     height: 100%;
-    background: var(--day-sidebar-content);
+    background: var(--sidebar-content-color);
     z-index: 1000;
     display: flex;
     flex-direction: column;
     transition: right 0.4s cubic-bezier(0.33, 1, 0.68, 1);
-    border-left: 1px solid rgba(0,0,0,0.1);
-}
-
-.night-mode .dash-sidebar {
-    background: var(--night-sidebar-content);
-    border-left-color: rgba(255,255,255,0.1);
+    border-left: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .dash-sidebar.active {
@@ -183,12 +75,8 @@ body.night-mode {
     padding: 20px;
     text-align: center;
     position: relative;
-    background: var(--day-sidebar-header);
+    background: var(--sidebar-header-color);
     color: white;
-}
-
-.night-mode .dash-sidebar-header {
-    background: var(--night-sidebar-header);
 }
 
 .logo {
@@ -196,7 +84,7 @@ body.night-mode {
     height: 70px;
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid rgba(255,255,255,0.3);
+    border: 2px solid rgba(255, 255, 255, 0.3);
 }
 
 .close-btn {
@@ -207,18 +95,13 @@ body.night-mode {
     border: none;
     font-size: 20px;
     cursor: pointer;
-    color: white;
 }
 
 .dash-sidebar-content {
     flex: 1;
     padding: 15px;
     overflow-y: auto;
-    background: var(--day-sidebar-content);
-}
-
-.night-mode .dash-sidebar-content {
-    background: var(--night-sidebar-content);
+    background: var(--sidebar-content-color);
 }
 
 .dash-sidebar-menu {
@@ -230,51 +113,43 @@ body.night-mode {
     align-items: center;
     padding: 12px 15px;
     margin-bottom: 8px;
-    color: var(--day-text);
+    color: var(--text-color);
     text-decoration: none;
     border-radius: var(--border-radius);
     transition: all 0.2s;
-    border-bottom: 1px solid rgba(0,0,0,0.1);
-    background: rgba(255,255,255,0.7);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    background: var(--background-menu-link);
 }
 
-.night-mode .menu-link {
+.night-theme .menu-link {
     color: var(--night-text);
-    border-bottom-color: rgba(255,255,255,0.1);
-    background: rgba(0,0,0,0.2);
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.2);
 }
 
 .menu-link:hover {
-    background: rgba(0,0,0,0.05);
+    background: rgba(0, 0, 0, 0.05);
     transform: translateX(-5px);
 }
 
-.night-mode .menu-link:hover {
-    background: rgba(255,255,255,0.1);
+.night-theme .menu-link:hover {
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .menu-link i {
     margin-left: 10px;
-    color: var(--day-primary);
-}
-
-.night-mode .menu-link i {
-    color: var(--night-primary);
+    color: var(--primary-color);
 }
 
 .dash-sidebar-footer {
     padding: 15px;
     text-align: center;
-    background: var(--day-sidebar-footer);
+    background: var(--sidebar-footer-color);
     color: white;
 }
 
-.night-mode .dash-sidebar-footer {
-    background: var(--night-sidebar-footer);
-}
-
 .theme-btn {
-    background: rgba(255,255,255,0.2);
+    background: rgba(255, 255, 255, 0.2);
     color: white;
     border: none;
     padding: 8px 15px;
@@ -303,27 +178,27 @@ body.night-mode {
 }
 
 .card {
-    background: var(--day-card);
+    background: var(--card-color);
     padding: 30px;
     border-radius: var(--border-radius);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15), 
-                0 5px 15px rgba(0,0,0,0.1),
-                inset 0 1px 0 rgba(255,255,255,0.8);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15),
+        0 5px 15px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
     max-width: 500px;
     margin: 0 auto;
     text-align: center;
     position: relative;
     overflow: hidden;
-    border: 1px solid rgba(0,0,0,0.1);
+    border: 1px solid rgba(0, 0, 0, 0.1);
     transform: perspective(800px) rotateX(5deg);
     animation: floatIn 0.6s ease-out;
 }
 
-.night-mode .card {
+.night-theme .card {
     background: var(--night-card);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3),
-                inset 0 1px 0 rgba(255,255,255,0.1);
-    border-color: rgba(255,255,255,0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 .card::before {
@@ -333,73 +208,49 @@ body.night-mode {
     left: -50%;
     width: 200%;
     height: 200%;
-    background: linear-gradient(
-        to bottom right,
-        rgba(255,255,255,0.2),
-        rgba(255,255,255,0)
-    );
+    background: linear-gradient(to bottom right,
+            rgba(255, 255, 255, 0.2),
+            rgba(255, 255, 255, 0));
     transform: rotate(20deg);
     pointer-events: none;
 }
 
-.night-mode .card::before {
-    background: linear-gradient(
-        to bottom right,
-        rgba(255,255,255,0.05),
-        rgba(255,255,255,0)
-    );
+.night-theme .card::before {
+    background: linear-gradient(to bottom right,
+            rgba(255, 255, 255, 0.05),
+            rgba(255, 255, 255, 0));
 }
 
 .card:hover {
-  transform: perspective(800px) rotateX(2deg) rotateY(-2deg);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-}
-
-@keyframes shake {
-
-    0%,
-    100% {
-        transform: translateX(0);
-    }
-
-    25% {
-        transform: translateX(-5px);
-    }
-
-    75% {
-        transform: translateX(5px);
-    }
-}
-
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
+    transform: perspective(800px) rotateX(2deg) rotateY(-2deg);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
 @keyframes floatIn {
-  from {
-    transform: perspective(800px) rotateX(10deg) rotateY(-10deg);
-    opacity: 0;
-  }
-  to {
-    transform: perspective(800px) rotateX(0deg) rotateY(0deg);
-    opacity: 1;
-  }
+    from {
+        transform: perspective(800px) rotateX(10deg) rotateY(-10deg);
+        opacity: 0;
+    }
+
+    to {
+        transform: perspective(800px) rotateX(0deg) rotateY(0deg);
+        opacity: 1;
+    }
 }
 
 .card h1 {
     margin-bottom: 20px;
-    color: var(--day-primary);
+    color: var(--primary-color);
     position: relative;
     z-index: 1;
 }
 
-.night-mode .card h1 {
-    color: var(--night-primary);
-}
-
 .buttons {
+    color: var(--text-color);
+    text-align: center;
+    padding: 0;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
     display: flex;
     gap: 15px;
     justify-content: center;
@@ -408,7 +259,11 @@ body.night-mode {
     z-index: 1;
 }
 
-.btn {
+/* زر أساسي */
+.primaryBtn {
+    text-align: center;
+    margin: 0;
+    box-sizing: border-box;
     padding: 12px 25px;
     border: none;
     border-radius: var(--border-radius);
@@ -417,57 +272,92 @@ body.night-mode {
     transition: all 0.2s;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 4px 0 rgba(0,0,0,0.2),
-                inset 0 -2px 0 rgba(0,0,0,0.1),
-                inset 0 1px 0 rgba(255,255,255,0.2);
     transform-style: preserve-3d;
+    background: var(--primary-color);
+    color: white;
+    box-shadow: 0 5px 0 rgba(148, 108, 63, 0.8),
+        inset 0 -2px 0 rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
-.btn:active {
+.night-theme .primaryBtn {
+    box-shadow: 0 5px 0 rgba(42, 82, 128, 0.8);
+}
+
+.primaryBtn:hover {
+    background: var(--primary-hover);
+    transform: translateY(2px);
+    filter: brightness(0.95);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.primaryBtn:active {
     transform: translateY(4px);
-    box-shadow: 0 1px 0 rgba(0,0,0,0.2);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
 }
 
-.btn::after {
+.primaryBtn::after {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(
-        to bottom,
-        rgba(255,255,255,0.3),
-        rgba(255,255,255,0)
-    );
+    background: linear-gradient(to bottom,
+            rgba(255, 255, 255, 0.3),
+            rgba(255, 255, 255, 0));
     pointer-events: none;
 }
 
-.primary {
-    background: var(--day-primary);
-    color: white;
-    box-shadow: 0 5px 0 rgba(148, 108, 63, 0.8),
-                inset 0 -2px 0 rgba(0,0,0,0.2),
-                inset 0 1px 0 rgba(255,255,255,0.3);
-}
-
-.night-mode .primary {
-    background: var(--night-primary);
-    box-shadow: 0 5px 0 rgba(42, 82, 128, 0.8);
-}
-
-.secondary {
+/* زر ثانوي */
+.secondaryBtn {
+    text-align: center;
+    margin: 0;
+    box-sizing: border-box;
+    padding: 12px 25px;
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+    transform-style: preserve-3d;
     background: #f0f0f0;
     color: #333;
     box-shadow: 0 5px 0 #ccc,
-                inset 0 -2px 0 rgba(0,0,0,0.1),
-                inset 0 1px 0 rgba(255,255,255,0.4);
+        inset 0 -2px 0 rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
-.night-mode .secondary {
+.night-theme .secondaryBtn {
+    text-align: center;
+    margin: 0;
+    box-sizing: border-box;
+    padding: 12px 25px;
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+    transform-style: preserve-3d;
     background: #2c3e50;
     color: white;
-    box-shadow: 0 5px 0 #1a2634
+    box-shadow: 0 5px 0 #374b5f;
+}
+
+.secondaryBtn:hover {
+    background: var(--primary-color);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.secondaryBtn:active {
+    transform: translateY(2px);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 /* أنماط طرق الدفع */
@@ -480,12 +370,8 @@ body.night-mode {
 
 .payment-methods h2 {
     margin-bottom: 15px;
-    color: var(--day-primary);
+    color: var(--primary-color);
     font-size: 1.1rem;
-}
-
-.night-mode .payment-methods h2 {
-    color: var(--night-primary);
 }
 
 .payment-icons {
@@ -505,40 +391,32 @@ body.night-mode {
     padding: 5px 8px;
     min-width: 60px;
     border-radius: calc(var(--border-radius) / 2);
-    background: rgba(0,0,0,0.03);
+    background: rgba(0, 0, 0, 0.03);
 }
 
-.night-mode .payment-method {
-    background: rgba(255,255,255,0.05);
+.night-theme .payment-method {
+    background: rgba(255, 255, 255, 0.05);
 }
 
 .payment-method:hover {
     transform: translateY(-3px);
-    background: rgba(0,0,0,0.1);
+    background: rgba(0, 0, 0, 0.1);
 }
 
-.night-mode .payment-method:hover {
-    background: rgba(255,255,255,0.1);
+.night-theme .payment-method:hover {
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .payment-method i {
     font-size: 1.2rem;
-    color: var(--day-primary);
+    color: var(--primary-color);
     margin-bottom: 3px;
-}
-
-.night-mode .payment-method i {
-    color: var(--night-primary);
 }
 
 .payment-method span {
     font-size: 0.6rem;
-    color: var(--day-text);
+    color: var(--text-color);
     white-space: nowrap;
-}
-
-.night-mode .payment-method span {
-    color: var(--night-text);
 }
 
 /* نوافذ الحوار المعدلة */
@@ -547,10 +425,10 @@ body.night-mode {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%) scale(0);
-    background: rgba(255,255,255,0.8);
+    background: rgba(255, 255, 255, 0.8);
     padding: 20px;
     border-radius: var(--border-radius);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
     z-index: 1001;
     width: 90%;
     max-width: 400px;
@@ -558,12 +436,12 @@ body.night-mode {
     transition: all 0.3s cubic-bezier(0.33, 1, 0.68, 1);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.3);
+    border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
-.night-mode .dialog {
+.night-theme .dialog {
     background: rgba(30, 30, 50, 0.8);
-    border-color: rgba(255,255,255,0.1);
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 .dialog.active {
@@ -577,20 +455,16 @@ body.night-mode {
     align-items: center;
     margin-bottom: 15px;
     padding-bottom: 10px;
-    border-bottom: 1px solid rgba(0,0,0,0.1);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-.night-mode .dialog-header {
-    border-color: rgba(255,255,255,0.1);
+.night-theme .dialog-header {
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 .dialog-header h3 {
-    color: var(--day-primary);
+    color: var(--primary-color);
     font-size: 1.2rem;
-}
-
-.night-mode .dialog-header h3 {
-    color: var(--night-primary);
 }
 
 /* أنماط محتوى الحوارات */
@@ -604,12 +478,8 @@ body.night-mode {
 
 .dialog-icon {
     font-size: 2.5rem;
-    color: var(--day-primary);
+    color: var(--primary-color);
     margin-bottom: 15px;
-}
-
-.night-mode .dialog-icon {
-    color: var(--night-primary);
 }
 
 .whatsapp-icon {
@@ -628,22 +498,18 @@ body.night-mode {
     justify-content: center;
     margin: 15px 0;
     padding: 10px 15px;
-    background: rgba(0,0,0,0.05);
+    background: rgba(0, 0, 0, 0.05);
     border-radius: var(--border-radius);
     transition: all 0.3s;
 }
 
-.night-mode .contact-info {
-    background: rgba(255,255,255,0.05);
+.night-theme .contact-info {
+    background: rgba(255, 255, 255, 0.05);
 }
 
 .contact-info i {
     margin-left: 8px;
-    color: var(--day-primary);
-}
-
-.night-mode .contact-info i {
-    color: var(--night-primary);
+    color: var(--primary-color);
 }
 
 .whatsapp-link {
@@ -659,17 +525,13 @@ body.night-mode {
 .team-signature {
     font-style: italic;
     margin-top: 20px;
-    color: var(--day-primary);
+    color: var(--primary-color);
     font-weight: bold;
-}
-
-.night-mode .team-signature {
-    color: var(--night-primary);
 }
 
 /* الفوتر المعدل */
 .footer {
-    background: var(--day-footer);
+    background: var(--bar-footer-color);
     color: white;
     text-align: center;
     padding: 12px;
@@ -680,10 +542,6 @@ body.night-mode {
     border-radius: var(--border-radius) var(--border-radius) 0 0;
 }
 
-.night-mode .footer {
-    background: var(--night-footer);
-}
-
 /* الـ Overlay */
 .overlay {
     position: fixed;
@@ -691,7 +549,7 @@ body.night-mode {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.5);
+    background: rgba(0, 0, 0, 0.5);
     z-index: 999;
     opacity: 0;
     visibility: hidden;
@@ -705,47 +563,25 @@ body.night-mode {
     visibility: visible;
 }
 
-@keyframes shake {
-
-    0%,
-    100% {
-        transform: translateX(0);
-    }
-
-    25% {
-        transform: translateX(-5px);
-    }
-
-    75% {
-        transform: translateX(5px);
-    }
-}
-
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
 /* للهواتف */
 @media (max-width: 480px) {
     .payment-method {
         min-width: 50px;
         padding: 4px 6px;
     }
-    
+
     .payment-method i {
         font-size: 1rem;
     }
-    
+
     .payment-method span {
         font-size: 0.55rem;
     }
-    
+
     .card {
         padding: 20px;
     }
-    
+
     .btn {
         padding: 10px 20px;
     }

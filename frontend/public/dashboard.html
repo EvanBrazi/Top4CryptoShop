@@ -6,7 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Top4CryptoShop</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="./assets/css/themes.css">
+    <link rel="stylesheet" href="./assets/css/style.css">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -14,7 +15,7 @@
 
 <body>
     <!-- زر القائمة الرئيسي -->
-    <button class="menu-btn" id="menuBtn" aria-label="فتح القائمة">
+    <button type="button" class="menu-btn" id="menuBtn" aria-label="فتح القائمة">
         <i class="fas fa-bars" aria-hidden="true"></i>
     </button>
 
@@ -22,7 +23,7 @@
     <div class="dash-sidebar" id="dash-sidebar">
         <div class="dash-sidebar-header">
             <img src="/assets/images/logo.png" alt="شعار Top4CryptoShop" class="logo">
-            <button class="close-btn" id="closeBtn" aria-label="إغلاق القائمة">
+            <button type="button" class="close-btn" id="closeBtn" aria-label="إغلاق القائمة">
                 <i class="fas fa-times" aria-hidden="true"></i>
             </button>
         </div>
@@ -39,7 +40,7 @@
         </div>
 
         <div class="dash-sidebar-footer">
-            <button class="theme-btn" id="themeBtn" aria-label="تبديل الثيم">
+            <button type="button" class="theme-btn" id="themeBtn" aria-label="تبديل الثيم">
                 <i class="fas fa-moon" aria-hidden="true"></i> تبديل الثيم
             </button>
             <p class="copyright">Top4CryptoShop &copy; 2024</p>
@@ -52,8 +53,8 @@
             <h1>مرحباً بكم في متجر Top4CryptoShop</h1>
 
             <div class="buttons">
-                <a href="/login.html" class="btn primary">تسجيل الدخول</a>
-                <a href="/register.html" class="btn secondary">التسجيل</a>
+                <button type="button" class="primaryBtn" id="loginBtn">تسجيل الدخول</button>
+                <button type="button" class="secondaryBtn" id="registerBtn">التسجيل</button>
             </div>
 
             <div class="payment-methods">
@@ -96,7 +97,7 @@
     <div class="dialog" id="aboutDialog" role="dialog" aria-labelledby="aboutDialogTitle">
         <div class="dialog-header">
             <h3 id="aboutDialogTitle">من نحن</h3>
-            <button class="close-btn" id="closeAboutBtn" aria-label="إغلاق نافذة من نحن">
+            <button type="button" class="close-btn" id="closeAboutBtn" aria-label="إغلاق نافذة من نحن">
                 <i class="fas fa-times" aria-hidden="true"></i>
             </button>
         </div>
@@ -129,7 +130,7 @@
     <div class="dialog" id="contactDialog" role="dialog" aria-labelledby="contactDialogTitle">
         <div class="dialog-header">
             <h3 id="contactDialogTitle">تواصل معنا</h3>
-            <button class="close-btn" id="closeContactBtn" aria-label="إغلاق نافذة التواصل">
+            <button type="button" class="close-btn" id="closeContactBtn" aria-label="إغلاق نافذة التواصل">
                 <i class="fas fa-times" aria-hidden="true"></i>
             </button>
         </div>

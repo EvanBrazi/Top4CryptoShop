@@ -279,22 +279,31 @@
                                 <div class="avatar-section">
                                     <img id="avatar-preview" src="" alt="الصورة الشخصية" />
                                     <input type="file" id="avatar-input" accept="image/*" />
-                                    <button type="button" id="remove-avatar-btn">🗑️ إزالة الصورة</button>
+                                    <button id="remove-avatar-btn" style="display: none;">🗑️ إزالة الصورة</button>
                                 </div>
-                                <label>الاسم الكامل:</label>
-                                <input type="text" id="user-name" required />
-
-                                <label>البريد الإلكتروني:</label>
-                                <input type="email" id="user-email" required />
-
-                                <label>رقم الهاتف:</label>
-                                <input type="tel" id="user-phone" placeholder="+963..." />
-
-                                <label>كلمة المرور الجديدة:</label>
-                                <input type="password" id="user-password" autocomplete="current-password"
-                                    placeholder="اتركه فارغًا إن لم ترغب بالتغيير" />
-
-                                <button type="submit" class="save-btn">💾 حفظ التغييرات</button>
+                                <div class="form-group">
+                                    <label for="fullName">الاسم الكامل</label>
+                                    <input type="text" id="fullName" />
+                                </div>
+                                <div class="form-group">
+                                    <label for="email">البريد الإلكتروني</label>
+                                    <input type="email" id="email" />
+                                </div>
+                                <div class="form-group">
+                                    <label for="phone">رقم الهاتف</label>
+                                    <input type="tel" id="phone" />
+                                </div>
+                                <div class="form-group">
+                                    <label for="newPassword">كلمة المرور الجديدة</label>
+                                    <input type="password" id="newPassword" />
+                                </div>
+                                <div class="form-group">
+                                    <label for="confirmPassword">تأكيد كلمة المرور</label>
+                                    <input type="password" id="confirmPassword" />
+                                </div>
+                                <div class="form-group full-width">
+                                    <button type="submit" class="save-btn">💾 حفظ التغييرات</button>
+                                </div>
                             </form>
                         </div>
                     </template>
@@ -302,32 +311,71 @@
                 <!-- تبويب الحماية داخل homepage.html -->
                 <div class="tab-pane" id="security-tab">
                     <h2>الحماية</h2>
-                    <div class="security-settings">
-                        <div class="setting-item">
-                            <!-- زر التفعيل -->
-                            <button id="enable-2fa-btn" class="btn primary">🔐 تفعيل الحماية</button>
-                            <!-- رمز QR -->
-                            <div id="qr-container"></div>
-                            <!-- إدخال رمز التحقق -->
-                            <input type="text" id="token-input" placeholder="أدخل رمز التحقق من التطبيق" />
-                            <!-- خيار التفعيل عبر البريد -->
-                            <div id="email-2fa-section">
-                                <button id="send-2fa-email-btn" class="btn primary">📧 تفعيل عبر البريد
-                                    الإلكتروني</button>
-                                <input type="text" id="email-token-input" placeholder="أدخل رمز التحقق من التطبيق" />
-                                <button id="verify-2fa-email-btn" class="btn success">✅ تحقق من الرمز</button>
+                    <div class="security-grid">
+
+                        <!-- ✅ حالة البريد الإلكتروني -->
+                        <div class="grid-row">
+                            <div class="grid-key">تفعيل البريد الإلكتروني</div>
+                            <div class="grid-value">
+                                <button id="verify-email-btn" class="btn primary">📧 تحقق الآن</button>
+                                <span id="email-status" class="status-label">غير مفعل</span>
                             </div>
-                            <!-- زر التحقق -->
-                            <button id="verify-2fa-btn" class="btn success">✅ تحقق</button>
-                            <!-- قسم تعطيل الحماية -->
-                            <div id="disable-section" style="display: none;">
-                                <input type="text" id="auth-confirm-input"
-                                    placeholder="أدخل كلمة المرور أو رمز المصادقة" />
-                                <button id="confirm-disable-btn" class="btn danger">❌ حذف الحماية</button>
-                            </div>
-                            <!-- حالة التحقق -->
-                            <div id="status-message"></div>
                         </div>
+
+                        <!-- 🔐 تفعيل المصادقة الثنائية -->
+                        <div class="grid-row">
+                            <div class="grid-key">المصادقة الثنائية (2FA)</div>
+                            <div class="grid-value">
+                                <label class="switch">
+                                    <input aria-label="Enable two-factor authentication" type="checkbox"
+                                        id="toggle-2fa">
+                                    <span class="slider"></span>
+                                </label>
+                                <span id="2fa-status" class="status-label">غير مفعلة</span>
+                            </div>
+                        </div>
+
+                        <!-- 🧩 خيارات التفعيل -->
+                        <div id="2fa-options" style="display: none;">
+                            <div class="grid-row">
+                                <div class="grid-key">تفعيل عبر رمز QR</div>
+                                <div class="grid-value">
+                                    <button id="enable-2fa-qr-btn" class="btn primary">📷 توليد رمز QR</button>
+                                    <div id="qr-container"></div>
+                                </div>
+                            </div>
+
+                            <div class="grid-row">
+                                <div class="grid-key">تفعيل عبر مفتاح يدوي</div>
+                                <div class="grid-value">
+                                    <button id="send-2fa-email-btn" class="btn primary">🔑 إرسال المفتاح عبر
+                                        البريد</button>
+                                    <input type="text" id="email-token-input" placeholder="أدخل رمز التحقق" />
+                                    <button id="verify-2fa-email-btn" class="btn success">✅ تحقق</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ❌ حذف الحماية -->
+                        <div id="disable-2fa-section" style="display: none;">
+                            <div class="grid-row">
+                                <div class="grid-key">إلغاء المصادقة الثنائية</div>
+                                <div class="grid-value">
+                                    <input type="text" id="auth-confirm-input"
+                                        placeholder="كلمة المرور أو رمز المصادقة" />
+                                    <button id="confirm-disable-btn" class="btn danger">❌ حذف الحماية</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 💬 حالة التفاعل -->
+                        <div class="grid-row">
+                            <div class="grid-key">الحالة</div>
+                            <div class="grid-value">
+                                <div id="status-message"></div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
                 <div class="tab-pane" id="about-tab">

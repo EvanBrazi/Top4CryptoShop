@@ -40,26 +40,36 @@ export async function register(username, password, email, phone, theme) {
 }
 
 /**
- * تسجيل الدخول
- * @param {string} username - اسم المستخدم
+ * 🔐 تسجيل الدخول الآمن مع دعم الجهاز الموثوق
+ * @param {string} username - اسم المستخدم أو البريد
  * @param {string} password - كلمة المرور
- * @returns {Promise<object>} - كائن يحتوي على بيانات الجلسة أو رسالة الخطأ
+ * @param {string} deviceId - رمز الجهاز المولد محليًا
+ * @param {boolean} rememberDevice - هل يجب حفظ الجهاز كمصدر موثوق
+ * @returns {Promise<object>} - نتيجة تسجيل الدخول
  */
-export async function login(username, password) {
-    const result = await secureFetch('/api/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ username, password })
-    });
+export async function login(username, password, deviceId, rememberDevice = false) {
+    try {
+        const result = await secureFetch('/api/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({ username, password, deviceId, rememberDevice })
+        });
 
-    if (!result.success) return result;
+        if (!result || !result.success || !result.data) return result;
 
-    const { user, token, redirectTo } = result.data;
-    return {
-        success: true,
-        user,
-        token,
-        redirectTo
-    };
+        const { user, token, redirectTo } = result.data;
+        return {
+            success: true,
+            user,
+            token,
+            redirectTo
+        };
+    } catch (err) {
+        return {
+            success: false,
+            error: 'NETWORK_ERROR',
+            message: err.message || 'فشل الاتصال بالخادم'
+        };
+    }
 }
 
 /**

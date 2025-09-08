@@ -53,11 +53,27 @@
                 <span id="btnText">تسجيل الدخول</span>
                 <div id="spinner" class="spinner"></div>
             </button>
+            <label class="remember-device">
+                <input type="checkbox" id="rememberDevice" />
+                <span>تذكرني</span>
+            </label>
         </form>
         <div class="bottom-divider"></div>
         <div class="register">
             <a href="forget-password.html">نسيت كلمة المرور؟</a> |
             <a href="register.html">إنشاء حساب جديد</a>
+        </div>
+    </div>
+    <div id="twofa-overlay" class="twofa-overlay" style="display: none;">
+        <div class="twofa-modal">
+            <h3>🔐 المصادقة الثنائية</h3>
+            <p>يرجى إدخال رمز التحقق من تطبيق Google Authenticator:</p>
+            <input type="text" id="twofa-token-input" placeholder="رمز المصادقة" />
+            <div class="twofa-actions">
+                <button id="verify-2fa-login-btn" class="btn success">✅ تحقق</button>
+                <button id="cancel-2fa-btn" class="btn danger">❌ إلغاء</button>
+            </div>
+            <div id="twofa-status-message" class="twofa-status"></div>
         </div>
     </div>
     <script src="assets/js/utils/loader.js" defer></script>

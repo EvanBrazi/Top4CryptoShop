@@ -1,113 +1,299 @@
 <!DOCTYPE html>
 <html dir="rtl" lang="ar">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تسجيل الخروج - متجر العملات الرقمية</title>
     <style>
+        /* المتغيرات المحدثة */
         :root {
-            --beige: #F5F5DC;
-            --chocolate: #D2691E;
-            --dark-chocolate: #8B4513;
+            /* ألوان الثيم النهاري */
+            --day-bg: #f5f5f5;
+            --day-text: #200000;
+            --day-h-color: #ffeede;
+            --day-p-color:#552301;
+            --day-primary: #d4a76a;
+            --day-primary-hover: #b88c4f;
+            --day-secondary: #e8d5b5;
+            --day-section-bg: #301b00;
+            --day-section-color: #ffe9c3;
+            --day-card: #fff9f0;
+            --day-border: #bb2500;
+            --day-shadow: rgba(93, 74, 54, 0.15);
+
+            /* ألوان الثيم الليلي */
+            --night-bg: #1a1a2e;
+            --night-text: #00043b;
+            --night-h-color: rgb(0, 126, 175);
+            --night-p-color:#a3cdfd;
+            --night-primary: #5a8dee;
+            --night-primary-hover: #3a6fc8;
+            --night-secondary: #5c6bc0;
+            --night-section-bg: #b9dafa;
+            --night-section-color: #000549;
+            --night-card: #1e1e2a;
+            --night-border: #a6c0f7;
+            --night-shadow: rgba(0, 0, 0, 0.4);
+
+            /* زوايا دائرية */
+            --border-radius: 12px;
+            --transition-speed: 0.3s;
+        }
+
+        /* الثيمات */
+        .day-theme {
+            --bg-color: var(--day-bg);
+            --text-color: var(--day-text);
+            --container-h3-color: var(--day-h-color);
+            --container-p-color: var(--day-p-color);
+            --primary-color: var(--day-primary);
+            --primary-hover: var(--day-primary-hover);
+            --secondary-color: var(--day-secondary);
+            --section-bg: var(--day-section-bg);
+            --section-color: var(--day-section-color);
+            --card-color: var(--day-card);
+            --border-color: var(--day-border);
+            --shadow-color: var(--day-shadow);
+        }
+
+        .night-theme {
+            --bg-color: var(--night-bg);
+            --text-color: var(--night-text);
+            --container-h3-color: var(--night-h-color);
+            --container-p-color: var(--night-p-color);
+            --primary-color: var(--night-primary);
+            --primary-hover: var(--night-primary-hover);
+            --secondary-color: var(--night-secondary);
+            --section-bg: var(--night-section-bg);
+            --section-color: var(--night-section-color);
+            --card-color: var(--night-card);
+            --border-color: var(--night-border);
+            --shadow-color: var(--night-shadow);
+        }
+
+        /* الأساسيات */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: all var(--transition-speed) ease;
         }
 
         body {
-            font-family: 'Tahoma', sans-serif;
-            background: var(--beige);
-            height: 100vh;
+            font-family: 'Tahoma', 'Arial', sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            margin: 0;
+            padding: 20px;
+            transition: background-color 0.4s ease, color 0.4s ease;
         }
 
+        /* الحاوية */
         .container {
-            width: 90%;
-            max-width: 400px;
-            padding: 2rem;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(139, 69, 19, 0.1);
-            border: 1px solid var(--chocolate);
+            max-width: 450px;
+            width: 100%;
+            padding: 2.5rem;
+            display: grid;
+            background-color: var(--card-color);
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 30px var(--shadow-color),
+                0 5px 15px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            margin: 20px auto;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            transform: perspective(800px) rotateX(5deg);
+            animation: floatIn 0.6s ease-out;
+        }
+
+        .night-theme .container {
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(to bottom right,
+                    rgba(255, 255, 255, 0.2),
+                    rgba(255, 255, 255, 0));
+            transform: rotate(20deg);
+            pointer-events: none;
+        }
+
+        .night-theme .container::before {
+            background: linear-gradient(to bottom right,
+                    rgba(255, 255, 255, 0.05),
+                    rgba(255, 255, 255, 0));
+        }
+
+        .container:hover {
+            transform: perspective(800px) rotateX(2deg) rotateY(-2deg);
+        }
+
+        /* العنوان */
+        .container h2 {
             text-align: center;
+            margin-bottom: 1.8rem;
+            color: var(--primary-color);
+            position: relative;
+            z-index: 1;
+            font-size: 1.8rem;
         }
 
-        h2 {
-            color: var(--dark-chocolate);
-            margin-bottom: 1.5rem;
-        }
-
-        p {
-            color: var(--dark-chocolate);
+        .container p {
+            text-align: center;
+            margin-bottom: 1rem;
+            color: var(--container-p-color);
+            position: relative;
+            z-index: 1;
             font-size: 1.1rem;
-            line-height: 1.6;
         }
 
-        .btn-primary {
-            background-color: var(--chocolate);
+        /* الأزرار */
+        .button {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary-color);
             color: white;
             border: none;
-            padding: 12px 20px;
-            border-radius: 6px;
-            font-size: 1rem;
+            border-radius: var(--border-radius);
+            font-weight: bold;
             cursor: pointer;
             transition: all 0.3s;
-            font-weight: bold;
-            text-decoration: none;
-            display: inline-block;
-            margin-top: 20px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2),
+                inset 0 -2px 0 rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transform-style: preserve-3d;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
         }
 
-        .btn-primary:hover {
-            background-color: var(--dark-chocolate);
+        .night-theme button {
+            box-shadow: 0 4px 0 rgba(42, 82, 128, 0.8),
+                inset 0 -2px 0 rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .button:hover {
+            background: var(--primary-hover);
             transform: translateY(-2px);
+            box-shadow: 0 6px 0 rgba(0, 0, 0, 0.2),
+                inset 0 -2px 0 rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .button:active {
+            transform: translateY(4px);
+            box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        .button::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom,
+                    rgba(255, 255, 255, 0.3),
+                    rgba(255, 255, 255, 0));
+            pointer-events: none;
+        }
+
+        .button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
         }
 
         /* التوثيق */
         .docs-section {
-            margin-top: 30px;
-            padding: 15px;
-            background-color: #f9f9f9;
-            border-radius: 8px;
-            border: 1px solid #ddd;
+            background-color: var(--section-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            font-family: 'Segoe UI', sans-serif;
+            color: var(--text-color);
         }
 
         .docs-section h3 {
-            color: var(--dark-chocolate);
-            margin-top: 0;
+            font-size: 1.4rem;
+            margin-bottom: 16px;
+            color: var(--container-h3-color);
         }
 
         .docs-section ul {
-            padding-right: 20px;
-            text-align: right;
+            list-style: none;
+            padding: 0;
         }
 
         .docs-section li {
-            margin-bottom: 8px;
+            margin-bottom: 12px;
+            font-size: 1rem;
+            line-height: 1.6;
+            color: var(--section-color);
+        }
+
+        @keyframes floatIn {
+            from {
+                transform: perspective(800px) rotateX(10deg) rotateY(-10deg);
+                opacity: 0;
+            }
+
+            to {
+                transform: perspective(800px) rotateX(0deg) rotateY(0deg);
+                opacity: 1;
+            }
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h2>تسجيل الخروج</h2>
         <p>لقد تم تسجيل خروجك بنجاح من حسابك.</p>
         <p>شكراً لاستخدامك متجر العملات الرقمية.</p>
-        
-        <a href="login.html" class="btn-primary">تسجيل الدخول مرة أخرى</a>
-        
-        <!-- قسم التوثيق -->
-        <div class="docs-section">
-            <h3>توثيق تسجيل الخروج</h3>
-            <ul>
-                <li><strong>الأمان:</strong> تم إبطال التوكن الخاص بك وحذف الكوكيز</li>
-                <li><strong>الحماية:</strong> لا يمكن استخدام التوكن القديم للوصول إلى الحساب</li>
-                <li><strong>الجلسة:</strong> تم إنهاء الجلسة بشكل آمن</li>
-            </ul>
-        </div>
+
+        <button type="button" class="button" id="loginBtn">تسجيل الدخول مرة أخرى</button>
+
+            <!-- قسم التوثيق -->
+            <div class="docs-section">
+                <h3>📤 تم تسجيل خروجك بنجاح</h3>
+                <ul>
+                    <li><strong>🔒 الأمان:</strong> تم إنهاء اتصالك بالحساب لحمايتك من أي استخدام غير مصرح به.</li>
+                    <li><strong>🛡️ الحماية:</strong> لا يمكن لأي شخص استخدام بياناتك القديمة للوصول إلى حسابك.</li>
+                    <li><strong>✅ الجلسة:</strong> تم إغلاق الجلسة الحالية بأمان، ويمكنك تسجيل الدخول مجددًا وقتما تشاء.</li>
+                </ul>
+            </div>
     </div>
     <script src="assets/js/utils/loader.js" defer></script>
     <script>
-        //window.location.reload();
+        // ✅ تطبيق الثيم المحفوظ
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('loginBtn')?.addEventListener('click', () => {
+                window.location.href = './login.html';
+            });
+            /**
+             * ✅ تطبيق الثيم المحفوظ في localStorage
+             * يضبط مظهر الصفحة حسب تفضيل المستخدم
+             **/
+            const savedTheme = localStorage.getItem('theme') || 'day';
+            document.body.classList.remove('day-theme', 'night-theme');
+            document.body.classList.add(`${savedTheme}-theme`);
+        });
     </script>
 </body>
+
 </html>

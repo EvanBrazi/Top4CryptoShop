@@ -1,6 +1,6 @@
 /**
  * @class SecurityTab
- * @description 🛡️ تبويب الحماية مع دعم الثيم وتفاعل ديناميكي حسب حالة الحماية
+ * @description 🛡️ تبويب الحماية: إدارة البريد الإلكتروني والمصادقة الثنائية مع دعم الثيم والتوسع المستقبلي
  */
 export default class SecurityTab {
   constructor(tabId, userId, options = {}) {
@@ -8,30 +8,37 @@ export default class SecurityTab {
     this.userId = userId;
     this.theme = localStorage.getItem('theme') === 'night' ? 'night' : 'day';
     this.container = document.getElementById(tabId);
-    this.is2FAEnabled = false; // ← يتم تحديثه من الخادم لاحقًا
+
+    // الحالة الداخلية
+    this.state = {
+      emailVerified: false,
+      twoFAEnabled: false
+    };
+
     this._init();
   }
 
   /**
-   * تهيئة التبويب وربط الأحداث
+   * تهيئة التبويب: جلب الحالة، تطبيق الثيم، ربط الأحداث، تحديث الواجهة
    */
   async _init() {
-    await this._fetchStatus(); // ← جلب حالة الحماية من الخادم
+    await this._fetchStatus();
     this._applyTheme();
     this._bindEvents();
-    this._updateUI();
+    this._renderState();
   }
 
   /**
-   * جلب حالة الحماية من الخادم
+   * جلب حالة البريد والمصادقة من الخادم
    */
   async _fetchStatus() {
     try {
       const res = await fetch('/api/security/status');
       const data = await res.json();
-      this.is2FAEnabled = data.enabled;
+      this.state.emailVerified = data.emailVerified;
+      this.state.twoFAEnabled = data.twoFAEnabled;
     } catch (err) {
-      console.warn('⚠️ فشل جلب حالة الحماية:', err);
+      console.warn('⚠️ فشل جلب الحالة:', err);
     }
   }
 
@@ -46,65 +53,87 @@ export default class SecurityTab {
    * ربط الأحداث بالواجهة
    */
   _bindEvents() {
-    document.getElementById('enable-2fa-btn')?.addEventListener('click', () => this._generateQR());
+    document.getElementById('verify-email-btn')?.addEventListener('click', () => this._sendEmailVerification());
+    document.getElementById('toggle-2fa')?.addEventListener('change', e => this._toggle2FA(e.target.checked));
+    document.getElementById('enable-2fa-qr-btn')?.addEventListener('click', () => this._generateQR());
     document.getElementById('verify-2fa-btn')?.addEventListener('click', () => this._verifyToken());
-    document.getElementById('confirm-disable-btn')?.addEventListener('click', () => this._confirmDisable());
-
     document.getElementById('send-2fa-email-btn')?.addEventListener('click', () => this._sendEmailKey());
     document.getElementById('verify-2fa-email-btn')?.addEventListener('click', () => this._verifyEmailToken());
-  }
-  
-  async _sendEmailKey() {
-    const res = await fetch('/api/security/send-2fa-email', { method: 'POST' });
-    const data = await res.json();
-    document.getElementById('status-message').textContent = data.message;
-  }
-
-  async _verifyEmailToken() {
-    const token = document.getElementById('email-token-input').value.trim();
-    const res = await fetch('/api/security/verify-2fa-email', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token })
-    });
-    const result = await res.json();
-    document.getElementById('status-message').textContent = result.success
-      ? '✅ تم التحقق وتفعيل الحماية'
-      : '❌ رمز غير صحيح';
+    document.getElementById('confirm-disable-btn')?.addEventListener('click', () => this._confirmDisable());
   }
 
   /**
-   * تحديث الواجهة حسب حالة الحماية
+   * تحديث الواجهة حسب الحالة
    */
-  _updateUI() {
-    const enableBtn = document.getElementById('enable-2fa-btn');
-    const disableSection = document.getElementById('disable-section');
+  _renderState() {
+    const emailStatus = document.getElementById('email-status');
+    const twoFAStatus = document.getElementById('2fa-status');
+    const toggle2FA = document.getElementById('toggle-2fa');
+    const options2FA = document.getElementById('2fa-options');
+    const disableSection = document.getElementById('disable-2fa-section');
 
-    if (this.is2FAEnabled) {
-      enableBtn.style.display = 'none';
+    // حالة البريد
+    if (this.state.emailVerified) {
+      emailStatus.textContent = 'مفعل';
+      emailStatus.classList.add('active');
+    } else {
+      emailStatus.textContent = 'غير مفعل';
+      emailStatus.classList.remove('active');
+    }
+
+    // حالة المصادقة الثنائية
+    if (this.state.twoFAEnabled) {
+      twoFAStatus.textContent = 'مفعلة';
+      twoFAStatus.classList.add('active');
+      toggle2FA.checked = true;
+      options2FA.style.display = 'none';
       disableSection.style.display = 'block';
     } else {
-      enableBtn.style.display = 'inline-block';
+      twoFAStatus.textContent = 'غير مفعلة';
+      twoFAStatus.classList.remove('active');
+      toggle2FA.checked = false;
+      options2FA.style.display = 'none';
       disableSection.style.display = 'none';
     }
   }
 
+  /**
+   * إرسال رابط تفعيل البريد
+   */
+  async _sendEmailVerification() {
+    const res = await fetch('/api/auth/send-email-verification', { method: 'POST' });
+    const result = await res.json();
+    this._setStatus(result.message);
+  }
+
+  /**
+   * تفعيل أو إلغاء عرض خيارات المصادقة الثنائية
+   */
+  _toggle2FA(enabled) {
+    const options2FA = document.getElementById('2fa-options');
+    options2FA.style.display = enabled ? 'block' : 'none';
+  }
+
+  /**
+   * توليد رمز QR
+   */
   async _generateQR() {
     const res = await fetch('/api/security/generate-qr');
     const data = await res.json();
     const qrContainer = document.getElementById('qr-container');
-    const status = document.getElementById('status-message');
     if (data.success) {
       qrContainer.innerHTML = `<img src="${data.qr}" alt="رمز QR" />`;
-      status.textContent = '📲 امسح الرمز باستخدام تطبيق Google Authenticator';
+      this._setStatus('📲 امسح الرمز باستخدام تطبيق Google Authenticator');
     } else {
-      status.textContent = '❌ فشل توليد رمز QR';
+      this._setStatus('❌ فشل توليد رمز QR');
     }
   }
 
+  /**
+   * التحقق من رمز QR
+   */
   async _verifyToken() {
     const token = document.getElementById('token-input').value.trim();
-    const status = document.getElementById('status-message');
     if (!token) return alert('يرجى إدخال رمز التحقق');
 
     const res = await fetch('/api/security/verify-token', {
@@ -114,31 +143,65 @@ export default class SecurityTab {
     });
     const result = await res.json();
     if (result.success) {
-      this.is2FAEnabled = true;
-      this._updateUI();
-      status.textContent = '✅ تم التحقق بنجاح وتفعيل الحماية';
+      this.state.twoFAEnabled = true;
+      this._renderState();
+      this._setStatus('✅ تم التحقق وتفعيل الحماية');
     } else {
-      status.textContent = '❌ رمز غير صحيح، حاول مرة أخرى';
+      this._setStatus('❌ رمز غير صحيح، حاول مرة أخرى');
     }
   }
 
+  /**
+   * إرسال مفتاح المصادقة عبر البريد
+   */
+  async _sendEmailKey() {
+    const res = await fetch('/api/security/send-2fa-email', { method: 'POST' });
+    const data = await res.json();
+    this._setStatus(data.message);
+  }
+
+  /**
+   * التحقق من رمز البريد
+   */
+  async _verifyEmailToken() {
+    const token = document.getElementById('email-token-input').value.trim();
+    const res = await fetch('/api/security/verify-2fa-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token })
+    });
+    const result = await res.json();
+    if (result.success) {
+      this.state.twoFAEnabled = true;
+      this._renderState();
+    }
+    this._setStatus(result.message);
+  }
+
+  /**
+   * حذف المصادقة الثنائية
+   */
   async _confirmDisable() {
-    const authInput = document.getElementById('auth-confirm-input').value.trim();
-    const status = document.getElementById('status-message');
-    if (!authInput) return alert('يرجى إدخال رمز التوثيق لإلغاء الحماية');
+    const code = document.getElementById('auth-confirm-input').value.trim();
+    if (!code) return alert('يرجى إدخال رمز التوثيق');
 
     const res = await fetch('/api/security/disable-2fa', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ confirmCode: authInput })
+      body: JSON.stringify({ confirmCode: code })
     });
     const result = await res.json();
     if (result.success) {
-      this.is2FAEnabled = false;
-      this._updateUI();
-      status.textContent = '🛡️ تم تعطيل المصادقة الثنائية بنجاح';
-    } else {
-      status.textContent = '❌ فشل التوثيق، تحقق من الرمز أو كلمة المرور';
+      this.state.twoFAEnabled = false;
+      this._renderState();
     }
+    this._setStatus(result.message);
+  }
+
+  /**
+   * عرض رسالة الحالة
+   */
+  _setStatus(message) {
+    document.getElementById('status-message').textContent = message;
   }
 }

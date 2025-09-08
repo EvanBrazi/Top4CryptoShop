@@ -87,7 +87,7 @@ router.post(
 
     } catch (err) {
       console.error('❌ خطأ أثناء التسجيل:', err);
-      
+
       let message = 'حدث خطأ أثناء التسجيل. يرجى المحاولة لاحقًا.';
       let status = 500;
 
@@ -188,6 +188,16 @@ router.post('/login',
       user.loginAttempts = 0;
       user.lastLogin = new Date();
       await user.save();
+
+      const deviceId = req.body.deviceId;
+      if (user.twoFAStatus === 'enabled' && !user.trustedDevices?.some(d => d.deviceId === deviceId)) {
+        return res.status(200).json({
+          success: true,
+          requires2FA: true,
+          userId: user._id,
+          message: '🔐 يرجى إدخال رمز المصادقة الثنائية'
+        });
+      }
 
       // 🧠 توليد sessionId وتسجيله في الذاكرة
       const sessionId = crypto.randomBytes(16).toString('hex');
@@ -308,6 +318,79 @@ router.post('/logout', doubleCsrfProtection, async (req, res) => {
       type: 'server_error'
     });
   }
+});
+
+// =============================================
+// ✅ للتحقق من رمز 2FA بعد كلمة المرور
+// =============================================
+router.post('/verify-2fa-login', async (req, res) => {
+  const { userId, token } = req.body;
+  const user = await User.findById(userId).select('+twoFASecret +twoFAAttempts');
+  if (!user) {
+    return res.status(404).json({ success: false, error: 'USER_NOT_FOUND' });
+  }
+
+  if (user.twoFAAttempts >= 5) {
+    return res.status(429).json({ success: false, error: 'TOO_MANY_2FA_ATTEMPTS' });
+  }
+
+  const verified = speakeasy.totp.verify({ secret: user.twoFASecret, encoding: 'base32', token, window: 1 });
+
+  if (!verified) {
+    user.twoFAAttempts += 1;
+    await user.save();
+    return res.status(403).json({ success: false, error: 'INVALID_2FA' });
+  }
+
+  user.twoFAAttempts = 0;
+  await user.save();
+
+  if (req.body.rememberDevice && req.body.deviceId) {
+    await User.findByIdAndUpdate(userId, {
+      $push: {
+        trustedDevices: {
+          deviceId: req.body.deviceId,
+          addedAt: new Date()
+        }
+      }
+    });
+  }
+  
+  // ✅ الآن نمنح الجلسة
+  const sessionId = crypto.randomBytes(16).toString('hex');
+  activeSessions.set(sessionId, {
+    userId: user._id.toString(),
+    role: user.role
+  });
+
+  const tokenJWT = jwt.sign(
+    { userId: user._id, role: user.role || 'user' },
+    process.env.JWT_SECRET,
+    { expiresIn: '1h', issuer: 'your-app-api', algorithm: 'HS256' }
+  );
+
+  res.cookie('session_token', tokenJWT, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'Lax',
+    maxAge: 3600000,
+    path: '/'
+  });
+
+  res.cookie('sessionId', sessionId, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'Lax',
+    maxAge: 3600000,
+    path: '/'
+  });
+
+  attachCsrfToken(req, res);
+  res.json({
+    success: true,
+    message: '✅ تم تسجيل الدخول بنجاح',
+    redirectTo: '/homepage.html'
+  });
 });
 
 // =============================================

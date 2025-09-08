@@ -319,10 +319,9 @@ h2 {
 
 /* bottom الفاصل */
 .bottom-divider {
-    margin: 20px 0;
+    margin: 12px 0;
     border-top: 1px solid var(--divider-color);
     height: 1px;
-    margin-top: 10%;
 }
 
 /* الفاصل */
@@ -356,7 +355,6 @@ h2 {
     color: var(--primary-color);
     text-decoration: solid;
     transition: color 0.3s;
-    margin-top: 1%;
     text-align: start;
     position: relative;
 }

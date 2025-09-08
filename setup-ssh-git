@@ -4,4 +4,3 @@ if [ -z "$SSH_AUTH_SOCK" ]; then
       ssh-add ~/.ssh/top4cryptoshop
 fi
 ssh -T git@github.com
-

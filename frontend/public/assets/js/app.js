@@ -1,4 +1,42 @@
 import { STORAGE_KEYS, isValidToken } from './utils/appUtils.js';
+// عناصر DOM
+const menuBtn = document.getElementById('menuBtn');
+const closeBtn = document.getElementById('closeBtn');
+const sidebar = document.getElementById('dash-sidebar');
+const overlay = document.getElementById('overlay');
+const themeBtn = document.getElementById('themeBtn');
+const aboutBtn = document.getElementById('aboutBtn');
+const contactBtn = document.getElementById('contactBtn');
+const closeAboutBtn = document.getElementById('closeAboutBtn');
+const closeContactBtn = document.getElementById('closeContactBtn');
+const aboutDialog = document.getElementById('aboutDialog');
+const contactDialog = document.getElementById('contactDialog');
+// زر تسجيل الدخول
+const loginBtn = document.getElementById('loginBtn');
+// زر التسجيل
+const registerBtn = document.getElementById('registerBtn');
+// أحداث الدرج الجانبي
+menuBtn.addEventListener('click', toggleSidebar);
+closeBtn.addEventListener('click', toggleSidebar);
+overlay.addEventListener('click', closeAll);
+// أحداث تغيير الثيم
+themeBtn.addEventListener('click', toggleTheme);
+// أحداث الحوارات
+aboutBtn.addEventListener('click', () => showDialog(aboutDialog));
+contactBtn.addEventListener('click', () => showDialog(contactDialog));
+closeAboutBtn.addEventListener('click', () => hideDialog(aboutDialog));
+closeContactBtn.addEventListener('click', () => hideDialog(contactDialog));
+// إغلاق الحوارات بالضغط على ESC
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && AppState.currentDialog) {
+        hideDialog(AppState.currentDialog);
+    }
+});
+// تحليل وإرسال إحصاءات الاستخدام إذا كان هناك token
+if (localStorage.getItem('authToken')) {
+    sendAnalytics();
+}
+
 // حالة التطبيق
 const AppState = {
     isSidebarOpen: false,
@@ -6,73 +44,21 @@ const AppState = {
     isNightMode: false
 };
 
-// تهيئة التطبيق
-function initApp() {
-    // عناصر DOM
-    const menuBtn = document.getElementById('menuBtn');
-    const closeBtn = document.getElementById('closeBtn');
-    const sidebar = document.getElementById('dash-sidebar');
-    const overlay = document.getElementById('overlay');
-    const themeBtn = document.getElementById('themeBtn');
-    const aboutBtn = document.getElementById('aboutBtn');
-    const contactBtn = document.getElementById('contactBtn');
-    const closeAboutBtn = document.getElementById('closeAboutBtn');
-    const closeContactBtn = document.getElementById('closeContactBtn');
-    const aboutDialog = document.getElementById('aboutDialog');
-    const contactDialog = document.getElementById('contactDialog');
-
-    // تحميل الإعدادات المحفوظة
-    loadSettings();
-
-    // أحداث الدرج الجانبي
-    menuBtn.addEventListener('click', toggleSidebar);
-    closeBtn.addEventListener('click', toggleSidebar);
-    overlay.addEventListener('click', closeAll);
-
-    // أحداث تغيير الثيم
-    themeBtn.addEventListener('click', toggleTheme);
-
-    // أحداث الحوارات
-    aboutBtn.addEventListener('click', () => showDialog(aboutDialog));
-    contactBtn.addEventListener('click', () => showDialog(contactDialog));
-    closeAboutBtn.addEventListener('click', () => hideDialog(aboutDialog));
-    closeContactBtn.addEventListener('click', () => hideDialog(contactDialog));
-
-    // إغلاق الحوارات بالضغط على ESC
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && AppState.currentDialog) {
-            hideDialog(AppState.currentDialog);
-        }
-    });
-
-    // تحليل وإرسال إحصاءات الاستخدام إذا كان هناك token
-    if (localStorage.getItem('authToken')) {
-        sendAnalytics();
-    }
-}
-
 // تحميل الإعدادات
 function loadSettings() {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'night') {
-        document.body.classList.add('night-mode');
-        const themeBtn = document.getElementById('themeBtn');
-        if (themeBtn) {
-            const icon = themeBtn.querySelector('i');
-            icon.classList.replace('fa-moon', 'fa-sun');
-            themeBtn.setAttribute('aria-label', 'تبديل إلى الثيم الفاتح');
-        }
-        AppState.isNightMode = true;
-    }
+    const savedTheme = localStorage.getItem('theme') || 'day';
+    document.body.classList.add(`${savedTheme}-theme`);
+    const themeBtn = document.getElementById('themeBtn');
+    const icon = themeBtn.querySelector('i');
+    const newIcon = savedTheme === 'day' ? 'sun' : 'moon';
+    icon.classList.add(`fa-${newIcon}`);
+    themeBtn.setAttribute('aria-label', 'تبديل إلى الثيم الفاتح');
+    AppState.isNightMode = savedTheme === 'day' ? true : false;
 }
 
 // تبديل الدرج الجانبي
 function toggleSidebar() {
-    const sidebar = document.getElementById('dash-sidebar');
-    const overlay = document.getElementById('overlay');
-
     AppState.isSidebarOpen = !AppState.isSidebarOpen;
-
     if (AppState.isSidebarOpen) {
         sidebar.classList.add('active');
         overlay.classList.add('active');
@@ -84,43 +70,29 @@ function toggleSidebar() {
 
 // إغلاق كل شيء
 function closeAll() {
-    const sidebar = document.getElementById('dash-sidebar');
-    const overlay = document.getElementById('overlay');
     const dialogs = document.querySelectorAll('.dialog.active');
-
     sidebar.classList.remove('active');
     overlay.classList.remove('active');
     dialogs.forEach(dialog => dialog.classList.remove('active'));
-
     AppState.isSidebarOpen = false;
     AppState.currentDialog = null;
 }
 
 // تبديل الثيم
 function toggleTheme() {
-    const body = document.body;
-    const themeBtn = document.getElementById('themeBtn');
+    const currentTheme = document.body.classList.contains('day-theme') ? 'day' : 'night';
+    const currentIcon = currentTheme === 'day' ? 'sun' : 'moon';
+    const newTheme = currentTheme === 'day' ? 'night' : 'day';
+    const replaceIcon = newTheme === 'day' ? 'sun' : 'moon';
     const icon = themeBtn.querySelector('i');
-
-    AppState.isNightMode = !AppState.isNightMode;
-
-    if (AppState.isNightMode) {
-        body.classList.add('night-mode');
-        localStorage.setItem('theme', 'night');
-        icon.classList.replace('fa-moon', 'fa-sun');
-        themeBtn.setAttribute('aria-label', 'تبديل إلى الثيم الفاتح');
-    } else {
-        body.classList.remove('night-mode');
-        localStorage.setItem('theme', 'day');
-        icon.classList.replace('fa-sun', 'fa-moon');
-        themeBtn.setAttribute('aria-label', 'تبديل إلى الثيم الداكن');
-    }
+    icon.classList.replace(`fa-${currentIcon}`, `fa-${replaceIcon}`);
+    document.body.classList.remove(`${currentTheme}-theme`);
+    document.body.classList.add(`${newTheme}-theme`);
+    localStorage.setItem('theme', newTheme);
 }
 
 // عرض الحوار
 function showDialog(dialog) {
-    const overlay = document.getElementById('overlay');
-
     if (AppState.currentDialog) {
         hideDialog(AppState.currentDialog);
     }
@@ -132,8 +104,6 @@ function showDialog(dialog) {
 
 // إخفاء الحوار
 function hideDialog(dialog) {
-    const overlay = document.getElementById('overlay');
-
     dialog.classList.remove('active');
     overlay.classList.remove('active');
     AppState.currentDialog = null;
@@ -164,7 +134,7 @@ function sendAnalytics() {
 }
 
 // تهيئة التطبيق عند تحميل الصفحة
-document.addEventListener('DOMContentLoaded', initApp);
+document.addEventListener('DOMContentLoaded', loadSettings());
 
 // تحويل المستخدم عند النقر على أزرار التسجيل/الدخول
 document.addEventListener('DOMContentLoaded', function () {
@@ -176,18 +146,13 @@ document.addEventListener('DOMContentLoaded', function () {
             window.location.href = '/homepage.html';
         }
     })();
-    // زر تسجيل الدخول
-    const loginBtn = document.getElementById('loginBtn');
     if (loginBtn) {
         loginBtn.addEventListener('click', function () {
             window.location.href = '/login.html';
         });
     }
-
-    // زر التسجيل
-    const registerBtn = document.getElementById('registerBtn');
     if (registerBtn) {
-        re.addEventListener('click', function () {
+        registerBtn.addEventListener('click', function () {
             window.location.href = '/register.html';
         });
     }

@@ -135,6 +135,14 @@ const userSchema = new Schema({
     default: 0
   },
 
+  twoFAMethod: { type: String, enum: ['qr', 'email'], default: null },
+  twoFAAttempts: { type: Number, default: 0 },
+  
+  trustedDevices: [{
+    deviceId: String,
+    addedAt: Date
+  }],
+
   resetPasswordToken: {
     type: String,
     select: false

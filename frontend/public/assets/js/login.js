@@ -50,13 +50,55 @@ if (appleBtn) {
     });
 }
 
+async function generateDeviceToken(userId) {
+    const encoder = new TextEncoder();
+    const raw = `${userId}-${navigator.userAgent}`;
+    const data = encoder.encode(raw);
+
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const token = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return token;
+}
+
+function show2FAInput(userId, deviceId, rememberDevice) {
+    const overlay = document.getElementById('twofa-overlay');
+    overlay.style.display = 'flex';
+
+    document.getElementById('verify-2fa-login-btn').onclick = async () => {
+        const token = document.getElementById('twofa-token-input').value.trim();
+        const res = await secureFetch('/api/auth/verify-2fa-login', {
+            method: 'POST',
+            body: JSON.stringify({ userId, token, deviceId, rememberDevice })
+        });
+
+        const status = document.getElementById('twofa-status-message');
+        if (!res.success) {
+            status.textContent = '❌ رمز غير صحيح، حاول مرة أخرى';
+            status.style.color = '#d9534f';
+            return;
+        }
+
+        status.textContent = '✅ تم التحقق بنجاح، جاري تسجيل الدخول...';
+        status.style.color = '#28a745';
+        setTimeout(() => {
+            overlay.style.display = 'none';
+            window.location.href = res.redirectTo || '/homepage.html';
+        }, 1000);
+    };
+
+    document.getElementById('cancel-2fa-btn').onclick = () => {
+        overlay.style.display = 'none';
+    };
+}
+
 /**
  * حفظ بيانات الجلسة في التخزين المحلي
  * @param {object} user - بيانات المستخدم
  * @param {string} token - رمز التوثيق
  */
-function saveSession(user, token, sessionId) {
-    localStorage.setItem(STORAGE_KEYS.USER_ID, user.id);
+function saveSession(userId, token, sessionId) {
+    localStorage.setItem(STORAGE_KEYS.USER_ID, userId);
     localStorage.setItem(STORAGE_KEYS.USER_TOKEN, token);
     localStorage.setItem(STORAGE_KEYS.SESSION_ID, sessionId)
 }
@@ -184,8 +226,13 @@ async function loginUser(username, password) {
     submitBtn.disabled = true;
 
     try {
-        const result = await login(username, password); // ⬅️ استخدام الدالة الموحدة
-        //console.log('Result: ', result, '\nUser: ', result.user);
+        // ✅ توليد رمز الجهاز قبل إرسال الطلب
+        const rememberDevice = document.getElementById('rememberDevice')?.checked;
+        const deviceId = localStorage.getItem('trustedDevice') || generateDeviceToken(username);
+
+        // ⬅️ استدعاء الدالة الموسعة مع جميع المعاملات
+        const result = await login(username, password, deviceId, rememberDevice);
+
         // ✅ معالجة الأخطاء المعروفة
         if (result.error === "يجب توفير رمز الجلسة") {
             showAlert('error', 'رمز الجلسة مفقود', 'يرجى إعادة تحميل الصفحة أو تسجيل الدخول من جديد.');
@@ -203,6 +250,7 @@ async function loginUser(username, password) {
         if (result.type === 'missing_password') {
             showError('passwordError', extractErrorMessage(result.error));
             shakeElement('passwordInput');
+            return;
         }
 
         if (result.type === 'invalid_password' && result.remainingAttempts !== undefined) {
@@ -226,8 +274,7 @@ async function loginUser(username, password) {
             return;
         }
 
-        // ❌ خطأ عام غير معروف
-        if (!result.success) {
+        if (!result.success || !result.user) {
             const msg = extractErrorMessage(result.error) || 'حدث خطأ أثناء تسجيل الدخول';
             showToastNotification(`🚨 ${msg}`, 'error', 3000);
             showError('generalError', msg);
@@ -236,8 +283,17 @@ async function loginUser(username, password) {
             return;
         }
 
+        // ✅ إذا كان المستخدم فعّل 2FA
+        if (result.requires2FA) {
+            if (rememberDevice) {
+                localStorage.setItem('trustedDevice', deviceId);
+            }
+            show2FAInput(result.user.id, deviceId, rememberDevice); // ← تمرير القيم إلى مربع التحقق
+            return;
+        }
+
         // ✅ تسجيل الدخول ناجح
-        saveSession(result.user, result.token, result.user.sessionId);
+        saveSession(result.user.id, result.token, result.user.sessionId);
 
         const roleRedirects = {
             admin: '/protectedViews/admin.html',
@@ -254,6 +310,7 @@ async function loginUser(username, password) {
             const redirectPath = result.redirectTo || roleRedirects[result.user.role] || '/homepage.html';
             window.location.href = redirectPath;
         }, 2100);
+
         showToastNotification(`👋 أهلاً بعودتك يا ${username} 🌟`, 'success', 2000);
     } catch (err) {
         const msg = extractErrorMessage(err.message || err);

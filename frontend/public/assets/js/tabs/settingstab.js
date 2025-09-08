@@ -35,58 +35,101 @@ export class SettingsTab {
         this.bindEvents();
     }
 
+
     /**
-     * حقن بيانات المستخدم داخل النموذج
+     * حقن بيانات المستخدم داخل النموذج، بما في ذلك صورة افتراضية ديناميكية حسب الثيم
      */
     injectUserData() {
-        document.getElementById('user-name').value = this.user.username || '';
-        document.getElementById('user-email').value = this.user.email || '';
-        document.getElementById('user-phone').value = this.user.phone || '';
-        document.getElementById('avatar-preview').src = this.user.avatar || this.userManager.getDefaultAvatar(this.user.username);
+        const nameInput = document.getElementById('user-name');
+        const emailInput = document.getElementById('user-email');
+        const phoneInput = document.getElementById('user-phone');
+        const avatarPreview = document.getElementById('avatar-preview');
+
+        if (!nameInput || !emailInput || !phoneInput || !avatarPreview) return;
+
+        nameInput.value = this.user.username || '';
+        emailInput.value = this.user.email || '';
+        phoneInput.value = this.user.phone || '';
+
+        // ✅ صورة افتراضية ديناميكية من DiceBear حسب الثيم
+        const theme = this.user.theme === 1 ? 'dark' : 'light';
+        const defaultAvatar = `https://api.dicebear.com/7.x/thumbs/svg?seed=${encodeURIComponent(this.user.username)}&backgroundColor=${theme === 'dark' ? '1c1c1c' : 'fefefe'}`;
+
+        avatarPreview.src = this.user.avatar || defaultAvatar;
     }
 
     /**
-     * ربط الأحداث بالنموذج
+     * ✅ ربط الأحداث بالنموذج مع التحقق من الصورة وكلمة المرور
      */
     bindEvents() {
-        document.getElementById('settings-form').addEventListener('submit', (e) => {
+        const form = document.getElementById('settings-form');
+        const avatarInput = document.getElementById('avatar-input');
+        const avatarPreview = document.getElementById('avatar-preview');
+        const removeBtn = document.getElementById('remove-avatar-btn');
+        const passwordInput = document.getElementById('newPassword');
+        const confirmInput = document.getElementById('confirmPassword');
+        // 🧠 التحقق من تطابق كلمة المرور قبل الحفظ
+        form.addEventListener('submit', (e) => {
             e.preventDefault();
-            this.saveProfile();
+            const password = passwordInput?.value.trim();
+            const confirm = confirmInput?.value.trim();
+            if (password || confirm) {
+                if (password.length < 6) {
+                    showToast('❌ كلمة المرور يجب أن تكون 6 أحرف على الأقل.', 'error');
+                    return;
+                }
+                if (password !== confirm) {
+                    showToast('❌ كلمة المرور وتأكيدها غير متطابقين.', 'error');
+                    return;
+                }
+            }
+            this.saveProfile(); // ✅ تابع الحفظ إذا كان التحقق ناجحًا
         });
-        document.getElementById('avatar-input').addEventListener('change', (e) => {
+        // 🖼️ تحميل الصورة والتحقق منها
+        avatarInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
-            if (!file) return;
-
+            if (!file) {
+                avatarPreview.src = '';
+                removeBtn.style.display = 'none';
+                return;
+            }
             const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
             const maxSize = 2 * 1024 * 1024; // 2MB
-
             if (!allowedTypes.includes(file.type)) {
                 showToast('❌ نوع الصورة غير مدعوم. الرجاء استخدام JPG أو PNG أو WEBP.', 'error');
                 e.target.value = '';
+                avatarPreview.src = '';
+                removeBtn.style.display = 'none';
                 return;
             }
-
             if (file.size > maxSize) {
                 showToast('❌ حجم الصورة كبير جدًا. الحد الأقصى هو 2MB.', 'error');
                 e.target.value = '';
+                avatarPreview.src = '';
+                removeBtn.style.display = 'none';
                 return;
             }
-
             this.avatarFile = file;
             const reader = new FileReader();
             reader.onload = () => {
-                document.getElementById('avatar-preview').src = reader.result;
+                avatarPreview.src = reader.result;
+                removeBtn.style.display = 'inline-block'; // ✅ إظهار زر الإزالة
             };
             reader.readAsDataURL(file);
         });
-        document.getElementById('remove-avatar-btn').addEventListener('click', () => {
-            this.removeAvatar();
+        // 🗑️ إزالة الصورة
+        removeBtn.addEventListener('click', () => {
+            avatarPreview.src = '';
+            avatarInput.value = '';
+            removeBtn.style.display = 'none';
+            this.avatarFile = null;
         });
     }
 
     /**
-     * رفع الصورة إلى Cloudinary وإرجاع الرابط
-     * @returns {Promise<string|null>}
+     * @method uploadAvatarToServer
+     * @description يرفع الصورة الشخصية إلى الخادم ويعيد رابطها
+     * @returns {Promise<string|null>} رابط الصورة أو null في حال الفشل
      */
     async uploadAvatarToServer() {
         if (!this.avatarFile) return null;
@@ -141,13 +184,13 @@ export class SettingsTab {
      */
     async saveProfile() {
         const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
-        const name = document.getElementById('user-name').value.trim();
-        const email = document.getElementById('user-email').value.trim();
-        const phone = document.getElementById('user-phone').value.trim();
-        const password = document.getElementById('user-password').value;
+        const name = document.getElementById('user-name')?.value.trim();
+        const email = document.getElementById('user-email')?.value.trim();
+        const phone = document.getElementById('user-phone')?.value.trim();
+        const password = document.getElementById('newPassword')?.value.trim();
 
         const payload = { name, email, phone };
-        if (password.length >= 6) payload.password = password;
+        if (password && password.length >= 6) payload.password = password;
 
         const avatarUrl = await this.uploadAvatarToServer();
         if (avatarUrl) payload.avatar = avatarUrl;
@@ -164,7 +207,7 @@ export class SettingsTab {
 
             if (!res.ok) throw new Error('فشل حفظ البيانات');
             showToast('✅ تم حفظ التغييرات بنجاح', 'success');
-            await this.userManager.refresh(); // تحديث الواجهة بعد الحفظ
+            await this.userManager.refresh();
         } catch (err) {
             console.error('❌ خطأ في حفظ الإعدادات:', err);
             showToast('حدث خطأ أثناء حفظ البيانات', 'error');

@@ -4,6 +4,7 @@ const paymentSchema = new mongoose.Schema({
   paymentId: { type: String, required: true, unique: true },
   userId: { type: String, required: true },
   amount: { type: Number, required: true },
+  amountInUSD: {type: Number, require: true},
   method: { type: String, required: true },
   status: { type: String, enum: ['pending', 'processing', 'completed', 'cancelled'], default: 'pending' },
   notified: { type: Boolean, default: false },

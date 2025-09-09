@@ -67,7 +67,7 @@ export class DialogPurchase {
   }
 
   /**
- * ✅ فتح نافذة الحوار
+   * ✅ فتح نافذة الحوار
  * @description ينشئ نافذة الشراء ويحقن البيانات ويمنع التكرار
  */
   open() {
@@ -98,7 +98,9 @@ export class DialogPurchase {
       this._setupDialogEvents();
       this._injectCardData();
     } else {
-      this._setupUnavailableEvents();
+      requestAnimationFrame(() => {
+        this._setupUnavailableEvents();
+      });
     }
   }
 
@@ -335,6 +337,21 @@ export class DialogPurchase {
     }
   }
 
+  _validatePlayerId(value) {
+    const isValid = /^[a-zA-Z0-9]{3,}$/.test(value);
+    const inputEl = document.querySelector('#player-id');
+
+    if (!isValid) {
+      inputEl.classList.add('invalid');
+      inputEl.setCustomValidity('❌ يجب أن يحتوي على 3 أحرف أو أرقام إنجليزية على الأقل بدون رموز');
+    } else {
+      inputEl.classList.remove('invalid');
+      inputEl.setCustomValidity('');
+    }
+
+    inputEl.reportValidity();
+  }
+
   /** توليد اسم لاعب عشوائي */
   _generatePlayerName() {
     const adjectives = ['سريع', 'ذكي', 'غامض', 'قوي'];
@@ -373,6 +390,38 @@ export class DialogPurchase {
       console.error('❌ فشل في حفظ الطلب:', err);
       return null;
     }
+  }
+
+  _setupUnavailableEvents() {
+    const dialog = document.querySelector('.purchase-dialog');
+    if (!dialog) return;
+    const closeBtn = dialog.querySelector('.dialog-purchase-close-btn');
+    const supportPhoneEl = dialog.querySelector('.support-phone');
+    const whatsappBtn = dialog.querySelector('.whatsapp-btn');
+
+    // ✅ إغلاق عند الضغط على زر الإغلاق
+    closeBtn.addEventListener('click', () => {
+      this.close();
+    });
+
+    // ✅ إغلاق عند الضغط خارج مربع الحوار
+    document.addEventListener('click', (e) => {
+      if (dialog && !dialog.contains(e.target)) {
+        this.close();
+      }
+    });
+
+    // ✅ فتح واتساب عند الضغط على الرقم أو الزر
+    const openWhatsApp = () => {
+      const phone = supportPhoneEl.textContent.replace(/\D/g, '');
+      if (phone) {
+        window.open(`https://wa.me/${phone}`, '_blank');
+        this.close();
+      }
+    };
+
+    supportPhoneEl.addEventListener('click', openWhatsApp);
+    whatsappBtn.addEventListener('click', openWhatsApp);
   }
 
   /**
@@ -449,6 +498,7 @@ export class DialogPurchase {
     </div>
   `;
   }
+
   /**
    * ✅ توليد قالب HTML للحوار غير المتاح
    * @returns {string} HTML

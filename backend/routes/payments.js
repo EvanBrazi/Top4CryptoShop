@@ -77,7 +77,7 @@ function multerErrorHandler(err, req, res, next) {
  */
 router.post('/', upload.single('receipt'), multerErrorHandler, async (req, res) => {
   try {
-    const { userId, amount, method, note } = req.body;
+    const { userId, amount, amountInUSD, method, note } = req.body;
     console.log('@desc إنشاء دفعة جديدة مع صورة إشعار وملاحظة : ', userId);
 
     // ✅ تحقق من البيانات الأساسية
@@ -91,6 +91,7 @@ router.post('/', upload.single('receipt'), multerErrorHandler, async (req, res) 
       paymentId: `pay-${Date.now().toString(36)}`, // أو استخدم _id فقط
       userId,
       amount,
+      amountInUSD, // 1289700 = 100$
       method,
       receiptImage: req.file.path, // ← رابط Cloudinary
       note,
@@ -168,7 +169,7 @@ router.put('/:id/accept', async (req, res) => {
 
     // تعديل رصيد المستخدم
     await User.findByIdAndUpdate(payment.userId, {
-      $inc: { balance: payment.amount }
+      $inc: { balance: payment.amountInUSD }
     });
 
     // إرسال إشعار لحظي للمستخدم

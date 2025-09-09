@@ -1,13 +1,13 @@
 /* ✅ الغلاف العام */
 .purchase-dialog-overlay {
   position: fixed;
-  top: 0;
+  top: var(--topbar-height);
   left: 0;
   width: 100vw;
   height: 100vh;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: self-start;
   z-index: 1;
   background-color: var(--background-menu-link);
   backdrop-filter: blur(12px);

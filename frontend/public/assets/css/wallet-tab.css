@@ -3,14 +3,13 @@
   background-clip: padding-box;
   background-image: linear-gradient(to right, var(--primary-color), var(--accent-color));
   background-origin: border-box;
-  padding: 20px;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   max-width: 500px;
   margin: auto;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 0.2rem;
 }
 
 .payment-form label {
@@ -25,6 +24,7 @@
 }
 
 .payment-form select,
+.payment-form input[type="text"],
 .payment-form input[type="number"],
 .payment-form textarea,
 .payment-form input[type="file"] {
@@ -45,10 +45,14 @@
 }
 
 .payment-form .preview-image {
-  max-width: 100%;
+  display: none;
+  max-width: 200px;
+  max-height: 200px;
   border-radius: 8px;
   box-shadow: 0 0 6px rgba(0, 0, 0, 0.1);
   margin-top: 8px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .payment-form button {
@@ -66,13 +70,31 @@
   color: var(--accent-color);
   background-color: var(--primary-hover);
 }
+
+.payment-details-box {
+    margin-top: 12px;
+    padding: 12px;
+    background-color: #f0f8ff;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.converted-amount-box {
+  font-weight: bold;
+  font-size: 0.8rem;
+  line-height: 0.4rem;
+  white-space: pre;
+  color: #2c3e50;
+}
+
 @media (max-width: 480px) {
   .payment-form {
-    padding: 16px;
     max-width: 100%;
     margin: 10px;
     border-radius: 8px;
-    gap: 12px;
+    gap: 0.2rem;
   }
 
   .payment-form label {
@@ -91,10 +113,5 @@
   .payment-form button {
     font-size: 0.95rem;
     padding: 10px;
-  }
-
-  .payment-form .preview-image {
-    max-width: 100%;
-    height: auto;
   }
 }

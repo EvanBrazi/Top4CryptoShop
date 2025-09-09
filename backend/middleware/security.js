@@ -62,6 +62,7 @@ const securityHeaders = helmet({
         "https://upload.wikimedia.org",
         "https://www.gravatar.com",
         "https://esm.sh",
+        "https://v6.exchangerate-api.com",
         "https://ui-avatars.com/",
         "https://cdn-icons-png.flaticon.com" // ✅ أضف هذا السطر
       ],

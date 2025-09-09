@@ -163,20 +163,21 @@
                         <select id="payment-method-select">
                             <option value="">-- اختر --</option>
                             <option value="visa">فيزا</option>
-                            <option value="shamcash">شام كاش</option>
+                            <option value="shamcashdol">شام كاش دولار</option>
+                            <option value="shamcash">شام كاش ليرة سورية</option>
                             <option value="syriatel">سيرياتيل كاش</option>
                             <option value="mtn">MTN كاش</option>
                             <option value="bank">حوالة بنكية</option>
                             <option value="webmoney">ويب موني</option>
                             <option value="usdt">USDT</option>
                         </select>
-
-                        <label for="amount-input">المبلغ بالدولار:</label>
+                        <div id="converted-amount-box" class="converted-amount-box"></div>
+                        <label for="amount-input">المبلغ:</label>
                         <input type="number" id="amount-input" placeholder="أدخل المبلغ" />
-
+                        <input type="text" id="amount-input-dol" placeholder="$" readonly/>
                         <label for="receipt-upload">تحميل إشعار الدفع:</label>
                         <input type="file" id="receipt-upload" accept="image/*" />
-                        <img id="receipt-preview" class="preview-image" loading="lazy" style="display:none;" />
+                        <img alt="Receipt Preview" id="receipt-preview" class="preview-image" loading="lazy"/>
                         <label for="note-input">ملاحظات إضافية (اختياري):</label>
                         <textarea id="note-input" rows="3" placeholder="اكتب أي ملاحظة هنا..."></textarea>
 

@@ -147,6 +147,7 @@ function renderPaymentNotification(data) {
     <h4>دفعة جديدة من المستخدم ${data.userId}</h4>
     <p><strong>الطريقة:</strong> ${data.method}</p>
     <p><strong>المبلغ:</strong> ${data.amount} 💵</p>
+    <p><strong>المبلغ:</strong> ${data.amountInUSD} 💵</p>
     ${data.note ? `<p><strong>ملاحظة:</strong> ${data.note}</p>` : ''}
     <img src="${data.receiptImage}" style="max-width:100%; margin-top:10px;" />
     <div class="payment-actions">

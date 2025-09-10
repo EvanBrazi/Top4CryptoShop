@@ -1,7 +1,49 @@
 [
-  { "id": 1, "name": "سيريافون", "icon": "syria_phone.png", "category": "balances", "price": "4.99", "available": true },
-  { "id": 2, "name": "MTN", "icon": "mtn.png", "category": "balances", "price": "3.99", "available": true },
-  { "id": 3, "name": "MTN Cash", "icon": "mtn.png", "category": "balances", "price": "5.99", "available": true },
-  { "id": 4, "name": "سيرياتيل", "icon": "syriatel.png", "category": "balances", "price": "4.49", "available": true },
-  { "id": 5, "name": "سيرياتيل كاش", "icon": "syriatel.png", "category": "balances", "price": "3.99", "available": true }
+  { 
+    "id": 1, 
+    "name": "سيريافون", 
+    "icon": "syria_phone.png", 
+    "category": "balances", 
+    "price": "4.99", 
+    "quantity": 1000, 
+    "available": true 
+  },
+  { 
+    "id": 2, 
+    "name": "MTN", 
+    "icon": "mtn.png", 
+    "category": "balances", 
+    "price": ["3.99", "7.99", "15.99"], 
+    "quantity": [500, 1000, 2000], 
+    "available": true 
+  },
+  { 
+    "id": 3, 
+    "name": "MTN Cash", 
+    "icon": "mtn.png", 
+    "category": "balances", 
+    "price": "5.99", 
+    "quantity": 1000, 
+    "maxLimit": 550000, 
+    "available": true 
+  },
+  { 
+    "id": 4, 
+    "name": "سيرياتيل", 
+    "icon": "syriatel.png", 
+    "category": "balances", 
+    "price": ["4.49", "8.99", "17.99"], 
+    "quantity": [500, 1000, 2000], 
+    "available": true 
+  },
+  { 
+    "id": 5, 
+    "name": "سيرياتيل كاش", 
+    "icon": "syriatel.png", 
+    "category": "balances", 
+    "price": "3.99", 
+    "quantity": 1000, 
+    "maxLimit": 550000, 
+    "available": true 
+  }
 ]

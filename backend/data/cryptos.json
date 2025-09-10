@@ -1,13 +1,13 @@
 [
-  { "id": 1, "name": "شام كاش", "icon": "cham_cash.webp", "category": "cryptos", "price": "4.99", "available": true },
-  { "id": 2, "name": "حوالات مالية", "icon": "transfer.png", "category": "cryptos", "price": "3.99", "available": true },
-  { "id": 3, "name": "BitCoin BTC", "icon": "bitcoin.png", "category": "cryptos", "price": "5.49", "available": true },
-  { "id": 4, "name": "Usdt TRC20", "icon": "tether_usdt_trc20.png", "category": "cryptos", "price": "5.99", "available": true },
-  { "id": 5, "name": "Usdt BEB20", "icon": "binance_usdt_beb20.png", "category": "cryptos", "price": "4.49", "available": true },
-  { "id": 6, "name": "Tron TRX", "icon": "tron.png", "category": "cryptos", "price": "3.99", "available": true },
-  { "id": 7, "name": "بايير", "icon": "payeer.png", "category": "cryptos", "price": "5.99", "available": true },
-  { "id": 8, "name": "بيرفكت موني", "icon": "perfect_money.png", "category": "cryptos", "price": "6.99", "available": true },
-  { "id": 9, "name": "تروكسل", "icon": "turkcell.png", "category": "cryptos", "price": "4.49", "available": true },
-  { "id": 10, "name": "تورك تيليكوم", "icon": "turk_telekom.png", "category": "cryptos", "price": "5.49", "available": true },
-  { "id": 11, "name": "بايسيل", "icon": "paycell_app_design.png", "category": "cryptos", "price": "3.99", "available": true }
+  { "id": 1, "name": "شام كاش", "icon": "cham_cash.webp", "category": "cryptos", "price": "4.99", "quantity": 1000, "available": true },
+  { "id": 2, "name": "حوالات مالية", "icon": "transfer.png", "category": "cryptos", "price": "3.99", "quantity": 1000, "available": true },
+  { "id": 3, "name": "BitCoin BTC", "icon": "bitcoin.png", "category": "cryptos", "price": "5.49", "quantity": 1000, "available": true },
+  { "id": 4, "name": "Usdt TRC20", "icon": "tether_usdt_trc20.png", "category": "cryptos", "price": "5.99", "quantity": 1000, "available": true },
+  { "id": 5, "name": "Usdt BEB20", "icon": "binance_usdt_beb20.png", "category": "cryptos", "price": "4.49", "quantity": 1000, "available": true },
+  { "id": 6, "name": "Tron TRX", "icon": "tron.png", "category": "cryptos", "price": "3.99", "quantity": 1000, "available": true },
+  { "id": 7, "name": "بايير", "icon": "payeer.png", "category": "cryptos", "price": "5.99", "quantity": 1000, "available": true },
+  { "id": 8, "name": "بيرفكت موني", "icon": "perfect_money.png", "category": "cryptos", "price": "6.99", "quantity": 1000, "available": true },
+  { "id": 9, "name": "تروكسل", "icon": "turkcell.png", "category": "cryptos", "price": "4.49", "quantity": 1000, "available": true },
+  { "id": 10, "name": "تورك تيليكوم", "icon": "turk_telekom.png", "category": "cryptos", "price": "5.49", "quantity": 1000, "available": true },
+  { "id": 11, "name": "بايسيل", "icon": "paycell_app_design.png", "category": "cryptos", "price": "3.99", "quantity": 1000, "available": true }
 ]

@@ -12,7 +12,8 @@
     "test": "jest"
   },
   "dependencies": {
-    "concurrently": "^7.6.0"
+    "concurrently": "^7.6.0",
+    "googleapis": "^159.0.0"
   },
   "keywords": [
     "cryptocurrency",

@@ -38,11 +38,15 @@ function initAdminWebSocket() {
           renderOrderNotification(data);
         } else if (data.type === 'newPayment') {
           renderPaymentNotification(data);
+        } else if (data.type === 'backupStatus') {
+          // ✅ إشعار النسخ الاحتياطي
+          showNotification(data.message, data.status);
+          renderBackupNotification(data); // يمكنك إنشاء هذه الدالة لعرضه في جدول أو سجل
         } else {
-          console.warn('Unkown Admin WebSocket Notification!');
+          console.warn('⚠️ إشعار غير معروف من WebSocket!');
         }
       } catch (error) {
-        console.error('Error while handle WebSocket message:', error);
+        console.error('❌ خطأ أثناء معالجة رسالة WebSocket:', error);
       }
     };
   } catch (error) {
@@ -232,6 +236,25 @@ function renderOrderNotification(data) {
   rejectBtn.addEventListener('click', () => handleOrderAction(data.orderId, 'reject'));
 
   console.log(`✅ تم عرض إشعار الطلب: ${data.orderId}`);
+}
+
+/**
+ * 
+ * @param {*} data 
+ * @returns 
+ */
+function renderBackupNotification(data) {
+  const container = document.getElementById('backupNotifications');
+  if (!container) return;
+
+  const entry = document.createElement('div');
+  entry.className = 'backup-entry';
+  entry.innerHTML = `
+    <strong>${data.source}</strong> - 
+    <span style="color:${data.status === 'success' ? 'green' : 'red'}">${data.message}</span> 
+    <small>${new Date(data.timestamp).toLocaleString()}</small>
+  `;
+  container.prepend(entry);
 }
 
 /**

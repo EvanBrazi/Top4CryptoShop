@@ -46,7 +46,7 @@
                 <div class="site-logo">
                     <img src="./assets/images/logo.png" loading="lazy" alt="شعار الموقع" class="logo-img">
                 </div>
-                <a href="#" class="back-btn hidden" id="back-btn">
+                <a title="Go back" href="#" class="back-btn hidden" id="back-btn">
                     <i class="fas fa-arrow-left"></i>
                 </a>
             </div>
@@ -128,6 +128,14 @@
     <!-- المحتوى الرئيسي -->
     <div class="main-content">
         <div class="content">
+            <!-- ✅ شريط البحث العام -->
+            <div id="globalSearchBar" class="search-bar-container">
+                <input type="text" id="globalSearchInput"
+                    placeholder="🔍 ابحث في التطبيقات، الألعاب، العملات، الرصيد..." />
+            </div>
+            <div id="searchSuggestions" class="search-suggestions" style="display: none;"></div>
+            <!-- ✅ رسالة عدم وجود نتائج -->
+            <div id="searchNoResults" class="search-no-results" style="display: none;"></div>
             <div class="tabs-container">
                 <div class="tab-pane active" id="home-tab">
                     <div class="cards-container">
@@ -157,6 +165,10 @@
                     <div class="grid-layout" id="balances-tab-container">
                     </div>
                 </div>
+                <div class="tab-pane" data-tab-type="searchinfo" id="searchinfo-tab">
+                    <div class="grid-layout" id="searchinfo-tab-container">
+                    </div>
+                </div>
                 <div class="tab-pane" id="wallet-tab">
                     <div class="payment-form">
                         <label for="payment-method-select">اختر طريقة الدفع:</label>
@@ -174,10 +186,10 @@
                         <div id="converted-amount-box" class="converted-amount-box"></div>
                         <label for="amount-input">المبلغ:</label>
                         <input type="number" id="amount-input" placeholder="أدخل المبلغ" />
-                        <input type="text" id="amount-input-dol" placeholder="$" readonly/>
+                        <input type="text" id="amount-input-dol" placeholder="$" readonly />
                         <label for="receipt-upload">تحميل إشعار الدفع:</label>
                         <input type="file" id="receipt-upload" accept="image/*" />
-                        <img alt="Receipt Preview" id="receipt-preview" class="preview-image" loading="lazy"/>
+                        <img alt="Receipt Preview" id="receipt-preview" class="preview-image" loading="lazy" />
                         <label for="note-input">ملاحظات إضافية (اختياري):</label>
                         <textarea id="note-input" rows="3" placeholder="اكتب أي ملاحظة هنا..."></textarea>
 

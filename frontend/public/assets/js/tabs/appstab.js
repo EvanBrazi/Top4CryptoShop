@@ -182,6 +182,61 @@ export class AppsTab {
     }
 
     /**
+     * عرض شبكة التطبيقات بعد الفلترة
+     * @private
+     * @param {Array} filteredApps
+     */
+    async _renderFilteredGrid(filteredApps) {
+        const oldGrid = this.container.querySelector('.grid-layout');
+        if (oldGrid) oldGrid.remove();
+        const grid = document.createElement('div');
+        grid.className = 'grid-layout'; // ✅ استخدام التنسيق الموحد
+        const fragment = document.createDocumentFragment();
+        const cardElements = await Promise.all(
+            filteredApps.map(app => this._createAppCard(app))
+        );
+        cardElements.forEach(card => {
+            if (card instanceof HTMLElement) fragment.appendChild(card);
+        });
+        grid.appendChild(fragment);
+        this.container.appendChild(grid);
+        await this._setupLazyLoading();
+    }
+
+    /**
+     * عرض رسالة فارغة عند عدم وجود نتائج
+     * @private
+     * @param {string} message
+     */
+    _renderEmptyState(message) {
+        this.container.innerHTML = `
+            <div class="empty-search-message">
+                <i class="search-icon">🔍</i>
+                <p>${message}</p>
+            </div>
+        `;
+    }
+
+    /**
+     * فلترة التطبيقات حسب نص البحث
+     * @public
+     * @param {string} query
+     */
+    filter(query) {
+        const searchTerm = query.toLowerCase();
+        const filtered = this.config.appsData.filter(app =>
+            app.name.toLowerCase().includes(searchTerm) ||
+            (app.tags && app.tags.some(tag => tag.toLowerCase().includes(searchTerm)))
+        );
+        if (filtered.length === 0) {
+            this._renderEmptyState(`لا توجد نتائج تطابق "${query}"`);
+            return false;
+        }
+        this._renderFilteredGrid(filtered);
+        return true;
+    }
+
+    /**
      * تحميل ملف CSS خارجي خاص بالتبويب
      * @private
      */

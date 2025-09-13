@@ -196,6 +196,61 @@ export class CryptosTab {
     }
 
     /**
+     * عرض شبكة العملات بعد الفلترة
+     * @private
+     * @param {Array} filteredCryptos
+     */
+    async _renderFilteredGrid(filteredCryptos) {
+        const oldGrid = this.container.querySelector('.grid-layout');
+        if (oldGrid) oldGrid.remove();
+        const grid = document.createElement('div');
+        grid.className = 'grid-layout';
+        const fragment = document.createDocumentFragment();
+        const cardElements = await Promise.all(
+            filteredCryptos.map(crypto => this._createCryptoCard(crypto))
+        );
+        cardElements.forEach(card => {
+            if (card instanceof HTMLElement) fragment.appendChild(card);
+        });
+        grid.appendChild(fragment);
+        this.container.appendChild(grid);
+        await this._setupLazyLoading();
+    }
+
+    /**
+     * عرض رسالة فارغة عند عدم وجود نتائج
+     * @private
+     * @param {string} message
+     */
+    _renderEmptyState(message) {
+        this.container.innerHTML = `
+            <div class="empty-search-message">
+                <i class="search-icon">🔍</i>
+                <p>${message}</p>
+            </div>
+        `;
+    }
+
+    /**
+     * فلترة العملات حسب نص البحث
+     * @public
+     * @param {string} query
+     */
+    filter(query) {
+        const searchTerm = query.toLowerCase();
+        const filtered = this.config.cryptosData.filter(crypto =>
+            crypto.name.toLowerCase().includes(searchTerm) ||
+            (crypto.tags && crypto.tags.some(tag => tag.toLowerCase().includes(searchTerm)))
+        );
+        if (filtered.length === 0) {
+            this._renderEmptyState(`لا توجد نتائج تطابق "${query}"`);
+            return false;
+        }
+        this._renderFilteredGrid(filtered);
+        return true;
+    }
+
+    /**
      * تحديث بيانات العملات وإعادة العرض
      * @public
      * @param {Array} newCryptosData

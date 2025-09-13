@@ -263,6 +263,51 @@ export class HomeTab {
         });
     }
 
+    async _renderFilteredGrid(filteredCards) {
+        this.container.innerHTML = '';
+        const grid = document.createElement('div');
+        grid.className = 'big-card-grid-container';
+        const cardElements = await Promise.all(
+            filteredCards.map(async (card, index) =>
+                await this._createCardElement(card, index))
+        );
+        cardElements.forEach(cardEl => {
+            if (cardEl instanceof HTMLElement) {
+                grid.appendChild(cardEl);
+            }
+        });
+        this.container.appendChild(grid);
+        this._adjustCardsToScreenSize();
+    }
+
+    /**
+     * عرض رسالة فارغة عند عدم وجود نتائج
+     * @private
+     * @param {string} message
+     */
+    _renderEmptyState(message) {
+        this.container.innerHTML = `
+            <div class="empty-search-message">
+                <i class="search-icon">🔍</i>
+                <p>${message}</p>
+            </div>
+        `;
+    }
+
+    filter(query) {
+        const searchTerm = query.toLowerCase();
+        const filtered = this.options.cardsData.filter(card =>
+            card.title.toLowerCase().includes(searchTerm) ||
+            (card.tags && card.tags.some(tag => tag.toLowerCase().includes(searchTerm)))
+        );
+        if (filtered.length === 0) {
+            this._renderEmptyState(`لا توجد نتائج تطابق "${query}"`);
+            return false;
+        }
+        this._renderFilteredGrid(filtered);
+        return true;
+    }
+
     /**
      * عرض حالة خطأ في الواجهة
      * @private

@@ -52,8 +52,8 @@ export class SettingsTab {
         phoneInput.value = this.user.phone || '';
 
         // ✅ صورة افتراضية ديناميكية من DiceBear حسب الثيم
-        const theme = this.user.theme === 1 ? 'dark' : 'light';
-        const defaultAvatar = `https://api.dicebear.com/7.x/thumbs/svg?seed=${encodeURIComponent(this.user.username)}&backgroundColor=${theme === 'dark' ? '1c1c1c' : 'fefefe'}`;
+        const theme = this.user.theme === 1 ? 'night' : 'day';
+        const defaultAvatar = `https://api.dicebear.com/7.x/thumbs/svg?seed=${encodeURIComponent(this.user.username)}&backgroundColor=${theme === 'night' ? '1c1c1c' : 'fefefe'}`;
 
         avatarPreview.src = this.user.avatar || defaultAvatar;
     }

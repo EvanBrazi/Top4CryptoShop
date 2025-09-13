@@ -196,6 +196,62 @@ export class BalancesTab {
     }
 
     /**
+     * عرض شبكة الأرصدة بعد الفلترة
+     * @private
+     * @param {Array} filteredBalances
+     */
+    async _renderFilteredGrid(filteredBalances) {
+        const oldGrid = this.container.querySelector('.grid-layout');
+        if (oldGrid) oldGrid.remove();
+        const grid = document.createElement('div');
+        grid.className = 'grid-layout';
+        const fragment = document.createDocumentFragment();
+        const cardElements = await Promise.all(
+            filteredBalances.map(balance => this._createBalanceCard(balance))
+        );
+        cardElements.forEach(card => {
+            if (card instanceof HTMLElement) fragment.appendChild(card);
+        });
+        grid.appendChild(fragment);
+        this.container.appendChild(grid);
+        await this._setupLazyLoading();
+    }
+
+    /**
+     * عرض رسالة فارغة عند عدم وجود نتائج
+     * @private
+     * @param {string} message
+     */
+    _renderEmptyState(message) {
+        this.container.innerHTML = `
+            <div class="empty-search-message">
+                <i class="search-icon">🔍</i>
+                <p>${message}</p>
+            </div>
+        `;
+    }
+
+    /**
+     * فلترة أرصدة المستخدم حسب نص البحث
+     * @public
+     * @param {string} query
+     */
+    filter(query) {
+        const searchTerm = query.toLowerCase();
+        const filtered = this.config.balancesData.filter(balance =>
+            balance.name.toLowerCase().includes(searchTerm) ||
+            (balance.tags && balance.tags.some(tag => tag.toLowerCase().includes(searchTerm)))
+        );
+        if (filtered.length === 0) {
+            this._renderEmptyState(`لا توجد نتائج تطابق "${query}"`);
+            return false;
+        }
+        this._renderFilteredGrid(filtered);
+        return true;
+    }
+
+
+    /**
      * تحديث بيانات الرصيد وإعادة العرض
      * @public
      * @param {Array} newBalancesData

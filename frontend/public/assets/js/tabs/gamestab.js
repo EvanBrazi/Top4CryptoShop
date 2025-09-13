@@ -197,6 +197,62 @@ export class GamesTab {
     }
 
     /**
+     * عرض شبكة الألعاب بعد الفلترة
+     * @private
+     * @param {Array} filteredGames
+     */
+    async _renderFilteredGrid(filteredGames) {
+        const oldGrid = this.container.querySelector('.grid-layout');
+        if (oldGrid) oldGrid.remove();
+        const grid = document.createElement('div');
+        grid.className = 'grid-layout';
+        const fragment = document.createDocumentFragment();
+        const cardElements = await Promise.all(
+            filteredGames.map(game => this._createGameCard(game))
+        );
+        cardElements.forEach(card => {
+            if (card instanceof HTMLElement) fragment.appendChild(card);
+        });
+        grid.appendChild(fragment);
+        this.container.appendChild(grid);
+        await this._setupLazyLoading();
+    }
+
+    /**
+     * عرض رسالة فارغة عند عدم وجود نتائج
+     * @private
+     * @param {string} message
+     */
+    _renderEmptyState(message) {
+        this.container.innerHTML = `
+            <div class="empty-search-message">
+                <i class="search-icon">🔍</i>
+                <p>${message}</p>
+            </div>
+        `;
+    }
+
+    /**
+     * فلترة الألعاب حسب نص البحث
+     * @public
+     * @param {string} query
+     */
+    filter(query) {
+        const searchTerm = query.toLowerCase();
+        const filtered = this.config.gamesData.filter(game =>
+            game.name.toLowerCase().includes(searchTerm) ||
+            (game.tags && game.tags.some(tag => tag.toLowerCase().includes(searchTerm)))
+        );
+        if (filtered.length === 0) {
+            this._renderEmptyState(`لا توجد نتائج تطابق "${query}"`);
+            return false;
+        }
+        this._renderFilteredGrid(filtered);
+        return true;
+    }
+
+
+    /**
      * تحديث بيانات الألعاب وإعادة العرض
      * @public
      * @param {Array} newGamesData

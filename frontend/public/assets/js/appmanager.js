@@ -309,7 +309,112 @@ export class AppManager {
                 themeColor: this.config.themeColor
             })
         };
+        this._initSearchBar();
         console.log('✅ تم تهيئة التبويبات بنجاح');
+    }
+
+    showNoResultsMessage(query) {
+        const container = document.getElementById('searchNoResults');
+        if (!container) return;
+
+        container.textContent = `❌ لا توجد نتائج تطابق "${query}"`;
+        container.style.display = 'block';
+    }
+
+    hideNoResultsMessage() {
+        const container = document.getElementById('searchNoResults');
+        if (container) container.style.display = 'none';
+    }
+
+    /**
+     * بحث عام عبر جميع التبويبات المدعومة
+     * @param {string} query
+     */
+    searchAcrossTabs(query) {
+        console.log('Query:', query)
+        const results = {
+            apps: this.tabs.apps?.filter(query),
+            games: this.tabs.games?.filter(query),
+            cryptos: this.tabs.cryptos?.filter(query),
+            balances: this.tabs.balances?.filter(query)
+        };
+
+        const hasResults = Object.values(results).some(Boolean);
+        if (!hasResults) {
+            //showUserNotification(`❌ لا توجد نتائج تطابق "${query}" في أي قسم`, 'error');
+            this.showNoResultsMessage(query);
+        } else {
+            this.hideNoResultsMessage();
+        }
+    }
+
+    showSuggestions(suggestions) {
+        const container = document.getElementById('searchSuggestions');
+        const noResults = document.getElementById('searchNoResults');
+        if (!container) return;
+        container.innerHTML = '';
+        container.style.display = 'none';
+        if (noResults) noResults.style.display = 'none';
+        if (!Array.isArray(suggestions) || suggestions.length === 0) {
+            if (noResults) {
+                noResults.textContent = `❌ لا توجد نتائج تطابق "${document.getElementById('globalSearchInput').value}"`;
+                noResults.style.display = 'block';
+            }
+            return;
+        }
+        console.log('Displaying suggestions:', suggestions);
+        suggestions.forEach(item => {
+            const suggestionEl = document.createElement('div');
+            suggestionEl.className = 'suggestion-item';
+            console.log('Suggestion item:', item);
+            const iconEl = document.createElement('img');
+            iconEl.className = 'suggestion-icon';
+            iconEl.src = `/icons/${item.category || 'apps'}/${item.icon || 'default.png'}`;
+            iconEl.alt = item.name;
+            iconEl.loading = 'lazy';
+            iconEl.onerror = () => {
+                iconEl.src = `/icons/${item.category || 'apps'}/default.png`;
+            };
+            const textEl = document.createElement('span');
+            textEl.textContent = item.name;
+            suggestionEl.appendChild(iconEl);
+            suggestionEl.appendChild(textEl);
+            suggestionEl.addEventListener('click', () => {
+                document.getElementById('globalSearchInput').value = item.name;
+                container.style.display = 'none';
+                if (noResults) noResults.style.display = 'none';
+                this.searchAcrossTabs(item.name);
+            });
+            container.appendChild(suggestionEl);
+        });
+        container.style.display = 'block';
+        console.log('Suggestions container visible')
+    }
+
+    _initSearchBar() {
+        // إعداد البحث العالمي
+        document.getElementById('globalSearchInput').addEventListener('input', (e) => {
+            const query = e.target.value;
+            let sourceData = [];
+            sourceData.push(...this.appsData || []);
+            sourceData.push(...this.gamesData || []);
+            sourceData.push(...this.cryptosData || []);
+            sourceData.push(...this.balancesData || []);
+            const suggestions = sourceData
+                .filter(item => {
+                    const text = item.name;
+                    return typeof text === 'string' && text.toLowerCase().includes(query.toLowerCase());
+                })
+                .slice(0, 5); // تمرير الكائنات كاملة
+            // عرض أول 5 اقتراحات فقط
+            console.log('Suggestions:', suggestions);
+            if (suggestions.length === 0) {
+                this.showNoResultsMessage(query);
+            } else {
+                this.hideNoResultsMessage();
+            }
+            this.showSuggestions(suggestions);
+        });
     }
 
     async _postOrderMessage() {
@@ -348,7 +453,21 @@ export class AppManager {
         if (backBtn) {
             backBtn.style.display = tabId === 'home' ? 'none' : 'block';
         }
+        this._updateSearchBarVisibility(tabId); // ✅ تفعيل شريط البحث حسب التبويب
         console.log(`🔀 تم تغيير التبويب إلى: ${tabId}`);
+    }
+
+    /**
+     * تحديث حالة ظهور شريط البحث حسب التبويب النشط
+     * @private
+     * @param {string} tabId
+     */
+    _updateSearchBarVisibility(tabId) {
+        const searchBar = document.getElementById('globalSearchBar');
+        const allowedTabs = ['home', 'apps', 'games', 'cryptos', 'balances'];
+        if (searchBar) {
+            searchBar.style.display = allowedTabs.includes(tabId) ? 'block' : 'none';
+        }
     }
 
     /**

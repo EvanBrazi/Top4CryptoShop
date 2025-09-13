@@ -175,6 +175,7 @@ export class DialogPurchase {
         const balance = await this._getUserBalance();
         if (balance < totalAmount) {
           alert('⚠️ رصيدك غير كافٍ، سيتم تحويلك إلى تبويب الدفع');
+          document.dispatchEvent(new CustomEvent('switchTab', { detail: 'wallet' }));
           return;
         }
 

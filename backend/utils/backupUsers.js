@@ -105,4 +105,4 @@ async function backupUsersToDrive() {
   }
 }
 
-module.exports = { backupUsers, backupUsersToDrive };
+module.exports = { backupUsers, backupUsersToDrive, logBackupStatus };

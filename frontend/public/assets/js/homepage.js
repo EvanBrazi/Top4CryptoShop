@@ -62,7 +62,7 @@ class HomePage {
             : console.warn('❌ SW is NOT controlling the page');
 
     }
-
+    
     /**
      * تخزين عناصر DOM
      * @private
@@ -102,27 +102,22 @@ class HomePage {
         // نظام التبويبات
         this.components.taber = new Taber(
             this.domElements.sidebarMenu,
-            this.domElements.tabsContent,
-            {
-                activeClass: 'active',
-                defaultTab: APP_CONFIG.DEFAULT_TAB,
-                storageKey: APP_CONFIG.STORAGE_KEYS.ACTIVE_TAB,
-                useCookies: true
-            }
+            this.domElements.tabsContent, {
+            activeClass: 'active',
+            defaultTab: APP_CONFIG.DEFAULT_TAB,
+            storageKey: APP_CONFIG.STORAGE_KEYS.ACTIVE_TAB,
+            useCookies: true
+        }
         );
-
         // مدير التطبيقات
         this.components.appManager = new AppManager(this.components.taber, this.userManager);
-
-        // تهيئة السمة
-        // th.initTheme();
     }
 
     /**
- * تحميل بيانات المستخدم وتحديث الواجهة
- * @private
- * @async
- */
+     * تحميل بيانات المستخدم وتحديث الواجهة
+     * @private
+     * @async
+     */
     async _loadUserData() {
         try {
             if (!this.userManager) {
@@ -600,6 +595,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     window.homePage = new HomePage();
     //setTimeout(async () => await hideLoader(), 3000);
+});
+
+document.addEventListener('switchTab', (e) => {
+    console.log('Switching to tab:', e.detail);
+    if (window.homePage?.components?.taber) window.homePage.components.taber.activateTab(e.detail);
 });
 
 window.addEventListener('load', () => {

@@ -331,7 +331,7 @@ html {
   transform: translateX(-5px);
 }
 
-.night-mode .menu-link:hover {
+.night-theme .menu-link:hover {
   transform: translateX(-5px);
   color: var(--accent-color);
   background-color: var(--primary-hover);
@@ -341,7 +341,7 @@ html {
   padding: 5px;
 }
 
-.night-mode .menu-link i {
+.night-theme .menu-link i {
   color: var(--text-color);
 }
 
@@ -602,10 +602,12 @@ button:hover {
     transform: scale(1) rotate(0deg);
     opacity: 0.8;
   }
+
   50% {
     transform: scale(1.1) rotate(180deg);
     opacity: 1;
   }
+
   100% {
     transform: scale(1) rotate(360deg);
     opacity: 0.8;
@@ -841,13 +843,28 @@ button:hover {
   transform: scale(1.2);
 }
 
-.toast-success { background-color: #28a745; }
-.toast-error   { background-color: #dc3545; }
-.toast-info    { background-color: #007bff; }
+.toast-success {
+  background-color: #28a745;
+}
+
+.toast-error {
+  background-color: #dc3545;
+}
+
+.toast-info {
+  background-color: #007bff;
+}
 
 @keyframes notifadeIn {
-  from { opacity: 0; transform: translate(-50%, -60%); }
-  to   { opacity: 1; transform: translate(-50%, -50%); }
+  from {
+    opacity: 0;
+    transform: translate(-50%, -60%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
 }
 
 @keyframes fadeInOut {
@@ -961,6 +978,93 @@ p {
   white-space: pre-line;
 }
 
+.search-bar-container {
+  width: calc(100% - 40px);
+  max-width: 800px;
+  margin: 0 auto 20px;
+  padding: 12px 20px;
+  border: 1px solid #ddd;
+  border-radius: 25px;
+  font-size: 16px;
+  outline: none;
+  transition: all 0.3s;
+  direction: rtl;
+  display: block;
+  box-sizing: border-box;
+}
+
+.search-bar-container:focus {
+  border-color: var(--theme-color);
+  box-shadow: 0 0 5px rgba(106, 90, 205, 0.3);
+}
+
+.search-no-results {
+  margin-top: 8px;
+  padding: 10px 16px;
+  background-color: #ffecec;
+  border: 1px solid #f5c2c2;
+  color: #c0392b;
+  font-size: 14px;
+  border-radius: 6px;
+  text-align: center;
+  font-family: 'Cairo', sans-serif;
+  direction: rtl;
+}
+
+/* ✅ الحاوية العامة للاقتراحات */
+.search-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  max-height: 220px;
+  overflow-y: auto;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-top: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  font-family: 'Cairo', sans-serif;
+  direction: rtl;
+}
+
+/* ✅ عنصر الاقتراح الفردي */
+.suggestion-item {
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid #eee;
+  font-size: 15px;
+  color: #333;
+}
+
+/* ✅ تأثير التحويم */
+.suggestion-item:hover {
+  background-color: #f0f0f0;
+}
+
+.suggestion-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+/* ✅ دعم الوضع الداكن */
+body.night-theme .search-suggestions {
+  background-color: #1e1e1e;
+  border-color: #444;
+}
+
+body.night-theme .suggestion-item {
+  color: #ddd;
+  border-bottom: 1px solid #333;
+}
+
+body.night-theme .suggestion-item:hover {
+  background-color: #2a2a2a;
+}
+
 /* ============================
    💠 تحسينات الاستجابة العامة
 ============================= */
@@ -1008,7 +1112,7 @@ p {
     z-index: 1000;
     border-radius: var(--border-radius);
   }
-  
+
   .dialog-title {
     font-size: 1.3rem;
   }

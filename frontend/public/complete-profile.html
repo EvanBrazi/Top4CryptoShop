@@ -1,0 +1,65 @@
+<!-- complete-profile.html -->
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>استكمال بيانات الحساب</title>
+    <link rel="stylesheet" href="./assets/css/register.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+
+<body class="day-theme">
+    <div class="container">
+        <h2>استكمال بيانات الحساب</h2>
+        <form id="completeProfileForm">
+            <div class="form-group">
+                <input type="text" id="fullName" placeholder="الاسم الكامل" required>
+            </div>
+            <div class="form-group">
+                <select id="country" required>
+                    <option value="" disabled selected>اختر بلدك</option>
+                    <option value="السعودية">السعودية</option>
+                    <option value="سوريا">سوريا</option>
+                    <option value="مصر">مصر</option>
+                    <option value="الإمارات">الإمارات</option>
+                    <!-- أضف باقي الدول حسب الحاجة -->
+                </select>
+            </div>
+            <div class="form-group">
+                <input type="tel" id="phone" placeholder="رقم الجوال" required>
+            </div>
+            <button type="submit" class="btn-primary">حفظ البيانات</button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('completeProfileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fullName = document.getElementById('fullName').value;
+            const country = document.getElementById('country').value;
+            const phone = document.getElementById('phone').value;
+
+            try {
+                const res = await fetch('/api/auth/complete-profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fullName, country, phone })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    Swal.fire('تم الحفظ', 'تم تحديث بياناتك بنجاح', 'success');
+                    setTimeout(() => window.location.href = '/homepage.html', 2000);
+                } else {
+                    Swal.fire('خطأ', data.message || 'حدث خطأ أثناء الحفظ', 'error');
+                }
+            } catch (err) {
+                Swal.fire('خطأ', 'تعذر الاتصال بالخادم', 'error');
+            }
+        });
+    </script>
+</body>
+
+</html>

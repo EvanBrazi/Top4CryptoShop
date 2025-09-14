@@ -26,13 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
 const googleBtn = document.getElementById('googleSignIn');
 if (googleBtn) {
     googleBtn.addEventListener('click', () => {
-        const googleAuthUrl = new URL('https://accounts.google.com/o/oauth2/auth');
-        googleAuthUrl.searchParams.set('response_type', 'code');
-        googleAuthUrl.searchParams.set('client_id', 'YOUR_GOOGLE_CLIENT_ID');
-        googleAuthUrl.searchParams.set('redirect_uri', 'https://top4cryptoshop.onrender.com/api/auth/google/callback');
-        googleAuthUrl.searchParams.set('scope', 'email profile');
-        googleAuthUrl.searchParams.set('state', crypto.randomUUID());
-        window.location.href = googleAuthUrl.toString();
+        window.location.href = '/api/auth/google';
     });
 }
 

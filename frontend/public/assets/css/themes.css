@@ -36,6 +36,8 @@
 .day-theme {
   --bg-color: #fdfdfd;
   --text-color: #2b2b2b;
+  --hover-bg: #f0f0f0;
+  --icon-bg: #e0e0e0;
   --primary-color: #d4a76a;
   --primary-hover: #b88c4f;
   --secondary-color: #f0e4d2;
@@ -68,12 +70,17 @@
   --border-menu-link: 1px solid rgba(0, 0, 0, 0.1);
   --background-menu-link: rgba(255, 255, 255, 0.7);
   --sidebar-border-left: 1px solid rgba(0, 0, 0, 0.1);
+  --search-container-border-bottom: 1px solid #111;
+  --main-search-input-border: 2px solid #a0522d;
+  --search-suggestion-item-border-bottom: 1px solid #0f0f0f;
 }
 
 /* ✅ ثيم الليل */
 .night-theme {
   --bg-color: #12121c;
   --text-color: #e2e2e2;
+  --hover-bg: #333;
+  --icon-bg: #444;
   --primary-color: #5a8dee;
   --primary-hover: #3a6fc8;
   --secondary-color: #24263a;
@@ -106,4 +113,7 @@
   --border-menu-link: 1px solid rgba(255, 255, 255, 0.1);
   --background-menu-link: rgba(0, 0, 0, 0.2);
   --sidebar-border-left: 1px solid rgba(255, 255, 255, 0.1);
+  --search-container-border-bottom: 1px solid #eee;
+  --main-search-input-border: 2px solid #1a2a40;
+  --search-suggestion-item-border-bottom: 1px solid #f0f0f0;
 }

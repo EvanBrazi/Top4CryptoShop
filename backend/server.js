@@ -23,6 +23,8 @@ const cors = require('cors');
 const hpp = require('hpp');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
+const passport = require('passport');
+require('./config/googleAuth'); // إعداد الاستراتيجية
 const MongoStore = require('connect-mongo');
 const compression = require('compression');
 const morgan = require('morgan');
@@ -189,6 +191,26 @@ app.put('/api/users/:id/balance', async (req, res) => {
 });
 
 // =======================
+// 🔐 إعدادات المصادقة باستخدام Google OAuth 2.0
+// =======================
+app.use(passport.initialize());
+app.use(passport.session());
+
+// ✅ نقطة بدء تسجيل الدخول
+app.get('/api/auth/google', passport.authenticate('google', {
+  scope: ['profile', 'email']
+}));
+
+// ✅ نقطة العودة من Google
+app.get('/api/auth/google/callback',
+  passport.authenticate('google', { failureRedirect: '/login-failed' }),
+  (req, res) => {
+    // ✅ تحويل المستخدم إلى صفحة استكمال البيانات
+    res.redirect('/complete-profile.html');
+  }
+);
+
+// =======================
 // 📄 صفحات الواجهة
 // =======================
 const servePage = page => (req, res) => {
@@ -201,6 +223,8 @@ app.get('/', servePage('dashboard'));
 app.get('/dashboard', servePage('dashboard'));
 app.get('/register', servePage('register'));
 app.get('/login', servePage('login'));
+// ✅ نقطة تسجيل الخروج
+//app.get('/logout', servePage('logout'));
 
 app.get('/homepage', (req, res) => {
   if (!req.session?.user || req.session.user.role !== 'admin') {

@@ -367,4 +367,21 @@ export class HomeTab {
             await this.render();
         }
     }
+
+    /**
+     * حذف الشبكة الحالية
+     * @private
+     */
+    _deleteGrid() {
+        this.container.innerHTML = '';
+    }
+
+    /**
+     * إعادة عرض الشبكة (مثلاً بعد تغيير البيانات الخارجية)
+     * @public
+     */
+    async refresh() {
+        this._deleteGrid();
+        await this.render();
+    }
 }

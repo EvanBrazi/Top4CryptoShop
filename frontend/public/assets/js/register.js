@@ -57,13 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // 🧭 روابط OAuth
 byId('googleSignIn').addEventListener('click', () => {
-    window.location.href =
-        'https://accounts.google.com/o/oauth2/auth?' +
-        'response_type=code&' +
-        'client_id=YOUR_GOOGLE_CLIENT_ID&' +
-        'redirect_uri=https://top4cryptoshop.onrender.com/api/auth/google/callback&' +
-        'scope=email profile&' +
-        'state=random_state_string';
+    window.location.href = '/api/auth/google';
 });
 
 byId('appleSignIn').addEventListener('click', () => {

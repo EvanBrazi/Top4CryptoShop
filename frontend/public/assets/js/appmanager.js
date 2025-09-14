@@ -19,6 +19,7 @@ import { GamesTab } from "./tabs/gamestab.js";
 import { CryptosTab } from "./tabs/cryptostab.js";
 import { BalancesTab } from "./tabs/balancestab.js";
 import { IconLoader } from "./core/icon-loader.js";
+import { SearchManager } from "./core/search-manager.js";
 import { UnifiedIconSystem } from './core/unified-icon-system.js';
 import { IconRenderer } from './core/icon-renderer.js';
 import { CardsService } from "./core/cards.js";
@@ -226,7 +227,7 @@ export class AppManager {
         this.tabs = {
             home: new HomeTab({
                 taber: this.taber,
-                containerId: 'home-tab-cards-container',
+                containerId: 'home-tab-container',
                 whichCardClick: (index, card) => this._whichCardClick(index, card),
                 options: {
                     cardsData: this.cardsData,
@@ -309,118 +310,24 @@ export class AppManager {
                 themeColor: this.config.themeColor
             })
         };
-        this._initSearchBar();
+        // مدير البحث (بعد أن يصبح AppManager جاهزاً)
+        setTimeout(() => {
+            this.searchManager = new SearchManager(this);
+        }, 1000);
         console.log('✅ تم تهيئة التبويبات بنجاح');
     }
-
-    showNoResultsMessage(query) {
-        const container = document.getElementById('searchNoResults');
-        if (!container) return;
-
-        container.textContent = `❌ لا توجد نتائج تطابق "${query}"`;
-        container.style.display = 'block';
-    }
-
-    hideNoResultsMessage() {
-        const container = document.getElementById('searchNoResults');
-        if (container) container.style.display = 'none';
-    }
-
     /**
-     * بحث عام عبر جميع التبويبات المدعومة
-     * @param {string} query
+     * التعامل مع رسالة تحديث الطلبات
+     * @private
      */
-    searchAcrossTabs(query) {
-        console.log('Query:', query)
-        const results = {
-            apps: this.tabs.apps?.filter(query),
-            games: this.tabs.games?.filter(query),
-            cryptos: this.tabs.cryptos?.filter(query),
-            balances: this.tabs.balances?.filter(query)
-        };
-
-        const hasResults = Object.values(results).some(Boolean);
-        if (!hasResults) {
-            //showUserNotification(`❌ لا توجد نتائج تطابق "${query}" في أي قسم`, 'error');
-            this.showNoResultsMessage(query);
-        } else {
-            this.hideNoResultsMessage();
-        }
-    }
-
-    showSuggestions(suggestions) {
-        const container = document.getElementById('searchSuggestions');
-        const noResults = document.getElementById('searchNoResults');
-        if (!container) return;
-        container.innerHTML = '';
-        container.style.display = 'none';
-        if (noResults) noResults.style.display = 'none';
-        if (!Array.isArray(suggestions) || suggestions.length === 0) {
-            if (noResults) {
-                noResults.textContent = `❌ لا توجد نتائج تطابق "${document.getElementById('globalSearchInput').value}"`;
-                noResults.style.display = 'block';
-            }
-            return;
-        }
-        console.log('Displaying suggestions:', suggestions);
-        suggestions.forEach(item => {
-            const suggestionEl = document.createElement('div');
-            suggestionEl.className = 'suggestion-item';
-            console.log('Suggestion item:', item);
-            const iconEl = document.createElement('img');
-            iconEl.className = 'suggestion-icon';
-            iconEl.src = `/icons/${item.category || 'apps'}/${item.icon || 'default.png'}`;
-            iconEl.alt = item.name;
-            iconEl.loading = 'lazy';
-            iconEl.onerror = () => {
-                iconEl.src = `/icons/${item.category || 'apps'}/default.png`;
-            };
-            const textEl = document.createElement('span');
-            textEl.textContent = item.name;
-            suggestionEl.appendChild(iconEl);
-            suggestionEl.appendChild(textEl);
-            suggestionEl.addEventListener('click', () => {
-                document.getElementById('globalSearchInput').value = item.name;
-                container.style.display = 'none';
-                if (noResults) noResults.style.display = 'none';
-                this.searchAcrossTabs(item.name);
-            });
-            container.appendChild(suggestionEl);
-        });
-        container.style.display = 'block';
-        console.log('Suggestions container visible')
-    }
-
-    _initSearchBar() {
-        // إعداد البحث العالمي
-        document.getElementById('globalSearchInput').addEventListener('input', (e) => {
-            const query = e.target.value;
-            let sourceData = [];
-            sourceData.push(...this.appsData || []);
-            sourceData.push(...this.gamesData || []);
-            sourceData.push(...this.cryptosData || []);
-            sourceData.push(...this.balancesData || []);
-            const suggestions = sourceData
-                .filter(item => {
-                    const text = item.name;
-                    return typeof text === 'string' && text.toLowerCase().includes(query.toLowerCase());
-                })
-                .slice(0, 5); // تمرير الكائنات كاملة
-            // عرض أول 5 اقتراحات فقط
-            console.log('Suggestions:', suggestions);
-            if (suggestions.length === 0) {
-                this.showNoResultsMessage(query);
-            } else {
-                this.hideNoResultsMessage();
-            }
-            this.showSuggestions(suggestions);
-        });
-    }
-
     async _postOrderMessage() {
         await this.tabs.orders.loadOrders();
     }
 
+    /**
+     * التعامل مع رسالة تحديث المدفوعات
+     * @private
+     */
     async _postPaymentMessage() {
         await this.tabs.payments.loadPayments();
     }
@@ -449,12 +356,31 @@ export class AppManager {
         console.log('Clicked Tab : ', tabId);
         document.querySelector('.sidebar')?.classList.remove('active');
         document.querySelector('.overlay')?.classList.remove('active');
+        this.updateBackBtnVisibility(tabId);
+        //this._updateSearchBarVisibility(tabId); // ✅ تفعيل شريط البحث حسب التبويب
+        console.log(`🔀 تم تغيير التبويب إلى: ${tabId}`);
+    }
+
+    /**
+     * Hide the back button
+     * @public
+     */
+    hideBackBtn() {
+        const backBtn = document.getElementById('back-btn');
+        if (backBtn.style.display === 'none') return;
+        backBtn.style.display = 'none';
+    }
+
+    /**
+     * تحديث حالة ظهور زر الرجوع
+     * @public
+     * @param {string} tabId - معرف التبويب الحالي
+     */
+    updateBackBtnVisibility(tabId = this.getActiveTabId()) {
         const backBtn = document.getElementById('back-btn');
         if (backBtn) {
             backBtn.style.display = tabId === 'home' ? 'none' : 'block';
         }
-        this._updateSearchBarVisibility(tabId); // ✅ تفعيل شريط البحث حسب التبويب
-        console.log(`🔀 تم تغيير التبويب إلى: ${tabId}`);
     }
 
     /**
@@ -492,12 +418,6 @@ export class AppManager {
     handleAppsCardsClick(card) {
         console.log('📱 تم النقر على التطبيق:', card.name);
         // لاحقًا: this.dialogs.purchase.open(app) أو favoritesManager.add(app)
-        /**const dialogPurchase = new DialogPurchase(card, {
-            iconsBasePath: '/icons/apps/',
-            cssPath: '/assets/css/purchase-dialog.css',
-            supportPhone: SUPPORT_PHONE
-        });
-        dialogPurchase.open();*/
     }
 
     /**
@@ -517,6 +437,26 @@ export class AppManager {
             console.log('✅ تم تحديث بيانات التطبيقات بنجاح');
         } catch (error) {
             console.error('❌ فشل تحديث بيانات التطبيقات:', error);
+        }
+    }
+
+    /**
+     * الحصول على معرف التبويب النشط
+     * @returns {string} معرف التبويب النشط
+     */
+    getActiveTabId() {
+        return this.taber.getActiveTab().id;
+    }
+
+    /**
+     * تحديث التبويب النشط
+     */
+    refreshCurrentTab() {
+        const activeTabId = this.getActiveTabId();
+        const activeTab = this.tabs[activeTabId];
+        if (activeTab && typeof activeTab.refresh === 'function') {
+            activeTab.refresh();
+            console.log(`🔄 تم تحديث التبويب النشط: ${activeTabId}`);
         }
     }
 

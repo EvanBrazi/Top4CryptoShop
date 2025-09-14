@@ -129,17 +129,18 @@
     <div class="main-content">
         <div class="content">
             <!-- ✅ شريط البحث العام -->
-            <div id="globalSearchBar" class="search-bar-container">
-                <input type="text" id="globalSearchInput"
-                    placeholder="🔍 ابحث في التطبيقات، الألعاب، العملات، الرصيد..." />
+            <!-- شريط البحث -->
+            <div class="search-container">
+                <div class="search-box">
+                    <input type="text" id="main-search-input" placeholder="ابحث..." autocomplete="on" />
+                    <div class="search-icon">🔍</div>
+                    <div class="search-suggestions" id="search-suggestions"></div>
+                </div>
             </div>
-            <div id="searchSuggestions" class="search-suggestions" style="display: none;"></div>
-            <!-- ✅ رسالة عدم وجود نتائج -->
-            <div id="searchNoResults" class="search-no-results" style="display: none;"></div>
-            <div class="tabs-container">
+            <div class="tabs-container" id="tabs-container">
                 <div class="tab-pane active" id="home-tab">
                     <div class="cards-container">
-                        <div id="home-tab-cards-container" class="cards-grid-container">
+                        <div id="home-tab-container" class="cards-grid-container">
                             <svg class="card-shadow" viewBox="0 0 100 100" preserveAspectRatio="none">
                                 <path d="M0,0 L100,0 L100,100 L0,100 Z" fill="transparent" />
                             </svg>
@@ -296,23 +297,23 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="fullName">الاسم الكامل</label>
-                                    <input type="text" id="fullName" />
+                                    <input type="text" id="fullName" autocomplete="username"/>
                                 </div>
                                 <div class="form-group">
                                     <label for="email">البريد الإلكتروني</label>
-                                    <input type="email" id="email" />
+                                    <input type="email" id="email" autocomplete="email"/>
                                 </div>
                                 <div class="form-group">
                                     <label for="phone">رقم الهاتف</label>
-                                    <input type="tel" id="phone" />
+                                    <input type="tel" id="phone" autocomplete="tel"/>
                                 </div>
                                 <div class="form-group">
                                     <label for="newPassword">كلمة المرور الجديدة</label>
-                                    <input type="password" id="newPassword" />
+                                    <input type="password" id="newPassword" autocomplete="new-password" />
                                 </div>
                                 <div class="form-group">
                                     <label for="confirmPassword">تأكيد كلمة المرور</label>
-                                    <input type="password" id="confirmPassword" />
+                                    <input type="password" id="confirmPassword" autocomplete="new-password" />
                                 </div>
                                 <div class="form-group full-width">
                                     <button type="submit" class="save-btn">💾 حفظ التغييرات</button>

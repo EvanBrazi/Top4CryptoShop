@@ -38,7 +38,7 @@ html {
   height: 50px;
   background-color: var(--bar-footer-color);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
+  z-index: 5;
   /* تأكد أن هذه القيمة عالية كفاية */
   display: flex;
   align-items: center;
@@ -135,7 +135,7 @@ html {
   /* إضافة هذه السطر */
   transition: right 0.4s cubic-bezier(0.33, 1, 0.68, 1);
   border-left: var(--sidebar-border-left);
-  z-index: 1000;
+  z-index: 10;
   /* أعلى من الشريط العلوي */
   display: flex;
   flex-direction: column;
@@ -504,7 +504,7 @@ html {
   width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
-  z-index: 999;
+  z-index: 9;
   display: none;
   cursor: pointer;
   /* تغيير المؤشر إلى pointer للإشارة أنه قابل للنقر */
@@ -567,7 +567,7 @@ button:hover {
   bottom: 0;
   left: 0;
   background: #fff;
-  z-index: 9999;
+  z-index: 999;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -587,7 +587,7 @@ button:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9;
+  z-index: 99;
   transition: opacity 0.5s ease;
 }
 
@@ -624,7 +624,7 @@ button:hover {
   color: var(--text-color);
   padding: 5px 0;
   text-align: center;
-  z-index: 100;
+  z-index: 5;
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease;
   border-radius: var(--border-radius) var(--border-radius) 0 0;
@@ -813,7 +813,7 @@ button:hover {
   border-radius: 12px;
   font-size: 2rem;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
-  z-index: 9999;
+  z-index: 20;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -903,7 +903,7 @@ button:hover {
   justify-content: center;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  z-index: 2000;
+  z-index: 8;
   box-sizing: border-box;
   overflow-y: auto;
   /* تمكين التمرير داخل المودال */
@@ -978,91 +978,280 @@ p {
   white-space: pre-line;
 }
 
-.search-bar-container {
-  width: calc(100% - 40px);
-  max-width: 800px;
-  margin: 0 auto 20px;
-  padding: 12px 20px;
-  border: 1px solid #ddd;
+/* تنسيق شريط البحث */
+.search-container {
+  padding: 15px;
+  background: var(--card-bg);
+  border-bottom: var(--search-container-border-bottom);
+  position: sticky;
+  top: 0;
+  z-index: 6;
+}
+
+.search-box {
+  position: relative;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+#main-search-input {
+  width: 100%;
+  padding: 12px 45px 12px 15px;
+  border: var(--main-search-input-border);
   border-radius: 25px;
   font-size: 16px;
+  font-weight: bold;
+  font-style: italic;
   outline: none;
-  transition: all 0.3s;
-  direction: rtl;
-  display: block;
-  box-sizing: border-box;
-}
-
-.search-bar-container:focus {
-  border-color: var(--theme-color);
-  box-shadow: 0 0 5px rgba(106, 90, 205, 0.3);
-}
-
-.search-no-results {
-  margin-top: 8px;
-  padding: 10px 16px;
-  background-color: #ffecec;
-  border: 1px solid #f5c2c2;
-  color: #c0392b;
-  font-size: 14px;
-  border-radius: 6px;
-  text-align: center;
-  font-family: 'Cairo', sans-serif;
+  transition: border-color 0.3s;
   direction: rtl;
 }
 
-/* ✅ الحاوية العامة للاقتراحات */
+#main-search-input:focus {
+  border-color: var(--accent-color);
+}
+
+.search-icon {
+  position: absolute; /* يجب أن تكون absolute وليس relative */
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  font-weight: bold;
+  color: #888;
+  pointer-events: none; /* يمنع التفاعل معها إذا كانت للعرض فقط */
+}
+
 .search-suggestions {
-  position: absolute;
+  position: absolute; /* مهم جدًا لتجنب التأثير على الأيقونة */
   top: 100%;
   left: 0;
   width: 100%;
-  max-height: 220px;
+  margin-right: 0; /* احذف الهامش الجانبي لأنه يسبب انزياح */
+  border-radius: 0 0 10px 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background: var(--card-bg);
   overflow-y: auto;
-  background-color: #fff;
-  border: 1px solid #ccc;
-  border-top: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-  font-family: 'Cairo', sans-serif;
-  direction: rtl;
+  z-index: 7;
+  opacity: 0;
+  transform: translateY(-10px);
+  animation: fadeSlideIn 0.3s ease-out forwards;
 }
 
-/* ✅ عنصر الاقتراح الفردي */
-.suggestion-item {
-  padding: 10px 16px;
+.search-suggestions.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.search-suggestion-item {
+  padding: 10px 15px;
   cursor: pointer;
+  border-bottom: var(--search-suggestion-item-border-bottom);
+  display: flex;
+  align-items: center;
+  opacity: 0;
+  transform: translateY(8px);
+  animation: fadeInItem 0.25s ease-out forwards;
+}
+
+.search-suggestion-item:nth-child(1) { animation-delay: 0.05s; }
+.search-suggestion-item:nth-child(2) { animation-delay: 0.1s; }
+.search-suggestion-item:nth-child(3) { animation-delay: 0.15s; }
+.search-suggestion-item:nth-child(4) { animation-delay: 0.2s; }
+.search-suggestion-item:nth-child(5) { animation-delay: 0.25s; }
+
+@keyframes fadeInItem {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInSuggestion {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeSlideIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-out {
+  animation: fadeSlideOut 0.2s ease-in forwards;
+}
+
+@keyframes fadeSlideOut {
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+.search-suggestion-item:hover {
+  background-color: #f5f5f5;
+}
+
+.search-suggestion-item img {
+  width: 24px;
+  height: 24px;
+  margin-left: 10px;
+  border-radius: 5px;
+}
+
+.no-results-message {
+  text-align: center;
+  padding: 40px;
+  font-size: 16px;
+  color: #888;
+  background: #f9f9f9;
+  border-radius: 8px;
+  animation: fadeInCard 0.3s ease-out forwards;
+}
+
+.card-result {
+  max-width: 120px;
+  max-height: 120px;
+  position: relative;
+  background: var(--card-bg);
+  border-radius: 15%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  text-align: center;
+  padding: 10px;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: linear-gradient(45deg,
+      #ff0000, #ff7f00, #ffff00, #00ff00,
+      #0000ff, #4b0082, #9400d3);
+  background-size: 400% 400%;
+  transform: scale(0.95);
+  animation: fadeInCard 0.3s ease-out forwards;
+}
+
+.card-result:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  background-position: 100% 100%;
+}
+
+.card-result .icon {
+  position: relative;
+  width: 75%;
+  height: 75%;
+  margin-bottom: auto;
+  border-radius: 100%;
+  object-fit: cover;
+  margin: 0px auto 10px;
+  display: block;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  transition: transform 0.3s ease;
+}
+
+.card-result:hover .icon {
+  transform: rotate(20deg);
+}
+
+.card-result .title {
+  margin-top: auto;
+  object-fit: cover;
+  bottom: 0;
+  width: 100%;
+  height: 25%;
+  padding: 1%;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: #ff5e00;
+  text-shadow: 0 0 5px #ff7300, 0 0 10px #ffee00, 0 0 20px #ff0000;
+  animation: pulseGlow 1.5s infinite alternate;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  word-break: break-word;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.card-result:hover .title {
+  color: #ffee00;
+  text-shadow: 0 0 10px #ff5e00, 0 0 20px #ffee00, 0 0 30px #ff0000;
+}
+
+@keyframes pulseGlow {
+  0% {
+    text-shadow: 0 0 5px #ff5e00, 0 0 10px #ffee00, 0 0 20px #ff0000;
+  }
+
+  100% {
+    text-shadow: 0 0 10px #ff5e00, 0 0 20px #ffee00, 0 0 30px #ff0000;
+  }
+}
+
+@keyframes fadeInCard {
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.back-button {
+  margin-top: 16px;
+  padding: 8px 16px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
   transition: background-color 0.2s ease;
-  border-bottom: 1px solid #eee;
-  font-size: 15px;
-  color: #333;
 }
 
-/* ✅ تأثير التحويم */
-.suggestion-item:hover {
-  background-color: #f0f0f0;
+.back-button:hover {
+  background-color: #0056b3;
 }
 
-.suggestion-icon {
-  width: 32px;
-  height: 32px;
+/* عنصر الاقتراح الكامل */
+.search-suggestion-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+  border-radius: 8px;
+  margin-bottom: 6px;
+}
+
+.search-suggestion-item:hover {
+  background-color: var(--hover-bg);
+  transform: scale(1.02);
+}
+
+/* محتوى البطاقة داخل الاقتراح */
+.suggestion-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.suggestion-card img {
+  width: 36px;
+  height: 36px;
   border-radius: 6px;
   object-fit: cover;
+  background-color: var(--icon-bg);
 }
 
-/* ✅ دعم الوضع الداكن */
-body.night-theme .search-suggestions {
-  background-color: #1e1e1e;
-  border-color: #444;
-}
-
-body.night-theme .suggestion-item {
-  color: #ddd;
-  border-bottom: 1px solid #333;
-}
-
-body.night-theme .suggestion-item:hover {
-  background-color: #2a2a2a;
+.suggestion-card span {
+  font-size: 14px;
+  color: var(--text-color);
+  font-weight: 500;
 }
 
 /* ============================
@@ -1109,7 +1298,7 @@ body.night-theme .suggestion-item:hover {
     overflow-y: auto;
     overflow-x: hidden;
     transition: right 0.4s ease;
-    z-index: 1000;
+    z-index: 10;
     border-radius: var(--border-radius);
   }
 

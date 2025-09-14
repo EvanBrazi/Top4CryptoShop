@@ -264,6 +264,31 @@ router.post('/login',
 );
 
 // =============================================
+// 📝 استكمال ملف التعريف بعد تسجيل الدخول عبر Google
+// =============================================
+router.post('/complete-profile', async (req, res) => {
+  try {
+    const { fullName, country, phone } = req.body;
+    const userId = req.user?.id;
+
+    if (!userId) return res.status(401).json({ message: 'غير مصرح' });
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: 'المستخدم غير موجود' });
+
+    user.username = fullName.replace(/\s+/g, '_').toLowerCase();
+    user.phone = phone;
+    user.country = country;
+    await user.save();
+
+    res.json({ message: 'تم التحديث بنجاح' });
+  } catch (err) {
+    console.error('❌ خطأ أثناء حفظ البيانات:', err);
+    res.status(500).json({ message: 'خطأ داخلي في الخادم' });
+  }
+});
+
+// =============================================
 // 🔓 تسجيل الخروج
 // =============================================
 router.post('/logout', doubleCsrfProtection, async (req, res) => {

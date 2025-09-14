@@ -25,5 +25,13 @@
   "license": "MIT",
   "devDependencies": {
     "jest": "^30.0.5"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EvanBrazi/Top4CryptoShop.git"
+  },
+  "bugs": {
+    "url": "https://github.com/EvanBrazi/Top4CryptoShop/issues"
+  },
+  "homepage": "https://github.com/EvanBrazi/Top4CryptoShop#readme"
 }

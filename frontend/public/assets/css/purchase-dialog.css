@@ -1,14 +1,14 @@
 /* ✅ الغلاف العام */
 .purchase-dialog-overlay {
   position: fixed;
-  top: var(--topbar-height);
+  top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
   display: flex;
   justify-content: center;
   align-items: self-start;
-  z-index: 999;
+  z-index: 9;
   background-color: var(--background-menu-link);
   backdrop-filter: blur(12px);
   opacity: 0;
@@ -135,6 +135,7 @@
 /* ✅ مربع الحوار */
 /* ✅ مربع الحوار - مصغر ومحسن */
 .purchase-dialog {
+  margin-top: calc(var(--topbar-height) - 20px);
   display: flex;
   flex-direction: column;
   backdrop-filter: blur(15px);

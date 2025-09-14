@@ -264,6 +264,24 @@ export class CryptosTab {
     }
 
     /**
+     * حذف الشبكة الحالية
+     * @private
+     */
+    _deleteGrid() {
+        this.container.innerHTML = '';
+    }
+
+    /**
+     * إعادة عرض الشبكة (مثلاً بعد تغيير البيانات الخارجية)
+     * @public
+     */
+    async refresh() {
+        this._deleteGrid();
+        await this._renderCryptosGrid();
+        await this._setupLazyLoading();
+    }
+
+    /**
      * تنظيف الموارد والمراقب
      * @public
      */

@@ -25,11 +25,16 @@ const userSchema = new Schema({
 
   password: {
     type: String,
-    required: [true, 'كلمة المرور مطلوبة'],
+    required: function () {
+      return this.provider === 'local';
+    },
     minlength: 8,
     select: false,
     validate: {
-      validator: v => /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/.test(v),
+      validator: v => {
+        if (this.provider !== 'local') return true;
+        return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/.test(v);
+      },
       message: 'كلمة المرور يجب أن تحتوي على حرف كبير، حرف صغير، رقم، ورمز خاص'
     }
   },
@@ -57,6 +62,19 @@ const userSchema = new Schema({
       message: 'البريد الإلكتروني غير صالح'
     },
     index: true
+  },
+
+  googleId: {
+    type: String,
+    unique: true,
+    sparse: true,
+    index: true
+  },
+
+  provider: {
+    type: String,
+    enum: ['local', 'google'],
+    default: 'local'
   },
 
   theme: {
@@ -137,7 +155,7 @@ const userSchema = new Schema({
 
   twoFAMethod: { type: String, enum: ['qr', 'email'], default: null },
   twoFAAttempts: { type: Number, default: 0 },
-  
+
   trustedDevices: [{
     deviceId: String,
     addedAt: Date

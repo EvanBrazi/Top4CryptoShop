@@ -11,7 +11,10 @@ function initAdminWebSocket() {
   console.log('initAdminWebSocket');
   try {
     // ✅ تهيئة WebSocket لاستقبال إشعارات لحظية من السيرفر
-    const adminSocket = new WebSocket('ws://localhost:10000');
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}`;
+    console.log('📡 محاولة الاتصال بـ WebSocket:', wsUrl);
+    const adminSocket = new WebSocket(wsUrl);
     adminSocket.addEventListener('message', (event) => {
       console.log('📡 رسالة WebSocket وصلت:', event.data);
     });

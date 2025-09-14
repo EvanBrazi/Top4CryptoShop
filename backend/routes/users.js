@@ -5,13 +5,16 @@
  * @version 3.0.0
  * @license MIT
  */
-
+require('dotenv').config();
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const { verifyToken } = require('../middlewares/auth');
 const upload = require('../middlewares/upload'); // نفس إعداد multer الذي تستخدمه
 const cloudinary = require('../config/cloudinary');
+const { activeSessions } = require('../utils/sessionStore');
+// استيراد jwt للتحقق من التوكن
+const jwt = require('jsonwebtoken');
 
 
 // 📥 جلب جميع المستخدمين (للوحة التحكم)
@@ -21,6 +24,52 @@ router.get('/', verifyToken, async (req, res) => {
     res.json(users);
   } catch (err) {
     res.status(500).json({ message: 'فشل تحميل المستخدمين' });
+  }
+});
+
+// ✅ نقطة جلب بيانات المستخدم الحالي
+router.get('/me', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    const sessionId = req.headers['x-session-id'];
+
+    if (!token || !sessionId) {
+      return res.status(401).json({ error: 'رمز الجلسة أو التوكن مفقود' });
+    }
+
+    const session = activeSessions.get(sessionId);
+    if (!session) {
+      return res.status(403).json({ error: 'جلسة غير صالحة أو منتهية' });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({ error: 'توكن غير صالح أو منتهي' });
+    }
+
+    if (decoded.userId !== session.userId) {
+      return res.status(403).json({ error: 'توكن غير متطابق مع الجلسة' });
+    }
+
+    const user = await User.findById(decoded.userId).select('-password -loginAttempts');
+    if (!user) {
+      return res.status(404).json({ error: 'المستخدم غير موجود' });
+    }
+
+    res.json({
+      id: user._id,
+      username: user.username,
+      email: user.email,
+      avatar: user.avatar,
+      balance: user.balance,
+      role: user.role,
+      lastLogin: user.lastLogin
+    });
+  } catch (err) {
+    console.error('❌ خطأ في /users/me:', err);
+    res.status(500).json({ error: 'فشل في جلب بيانات المستخدم' });
   }
 });
 

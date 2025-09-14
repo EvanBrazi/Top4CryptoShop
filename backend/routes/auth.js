@@ -18,7 +18,7 @@ const { attachCsrfToken, doubleCsrfProtection } = require('../middlewares/csrfMi
 const { registerUser } = require('../controllers/authController');
 const { body } = require('express-validator');
 const { verifyToken, checkAdmin, checkSession } = require('../middlewares/auth');
-const { activeSessions } = require('../socket');
+const { activeSessions } = require('../utils/sessionStore');
 const passport = require('passport');
 require('../config/googleAuth'); // تأكد من إعداد استراتيجية جوجل في هذا الملف
 const speakeasy = require('speakeasy');
@@ -206,7 +206,8 @@ router.post('/login',
       const sessionId = crypto.randomBytes(16).toString('hex');
       activeSessions.set(sessionId, {
         userId: user._id.toString(),
-        role: user.role
+        role: user.role,
+        expiresAt: Date.now() + 3600000 // ساعة واحدة
       });
 
       // 🛡️ توليد JWT
@@ -282,18 +283,15 @@ router.get('/google/callback',
     try {
       const user = req.user;
 
-      // ✅ تحديث بيانات الدخول
       user.lastLogin = new Date();
       await user.save();
 
-      // 🧠 توليد sessionId وتسجيله في الذاكرة
       const sessionId = crypto.randomBytes(16).toString('hex');
       activeSessions.set(sessionId, {
         userId: user._id.toString(),
         role: user.role
       });
 
-      // 🛡️ توليد JWT بنفس المنطق
       const issuer = user.role === 'admin' ? 'admin-panel' : 'your-app-api';
       const token = jwt.sign(
         { userId: user._id, role: user.role || 'user' },
@@ -301,7 +299,6 @@ router.get('/google/callback',
         { expiresIn: '1h', issuer, algorithm: 'HS256' }
       );
 
-      // 🍪 إرسال الكوكيز
       res.cookie('session_token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
@@ -318,37 +315,17 @@ router.get('/google/callback',
         path: '/'
       });
 
-      attachCsrfToken(req, res); // توليد رمز CSRF
+      attachCsrfToken(req, res);
 
-      // 📦 إرسال بيانات المستخدم
-      const userResponse = {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        phone: user.phone,
-        theme: user.theme,
-        balance: user.balance,
-        lastLogin: user.lastLogin,
-        role: user.role,
-        sessionId: sessionId
-      };
+      const redirectPath = user.role === 'admin'
+        ? '/protectedViews/admin.html'
+        : `/google-redirect.html?token=${token}&sessionId=${sessionId}`;
 
-      return handleAuthResponse(req, res, {
-        success: true,
-        user: userResponse,
-        token,
-        redirectTo: user.role === 'admin' ? '/admin' : `/google-redirect.html?token=${token}&sessionId=${sessionId}`
-      });
+      return res.redirect(redirectPath);
 
     } catch (err) {
       console.error('❌ خطأ أثناء تسجيل الدخول عبر Google:', err);
-      return handleAuthResponse(req, res, {
-        status: 500,
-        success: false,
-        error: 'فشل تسجيل الدخول عبر Google',
-        details: process.env.NODE_ENV === 'development' ? err.message : null,
-        type: 'google_auth_error'
-      });
+      return res.redirect('/login.html');
     }
   }
 );

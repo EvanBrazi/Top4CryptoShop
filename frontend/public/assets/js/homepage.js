@@ -62,7 +62,7 @@ class HomePage {
             : console.warn('❌ SW is NOT controlling the page');
 
     }
-    
+
     /**
      * تخزين عناصر DOM
      * @private
@@ -516,7 +516,11 @@ document.addEventListener('DOMContentLoaded', () => {
          *
          * @author: Evan Brazi
          */
-        const socket = new WebSocket('ws://localhost:10000');
+        // ✅ تهيئة WebSocket لاستقبال إشعارات لحظية من السيرفر
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}`;
+        console.log('📡 محاولة الاتصال بـ WebSocket:', wsUrl);
+        const socket = new WebSocket(wsUrl);
         const sessionId = localStorage.getItem(STORAGE_KEYS.SESSION_ID) || `session_${Date.now()}`;
         console.log('Session_Id: ', sessionId);
         if (!localStorage.getItem(STORAGE_KEYS.SESSION_ID)) localStorage.setItem(STORAGE_KEYS.SESSION_ID, sessionId);

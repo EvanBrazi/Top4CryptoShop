@@ -14,6 +14,7 @@
 
 const WebSocket = require('ws');
 const { registerClient } = require('./utils/notifications');
+const { activeSessions } = require('./utils/sessionStore'); // ✅ استيراد الجلسات المشتركة
 
 // 🧠 استخراج sessionId من الكوكيز
 function extractSessionId(cookies) {
@@ -21,9 +22,6 @@ function extractSessionId(cookies) {
   const match = cookies.match(/sessionId=([^;]+)/);
   return match ? match[1] : null;
 }
-
-// 🔐 جلسات نشطة (مثال باستخدام ذاكرة مؤقتة)
-const activeSessions = new Map(); // sessionId => { userId, role }
 
 /**
  * تحقق من صلاحية الجلسة حسب الدور المطلوب

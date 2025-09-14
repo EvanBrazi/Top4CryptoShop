@@ -49,8 +49,11 @@ export class WalletTab {
      * تهيئة WebSocket لتحديث الرصيد عند قبول الدفع
      */
     _initWebSocket() {
-        const socket = new WebSocket('ws://localhost:10000');
-
+        // ✅ تهيئة WebSocket لاستقبال إشعارات لحظية من السيرفر
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}`;
+        console.log('📡 محاولة الاتصال بـ WebSocket:', wsUrl);
+        const socket = new WebSocket(wsUrl);
         socket.onmessage = (event) => {
             const data = JSON.parse(event.data);
             if (data.type === 'paymentAccepted' && data.userId === this.userId) {

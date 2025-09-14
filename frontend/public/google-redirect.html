@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>جارٍ تسجيل الدخول...</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            text-align: center;
+            margin-top: 80px;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+
+        .loader {
+            margin-top: 30px;
+            border: 6px solid #eee;
+            border-top: 6px solid #4CAF50;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .welcome {
+            font-size: 1.2em;
+            margin-top: 20px;
+            color: #4CAF50;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>🔐 جارٍ تسجيل الدخول عبر Google...</h2>
+    <div class="loader"></div>
+    <div class="welcome" id="welcomeMessage"></div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        const sessionId = urlParams.get('sessionId');
+
+        if (token && sessionId) {
+            localStorage.setItem('session_token', token);
+            localStorage.setItem('sessionId', sessionId);
+
+            fetch('/api/user/me', {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'X-Session-ID': sessionId
+                }
+            })
+                .then(res => res.json())
+                .then(user => {
+                    if (!user || !user.username) {
+                        document.getElementById('welcomeMessage').textContent = '👋 مرحبًا بك!';
+                    } else {
+                        document.getElementById('welcomeMessage').textContent = `👋 أهلاً ${user.username}، جاري تحويلك...`;
+                    }
+
+                    // حفظ معرف المستخدم
+                    localStorage.setItem('userId', user.id);
+
+                    const roleRedirects = {
+                        admin: '/protectedViews/admin.html',
+                        user: '/homepage.html',
+                        moderator: '/moderator/dashboard.html',
+                        support: '/support/center.html'
+                    };
+
+                    const redirectPath = roleRedirects[user.role] || '/homepage.html';
+
+                    setTimeout(() => {
+                        window.location.href = redirectPath;
+                    }, 2500); // تأخير بسيط لعرض الرسالة
+                })
+                .catch(err => {
+                    console.error('❌ فشل في جلب بيانات المستخدم:', err);
+                    window.location.href = '/login.html';
+                });
+        } else {
+            window.location.href = '/login.html';
+        }
+    </script>
+</body>
+
+</html>

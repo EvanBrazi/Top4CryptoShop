@@ -1,3 +1,8 @@
+// backend\config\googleAuth.js
+// =======================
+// 🔐 إعدادات المصادقة باستخدام Google OAuth 2.0
+// =======================
+require('dotenv').config();
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const User = require('../models/User') // تأكد من المسار الصحيح

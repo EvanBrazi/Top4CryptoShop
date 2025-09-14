@@ -196,20 +196,6 @@ app.put('/api/users/:id/balance', async (req, res) => {
 app.use(passport.initialize());
 app.use(passport.session());
 
-// ✅ نقطة بدء تسجيل الدخول
-app.get('/api/auth/google', passport.authenticate('google', {
-  scope: ['profile', 'email']
-}));
-
-// ✅ نقطة العودة من Google
-app.get('/api/auth/google/callback',
-  passport.authenticate('google', { failureRedirect: '/login-failed' }),
-  (req, res) => {
-    // ✅ تحويل المستخدم إلى صفحة استكمال البيانات
-    res.redirect('/complete-profile.html');
-  }
-);
-
 // =======================
 // 📄 صفحات الواجهة
 // =======================

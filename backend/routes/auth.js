@@ -19,6 +19,9 @@ const { registerUser } = require('../controllers/authController');
 const { body } = require('express-validator');
 const { verifyToken, checkAdmin, checkSession } = require('../middlewares/auth');
 const { activeSessions } = require('../socket');
+const passport = require('passport');
+require('../config/googleAuth'); // تأكد من إعداد استراتيجية جوجل في هذا الملف
+const speakeasy = require('speakeasy');
 
 // =============================================
 // 🛡️ دالة موحدة للاستجابات
@@ -264,6 +267,93 @@ router.post('/login',
 );
 
 // =============================================
+// 🔐 تسجيل الدخول عبر Google OAuth2
+// =============================================
+router.get('/google',
+  passport.authenticate('google', { scope: ['profile', 'email'], session: false })
+);
+
+// =============================================
+// 🔐 نقطة نهاية رد الاتصال من Google OAuth2
+// =============================================
+router.get('/google/callback',
+  passport.authenticate('google', { session: false }),
+  async (req, res) => {
+    try {
+      const user = req.user;
+
+      // ✅ تحديث بيانات الدخول
+      user.lastLogin = new Date();
+      await user.save();
+
+      // 🧠 توليد sessionId وتسجيله في الذاكرة
+      const sessionId = crypto.randomBytes(16).toString('hex');
+      activeSessions.set(sessionId, {
+        userId: user._id.toString(),
+        role: user.role
+      });
+
+      // 🛡️ توليد JWT بنفس المنطق
+      const issuer = user.role === 'admin' ? 'admin-panel' : 'your-app-api';
+      const token = jwt.sign(
+        { userId: user._id, role: user.role || 'user' },
+        process.env.JWT_SECRET,
+        { expiresIn: '1h', issuer, algorithm: 'HS256' }
+      );
+
+      // 🍪 إرسال الكوكيز
+      res.cookie('session_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'Lax',
+        maxAge: 3600000,
+        path: '/'
+      });
+
+      res.cookie('sessionId', sessionId, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'Lax',
+        maxAge: 3600000,
+        path: '/'
+      });
+
+      attachCsrfToken(req, res); // توليد رمز CSRF
+
+      // 📦 إرسال بيانات المستخدم
+      const userResponse = {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        phone: user.phone,
+        theme: user.theme,
+        balance: user.balance,
+        lastLogin: user.lastLogin,
+        role: user.role,
+        sessionId: sessionId
+      };
+
+      return handleAuthResponse(req, res, {
+        success: true,
+        user: userResponse,
+        token,
+        redirectTo: user.role === 'admin' ? '/admin' : `/google-redirect.html?token=${token}&sessionId=${sessionId}`
+      });
+
+    } catch (err) {
+      console.error('❌ خطأ أثناء تسجيل الدخول عبر Google:', err);
+      return handleAuthResponse(req, res, {
+        status: 500,
+        success: false,
+        error: 'فشل تسجيل الدخول عبر Google',
+        details: process.env.NODE_ENV === 'development' ? err.message : null,
+        type: 'google_auth_error'
+      });
+    }
+  }
+);
+
+// =============================================
 // 📝 استكمال ملف التعريف بعد تسجيل الدخول عبر Google
 // =============================================
 router.post('/complete-profile', async (req, res) => {
@@ -380,7 +470,7 @@ router.post('/verify-2fa-login', async (req, res) => {
       }
     });
   }
-  
+
   // ✅ الآن نمنح الجلسة
   const sessionId = crypto.randomBytes(16).toString('hex');
   activeSessions.set(sessionId, {

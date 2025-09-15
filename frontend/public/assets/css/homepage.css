@@ -40,7 +40,6 @@ a:hover {
 
 /* ======== المحتوى الرئيسي ======== */
 .main-content {
-  margin-top: var(--topbar-height);
   /* إضافة margin-top */
   padding: 0%;
   min-height: calc(100vh - var(--topbar-height));

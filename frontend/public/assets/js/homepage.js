@@ -15,6 +15,7 @@ import UserManager from "./usermanager.js";
 import { Taber } from "./core/taber.js";
 import { AppManager } from "./appmanager.js";
 import { checkSession } from './auth.js';
+import AdsManager from "./utils/adsManager.js";
 import { STORAGE_KEYS } from "./utils/appUtils.js";
 
 // ثوابت التطبيق
@@ -410,7 +411,6 @@ class HomePage {
         // تنظيف مستمعي الأحداث
         this.domElements.toggleBtn.removeEventListener('click', this.eventListeners.toggleSidebar);
         this.domElements.overlay.removeEventListener('click', this.eventListeners.toggleSidebar);
-
         // تدمير المكونات
         this.components.appManager?.destroy();
     }
@@ -599,6 +599,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     window.homePage = new HomePage();
     //setTimeout(async () => await hideLoader(), 3000);
+    AdsManager.init("#adsWrapper");
 });
 
 document.addEventListener('switchTab', (e) => {
@@ -621,31 +622,7 @@ window.addEventListener('beforeunload', () => {
     window.homePage?.destroy();
 });
 
-//case 'paymentAccepted':
-//enqueueNotification(`✅ تم قبول دفعتك بنجاح!`, 'success');
-//await window.homePage._loadUserData();
-//await window.homePage.components.appManager._postPaymentMessage();
-//break;
-//case 'paymentRejected':
-//enqueueNotification(`❌ تم رفض دفعتك. يرجى التواصل مع الدعم.`, 'error');
-//await window.homePage.components.appManager._postPaymentMessage();
-//break;
-//case 'orderAccepted':
-//enqueueNotification(`✅ تم قبول طلبك بنجاح!`, 'success');
-//await window.homePage._loadUserData();
-//await window.homePage.components.appManager._postOrderMessage();
-//break;
-
-//case 'orderRejected':
-//enqueueNotification(`❌ تم رفض طلبك. يرجى التواصل مع الدعم.`, 'error');
-//await window.homePage.components.appManager._postOrderMessage();
-//break;
-
-//case 'orderStatus':
-//enqueueNotification(`📦 حالة طلبك: ${data.status}`, 'info');
-//await window.homePage._loadUserData();
-//await window.homePage.components.appManager._postOrderMessage();
-//break;
+// استقبال رسائل من Service Worker (مثال على كيفية التعامل مع الرسائل)
 //navigator.serviceWorker.addEventListener('message', event => {
 //if (event.data.type === 'loading-start') showLoader();
 //if (event.data.type === 'loading-end') hideLoader();

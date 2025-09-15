@@ -360,6 +360,8 @@ body.night-theme {
   }
 
   .standard-table {
+    position: relative;
+    right: 55%;
     min-width: unset;
     width: 100%;
     font-size: 0.75rem;

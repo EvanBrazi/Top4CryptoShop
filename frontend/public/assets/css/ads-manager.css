@@ -1,0 +1,118 @@
+:root {
+    --ads-bg-dark: linear-gradient(135deg, #00087e, #6a8ddf, #c0e4ff);
+    --ads-bg-light: linear-gradient(135deg, #531b00, #b36b3f, #ffe4c2);
+    --ads-text-light: #faba90;
+    --ads-text-dark: #90caf9;
+}
+
+.day-theme {
+    --ads-bg: var(--ads-bg-light);
+    --ads-text: var(--ads-text-light);
+}
+
+.night-theme {
+    --ads-bg: var(--ads-bg-dark);
+    --ads-text: var(--ads-text-dark);
+}
+
+.ads-wrapper {
+    width: 100%;
+    max-width: 600px;
+    height: 140px;
+    margin: 40px auto;
+    border-radius: 20px;
+    background: var(--ads-bg, #f0faff);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.ad-slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image:
+        linear-gradient(135deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)),
+        url('/assets/images/loading.gif');
+    background-size: cover;
+    background-position: center;
+    background-blend-mode: overlay;
+    border-radius: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 20px;
+    box-sizing: border-box;
+    transform: translateX(100%);
+    transition: transform 0.8s ease-in-out;
+    z-index: 1;
+}
+
+.ad-slide img {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    object-fit: cover;
+}
+
+.ad-slide .ad-text {
+    flex: 1;
+    font-size: 16px;
+    font-weight: bold;
+    color: var(--ads-text);
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.ads-bg {
+  background: linear-gradient(135deg, #00087e, #4f6cb3, #92c1ff);
+  background-size: 300% 300%;
+  animation: gradientShift 8s ease infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.2);
+  }
+}
+
+.ads-bg {
+  animation: pulseGlow 4s ease-in-out infinite;
+}
+
+.ad-slide.active {
+    transform: translateX(0);
+    z-index: 2;
+}
+
+.ads-bg::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255,255,255,0.2), transparent);
+  animation: shimmer 3s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}

@@ -3,7 +3,7 @@
   position: relative;
   width: 100%;
   max-width: 600px;
-  margin: 40px auto;
+  margin: 4px auto;
   border-radius: 50px;
   background: linear-gradient(135deg, #dae8f7 0%, #d6e5f7 100%);
   padding: 8px 12px;
@@ -327,7 +327,7 @@
   .search-container {
     padding: 6px;
     border-radius: 30px;
-    margin: 20px auto;
+    margin: 2px auto;
   }
 
   .search-box {

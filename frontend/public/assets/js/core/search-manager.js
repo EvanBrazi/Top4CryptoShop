@@ -181,6 +181,7 @@ export class SearchManager {
             this.showPopularSuggestions();
             return;
         }
+
         if (typeof query !== 'string') {
             query = String(query || '').trim();
         }
@@ -192,22 +193,12 @@ export class SearchManager {
 
         if (suggestions.length > 0) {
             this.suggestionsContainer.innerHTML = '';
+
             suggestions.forEach(item => {
-                const suggestionItem = document.createElement('div');
-                suggestionItem.className = 'search-suggestion-item';
-                suggestionItem.innerHTML = `
-                    <div class="suggestion-card">
-                        <img src="/icons/${item.category}/${item.icon}" alt="${item.name}" onerror="this.src='/icons/${item.category}/default.png'">
-                        <span>${item.name}</span>
-                    </div>
-                `;
-                suggestionItem.addEventListener('click', () => {
-                    this.searchInput.value = item.name;
-                    this.displaySingleResult(item);
-                    this.hideSuggestions();
-                });
+                const suggestionItem = this.createSuggestionElement(item);
                 this.suggestionsContainer.appendChild(suggestionItem);
             });
+
             this.suggestionsContainer.style.display = 'block';
         } else {
             this.hideSuggestions();
@@ -219,22 +210,50 @@ export class SearchManager {
         this.suggestionsContainer.innerHTML = '';
 
         popularItems.forEach(item => {
-            const suggestionItem = document.createElement('div');
-            suggestionItem.className = 'search-suggestion-item';
-            suggestionItem.innerHTML = `
-                <div class="suggestion-card">
-                    <img src="/icons/${item.category}/${item.icon}" alt="${item.name}" onerror="this.src='/icons/${item.category}/default.png'">
-                    <span>${item.name}</span>
-                </div>
-            `;
-            suggestionItem.addEventListener('click', () => {
-                this.searchInput.value = item.name;
-                this.displaySingleResult(item);
-                this.hideSuggestions();
-            });
+            const suggestionItem = this.createSuggestionElement(item);
             this.suggestionsContainer.appendChild(suggestionItem);
         });
+
         this.suggestionsContainer.style.display = 'block';
+    }
+
+    createSuggestionElement(item) {
+        const suggestionItem = document.createElement('div');
+        suggestionItem.className = 'search-suggestion-item';
+
+        const img = document.createElement('img');
+        img.src = '/assets/images/loading.gif';
+        img.alt = item.name;
+
+        const realSrc = `/icons/${item.category}/${item.icon}`;
+        const tempImage = new Image();
+        tempImage.src = realSrc;
+
+        tempImage.onload = () => {
+            img.src = realSrc;
+        };
+
+        tempImage.onerror = () => {
+            img.src = `/icons/${item.category}/default.png`;
+        };
+
+        const span = document.createElement('span');
+        span.textContent = item.name;
+
+        const card = document.createElement('div');
+        card.className = 'suggestion-card';
+        card.appendChild(img);
+        card.appendChild(span);
+
+        suggestionItem.appendChild(card);
+
+        suggestionItem.addEventListener('click', () => {
+            this.searchInput.value = item.name;
+            this.displaySingleResult(item);
+            this.hideSuggestions();
+        });
+
+        return suggestionItem;
     }
 
     getAllItems() {

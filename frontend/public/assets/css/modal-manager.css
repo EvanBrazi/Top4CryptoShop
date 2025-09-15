@@ -1,0 +1,140 @@
+/* النوافذ المنبثقة */
+.payments-modal,
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 11;
+  box-sizing: border-box;
+  overflow-y: auto;
+  /* تمكين التمرير داخل المودال */
+}
+
+.payments-modal-content,
+.modal-content {
+  margin: auto;
+  padding: 20px;
+  width: 90%;
+  max-width: 600px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+}
+
+@supports (backdrop-filter: blur(8px)) or (-webkit-backdrop-filter: blur(8px)) {
+
+  .payments-modal,
+  .modal {
+    background-color: var(--background-menu-link);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+}
+
+.payments-modal-header,
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--divider-color);
+}
+
+.payments-modal-header h2,
+.modal-header h2,
+p {
+  margin: 0;
+  color: var(--text-color);
+}
+
+.payments-modal.show,
+.modal.show {
+  display: flex;
+}
+
+.payments-close-btn,
+.close-modal {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  color: var(--text-color);
+}
+
+.payments-body,
+.modal-body {
+  line-height: 1.6;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: var(--text-color);
+  padding: 40px;
+  /* 120px = رأس المودال + هامش */
+}
+
+.payments-body p,
+.modal-body p {
+  margin: 0;
+  white-space: pre-line;
+}
+
+.modal-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px 30px;
+}
+
+.modal-info-grid div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-info-grid span {
+  font-weight: normal;
+  color: var(--text-secondary);
+}
+
+.modal-info-grid strong {
+  font-size: 1.1rem;
+  color: var(--text-color);
+}
+
+.modal-info-grid .status {
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  text-transform: capitalize;
+}
+
+.modal-info-grid .status.pending {
+  background-color: var(--status-pending-bg);
+  color: var(--status-pending-text);
+}
+
+.modal-info-grid .status.rejected {
+  background-color: var(--status-rejected-bg);
+  color: var(--status-rejected-text);
+}
+
+.modal-info-grid .status.approved {
+  background-color: var(--status-approved-bg);
+  color: var(--status-approved-text);
+}
+/* تأثير الخروج */
+.modal.exit,
+.payments-modal.exit {
+  animation: fadeOut 0.3s forwards;
+}
+
+.modal-content.exit,
+.payments-modal-content.exit {
+  animation: slideDown 0.3s forwards;
+}

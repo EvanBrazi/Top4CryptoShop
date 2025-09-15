@@ -18,448 +18,24 @@ html {
   scroll-behavior: smooth;
 }
 
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-/* الشريط العلوي */
-.top-bar {
-  position: fixed;
-  /* تغيير من sticky إلى fixed */
-  top: 0;
-  right: 0;
-  left: 0;
-  height: 50px;
-  background-color: var(--bar-footer-color);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  z-index: 5;
-  /* تأكد أن هذه القيمة عالية كفاية */
-  display: flex;
-  align-items: center;
-  color: var(--text-color);
-}
-
-/* إزالة padding-top من body */
-.top-bar-content {
+html, body {
   width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 20px;
+  overflow-x: hidden;
 }
 
-.balance-container {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+body.sidebar-open {
+  overflow: hidden;
 }
 
-.balance-amount {
-  font-weight: bold;
-  font-size: 16px;
-}
-
-.add-balance-btn {
-  background-color: var(--primary-color);
-  color: var(--text-color);
-  border: none;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.add-balance-btn:hover {
-  color: var(--accent-color);
-  background-color: var(--primary-hover);
-  transform: scale(1.1);
-}
-
-.logo-back-container {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.back-btn {
-  color: var(--text-color);
-  font-size: 18px;
-  display: none;
-}
-
-.back-btn.hidden {
-  display: none;
-}
-
-.back-btn.visible {
-  display: block;
-}
-
-.site-logo {
-  width: 60px;
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.logo-img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  border-radius: 100px;
-  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  transform-style: preserve-3d;
-}
-
-/* ======== الدرج الجانبي المعدل ======== */
-.sidebar {
-  border-radius: var(--border-radius);
-  width: var(--sidebar-width);
-  height: 100%;
-  position: fixed;
-  right: calc(var(--sidebar-width) * -1);
-  top: 0;
-  /* إضافة هذه السطر */
-  transition: right 0.4s cubic-bezier(0.33, 1, 0.68, 1);
-  border-left: var(--sidebar-border-left);
-  z-index: 10;
-  /* أعلى من الشريط العلوي */
-  display: flex;
-  flex-direction: column;
-  box-shadow: var(--shadow-md);
-}
-
-.sidebar.active {
-  right: 0;
-}
-
-.sidebar-header {
-  border-radius: var(--border-radius);
-  margin-bottom: 8px;
-  padding: 15px 15px 5px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex-shrink: 0;
-  background-color: var(--sidebar-header-color);
-  z-index: 0;
-}
-
-.sidebar-content {
-  height: 100%;
-  width: 100%;
-  background: var(--sidebar-content-color);
-}
-
-.profile-header {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative;
-  height: 100%;
-}
-
-.user-avatar-container {
-  margin-bottom: 5px;
-}
-
-.profile-sidebar-img {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid var(--primary-color);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  transition: opacity 0.3s ease;
-  background-color: #f0f0f0;
-}
-
-.night-theme .profile-sidebar-img {
-  background-color: #333;
-}
-
-.profile-info {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  /* ← تمركز أفقي */
-  justify-content: center;
-  /* ← تمركز عمودي */
-  text-align: center;
-}
-
-.user-name {
-  margin: 2px;
-  margin-bottom: 6px;
-  display: inline-block;
-  /* ← بدل flex */
-  font-size: 1.9rem;
-  font-weight: bold;
-  border-radius: 8px;
-  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  transform-style: preserve-3d;
-  /* 🌈 تأثير التدرج المتحرك */
-  background: linear-gradient(270deg, #ff0000, #ff9900, #33cc33, #3399ff, #9900cc, #ff0000);
-  background-size: 600% 600%;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: rainbowText 6s ease infinite;
-}
-
-@keyframes rainbowText {
-  0% {
-    background-position: 0% 50%;
-  }
-
-  50% {
-    background-position: 100% 50%;
-  }
-
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-.user-balance {
-  display: flex;
-  align-items: center;
-  font-size: 15px;
-  background-color: rgba(0, 0, 0, 0.2);
-  padding: 4px 12px;
-  border-radius: 20px;
-}
-
-.currency-icon {
-  margin-right: 5px;
-  font-size: 14px;
-}
-
-.profile-actions {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  background-color: var(--sidebar-header-color);
-  position: sticky;
-  top: 100%;
-  bottom: 100%;
-  z-index: 1;
-}
-
-.profile-btn {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  border: none;
-  background-color: var(--primary-color);
-  color: var(--text-color);
-  cursor: pointer;
-  transition: all 0.3s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-}
-
-.profile-btn:hover {
-  color: var(--accent-color);
-  background-color: var(--primary-hover);
-  transform: scale(1.1);
-}
-
-.header-divider {
-  width: 100%;
-  height: 1px;
-  background-color: var(--divider-color);
-  margin-bottom: 5px;
-}
-
-.menu-link {
-  display: flex;
-  align-items: center;
-  padding: 8px 8px;
-  margin-bottom: 8px;
-  color: var(--text-color);
+a {
+  color: var(--link-color);
   text-decoration: none;
-  border-radius: var(--border-radius);
-  transition: all 0.2s;
-  border-bottom: var(--border-menu-link);
-  background: var(--background-menu-link);
-  background-color: var(--bg-color);
-  gap: 15px;
-  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  transform-style: preserve-3d;
+  transition: color 0.3s;
 }
 
-.menu-link:active {
-  transform: translateY(4px);
-  box-shadow: 0 1px rgba(0, 0, 0, 0.2);
-}
-
-.night-theme .menu-link {
-  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  transform-style: preserve-3d;
-}
-
-.night-theme .menu-link:active {
-  transform: translateY(4px);
-  box-shadow: 0 1px rgba(0, 0, 0, 0.2);
-}
-
-.menu-link:hover {
+a:hover {
   color: var(--accent-color);
-  background-color: var(--primary-hover);
-  transform: translateX(-5px);
-}
-
-.night-theme .menu-link:hover {
-  transform: translateX(-5px);
-  color: var(--accent-color);
-  background-color: var(--primary-hover);
-}
-
-.menu-link i {
-  padding: 5px;
-}
-
-.night-theme .menu-link i {
-  color: var(--text-color);
-}
-
-.sidebar-menu-container {
-  position: fixid;
-  z-index: 1;
-  display: flex;
-  width: 100%;
-  height: 100%;
-  /* تغيير من center إلى flex-start */
-}
-
-.sidebar-menu {
-  list-style: none;
-  padding: 0px;
-  margin: 0px;
-  width: 100%;
-  height: 100%;
-  /* تحديد ارتفاع ثابت للقائمة */
-}
-
-.sidebar-menu li {
-  padding: 0px 0px;
-  /* تعديل المسافات الداخلية */
-  transition: all 0.2s;
-  white-space: nowrap;
-  /* منع التفاف النص */
-  text-overflow: ellipsis;
-  /* إضافة نقاط (...) إذا كان النص طويلاً */
-}
-
-.sidebar-menu li:hover {
-  color: var(--accent-color);
-  background-color: var(--primary-hover);
-}
-
-
-.sidebar-menu li a {
-  color: var(--text-color);
-  text-decoration: none;
-  display: block;
-  font-size: 15px;
-  font-weight: bold;
-}
-
-.sidebar-menu i {
-  margin: 0 10px;
-  font-size: 15px;
-  font-weight: bold;
-  color: var(--primary-color);
-}
-
-.sidebar-footer {
-  border-radius: var(--border-radius);
-  flex-shrink: 0;
-  background-color: var(--sidebar-footer-color);
-  border-top: 1px solid var(--divider-color);
-  display: block;
-  flex-direction: column;
-}
-
-.theme-container {
-  margin-bottom: 8px;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-}
-
-.theme-toggle {
-  background-color: var(--primary-color);
-  color: var(--text-color);
-  border: none;
-  padding: 4px 8px;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: all 0.3s;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-}
-
-.theme-toggle:hover {
-  color: var(--accent-color);
-  background-color: var(--primary-hover);
-}
-
-.social-links {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  width: 100%;
-  padding: 0 10px;
-  flex-wrap: wrap;
-}
-
-.social-link {
-  color: var(--social-icon-color);
-  font-size: 14px;
-  transition: all 0.3s;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background-color: var(--sidebar-header-color);
-  gap: 15px;
-  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  transform-style: preserve-3d;
-}
-
-.social-link:hover {
-  transform: translateY(-3px);
-  color: var(--accent-color);
-  background-color: var(--primary-hover);
+  text-decoration: underline;
 }
 
 /* ======== المحتوى الرئيسي ======== */
@@ -504,7 +80,7 @@ html {
   width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
-  z-index: 9;
+  z-index: 15;
   display: none;
   cursor: pointer;
   /* تغيير المؤشر إلى pointer للإشارة أنه قابل للنقر */
@@ -591,156 +167,30 @@ button:hover {
   transition: opacity 0.5s ease;
 }
 
+.page-loader.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loader-content {
+  text-align: center;
+}
+
 .loader-logo {
   width: 80px;
   height: 80px;
   animation: pulseRotate 1.5s infinite ease-in-out;
 }
 
-@keyframes pulseRotate {
-  0% {
-    transform: scale(1) rotate(0deg);
-    opacity: 0.8;
-  }
-
-  50% {
-    transform: scale(1.1) rotate(180deg);
-    opacity: 1;
-  }
-
-  100% {
-    transform: scale(1) rotate(360deg);
-    opacity: 0.8;
-  }
-}
-
-/* ======== الفوتر المعدل ======== */
-.site-footer {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background-color: var(--bar-footer-color);
+.loader-text {
+  margin-top: 20px;
+  font-size: 1.5rem;
   color: var(--text-color);
-  padding: 5px 0;
-  text-align: center;
-  z-index: 5;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease;
-  border-radius: var(--border-radius) var(--border-radius) 0 0;
-}
-
-.site-footer.hidden {
-  transform: translateY(100%);
-}
-
-.footer-links {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  margin-bottom: 4px;
-}
-
-.footer-link {
-  width: 160px;
-  height: 40px;
-  box-sizing: border-box;
-  background: transparent;
-  color: var(--text-color);
-  border: none;
-  cursor: pointer;
-  font-size: 15px;
-  transition: all 0.3s;
-  padding: 10px 10px;
-  border-radius: 4px;
-}
-
-.footer-link:hover {
-  color: var(--accent-color);
-  background-color: var(--primary-hover);
-  text-decoration: underline;
-}
-
-.footer-copyright {
-  font-size: 14px;
-  opacity: 0.8;
-}
-
-.copyright-icon {
-  font-size: 14px;
-}
-
-/* ======== التبويبات المعدلة ======== */
-.tabs-container {
-  margin-top: var(--space-md);
-}
-
-.tabs-header {
-  display: none !important;
-}
-
-.tabs-content {
-  padding: 0;
-}
-
-.tab-pane {
-  display: none;
-  opacity: 0;
-  background-color: var(--card-color);
-  padding: var(--space-sm);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  animation: fadeIn 0.3s ease forwards;
-  transition: opacity 0.3s ease;
-}
-
-/* عند التفعيل */
-.tab-pane.active {
-  display: block;
-  opacity: 1;
-  animation: fadeIn 0.3s ease forwards;
-}
-
-/* تأثير الدخول */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-/* تأثير الخروج */
-@keyframes fadeOut {
-  from {
-    opacity: 1;
-    transform: scale(1);
-  }
-
-  to {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-}
-
-/* عند الإخفاء (يمكن إضافته ديناميكيًا عبر JS) */
-.tab-pane.hide {
-  animation: fadeOut 0.3s ease forwards;
-}
-
-
-/* أنماط المحتوى داخل التبويبات */
-.wallet-content,
-.payments-list,
-.portfolio-stats,
-.orders-table,
-.security-settings,
-.about-content {
-  margin-top: 15px;
+  animation: rainbowText 3s linear infinite;
+  background: linear-gradient(270deg, #ff5e00, #ffee00, #ff0000, #ff5e00);
+  background-size: 600% 600%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .balance-card {
@@ -802,458 +252,10 @@ button:hover {
   cursor: pointer;
 }
 
-.toast-notification {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: #323232;
-  color: #fff;
-  padding: 20px 30px;
-  border-radius: 12px;
-  font-size: 2rem;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
-  z-index: 20;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  min-width: 300px;
-  max-width: 100vw;
-  opacity: 1;
-  transition: none;
+.change-password-btn:hover {
+  color: var(--accent-color);
+  background-color: var(--primary-hover);
 }
-
-.toast-message {
-  flex: 1;
-  font-weight: 500;
-  color: inherit;
-}
-
-.toast-close-btn {
-  background: none;
-  border: none;
-  color: #fff;
-  font-size: 18px;
-  cursor: pointer;
-  transition: transform 0.2s ease;
-}
-
-.toast-close-btn:hover {
-  transform: scale(1.2);
-}
-
-.toast-success {
-  background-color: #28a745;
-}
-
-.toast-error {
-  background-color: #dc3545;
-}
-
-.toast-info {
-  background-color: #007bff;
-}
-
-@keyframes notifadeIn {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -60%);
-  }
-
-  to {
-    opacity: 1;
-    transform: translate(-50%, -50%);
-  }
-}
-
-@keyframes fadeInOut {
-  0% {
-    opacity: 0;
-    transform: translateX(-50%) translateY(20px);
-  }
-
-  10% {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-
-  90% {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-
-  100% {
-    opacity: 0;
-    transform: translateX(-50%) translateY(-20px);
-  }
-}
-
-
-/* النوافذ المنبثقة */
-.payments-modal,
-.modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  z-index: 8;
-  box-sizing: border-box;
-  overflow-y: auto;
-  /* تمكين التمرير داخل المودال */
-}
-
-.payments-modal-content,
-.modal-content {
-  margin: auto;
-  padding: 20px;
-  width: 90%;
-  max-width: 600px;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
-}
-
-@supports (backdrop-filter: blur(8px)) or (-webkit-backdrop-filter: blur(8px)) {
-
-  .payments-modal,
-  .modal {
-    background-color: var(--background-menu-link);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-  }
-}
-
-.payments-modal-header,
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--divider-color);
-}
-
-.payments-modal-header h2,
-.modal-header h2,
-p {
-  margin: 0;
-  color: var(--text-color);
-}
-
-.payments-modal.show,
-.modal.show {
-  display: flex;
-}
-
-.payments-close-btn,
-.close-modal {
-  background: none;
-  border: none;
-  font-size: 1rem;
-  font-weight: bold;
-  cursor: pointer;
-  color: var(--text-color);
-}
-
-.payments-body,
-.modal-body {
-  line-height: 1.6;
-  font-size: 1.2rem;
-  font-weight: bold;
-  color: var(--text-color);
-  padding: 40px;
-  /* 120px = رأس المودال + هامش */
-}
-
-.payments-body p,
-.modal-body p {
-  margin: 0;
-  white-space: pre-line;
-}
-
-/* تنسيق شريط البحث */
-.search-container {
-  padding: 15px;
-  background: var(--card-bg);
-  border-bottom: var(--search-container-border-bottom);
-  position: sticky;
-  top: 0;
-  z-index: 6;
-}
-
-.search-box {
-  position: relative;
-  max-width: 500px;
-  margin: 0 auto;
-}
-
-#main-search-input {
-  width: 100%;
-  padding: 12px 45px 12px 15px;
-  border: var(--main-search-input-border);
-  border-radius: 25px;
-  font-size: 16px;
-  font-weight: bold;
-  font-style: italic;
-  outline: none;
-  transition: border-color 0.3s;
-  direction: rtl;
-}
-
-#main-search-input:focus {
-  border-color: var(--accent-color);
-}
-
-.search-icon {
-  position: absolute; /* يجب أن تكون absolute وليس relative */
-  right: 15px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 18px;
-  font-weight: bold;
-  color: #888;
-  pointer-events: none; /* يمنع التفاعل معها إذا كانت للعرض فقط */
-}
-
-.search-suggestions {
-  position: absolute; /* مهم جدًا لتجنب التأثير على الأيقونة */
-  top: 100%;
-  left: 0;
-  width: 100%;
-  margin-right: 0; /* احذف الهامش الجانبي لأنه يسبب انزياح */
-  border-radius: 0 0 10px 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  background: var(--card-bg);
-  overflow-y: auto;
-  z-index: 7;
-  opacity: 0;
-  transform: translateY(-10px);
-  animation: fadeSlideIn 0.3s ease-out forwards;
-}
-
-.search-suggestions.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.search-suggestion-item {
-  padding: 10px 15px;
-  cursor: pointer;
-  border-bottom: var(--search-suggestion-item-border-bottom);
-  display: flex;
-  align-items: center;
-  opacity: 0;
-  transform: translateY(8px);
-  animation: fadeInItem 0.25s ease-out forwards;
-}
-
-.search-suggestion-item:nth-child(1) { animation-delay: 0.05s; }
-.search-suggestion-item:nth-child(2) { animation-delay: 0.1s; }
-.search-suggestion-item:nth-child(3) { animation-delay: 0.15s; }
-.search-suggestion-item:nth-child(4) { animation-delay: 0.2s; }
-.search-suggestion-item:nth-child(5) { animation-delay: 0.25s; }
-
-@keyframes fadeInItem {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeInSuggestion {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeSlideIn {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.fade-out {
-  animation: fadeSlideOut 0.2s ease-in forwards;
-}
-
-@keyframes fadeSlideOut {
-  to {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-}
-
-.search-suggestion-item:hover {
-  background-color: #f5f5f5;
-}
-
-.search-suggestion-item img {
-  width: 24px;
-  height: 24px;
-  margin-left: 10px;
-  border-radius: 5px;
-}
-
-.no-results-message {
-  text-align: center;
-  padding: 40px;
-  font-size: 16px;
-  color: #888;
-  background: #f9f9f9;
-  border-radius: 8px;
-  animation: fadeInCard 0.3s ease-out forwards;
-}
-
-.card-result {
-  max-width: 120px;
-  max-height: 120px;
-  position: relative;
-  background: var(--card-bg);
-  border-radius: 15%;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  cursor: pointer;
-  text-align: center;
-  padding: 10px;
-  aspect-ratio: 1 / 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  background: linear-gradient(45deg,
-      #ff0000, #ff7f00, #ffff00, #00ff00,
-      #0000ff, #4b0082, #9400d3);
-  background-size: 400% 400%;
-  transform: scale(0.95);
-  animation: fadeInCard 0.3s ease-out forwards;
-}
-
-.card-result:hover {
-  transform: scale(1.05);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-  background-position: 100% 100%;
-}
-
-.card-result .icon {
-  position: relative;
-  width: 75%;
-  height: 75%;
-  margin-bottom: auto;
-  border-radius: 100%;
-  object-fit: cover;
-  margin: 0px auto 10px;
-  display: block;
-  align-items: center;
-  justify-content: center;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
-  transition: transform 0.3s ease;
-}
-
-.card-result:hover .icon {
-  transform: rotate(20deg);
-}
-
-.card-result .title {
-  margin-top: auto;
-  object-fit: cover;
-  bottom: 0;
-  width: 100%;
-  height: 25%;
-  padding: 1%;
-  text-align: center;
-  font-size: 0.75rem;
-  font-weight: bold;
-  color: #ff5e00;
-  text-shadow: 0 0 5px #ff7300, 0 0 10px #ffee00, 0 0 20px #ff0000;
-  animation: pulseGlow 1.5s infinite alternate;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  word-break: break-word;
-  overflow: hidden;
-  box-sizing: border-box;
-}
-
-.card-result:hover .title {
-  color: #ffee00;
-  text-shadow: 0 0 10px #ff5e00, 0 0 20px #ffee00, 0 0 30px #ff0000;
-}
-
-@keyframes pulseGlow {
-  0% {
-    text-shadow: 0 0 5px #ff5e00, 0 0 10px #ffee00, 0 0 20px #ff0000;
-  }
-
-  100% {
-    text-shadow: 0 0 10px #ff5e00, 0 0 20px #ffee00, 0 0 30px #ff0000;
-  }
-}
-
-@keyframes fadeInCard {
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.back-button {
-  margin-top: 16px;
-  padding: 8px 16px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.2s ease;
-}
-
-.back-button:hover {
-  background-color: #0056b3;
-}
-
-/* عنصر الاقتراح الكامل */
-.search-suggestion-item {
-  padding: 8px 12px;
-  cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.2s ease;
-  border-radius: 8px;
-  margin-bottom: 6px;
-}
-
-.search-suggestion-item:hover {
-  background-color: var(--hover-bg);
-  transform: scale(1.02);
-}
-
-/* محتوى البطاقة داخل الاقتراح */
-.suggestion-card {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.suggestion-card img {
-  width: 36px;
-  height: 36px;
-  border-radius: 6px;
-  object-fit: cover;
-  background-color: var(--icon-bg);
-}
-
-.suggestion-card span {
-  font-size: 14px;
-  color: var(--text-color);
-  font-weight: 500;
-}
-
 /* ============================
    💠 تحسينات الاستجابة العامة
 ============================= */
@@ -1298,7 +300,7 @@ p {
     overflow-y: auto;
     overflow-x: hidden;
     transition: right 0.4s ease;
-    z-index: 10;
+    z-index: 16;
     border-radius: var(--border-radius);
   }
 
@@ -1354,6 +356,57 @@ p {
   .toast-notification {
     font-size: 0.85rem;
     padding: 10px 14px;
+  }
+  .toast-notification {
+    max-width: 90%;
+  }
+  .tab-pane {
+    padding: 10px;
+  }
+  .cards-container {
+    gap: 10px;
+  }
+  .card {
+    padding: 10px;
+  }
+  .card img {
+    height: 100px;
+  }
+  .card h3 {
+    font-size: 1rem;
+  }
+  .card p {
+    font-size: 0.85rem;
+  }
+  .card .price {
+    font-size: 1rem;
+  }
+  .card .buy-btn {
+    font-size: 0.85rem;
+    padding: 6px 12px;
+  }
+  
+  .sidebar.active {
+    right: 0;
+  }
+  .sidebar-header h2 {
+    font-size: 1.2rem;
+  }
+  .sidebar a {
+    font-size: 0.9rem;
+  }
+  .sidebar a .icon {
+    font-size: 1.1rem;
+  }
+  .sidebar a .label {
+    margin-left: 8px;
+  }
+  .toggle-sidebar {
+    font-size: 18px;
+    padding: 6px 10px;
+  }
+  .dummy-content {
+    height: 600px;
   }
 }
 

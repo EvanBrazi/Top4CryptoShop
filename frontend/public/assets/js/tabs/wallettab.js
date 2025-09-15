@@ -25,7 +25,7 @@ export class WalletTab {
         this.balanceDisplay = this.container.querySelector('.balance-amount');
         this.isSubmitting = false;
         this._init();
-        this._initWebSocket();
+        //this._initWebSocket();
     }
 
     /**
@@ -48,19 +48,19 @@ export class WalletTab {
     /**
      * تهيئة WebSocket لتحديث الرصيد عند قبول الدفع
      */
-    _initWebSocket() {
+    //_initWebSocket() {
         // ✅ تهيئة WebSocket لاستقبال إشعارات لحظية من السيرفر
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.host}`;
-        console.log('📡 محاولة الاتصال بـ WebSocket:', wsUrl);
-        const socket = new WebSocket(wsUrl);
-        socket.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            if (data.type === 'paymentAccepted' && data.userId === this.userId) {
-                this._updateBalanceDisplay(data.newAmount);
-            }
-        };
-    }
+    //    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    //    const wsUrl = `${protocol}//${window.location.host}`;
+    //    console.log('📡 محاولة الاتصال بـ WebSocket:', wsUrl);
+    //    const socket = new WebSocket(wsUrl);
+    //    socket.onmessage = (event) => {
+    //        const data = JSON.parse(event.data);
+    //        if (data.type === 'paymentAccepted' && data.userId === this.userId) {
+    //            this._updateBalanceDisplay(data.newAmount);
+    //        }
+    //    };
+    //}
 
     updateConvertedAmount() {
         const amount = parseFloat(document.getElementById('amount-input').value);

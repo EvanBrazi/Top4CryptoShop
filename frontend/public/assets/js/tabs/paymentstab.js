@@ -77,7 +77,7 @@ export class PaymentsTab {
                 <td>${payment.paymentId}</td>
                 <td>${this.formatDate(payment.createdAt)}</td>
                 <td><span class="status ${payment.status}">${this.translateStatus(payment.status)}</span></td>
-                <td>${payment.amount} 💵</td>
+                <td>${payment.amountInUSD} 💵</td>
                 <td><img src="${payment.receiptImage}" style="width:40px; border-radius:4px;" /></td>
                 <td><button class="details-btn" data-id="${payment.paymentId}">عرض التفاصيل</button></td>
             `;
@@ -113,9 +113,12 @@ export class PaymentsTab {
         modal.style.display = 'flex';
         modal.classList.remove('exit');
         modalContent.classList.remove('exit');
+        const amountDisplay = payment.amount === payment.amountInUSD
+            ? `${payment.amount} USD 💵`
+            : `${payment.amount} ≈ ${payment.amountInUSD} USD 💵`;
         modal.querySelector('.modal-body').innerHTML = `
   <div class="modal-info-grid">
-    <div><span>💵 المبلغ:</span><strong>${payment.amount}</strong></div>
+    <div><span>💵 المبلغ:</span><strong>${amountDisplay}</strong></div>
     <div><span>💳 الطريقة:</span><strong>${payment.method}</strong></div>
     <div><span>📌 الحالة:</span><strong class="status ${payment.status}">${this.translateStatus(payment.status)}</strong></div>
     <div><span>📅 التاريخ:</span><strong>${this.formatDate(payment.createdAt)}</strong></div>

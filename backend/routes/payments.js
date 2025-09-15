@@ -97,16 +97,17 @@ router.post('/', upload.single('receipt'), multerErrorHandler, async (req, res) 
       note,
       status: 'pending'
     });
-
+    console.log('💾 حفظ الدفعة في قاعدة البيانات:', payment);
     await payment.save();
 
+    console.log('✅ دفعة جديدة تم إنشاؤها بنجاح:', payment);
     // 📡 إرسال إشعار لحظي إلى الأدمن والمستخدم
     notify({ type: 'newPayment', ...payment.toObject() }, 'admin');
     notify({ type: 'newPayment', ...payment.toObject() }, 'user', userId);
-
+    console.log('🔔 إشعار دفعة جديدة تم إرساله إلى الأدمن والمستخدم');
     // ✅ تحديث حالة الإشعار
     await markNotificationSent('Payment', payment._id);
-
+    console.log('✅ حالة الإشعار تم تحديثها في قاعدة البيانات');
     res.json({ status: 'success', paymentId: payment.paymentId });
   } catch (err) {
     console.error('❌ خطأ في إنشاء دفعة:', err);

@@ -1,0 +1,46 @@
+/* ======== التبويبات المعدلة ======== */
+.tabs-container {
+  margin-top: var(--space-md);
+}
+
+.tabs-header {
+  display: none !important;
+}
+
+.tabs-content {
+  padding: 0;
+}
+
+.tab-pane {
+  display: none;
+  opacity: 0;
+  background-color: var(--card-color);
+  padding: var(--space-sm);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  animation: fadeIn 0.3s ease forwards;
+  transition: opacity 0.3s ease;
+}
+
+/* عند التفعيل */
+.tab-pane.active {
+  display: block;
+  opacity: 1;
+  animation: fadeIn 0.3s ease forwards;
+}
+
+/* عند الإخفاء (يمكن إضافته ديناميكيًا عبر JS) */
+.tab-pane.hide {
+  animation: fadeOut 0.3s ease forwards;
+}
+
+
+/* أنماط المحتوى داخل التبويبات */
+.wallet-content,
+.payments-list,
+.portfolio-stats,
+.orders-table,
+.security-settings,
+.about-content {
+  margin-top: 15px;
+}

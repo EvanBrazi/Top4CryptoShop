@@ -24,6 +24,7 @@ import { UnifiedIconSystem } from './core/unified-icon-system.js';
 import { IconRenderer } from './core/icon-renderer.js';
 import { CardsService } from "./core/cards.js";
 import { STORAGE_KEYS } from "./utils/appUtils.js";
+import { AdsManager } from "./utils/adsManager.js";
 
 /* ---------------------------------- */
 /* --------- إعدادات التطبيق -------- */
@@ -178,7 +179,7 @@ export class AppManager {
 
         try {
             this._setupEventListeners();
-            await this.preloadEssentialIcons();
+            await this.initAdsManager();
             await this.initTabs();
 
             this.initState.loaded = true;
@@ -193,22 +194,15 @@ export class AppManager {
         }
     }
 
-    /**
-     * تحميل مسبق للأيقونات الأساسية
-     * @returns {Promise<void>}
-     */
-    async preloadEssentialIcons() {
-        const essentialIcons = [
-            'default.png',
-            'chat_saya.png',
-            'com_taka_vhgyk.png'
-        ];
-
+    
+    async initAdsManager() {
+        // تهيئة مدير الإعلانات
+        const adsManager = new AdsManager("#adsWrapper");
         // تحميل مسبق لأيقونات التبويب الرئيسي
-        await this.homeTabIcons.preloadIcons(essentialIcons);
+        //await this.homeTabIcons.preloadIcons(essentialIcons);
 
         // تحميل مسبق لأيقونات تبويب التطبيقات
-        await this.appsTabIcons.preloadIcons(essentialIcons);
+        //await this.appsTabIcons.preloadIcons(essentialIcons);
 
         console.log('✅ تم التحميل المسبق للأيقونات الأساسية');
     }

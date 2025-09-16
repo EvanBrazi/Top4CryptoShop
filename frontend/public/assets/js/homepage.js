@@ -15,7 +15,6 @@ import UserManager from "./usermanager.js";
 import { Taber } from "./core/taber.js";
 import { AppManager } from "./appmanager.js";
 import { checkSession } from './auth.js';
-import AdsManager from "./utils/adsManager.js";
 import { STORAGE_KEYS } from "./utils/appUtils.js";
 
 // ثوابت التطبيق
@@ -599,7 +598,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     window.homePage = new HomePage();
     //setTimeout(async () => await hideLoader(), 3000);
-    AdsManager.init("#adsWrapper");
 });
 
 document.addEventListener('switchTab', (e) => {

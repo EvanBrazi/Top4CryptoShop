@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم - تبويب المحفظة</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2196F3;
+            --secondary-color: #03A9F4;
+            --text-color: #333;
+            --bg-color: #f9f9f9;
+            --card-bg: #fff;
+            --border-color: #e0e0e0;
+            --metric-bg: #f5f7ff;
+            --shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            --hover-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+        }
+
+        .night-theme {
+            --primary-color: #64B5F6;
+            --secondary-color: #4FC3F7;
+            --text-color: #e0e0e0;
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --border-color: #333;
+            --metric-bg: #2a2a2a;
+            --shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+            --hover-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+        }
+
+        /* تبويب المحفظة */
+        .portfolio-tab {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 24px;
+            max-width: 1000px;
+            margin: auto;
+            box-sizing: border-box;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+        }
+
+        .portfolio-tab h2 {
+            color: var(--primary-color);
+            margin-bottom: 24px;
+            font-size: 1.8rem;
+            text-align: center;
+        }
+
+        /* شبكة المفاتيح */
+        .wallet-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            width: 100%;
+            margin-bottom: 24px;
+        }
+
+        .metric-box {
+            background: var(--metric-bg);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            border: 1px solid var(--border-color);
+        }
+
+        .metric-box:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--hover-shadow);
+        }
+
+        .metric-box h4 {
+            font-size: 1rem;
+            color: var(--text-color);
+            margin-bottom: 12px;
+            opacity: 0.8;
+        }
+
+        .metric-box p {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin: 0;
+        }
+
+        /* فلتر زمني */
+        .wallet-filter {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 24px;
+            font-size: 1rem;
+            color: var(--text-color);
+            width: 100%;
+        }
+
+        .wallet-filter label {
+            margin: 0;
+        }
+
+        .wallet-filter select {
+            padding: 10px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
+            color: var(--text-color);
+            cursor: pointer;
+            min-width: 150px;
+        }
+
+        /* الرسم البياني */
+        .wallet-chart {
+            width: 100%;
+            background: var(--card-bg);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            box-sizing: border-box;
+            margin-bottom: 24px;
+            border: 1px solid var(--border-color);
+        }
+
+        .wallet-chart canvas {
+            width: 100% !important;
+            height: 300px !important;
+        }
+
+        /* حالة التحميل */
+        .chart-loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 300px;
+            color: var(--text-color);
+            font-size: 1.1rem;
+        }
+
+        /* رسالة الخطأ */
+        .chart-error {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 300px;
+            color: #f44336;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .chart-error i {
+            font-size: 3rem;
+            margin-bottom: 16px;
+        }
+
+        .chart-error button {
+            margin-top: 16px;
+            padding: 10px 20px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .chart-error button:hover {
+            background: var(--secondary-color);
+        }
+
+        /* تحسينات للشاشات الصغيرة */
+        @media (max-width: 768px) {
+            .portfolio-tab {
+                padding: 16px;
+            }
+
+            .wallet-metrics {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+
+            .metric-box {
+                padding: 16px;
+            }
+
+            .metric-box p {
+                font-size: 1.5rem;
+            }
+
+            .wallet-filter {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .wallet-filter select {
+                width: 100%;
+            }
+
+            .wallet-chart {
+                padding: 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .portfolio-tab h2 {
+                font-size: 1.5rem;
+            }
+
+            .metric-box h4 {
+                font-size: 0.9rem;
+            }
+
+            .metric-box p {
+                font-size: 1.3rem;
+            }
+        }
+
+        /* تحسينات للوضع الليلي */
+        .night-theme .wallet-filter select {
+            border-color: #444;
+        }
+    </style>
+</head>
+
+<body class="day-theme">
+    <!-- تبويب المحفظة المحسن -->
+    <div class="tab-pane active" id="portfolio-tab">
+        <div class="portfolio-tab">
+            <h2>📊 محفظتي</h2>
+            <div class="wallet-metrics">
+                <div class="metric-box">
+                    <h4>الرصيد الحالي</h4>
+                    <p id="balance-amount">$0.00</p>
+                </div>
+                <div class="metric-box">
+                    <h4>إجمالي الدفع</h4>
+                    <p id="total-payments">$0.00</p>
+                </div>
+                <div class="metric-box">
+                    <h4>إجمالي الشراء</h4>
+                    <p id="total-purchases">$0.00</p>
+                </div>
+            </div>
+            <div class="wallet-filter">
+                <label>عرض البيانات حسب:</label>
+                <select id="time-filter">
+                    <option value="7">آخر أسبوع</option>
+                    <option value="30" selected>آخر شهر</option>
+                    <option value="365">آخر سنة</option>
+                </select>
+            </div>
+            <div class="wallet-chart">
+                <div id="chart-loading" class="chart-loading">
+                    <i class="fas fa-spinner fa-spin"></i> جاري تحميل البيانات...
+                </div>
+                <div id="chart-error" class="chart-error" style="display: none;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>حدث خطأ في تحميل البيانات. يرجى المحاولة مرة أخرى.</p>
+                    <button onclick="portfolioTab.fetchData()">إعادة المحاولة</button>
+                </div>
+                <canvas id="interactionChart" width="600" height="300" style="display: none;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        class PortfolioTab {
+            constructor(containerId, userId, options = {}) {
+                this.containerId = containerId;
+                this.userId = userId;
+                this.token = localStorage.getItem('userToken') || 'demo-token'; // لأغراض العرض
+                this.themeColor = options.themeColor || '#2196F3';
+                this.chartInstance = null;
+                this.render();
+
+                // لمحاكاة البيانات في العرض التوضيحي
+                this.demoData = {
+                    balance: 1250.75,
+                    payments: [
+                        { id: 1, amount: 500, createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString() },
+                        { id: 2, amount: 250, createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString() },
+                        { id: 3, amount: 500.75, createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() }
+                    ],
+                    orders: [
+                        { id: 1, amount: 300, createdAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString() },
+                        { id: 2, amount: 150, createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() },
+                        { id: 3, amount: 100, createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString() }
+                    ]
+                };
+            }
+
+            render() {
+                const container = document.getElementById(this.containerId);
+                if (!container) return;
+
+                const filter = container.querySelector('#time-filter');
+                if (filter) {
+                    filter.addEventListener('change', (e) => {
+                        const days = parseInt(e.target.value);
+                        this.fetchData(days);
+                    });
+                }
+
+                this.fetchData(30); // تحميل افتراضي لآخر شهر
+            }
+
+            async fetchData(days = 30) {
+                // إظهار حالة التحميل
+                document.getElementById('chart-loading').style.display = 'flex';
+                document.getElementById('chart-error').style.display = 'none';
+                document.getElementById('interactionChart').style.display = 'none';
+
+                try {
+                    // محاكاة وقت تحميل للعرض التوضيحي
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+
+                    const fromDate = new Date();
+                    fromDate.setDate(fromDate.getDate() - days);
+                    const fromISO = fromDate.toISOString();
+
+                    // في التطبيق الحقيقي، استخدم:
+                    // const balanceRes = await fetch(`/api/users/${this.userId}/balance`, {
+                    //     headers: { Authorization: `Bearer ${this.token}` }
+                    // });
+                    // const balanceData = await balanceRes.json();
+
+                    // لمحاكاة البيانات في العرض التوضيحي
+                    const balanceData = { balance: this.demoData.balance };
+                    const payments = this.demoData.payments.filter(p => new Date(p.createdAt) >= new Date(fromISO));
+                    const orders = this.demoData.orders.filter(o => new Date(o.createdAt) >= new Date(fromISO));
+
+                    document.getElementById('balance-amount').textContent = `$${balanceData.balance.toFixed(2)}`;
+
+                    const totalPayments = payments.reduce((sum, p) => sum + parseFloat(p.amount), 0);
+                    document.getElementById('total-payments').textContent = `$${totalPayments.toFixed(2)}`;
+
+                    const totalPurchases = orders.reduce((sum, o) => sum + parseFloat(o.amount), 0);
+                    document.getElementById('total-purchases').textContent = `$${totalPurchases.toFixed(2)}`;
+
+                    // إنشاء بيانات الرسم البياني
+                    this.createChartData(payments, orders, days);
+
+                } catch (err) {
+                    console.error('❌ فشل تحميل بيانات المحفظة:', err);
+                    document.getElementById('chart-loading').style.display = 'none';
+                    document.getElementById('chart-error').style.display = 'flex';
+                }
+            }
+
+            createChartData(payments, orders, days) {
+                // إنشاء بيانات للرسم البياني حسب الفترة الزمنية
+                let labels = [];
+                let paymentData = [];
+                let orderData = [];
+
+                if (days <= 30) {
+                    // بيانات يومية للفترات القصيرة
+                    for (let i = days - 1; i >= 0; i--) {
+                        const date = new Date();
+                        date.setDate(date.getDate() - i);
+                        const label = `${date.getDate()}/${date.getMonth() + 1}`;
+                        labels.push(label);
+
+                        const dateStr = date.toISOString().split('T')[0];
+                        const dayPayments = payments.filter(p => p.createdAt.split('T')[0] === dateStr)
+                            .reduce((sum, p) => sum + parseFloat(p.amount), 0);
+                        const dayOrders = orders.filter(o => o.createdAt.split('T')[0] === dateStr)
+                            .reduce((sum, o) => sum + parseFloat(o.amount), 0);
+
+                        paymentData.push(dayPayments);
+                        orderData.push(dayOrders);
+                    }
+                } else {
+                    // بيانات شهرية للفترات الطويلة
+                    const monthMap = {};
+                    const currentDate = new Date();
+                    
+                    for (let i = 0; i < 12; i++) {
+                        const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+                        const label = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                        monthMap[label] = { payments: 0, orders: 0 };
+                    }
+                    
+                    // تجميع البيانات
+                    payments.forEach(p => {
+                        const date = new Date(p.createdAt);
+                        const label = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                        if (monthMap[label]) {
+                            monthMap[label].payments += parseFloat(p.amount);
+                        }
+                    });
+                    
+                    orders.forEach(o => {
+                        const date = new Date(o.createdAt);
+                        const label = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                        if (monthMap[label]) {
+                            monthMap[label].orders += parseFloat(o.amount);
+                        }
+                    });
+                    
+                    // تحضير البيانات للرسم البياني
+                    labels = Object.keys(monthMap).reverse();
+                    paymentData = labels.map(label => monthMap[label].payments);
+                    orderData = labels.map(label => monthMap[label].orders);
+                }
+
+                this.renderChart(labels, paymentData, orderData);
+            }
+
+            renderChart(labels, paymentData, orderData) {
+                const ctx = document.getElementById('interactionChart').getContext('2d');
+                
+                // إخفاء حالة التحميل وإظهار الرسم البياني
+                document.getElementById('chart-loading').style.display = 'none';
+                document.getElementById('interactionChart').style.display = 'block';
+
+                if (this.chartInstance) {
+                    this.chartInstance.destroy();
+                }
+
+                this.chartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'المدفوعات',
+                                data: paymentData,
+                                backgroundColor: '#4CAF50',
+                                borderColor: '#4CAF50',
+                                borderWidth: 1
+                            },
+                            {
+                                label: 'المشتريات',
+                                data: orderData,
+                                backgroundColor: '#F44336',
+                                borderColor: '#F44336',
+                                borderWidth: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return '$' + value;
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                rtl: true
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.dataset.label + ': $' + context.raw;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // تهيئة تبويب المحفظة عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            window.portfolioTab = new PortfolioTab('portfolio-tab', 'user123');
+            
+            // لمحاكاة تبديل الثيم (لأغراض العرض التوضيحي)
+            document.getElementById('theme-toggle-btn').addEventListener('click', function() {
+                document.body.classList.toggle('day-theme');
+                document.body.classList.toggle('night-theme');
+                
+                // إذا كان الرسم البياني موجودًا، أعد رسمه لتطبيق الألوان الجديدة
+                if (window.portfolioTab && window.portfolioTab.chartInstance) {
+                    window.portfolioTab.chartInstance.update();
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

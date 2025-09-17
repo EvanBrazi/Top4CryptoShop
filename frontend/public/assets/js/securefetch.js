@@ -1,9 +1,11 @@
 function inferErrorType(message = '') {
-  if (message.includes('اسم المستخدم')) return 'invalid_credentials';
-  if (message.includes('كلمة المرور')) return 'invalid_password';
-  if (message.includes('رمز الجلسة')) return 'missing_session';
-  if (message.includes('تم تعليق الحساب')) return 'too_many_attempts';
-  return 'server_error';
+    if (message.includes('اسم المستخدم')) return 'invalid_credentials';
+    if (message.includes('كلمة المرور')) return 'invalid_password';
+    if (message.includes('رمز الجلسة')) return 'missing_session';
+    if (message.includes('تم تعليق الحساب')) return 'too_many_attempts';
+    if (message.includes('توكن غير صالح')) return 'invalid_token';
+    if (message.includes('انتهت صلاحية الجلسة')) return 'expired_session';
+    return 'server_error';
 }
 
 /**
@@ -13,6 +15,12 @@ function inferErrorType(message = '') {
  */
 function getCsrfTokenFromCookie() {
     const match = document.cookie.match(/(?:^|;\s*)x-csrf-token=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : null;
+}
+
+export function getSessionIdFromCookie() {
+    //s%3A8fqxh1bMJCjYx1Mj1pCES418Wc9KwfLR.upEMRm
+    const match = document.cookie.match(/(?:^|;\s*)customSessionId=([^;]+)/);
     return match ? decodeURIComponent(match[1]) : null;
 }
 
@@ -26,13 +34,14 @@ export async function secureFetch(url, options = {}) {
     const method = options.method?.toUpperCase() || 'GET';
     const needsCsrf = ['POST', 'PUT', 'DELETE'].includes(method);
     const csrfToken = needsCsrf ? getCsrfTokenFromCookie() : null;
-
+    const sessionId = getSessionIdFromCookie();
+    console.log('secureFetch:url', url, 'method:', method, 'csrfToken:', csrfToken, 'sessionId', sessionId);
     const headers = {
         'Content-Type': 'application/json',
         ...(options.headers || {}),
-        ...(csrfToken ? { 'x-csrf-token': csrfToken } : {})
+        ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
+        ...(sessionId ? { 'x-session-id': sessionId } : {})
     };
-
     try {
         const response = await secureFetchWithLoader(url, {
             ...options,

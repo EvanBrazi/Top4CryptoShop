@@ -4,7 +4,7 @@
  * @version 2.3.0
  * @author Evan Brazi
  */
-
+require('dotenv').config();
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
@@ -18,7 +18,7 @@ const { attachCsrfToken, doubleCsrfProtection } = require('../middlewares/csrfMi
 const { registerUser } = require('../controllers/authController');
 const { body } = require('express-validator');
 const { verifyToken, checkAdmin, checkSession } = require('../middlewares/auth');
-const { activeSessions } = require('../utils/sessionStore');
+const { createSession, activeSessions } = require('../utils/sessionStore');
 const passport = require('passport');
 require('../config/googleAuth'); // تأكد من إعداد استراتيجية جوجل في هذا الملف
 const speakeasy = require('speakeasy');
@@ -118,12 +118,13 @@ router.post(
  * @module AuthRoutes
  * @description
  *  - تسجيل الدخول للمستخدم أو الأدمن
- *  - توليد sessionId وتخزينه في activeSessions
- *  - إرسال sessionId و JWT ككوكي
+ *  - توليد customSessionId وتخزينه في activeSessions عبر createSession
+ *  - إرسال customSessionId و JWT ككوكي
  *  - يدعم الحماية من المحاولات الزائدة والتعليق المؤقت
+ *  - يدعم تسجيل الدخول عبر Google و 2FA
  *
  * @author Evan Brazi
- * @lastModified 2025-08-28
+ * @lastModified 2025-09-17
  */
 // 🔐 تسجيل الدخول
 router.post('/login',
@@ -202,13 +203,10 @@ router.post('/login',
         });
       }
 
-      // 🧠 توليد sessionId وتسجيله في الذاكرة
+      // 🧠 توليد customSessionId وتسجيله في الذاكرة
+      // 🧠 إنشاء جلسة جديدة بصلاحية ساعة واحدة
       const sessionId = crypto.randomBytes(16).toString('hex');
-      activeSessions.set(sessionId, {
-        userId: user._id.toString(),
-        role: user.role,
-        expiresAt: Date.now() + 3600000 // ساعة واحدة
-      });
+      createSession(sessionId, user._id.toString(), user.role);
 
       // 🛡️ توليد JWT
       const issuer = user.role === 'admin' ? 'admin-panel' : 'your-app-api';
@@ -227,14 +225,14 @@ router.post('/login',
         path: '/'
       });
 
-      res.cookie('sessionId', sessionId, {
+      res.cookie('customSessionId', sessionId, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'Lax',
         maxAge: 3600000,
         path: '/'
       });
-
+      console.log('🍪 customSessionId المرسل للمتصفح:', sessionId, 'Token:', token);
       attachCsrfToken(req, res); // توليد رمز CSRF
       const userResponse = {
         id: user._id,
@@ -247,15 +245,15 @@ router.post('/login',
         role: user.role,
         sessionId: sessionId
       };
-
+      console.log('🧠 الجلسات النشطة:', [...activeSessions.entries()]);
       return handleAuthResponse(req, res, {
         success: true,
         user: userResponse,
         token,
         redirectTo: user.role === 'admin' ? '/admin' : '/homepage.html'
       });
-
     } catch (err) {
+      //console.log('Error:', err);
       return handleAuthResponse(req, res, {
         status: 500,
         success: false,
@@ -277,6 +275,9 @@ router.get('/google',
 // =============================================
 // 🔐 نقطة نهاية رد الاتصال من Google OAuth2
 // =============================================
+/**
+ * @lastModified 2025-09-17
+ */
 router.get('/google/callback',
   passport.authenticate('google', { session: false }),
   async (req, res) => {
@@ -286,11 +287,9 @@ router.get('/google/callback',
       user.lastLogin = new Date();
       await user.save();
 
+      // 🧠 إنشاء جلسة جديدة بصلاحية ساعة واحدة
       const sessionId = crypto.randomBytes(16).toString('hex');
-      activeSessions.set(sessionId, {
-        userId: user._id.toString(),
-        role: user.role
-      });
+      createSession(sessionId, user._id.toString(), user.role);
 
       const issuer = user.role === 'admin' ? 'admin-panel' : 'your-app-api';
       const token = jwt.sign(
@@ -307,7 +306,7 @@ router.get('/google/callback',
         path: '/'
       });
 
-      res.cookie('sessionId', sessionId, {
+      res.cookie('customSessionId', sessionId, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'Lax',
@@ -415,6 +414,9 @@ router.post('/logout', doubleCsrfProtection, async (req, res) => {
 // =============================================
 // ✅ للتحقق من رمز 2FA بعد كلمة المرور
 // =============================================
+/**
+ * @lastModified 2025-09-17
+ */
 router.post('/verify-2fa-login', async (req, res) => {
   const { userId, token } = req.body;
   const user = await User.findById(userId).select('+twoFASecret +twoFAAttempts');
@@ -449,11 +451,9 @@ router.post('/verify-2fa-login', async (req, res) => {
   }
 
   // ✅ الآن نمنح الجلسة
+  // 🧠 إنشاء جلسة جديدة بصلاحية ساعة واحدة
   const sessionId = crypto.randomBytes(16).toString('hex');
-  activeSessions.set(sessionId, {
-    userId: user._id.toString(),
-    role: user.role
-  });
+  createSession(sessionId, user._id.toString(), user.role);
 
   const tokenJWT = jwt.sign(
     { userId: user._id, role: user.role || 'user' },
@@ -469,7 +469,7 @@ router.post('/verify-2fa-login', async (req, res) => {
     path: '/'
   });
 
-  res.cookie('sessionId', sessionId, {
+  res.cookie('customSessionId', sessionId, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'Lax',

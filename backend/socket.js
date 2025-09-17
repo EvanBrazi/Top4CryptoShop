@@ -16,21 +16,21 @@ const WebSocket = require('ws');
 const { registerClient } = require('./utils/notifications');
 const { activeSessions } = require('./utils/sessionStore'); // ✅ استيراد الجلسات المشتركة
 
-// 🧠 استخراج sessionId من الكوكيز
+// 🧠 استخراج customSessionId من الكوكيز
 function extractSessionId(cookies) {
   if (!cookies) return null;
-  const match = cookies.match(/sessionId=([^;]+)/);
+  const match = cookies.match(/customSessionId=([^;]+)/);
   return match ? match[1] : null;
 }
 
 /**
  * تحقق من صلاحية الجلسة حسب الدور المطلوب
- * @param {string} sessionId
+ * @param {string} customSessionId
  * @param {string} requiredRole
  * @returns {boolean}
  */
-function isValidSession(sessionId, requiredRole = null) {
-  const session = activeSessions.get(sessionId);
+function isValidSession(customSessionId, requiredRole = null) {
+  const session = activeSessions.get(customSessionId);
   if (!session) return false;
   return requiredRole ? session.role === requiredRole : true;
 }
@@ -45,16 +45,16 @@ function setupWebSocket(server) {
 
   wss.on('connection', (ws, req) => {
     const cookies = req.headers.cookie;
-    const sessionId = extractSessionId(cookies);
+    const customSessionId = extractSessionId(cookies);
 
     // رفض الاتصال إذا لم تكن الجلسة صالحة
-    if (!isValidSession(sessionId, 'admin')) {
+    if (!isValidSession(customSessionId, 'admin')) {
       ws.close(4001, 'Unauthorized session');
       return;
     }
 
     // 🟢 الاتصال مقبول
-    const session = activeSessions.get(sessionId);
+    const session = activeSessions.get(customSessionId);
     ws.userType = session.role;
     ws.userId = session.userId;
 

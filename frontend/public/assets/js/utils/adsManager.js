@@ -78,12 +78,12 @@ export class AdsManager {
     const slide = document.createElement("div");
     slide.className = "ad-slide";
     slide.innerHTML = `
-      <img src="${ad.image}" alt="Ad Image" class="ad-image"/>
-      <div class="ads-content">
-        <h1 class="ad-title">${ad.title}</h1>
-        <p class="ad-text">${ad.text}</p>
-        <h2 class="ad-cta">${ad.cta}</h2>
-      </div>
+        <img src="${ad.image}" alt="Ad Image" class="ad-image" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAiIGhlaWdodD0iNTAiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMTIgMTZDMTQuMjA5MSAxNiAxNiAxNC4yMDkxIDE2IDEyQzE2IDkuNzkwODYgMTQuMjA5MSA4IDEyIDhDOS43OTA4NiA4IDggOS43OTA4NiA4IDEyQzggMTQuMjA5MSA5Ljc5MDg2IDE2IDEyIDE2WiIgZmlsbD0iI2NjYyIvPjxwYXRoIGQ9Ik0xMiAyMkMxNi45NzA2IDIyIDIxIDE2Ljk3MDYgMjEgMTJDMjEgNy4wMjk0NCAxNi45NzA2IDMgMTIgM0M3LjAyOTQ0IDMgMyA3LjAyOTQ0IDMgMTJDNy4wMjk0NCAyMiAxMiAyMiAxMiAyMloiIHN0cm9rZT0iI2NjYyIgc3Ryb2tlLXdpZHRoPSIyIi8+PC9zdmc+'"/>
+        <div class="ads-content">
+            <h3 class="ad-title">${ad.title}</h3>
+            <p class="ad-text">${ad.text}</p>
+            <p class="ad-cta">${ad.cta} →</p>
+        </div>
     `;
 
     slide.onclick = () => ad.action();

@@ -40,7 +40,8 @@ const securityHeaders = helmet({
         "https://ui-avatars.com",
         "https://lh3.googleusercontent.com",
         "https://upload.wikimedia.org",
-        "https://developers.google.com"
+        "https://developers.google.com",
+        "https://api.dicebear.com"
       ],
 
       fontSrc: [
@@ -65,6 +66,7 @@ const securityHeaders = helmet({
         "https://esm.sh",
         "https://v6.exchangerate-api.com",
         "https://ui-avatars.com/",
+        "https://api.dicebear.com",
         "https://cdn-icons-png.flaticon.com" // ✅ أضف هذا السطر
       ],
 

@@ -1,4 +1,5 @@
 import { login } from './auth.js';
+import { getSessionIdFromCookie } from './securefetch.js';
 import { STORAGE_KEYS, isValidToken } from './utils/appUtils.js';
 // ✅ عناصر الواجهة
 const spinner = document.getElementById('spinner');
@@ -92,9 +93,16 @@ function show2FAInput(userId, deviceId, rememberDevice) {
  * @param {string} token - رمز التوثيق
  */
 function saveSession(userId, token, sessionId) {
+    console.log('Save Session Id at internal Storage', sessionId);
     localStorage.setItem(STORAGE_KEYS.USER_ID, userId);
     localStorage.setItem(STORAGE_KEYS.USER_TOKEN, token);
     localStorage.setItem(STORAGE_KEYS.SESSION_ID, sessionId)
+}
+
+function removeOldSession() {
+    localStorage.removeItem(STORAGE_KEYS.USER_ID);
+    localStorage.removeItem(STORAGE_KEYS.USER_TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.SESSION_ID);
 }
 
 /**
@@ -276,6 +284,12 @@ async function loginUser(username, password) {
             shakeElement('passwordInput');
             return;
         }
+        
+        if (result.status === 401 || result.status === 403) {
+            console.log('Expired!', result);
+            removeOldSession();
+            window.location.href = '/login.html';
+        }
 
         // ✅ إذا كان المستخدم فعّل 2FA
         if (result.requires2FA) {
@@ -285,7 +299,6 @@ async function loginUser(username, password) {
             show2FAInput(result.user.id, deviceId, rememberDevice); // ← تمرير القيم إلى مربع التحقق
             return;
         }
-
         // ✅ تسجيل الدخول ناجح
         saveSession(result.user.id, result.token, result.user.sessionId);
 

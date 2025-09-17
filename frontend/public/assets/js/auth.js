@@ -102,9 +102,9 @@ export async function logout() {
 export async function checkSession(expectedRole = null) {
     try {
         const result = await secureFetch('/api/auth/check-session', {
-            method: 'GET'
+            method: 'GET',
         });
-
+        //console.log('Front: checkSession:', result);
         if (!result.success) {
             console.warn('⚠️ فشل التحقق من الجلسة:', result.error);
             window.location.href = '/401.html';
@@ -112,7 +112,6 @@ export async function checkSession(expectedRole = null) {
         }
 
         const data = result.data;
-
         if (!data.isAuthenticated || !data.user) {
             window.location.href = data.redirectTo || '/401.html';
             return null;
@@ -125,7 +124,7 @@ export async function checkSession(expectedRole = null) {
 
         return data.user;
     } catch (error) {
-        console.error('Session check failed:', error);
+        console.error('❌ فشل التحقق من الجلسة:', error);
         window.location.href = '/401.html';
         return null;
     }

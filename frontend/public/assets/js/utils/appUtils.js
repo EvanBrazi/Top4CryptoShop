@@ -1,7 +1,7 @@
 export const STORAGE_KEYS = {
     USER_ID: 'userId',
     USER_TOKEN: 'userToken',
-    SESSION_ID: 'sessionId'
+    SESSION_ID: 'customSessionId'
 };
 
 const fullPathByCategoryMap = {
@@ -100,4 +100,79 @@ export function isValidImage(file, maxSizeMB = 5) {
     }
 
     return true;
+}
+
+export function validateField(fieldName, value) {
+    switch (fieldName) {
+        case 'name':
+            if (value.length < 3) return '❌ الاسم يجب أن يكون 3 أحرف على الأقل.';
+            break;
+        case 'email':
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return '❌ البريد الإلكتروني غير صالح.';
+            break;
+        case 'phone':
+            if (!/^\+?\d{9,15}$/.test(value)) return '❌ رقم الهاتف غير صالح.';
+            break;
+        case 'password':
+            if (value.length < 8) return '❌ كلمة المرور يجب أن تكون 8 أحرف على الأقل.';
+            if (!/[A-Z]/.test(value)) return '❌ يجب أن تحتوي كلمة المرور على حرف كبير واحد على الأقل.';
+            if (!/[a-z]/.test(value)) return '❌ يجب أن تحتوي كلمة المرور على حرف صغير واحد على الأقل.';
+            if (!/[0-9]/.test(value)) return '❌ يجب أن تحتوي كلمة المرور على رقم واحد على الأقل.';
+            if (!/[!@#$%^&*(),.?":{}|<>]/.test(value)) return '❌ يجب أن تحتوي كلمة المرور على رمز خاص واحد على الأقل.';
+            break;
+        default:
+            return null;
+    }
+    return null;
+}
+
+// <span class="field-icon" id="email-icon"></span>
+// <small class="field-message" id="email-msg"></small>
+export function updateFieldVisual(fieldId, status, message = '') {
+    const icon = document.getElementById(`${fieldId}-icon`);
+    const msg = document.getElementById(`${fieldId}-msg`);
+
+    if (!icon || !msg) return;
+
+    if (status === 'success') {
+        icon.textContent = '✅';
+        icon.style.color = '#4CAF50';
+        msg.textContent = '';
+    } else if (status === 'error') {
+        icon.textContent = '❌';
+        icon.style.color = '#f44336';
+        msg.textContent = message;
+        msg.style.color = '#f44336';
+    } else {
+        icon.textContent = '';
+        msg.textContent = '';
+    }
+}
+
+export function validateAndVisualizeField(key, value, passwordRef = '') {
+    if (!value) {
+        updateFieldVisual(key, 'neutral');
+        return { valid: true };
+    }
+
+    if (key === 'confirm') {
+        if (value !== passwordRef) {
+            updateFieldVisual(key, 'error', 'كلمة المرور وتأكيدها غير متطابقان');
+            return { valid: false, message: 'كلمة المرور وتأكيدها غير متطابقان' };
+        }
+        updateFieldVisual(key, 'success');
+        return { valid: true };
+    }
+
+    const error = validateField(key, value);
+    if (error) {
+        updateFieldVisual(key, 'error', error);
+        if (key === 'password') {
+            showToast('💡 استخدم كلمة مرور قوية تحتوي على أحرف كبيرة وصغيرة وأرقام ورموز، مثل: Pass!1234.', 'info');
+        }
+        return { valid: false, message: error };
+    }
+
+    updateFieldVisual(key, 'success');
+    return { valid: true };
 }

@@ -185,11 +185,10 @@ class UserManager {
    */
   async setUserTheme(theme) {
     if (![0, 1].includes(theme)) return;
+    const themeName = theme === 1 ? 'ليلي' : 'نهاري';
     this.#user.theme = theme;
-    await this.saveUser();
-
     try {
-      await fetch(`/api/users/${this.#user._id}/theme`, {
+      const res = await fetch(`/api/users/${this.#user._id}/theme`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -197,7 +196,10 @@ class UserManager {
         },
         body: JSON.stringify({ theme })
       });
+      if (!res.ok) throw new Error();
+      showToast(`✅ تم تغيير الوضع إلى ${themeName} بنجاح`, 'success');
     } catch (err) {
+      showToast(`❌  إلى ${themeName} فشل تغيير الوضع`, 'error');
       console.error('فشل تحديث الثيم في السيرفر', err);
     }
   }

@@ -2,19 +2,42 @@
  * @module toast
  * عرض إشعار مؤقت للمستخدم في واجهة المشروع
  * @param {string} message - نص الإشعار
- * @param {string} type - نوع الإشعار (success, error, info)
+ * @param {'success'|'error'|'info'|'warning'} type - نوع الإشعار
  */
 export function showToast(message, type = 'info') {
   const toast = document.createElement('div');
-  toast.className = 'toast-message';
+  toast.className = 'custom-toast';
+
+  // أيقونات حسب النوع
+  const icons = {
+    success: '✅',
+    error: '❌',
+    info: 'ℹ️',
+    warning: '⚠️'
+  };
+
+  toast.innerHTML = `<span class="toast-icon">${icons[type] || '🔔'}</span><span class="toast-message">${message}</span>`;
 
   // تخصيص اللون حسب النوع
-  if (type === 'success') toast.style.backgroundColor = '#4CAF50';
-  else if (type === 'error') toast.style.backgroundColor = '#f44336';
-  else toast.style.backgroundColor = '#323232';
+  const colors = {
+    success: '#4CAF50',
+    error: '#f44336',
+    info: '#2196F3',
+    warning: '#FF9800'
+  };
 
-  toast.textContent = message;
+  toast.style.backgroundColor = colors[type] || '#333';
+
   document.body.appendChild(toast);
 
-  setTimeout(() => toast.remove(), 3000);
+  // دخول سلس
+  setTimeout(() => {
+    toast.classList.add('visible');
+  }, 100);
+
+  // خروج بعد 3 ثوانٍ
+  setTimeout(() => {
+    toast.classList.remove('visible');
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
 }

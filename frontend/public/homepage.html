@@ -236,37 +236,107 @@
                         </table>
                     </div>
                 </div>
-                <div class="tab-pane" id="portfolio-tab">
-                    <div class="portfolio-tab">
-                        <h2>📊 محفظتي</h2>
+                <!-- تبويب المحفظة المحسن -->
+                <div class="tab-pane active" id="portfolio-tab">
+                    <div class="portfolio-container">
+                        <div class="portfolio-header">
+                            <h1><i class="fas fa-wallet"></i> محفظتي</h1>
+                            <p>إدارة أموالك وتتبع معاملاتك المالية</p>
+                        </div>
+
                         <div class="wallet-metrics">
-                            <div class="metric-box">
-                                <h4>الرصيد الحالي</h4>
-                                <p id="balance-amount">$0.00</p>
+                            <div class="metric-card">
+                                <div class="metric-icon"><i class="fas fa-dollar-sign"></i></div>
+                                <h3 class="metric-title">الرصيد الحالي</h3>
+                                <p class="metric-value" id="balance-amount">$0.00</p>
+                                <p class="metric-subtext">رصيدك المتاح للاستخدام</p>
                             </div>
-                            <div class="metric-box">
-                                <h4>إجمالي الدفع</h4>
-                                <p id="total-payments">$0.00</p>
+
+                            <div class="metric-card">
+                                <div class="metric-icon"><i class="fas fa-money-bill-wave"></i></div>
+                                <h3 class="metric-title">إجمالي الدفع</h3>
+                                <p class="metric-value" id="total-payments">$0.00</p>
+                                <p class="metric-subtext">مجموع ما أضفته من رصيد</p>
                             </div>
-                            <div class="metric-box">
-                                <h4>إجمالي الشراء</h4>
-                                <p id="total-purchases">$0.00</p>
+
+                            <div class="metric-card">
+                                <div class="metric-icon"><i class="fas fa-shopping-cart"></i></div>
+                                <h3 class="metric-title">إجمالي الشراء</h3>
+                                <p class="metric-value" id="total-purchases">$0.00</p>
+                                <p class="metric-subtext">مجموع ما أنفقته من رصيد</p>
                             </div>
                         </div>
-                        <div class="wallet-filter">
-                            <label>عرض البيانات حسب:</label>
-                            <select id="time-filter">
-                                <option value="7">آخر أسبوع</option>
-                                <option value="30">آخر شهر</option>
-                                <option value="365">آخر سنة</option>
-                            </select>
+
+                        <div class="portfolio-controls">
+                            <div class="time-filter">
+                                <label for="time-filter">عرض البيانات حسب:</label>
+                                <select id="time-filter">
+                                    <option value="7">آخر أسبوع</option>
+                                    <option value="30" selected>آخر شهر</option>
+                                    <option value="90">آخر 3 أشهر</option>
+                                    <option value="365">آخر سنة</option>
+                                    <option value="all">كل الفترات</option>
+                                </select>
+                            </div>
+
+                            <div class="chart-actions">
+                                <button type="button" class="chart-btn" id="refresh-chart"><i
+                                        class="fas fa-sync-alt"></i>
+                                    تحديث</button>
+                                <button type="button" class="chart-btn" id="export-chart"><i
+                                        class="fas fa-download"></i>
+                                    تصدير</button>
+                            </div>
                         </div>
-                        <div class="wallet-chart">
-                            <canvas id="interactionChart" width="600" height="300"></canvas>
+                        <div class="portfolio-tab">
+                            <div class="wallet-chart">
+                                <div id="small-chart-loading" class="chart-loading">
+                                    <i class="fas fa-spinner fa-spin"></i> جاري تحميل البيانات...
+                                </div>
+                                <div id="small-chart-error" class="chart-error" style="display: none;">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <p>حدث خطأ في تحميل البيانات. يرجى المحاولة مرة أخرى.</p>
+                                    <button type="button" id="retry">إعادة المحاولة</button>
+                                </div>
+                                <canvas id="small-interactionChart" width="600" height="300"
+                                    style="display: none;"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <h2 class="chart-title"><i class="fas fa-chart-bar"></i> تحليلات المعاملات</h2>
+
+                            <div id="chart-loading" class="chart-loading">
+                                <i class="fas fa-spinner fa-spin fa-2x"></i>
+                                <p>جاري تحميل البيانات...</p>
+                            </div>
+
+                            <div id="chart-error" class="chart-error" style="display: none;">
+                                <i class="fas fa-exclamation-triangle fa-2x"></i>
+                                <p>حدث خطأ في تحميل البيانات. يرجى المحاولة مرة أخرى.</p>
+                                <button type="button" class="chart-btn" id="retry-loading"><i class="fas fa-redo"></i>
+                                    إعادة
+                                    المحاولة</button>
+                            </div>
+
+                            <div id="chart-empty" class="chart-empty" style="display: none;">
+                                <i class="fas fa-chart-line fa-2x"></i>
+                                <p>لا توجد بيانات لعرضها في الفترة المحددة.</p>
+                                <p>قم بإجراء بعض المعاملات المالية لرؤية التحليلات هنا.</p>
+                            </div>
+
+                            <div class="chart-canvas-container">
+                                <canvas id="interactionChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="transactions-section">
+                            <h2 class="section-title">آخر المعاملات</h2>
+                            <div class="transactions-grid" id="transactions-container">
+                                <!-- سيتم ملء هذا القسم بالمعاملات عبر JavaScript -->
+                            </div>
                         </div>
                     </div>
                 </div>
-
                 <div class="tab-pane" id="orders-tab">
                     <h2>طلباتي</h2>
                     <label for="order-filter">فلترة حسب الحالة:</label>
@@ -296,41 +366,65 @@
                     </div>
                 </div>
                 <div class="tab-pane" id="settings-tab">
-                    <template id="settings-template">
-                        <div class="settings-tab">
-                            <h2>⚙️ إعدادات الحساب</h2>
-                            <form id="settings-form">
-                                <div class="avatar-section">
-                                    <img id="avatar-preview" src="" alt="الصورة الشخصية" />
-                                    <input type="file" id="avatar-input" accept="image/*" />
-                                    <button id="remove-avatar-btn" style="display: none;">🗑️ إزالة الصورة</button>
-                                </div>
-                                <div class="form-group">
-                                    <label for="fullName">الاسم الكامل</label>
-                                    <input type="text" id="fullName" autocomplete="username" />
-                                </div>
-                                <div class="form-group">
-                                    <label for="email">البريد الإلكتروني</label>
-                                    <input type="email" id="email" autocomplete="email" />
-                                </div>
-                                <div class="form-group">
-                                    <label for="phone">رقم الهاتف</label>
-                                    <input type="tel" id="phone" autocomplete="tel" />
-                                </div>
-                                <div class="form-group">
-                                    <label for="newPassword">كلمة المرور الجديدة</label>
-                                    <input type="password" id="newPassword" autocomplete="new-password" />
-                                </div>
-                                <div class="form-group">
-                                    <label for="confirmPassword">تأكيد كلمة المرور</label>
-                                    <input type="password" id="confirmPassword" autocomplete="new-password" />
-                                </div>
-                                <div class="form-group full-width">
-                                    <button type="submit" class="save-btn">💾 حفظ التغييرات</button>
-                                </div>
-                            </form>
+                    <h2><i class="fas fa-cog"></i> إعدادات الحساب</h2>
+                    <form id="settings-form" class="settings-form">
+                        <div class="avatar-section">
+                            <img id="avatar-preview"
+                                src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDExQzE0LjIwOTEgMTEgMTYgOS4yMDkxIDE2IDdDMTYgNC43OTA4NiAxNC4yMDkxIDMgMTIgM0M5Ljc5MDg2IDMgOCA0Ljc5MDg2IDggN0M4IDkuMjA5MTQgOS43OTA4NiAxMSAxMiAxMVoiIGZpbGw9IiNjY2MiLz4KPHBhdGggZD0iTTEyIDIxQzE2Ljk3MDYgMjEgMjEgMTYuOTcwNiAyMSAxMkMyMSA3LjAyOTQ0IDE2Ljk3MDYgMyAxMiAzQzcuMDI5NDQgMyAzIDcuMDI5NDQgMyAxMkMzIDE2Ljk3MDYgNy4wMjk0NCAyMSAxMiAyMVoiIHN0cm9rZT0iI2NjYyIgc3Ryb2tlLXdpZHRoPSIyIi8+Cjwvc3ZnPg=="
+                                alt="الصورة الشخصية" />
+                            <div class="avatar-actions">
+                                <input type="file" id="avatar-input" accept="image/*" style="display: none;" />
+                                <button type="button" class="btn btn-primary" id="accept-avatar-btn">
+                                    <i class="fas fa-upload"></i> تغيير الصورة
+                                </button>
+                                <button type="button" class="btn btn-danger" id="remove-avatar-btn">
+                                    <i class="fas fa-trash"></i> إزالة الصورة
+                                </button>
+                            </div>
                         </div>
-                    </template>
+
+                        <div class="form-group">
+                            <label for="fullName"><i class="fas fa-user"></i> الاسم الكامل</label>
+                            <input type="text" id="fullName" autocomplete="username" placeholder="أدخل الأسم الكامل" />
+                            <span class="field-icon" id="fullName-icon"></span>
+                            <small class="field-message" id="fullName-msg"></small>
+                        </div>
+                        <div class="form-group">
+                            <label for="email"><i class="fas fa-envelope"></i> البريد الإلكتروني</label>
+                            <input type="email" id="email" autocomplete="email" placeholder="أدخل بريدك الإلكتروني">
+                            <span class="field-icon" id="email-icon"></span>
+                            <small class="field-message" id="email-msg"></small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="phone"><i class="fas fa-phone"></i> رقم الهاتف</label>
+                            <input type="tel" id="phone" autocomplete="tel" placeholder="أدخل رقم هاتفك" />
+                            <span class="field-icon" id="phone-icon"></span>
+                            <small class="field-message" id="phone-msg"></small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="newPassword"><i class="fas fa-lock"></i> كلمة المرور الجديدة</label>
+                            <input type="password" id="newPassword" autocomplete="new-password"
+                                placeholder="أدخل كلمة المرور الجديدة" />
+                            <span class="field-icon" id="newPassword-icon"></span>
+                            <small class="field-message" id="newPassword-msg"></small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="confirmPassword"><i class="fas fa-lock"></i> تأكيد كلمة المرور</label>
+                            <input type="password" id="confirmPassword" autocomplete="new-password"
+                                placeholder="أكد كلمة المرور الجديدة" />
+                            <span class="field-icon" id="confirmPassword-icon"></span>
+                            <small class="field-message" id="confirmPassword-msg"></small>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <button type="submit" class="save-btn">
+                                <i class="fas fa-save"></i> حفظ التغييرات
+                            </button>
+                        </div>
+                    </form>
                 </div>
                 <!-- تبويب الحماية داخل homepage.html -->
                 <div class="tab-pane" id="security-tab">
@@ -341,7 +435,7 @@
                         <div class="grid-row">
                             <div class="grid-key">تفعيل البريد الإلكتروني</div>
                             <div class="grid-value">
-                                <button id="verify-email-btn" class="btn primary">📧 تحقق الآن</button>
+                                <button type="button" id="verify-email-btn" class="btn primary">📧 تحقق الآن</button>
                                 <span id="email-status" class="status-label">غير مفعل</span>
                             </div>
                         </div>

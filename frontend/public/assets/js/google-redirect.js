@@ -16,7 +16,7 @@ function saveSession(userId, token, sessionId) {
 document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
-    const sessionId = urlParams.get('sessionId');
+    const sessionId = urlParams.get('customSessionId');
 
     if (!token || !sessionId) return window.location.href = '/login.html';
 
@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     fetch('/api/users/me', {
         headers: {
             Authorization: `Bearer ${token}`,
-            'X-Session-ID': sessionId
+            'x-session-id': sessionId
         }
     })
         .then(res => {

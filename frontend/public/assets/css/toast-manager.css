@@ -69,3 +69,37 @@
 .toast-slide-out {
   animation: slideOut 0.5s forwards;
 }
+
+.custom-toast {
+  position: fixed;
+  top: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 280px;
+  max-width: 90%;
+  padding: 12px 18px;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 15px;
+  font-family: 'Segoe UI', sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  z-index: 9999;
+  opacity: 0;
+  transition: top 0.4s ease, opacity 0.4s ease;
+}
+
+.custom-toast.visible {
+  top: 20px;
+  opacity: 1;
+}
+
+.toast-icon {
+  font-size: 18px;
+}
+
+.toast-message {
+  flex: 1;
+}

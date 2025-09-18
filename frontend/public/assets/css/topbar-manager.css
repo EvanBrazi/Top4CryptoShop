@@ -28,31 +28,44 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  border-radius: var(--radius-md);
+  justify-content: flex-start;
+  flex: 1;
+  margin-right: 25px;
 }
 
-.balance-amount {
+.balance-container-amount {
+  display: flex;
+  align-items: center;
+  font-size: 15px;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+.balance-container-amount .topbar-balance-amount {
+  font-size: 0.8rem;
   font-weight: bold;
-  font-size: 16px;
+  margin: 10px 0;
+}
+
+.balance-container-amount .topbar-currency-icon {
+  margin-bottom: 3px;
+  margin-right: 2px;
 }
 
 .add-balance-btn {
-  background-color: var(--primary-color);
+  background: none;
   color: var(--text-color);
-  border: none;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s;
+  padding: 0;
+  margin: 0;
+  border-radius: unset;
+  box-shadow: unset;
 }
 
 .add-balance-btn:hover {
   color: var(--accent-color);
   background-color: var(--primary-hover);
-  transform: scale(1.1);
+  transform: scale(1.5);
 }
 
 .logo-back-container {
@@ -93,6 +106,7 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
   transform-style: preserve-3d;
 }
+
 .logo-img:hover {
   animation: spin 2s linear infinite;
 }

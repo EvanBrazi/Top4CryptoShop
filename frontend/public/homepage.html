@@ -46,10 +46,13 @@
             </button>
 
             <div class="balance-container">
-                <span class="balance-amount" id="top-balance-display">0.00</span>
                 <button class="add-balance-btn" id="add-balance-btn" type="button" title="إضافة رصيد">
                     <i class="fas fa-plus"></i>
                 </button>
+                <div class="balance-container-amount">
+                    <span class="topbar-balance-amount" id="top-balance-display">0.00</span>
+                    <span class="topbar-currency-icon">💵</span>
+                </div>
             </div>
             <div class="logo-back-container">
                 <div class="site-logo">
@@ -129,11 +132,6 @@
             </div>
         </div>
     </div>
-
-    <div id="loading-screen">
-        <div class="loader-text">جاري التحميل...</div>
-    </div>
-
     <!-- المحتوى الرئيسي -->
     <div class="main-content">
         <div class="ads-wrapper" id="adsWrapper"></div>
@@ -237,102 +235,112 @@
                     </div>
                 </div>
                 <!-- تبويب المحفظة المحسن -->
-                <div class="tab-pane active" id="portfolio-tab">
-                    <div class="portfolio-container">
-                        <div class="portfolio-header">
-                            <h1><i class="fas fa-wallet"></i> محفظتي</h1>
-                            <p>إدارة أموالك وتتبع معاملاتك المالية</p>
-                        </div>
-
-                        <div class="wallet-metrics">
-                            <div class="metric-card">
-                                <div class="metric-icon"><i class="fas fa-dollar-sign"></i></div>
-                                <h3 class="metric-title">الرصيد الحالي</h3>
-                                <p class="metric-value" id="balance-amount">$0.00</p>
-                                <p class="metric-subtext">رصيدك المتاح للاستخدام</p>
-                            </div>
-
-                            <div class="metric-card">
-                                <div class="metric-icon"><i class="fas fa-money-bill-wave"></i></div>
-                                <h3 class="metric-title">إجمالي الدفع</h3>
-                                <p class="metric-value" id="total-payments">$0.00</p>
-                                <p class="metric-subtext">مجموع ما أضفته من رصيد</p>
-                            </div>
-
-                            <div class="metric-card">
-                                <div class="metric-icon"><i class="fas fa-shopping-cart"></i></div>
-                                <h3 class="metric-title">إجمالي الشراء</h3>
-                                <p class="metric-value" id="total-purchases">$0.00</p>
-                                <p class="metric-subtext">مجموع ما أنفقته من رصيد</p>
+                <div class="tab-pane" id="portfolio-tab">
+                    <div class="portfolio-header">
+                        <div class="balance-info">
+                            <h2>رصيد المحفظة</h2>
+                            <div class="balance-amount">$12,458.75</div>
+                            <div class="balance-change">
+                                <span class="change-positive">+$245.50 (2.01%)</span>
+                                <span>منذ الأمس</span>
                             </div>
                         </div>
 
-                        <div class="portfolio-controls">
-                            <div class="time-filter">
-                                <label for="time-filter">عرض البيانات حسب:</label>
-                                <select id="time-filter">
-                                    <option value="7">آخر أسبوع</option>
-                                    <option value="30" selected>آخر شهر</option>
-                                    <option value="90">آخر 3 أشهر</option>
-                                    <option value="365">آخر سنة</option>
-                                    <option value="all">كل الفترات</option>
-                                </select>
+                        <div class="portfolio-actions">
+                            <div class="filter-buttons">
+                                <button class="filter-btn active" data-filter="all">الكل</button>
+                                <button class="filter-btn" data-filter="daily">يومي</button>
+                                <button class="filter-btn" data-filter="weekly">أسبوعي</button>
+                                <button class="filter-btn" data-filter="monthly">شهري</button>
+                                <button class="filter-btn" data-filter="yearly">سنوي</button>
                             </div>
 
-                            <div class="chart-actions">
-                                <button type="button" class="chart-btn" id="refresh-chart"><i
-                                        class="fas fa-sync-alt"></i>
-                                    تحديث</button>
-                                <button type="button" class="chart-btn" id="export-chart"><i
-                                        class="fas fa-download"></i>
-                                    تصدير</button>
-                            </div>
-                        </div>
-                        <div class="portfolio-tab">
-                            <div class="wallet-chart">
-                                <div id="small-chart-loading" class="chart-loading">
-                                    <i class="fas fa-spinner fa-spin"></i> جاري تحميل البيانات...
+                            <div class="action-buttons">
+                                <button id="refresh-portfolio" class="action-btn" title="تحديث البيانات">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                                <div class="export-dropdown">
+                                    <button id="export-portfolio" class="action-btn" title="تصدير البيانات">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                    <div class="export-options">
+                                        <button data-export="png">صورة (PNG)</button>
+                                        <button data-export="txt">ملف نصي (TXT)</button>
+                                        <button data-export="json">JSON</button>
+                                    </div>
                                 </div>
-                                <div id="small-chart-error" class="chart-error" style="display: none;">
-                                    <i class="fas fa-exclamation-triangle"></i>
-                                    <p>حدث خطأ في تحميل البيانات. يرجى المحاولة مرة أخرى.</p>
-                                    <button type="button" id="retry">إعادة المحاولة</button>
-                                </div>
-                                <canvas id="small-interactionChart" width="600" height="300"
-                                    style="display: none;"></canvas>
                             </div>
                         </div>
+                    </div>
+
+                    <div class="charts-row">
                         <div class="chart-container">
-                            <h2 class="chart-title"><i class="fas fa-chart-bar"></i> تحليلات المعاملات</h2>
-
-                            <div id="chart-loading" class="chart-loading">
-                                <i class="fas fa-spinner fa-spin fa-2x"></i>
-                                <p>جاري تحميل البيانات...</p>
-                            </div>
-
-                            <div id="chart-error" class="chart-error" style="display: none;">
-                                <i class="fas fa-exclamation-triangle fa-2x"></i>
-                                <p>حدث خطأ في تحميل البيانات. يرجى المحاولة مرة أخرى.</p>
-                                <button type="button" class="chart-btn" id="retry-loading"><i class="fas fa-redo"></i>
-                                    إعادة
-                                    المحاولة</button>
-                            </div>
-
-                            <div id="chart-empty" class="chart-empty" style="display: none;">
-                                <i class="fas fa-chart-line fa-2x"></i>
-                                <p>لا توجد بيانات لعرضها في الفترة المحددة.</p>
-                                <p>قم بإجراء بعض المعاملات المالية لرؤية التحليلات هنا.</p>
-                            </div>
-
-                            <div class="chart-canvas-container">
-                                <canvas id="interactionChart"></canvas>
-                            </div>
+                            <h3>أداء المحفظة</h3>
+                            <canvas id="performance-chart"></canvas>
                         </div>
 
-                        <div class="transactions-section">
-                            <h2 class="section-title">آخر المعاملات</h2>
-                            <div class="transactions-grid" id="transactions-container">
-                                <!-- سيتم ملء هذا القسم بالمعاملات عبر JavaScript -->
+                        <div class="chart-container">
+                            <h3>توزيع الأصول</h3>
+                            <canvas id="distribution-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-3d-container">
+                        <h3>تحليل ثلاثي الأبعاد</h3>
+                        <canvas id="three-dis-chart"></canvas>
+                    </div>
+
+                    <div class="transactions-section">
+                        <div id="last-update-time" class="update-time">آخر تحديث: جاري التحميل...</div>
+                        <div class="transactions-filter">
+                            <button class="trans-filter-btn active" data-trans-filter="all">الكل</button>
+                            <button class="trans-filter-btn" data-trans-filter="deposit">الإيداعات</button>
+                            <button class="trans-filter-btn" data-trans-filter="purchase">عمليات الشراء</button>
+                        </div>
+
+                        <div class="transactions-list">
+                            <div class="transaction-item">
+                                <div class="trans-icon">
+                                    <i class="fas fa-arrow-down deposit"></i>
+                                </div>
+                                <div class="trans-details">
+                                    <div class="trans-title">إيداع</div>
+                                    <div class="trans-date">20 أكتوبر 2023 - 10:30 صباحاً</div>
+                                </div>
+                                <div class="trans-amount positive">+$1,000.00</div>
+                            </div>
+
+                            <div class="transaction-item">
+                                <div class="trans-icon">
+                                    <i class="fas fa-shopping-cart purchase"></i>
+                                </div>
+                                <div class="trans-details">
+                                    <div class="trans-title">شراء أسهم Apple</div>
+                                    <div class="trans-date">19 أكتوبر 2023 - 02:15 مساءً</div>
+                                </div>
+                                <div class="trans-amount negative">-$2,500.00</div>
+                            </div>
+
+                            <div class="transaction-item">
+                                <div class="trans-icon">
+                                    <i class="fas fa-shopping-cart purchase"></i>
+                                </div>
+                                <div class="trans-details">
+                                    <div class="trans-title">شراء أسهم Microsoft</div>
+                                    <div class="trans-date">18 أكتوبر 2023 - 11:45 صباحاً</div>
+                                </div>
+                                <div class="trans-amount negative">-$1,800.00</div>
+                            </div>
+
+                            <div class="transaction-item">
+                                <div class="trans-icon">
+                                    <i class="fas fa-arrow-down deposit"></i>
+                                </div>
+                                <div class="trans-details">
+                                    <div class="trans-title">إيداع</div>
+                                    <div class="trans-date">15 أكتوبر 2023 - 09:20 صباحاً</div>
+                                </div>
+                                <div class="trans-amount positive">+$3,000.00</div>
                             </div>
                         </div>
                     </div>

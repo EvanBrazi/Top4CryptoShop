@@ -182,4 +182,58 @@ router.get('/summary', async (req, res) => {
     }
 });
 
+/**
+ * @route GET /api/orders/all
+ * @desc جلب جميع طلبات الشراء لجميع المستخدمين
+ * @access إداري أو داخلي
+ */
+router.get('/all', async (req, res) => {
+    try {
+        const orders = await Order.find().sort({ createdAt: -1 });
+        res.json(orders);
+    } catch (err) {
+        console.error('❌ خطأ في جلب جميع الطلبات:', err);
+        res.status(500).json({ error: 'فشل في جلب جميع الطلبات' });
+    }
+});
+
+/**
+ * @route GET /api/orders/summary/all
+ * @desc جلب ملخص الطلبات لجميع المستخدمين
+ * @access إداري أو داخلي
+ */
+router.get('/summary/all', async (req, res) => {
+    try {
+        const orders = await Order.find();
+
+        const summary = {
+            totalAmount: 0,
+            totalQuantity: 0,
+            totalPending: 0,
+            totalProcessing: 0,
+            totalCompleted: 0,
+            totalCancelled: 0
+        };
+
+        orders.forEach(order => {
+            summary.totalAmount += parseFloat(order.amount) || 0;
+            summary.totalQuantity += parseInt(order.quantity) || 0;
+
+            switch (order.status) {
+                case 'pending': summary.totalPending++; break;
+                case 'processing': summary.totalProcessing++; break;
+                case 'completed': summary.totalCompleted++; break;
+                case 'cancelled': summary.totalCancelled++; break;
+            }
+        });
+
+        summary.totalAmount = parseFloat(summary.totalAmount.toFixed(2));
+
+        res.json(summary);
+    } catch (err) {
+        console.error('❌ خطأ في جلب ملخص الطلبات:', err);
+        res.status(500).json({ error: 'فشل في جلب ملخص الطلبات' });
+    }
+});
+
 module.exports = router;

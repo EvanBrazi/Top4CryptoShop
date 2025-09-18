@@ -18,7 +18,8 @@ html {
   scroll-behavior: smooth;
 }
 
-html, body {
+html,
+body {
   width: 100%;
   overflow-x: hidden;
 }
@@ -45,6 +46,7 @@ a:hover {
   min-height: calc(100vh - var(--topbar-height));
   transition: all 0.3s;
   z-index: 1;
+  margin-top: calc(var(--topbar-height) + 2vh);
 }
 
 .main-content.sidebar-open {
@@ -192,20 +194,6 @@ button:hover {
   -webkit-text-fill-color: transparent;
 }
 
-.balance-card {
-  background-color: var(--secondary-color);
-  padding: 20px;
-  border-radius: var(--radius-md);
-  text-align: center;
-  margin-bottom: 20px;
-}
-
-.balance-card .balance-amount {
-  font-size: 28px;
-  font-weight: bold;
-  margin: 10px 0;
-}
-
 .add-funds-btn {
   background-color: var(--primary-color);
   color: var(--text-color);
@@ -255,6 +243,7 @@ button:hover {
   color: var(--accent-color);
   background-color: var(--primary-hover);
 }
+
 /* ============================
    💠 تحسينات الاستجابة العامة
 ============================= */
@@ -274,15 +263,9 @@ button:hover {
   }
 
   .balance-amount {
-    font-size: 14px;
+    font-size: 0.5rem;
   }
-
-  .add-balance-btn {
-    width: 28px;
-    height: 28px;
-    font-size: 14px;
-  }
-
+  
   .site-logo {
     width: 50px;
     height: 50px;
@@ -356,54 +339,69 @@ button:hover {
     font-size: 0.85rem;
     padding: 10px 14px;
   }
+
   .toast-notification {
     max-width: 90%;
   }
+
   .tab-pane {
     padding: 10px;
   }
+
   .cards-container {
     gap: 10px;
   }
+
   .card {
     padding: 10px;
   }
+
   .card img {
     height: 100px;
   }
+
   .card h3 {
     font-size: 1rem;
   }
+
   .card p {
     font-size: 0.85rem;
   }
+
   .card .price {
     font-size: 1rem;
   }
+
   .card .buy-btn {
     font-size: 0.85rem;
     padding: 6px 12px;
   }
-  
+
   .sidebar.active {
     right: 0;
   }
+
   .sidebar-header h2 {
     font-size: 1.2rem;
   }
+
   .sidebar a {
     font-size: 0.9rem;
   }
+
   .sidebar a .icon {
     font-size: 1.1rem;
   }
+
   .sidebar a .label {
     margin-left: 8px;
   }
+
   .toggle-sidebar {
     font-size: 18px;
     padding: 6px 10px;
   }
+
   .dummy-content {
     height: 600px;
   }

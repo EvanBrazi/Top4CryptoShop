@@ -194,7 +194,7 @@ export class AppManager {
         }
     }
 
-    
+
     async initAdsManager() {
         // تهيئة مدير الإعلانات
         const adsManager = new AdsManager("#adsWrapper");
@@ -481,6 +481,7 @@ export class AppManager {
      * تنظيف الكاش والموارد عند الإغلاق
      */
     destroy() {
+        this.tabs.portfolio.destroy();
         // تنظيف أنظمة الأيقونات
         this.homeTabIcons.clearCache();
         this.appsTabIcons.clearCache();

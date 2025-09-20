@@ -98,13 +98,6 @@ a:hover {
   visibility: visible;
 }
 
-.dummy-content {
-  height: 1000px;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.05) 0%, rgba(0, 0, 0, 0) 100%);
-  border-radius: 10px;
-  margin-top: 20px;
-}
-
 /* أزرار الاختبار */
 button {
   padding: 9px 22px;
@@ -262,10 +255,6 @@ button:hover {
     padding: 6px 10px;
   }
 
-  .balance-amount {
-    font-size: 0.5rem;
-  }
-  
   .site-logo {
     width: 50px;
     height: 50px;
@@ -323,11 +312,6 @@ button:hover {
     padding: 10px;
   }
 
-  .refresh-player-btn {
-    font-size: 0.8rem;
-    padding: 6px;
-  }
-
   .loading-spinner {
     width: 16px;
     height: 16px;
@@ -350,31 +334,6 @@ button:hover {
 
   .cards-container {
     gap: 10px;
-  }
-
-  .card {
-    padding: 10px;
-  }
-
-  .card img {
-    height: 100px;
-  }
-
-  .card h3 {
-    font-size: 1rem;
-  }
-
-  .card p {
-    font-size: 0.85rem;
-  }
-
-  .card .price {
-    font-size: 1rem;
-  }
-
-  .card .buy-btn {
-    font-size: 0.85rem;
-    padding: 6px 12px;
   }
 
   .sidebar.active {
@@ -400,10 +359,6 @@ button:hover {
   .toggle-sidebar {
     font-size: 18px;
     padding: 6px 10px;
-  }
-
-  .dummy-content {
-    height: 600px;
   }
 }
 

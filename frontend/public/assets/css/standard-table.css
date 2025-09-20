@@ -106,35 +106,6 @@
   background-color: #5848c2;
 }
 
-@media (max-width: 768px) {
-  .standard-table {
-    min-width: 100%;
-    font-size: 0.85rem;
-  }
-
-  .standard-table th,
-  .standard-table td {
-    padding: 10px;
-    white-space: nowrap;
-  }
-}
-
-@media (max-width: 480px) {
-  .standard-table {
-    font-size: 0.8rem;
-  }
-
-  .standard-table th,
-  .standard-table td {
-    padding: 8px;
-  }
-
-  .details-btn {
-    font-size: 0.75rem;
-    padding: 4px 8px;
-  }
-}
-
 :root {
   --modal-bg-light: rgba(255, 255, 255, 0.95);
   --modal-bg-dark: rgba(30, 30, 30, 0.95);
@@ -353,19 +324,39 @@ body.night-theme {
   100% { transform: perspective(800px) rotateX(-20deg) scale(0.8); opacity: 0; }
 }
 
+@media (max-width: 768px) {
+  .standard-table {
+    min-width: 100%;
+    font-size: 0.85rem;
+  }
+
+  .standard-table th,
+  .standard-table td {
+    padding: 10px;
+    white-space: nowrap;
+  }
+}
+
 @media (max-width: 480px) {
+  .standard-table {
+    position: relative;
+    min-width: unset;
+    width: 100%;
+    font-size: 0.8rem;
+    border-radius: 8px;
+  }
+
   .orders-table,
   .payments-table {
     padding: 10px;
   }
 
-  .standard-table {
-    position: relative;
-    right: 55%;
-    min-width: unset;
-    width: 100%;
-    font-size: 0.75rem;
-    border-radius: 8px;
+  .payments-table .standard-table {
+    right: 10%;
+  }
+
+  .orders-table .standard-table {
+    right: 1%;
   }
 
   .standard-table th,

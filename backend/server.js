@@ -112,10 +112,30 @@ app.use(morgan('dev'));
 // =======================
 // 🌐 إعداد CORS
 // =======================
+// في backend/server.js
+const allowedOrigins = [
+  'https://top4cryptoshop.giize.com:10000',
+  'http://localhost:8081',
+  'http://192.168.43.108:8081',
+  'exp://192.168.43.108:8081',
+  'http://localhost:19006',
+  'http://localhost:19000'
+];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:10000',
+  origin: function (origin, callback) {
+    // السماح لطلبات بدون origin (مثل mobile apps أو curl)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log('CORS Blocked Origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-csrf-token'],
   credentials: true,
   maxAge: 86400
 }));

@@ -112,14 +112,16 @@ app.use(morgan('dev'));
 // =======================
 // 🌐 إعداد CORS
 // =======================
-// في backend/server.js
+// في backend/server.js - تحديث allowedOrigins
 const allowedOrigins = [
-  process.env.FRONTEND_URL,
+  'https://top4cryptoshop.giize.com',        // النطاق الرئيسي (بدون port)
+  'https://top4cryptoshop.giize.com:10000', // النطاق مع port
   'http://localhost:8081',
   'http://192.168.43.108:8081',
   'exp://192.168.43.108:8081',
   'http://localhost:19006',
-  'http://localhost:19000'
+  'http://localhost:19000',
+  'https://top4cryptoshop.onrender.com'     // إذا كان لديك نطاق render أيضًا
 ];
 
 app.use(cors({

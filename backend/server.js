@@ -114,7 +114,7 @@ app.use(morgan('dev'));
 // =======================
 // في backend/server.js
 const allowedOrigins = [
-  'https://top4cryptoshop.giize.com:10000',
+  process.env.FRONTED_URL,
   'http://localhost:8081',
   'http://192.168.43.108:8081',
   'exp://192.168.43.108:8081',

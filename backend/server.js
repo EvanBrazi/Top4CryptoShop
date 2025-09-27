@@ -114,7 +114,7 @@ app.use(morgan('dev'));
 // =======================
 // في backend/server.js
 const allowedOrigins = [
-  process.env.FRONTED_URL,
+  process.env.FRONTEND_URL,
   'http://localhost:8081',
   'http://192.168.43.108:8081',
   'exp://192.168.43.108:8081',

@@ -1,5 +1,4 @@
 import { login } from './auth.js';
-import { getSessionIdFromCookie } from './securefetch.js';
 import { STORAGE_KEYS, isValidToken } from './utils/appUtils.js';
 // ✅ عناصر الواجهة
 const spinner = document.getElementById('spinner');

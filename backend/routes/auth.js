@@ -525,4 +525,35 @@ router.post('/admin/update-status',
 // =============================================
 router.get('/check-session', checkSession);
 
+// - إضافة endpoints مساعدة
+// ✅ endpoint لفحص الجلسة الحالية
+router.get('/session-info', (req, res) => {
+  res.json({
+    sessionId: req.sessionID,
+    hasCsrfToken: !!req.session.csrfToken,
+    csrfToken: req.session.csrfToken,
+    userId: req.session.userId,
+    sessionData: req.session
+  });
+});
+
+// ✅ endpoint لإصلاح CSRF token
+router.post('/refresh-csrf', (req, res) => {
+  const { attachCsrfToken } = require('./middleware/csrfMiddleware');
+  
+  if (attachCsrfToken(req, res)) {
+    res.json({
+      success: true,
+      message: 'تم تجديد رمز CSRF',
+      csrfToken: req.session.csrfToken,
+      sessionId: req.sessionID
+    });
+  } else {
+    res.status(500).json({
+      success: false,
+      error: 'FAILED_TO_REFRESH_CSRF'
+    });
+  }
+});
+
 module.exports = router;

@@ -49,6 +49,21 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 initNotifications(wss); // ✅ تهيئة الإشعارات
 
+// ✅ middleware لتتبع الجلسات للتطبيقات
+app.use((req, res, next) => {
+  console.log(`📡 طلب وارد: ${req.method} ${req.url}`);
+  res.setHeader('Access-Control-Allow-Headers', 'x-csrf-token, x-session-id, Content-Type, Authorization');
+  res.setHeader('Access-Control-Expose-Headers', 'x-csrf-token');
+  // للتطبيقات التي لا تدعم الكوكيز، استخدام الهيدرات
+  const sessionIdFromHeader = req.headers['x-session-id'];
+
+  if (sessionIdFromHeader && !req.sessionID) {
+    // محاولة استعادة الجلسة من الهيدر
+    req.sessionID = sessionIdFromHeader;
+  }
+  next();
+});
+
 // =======================
 // 🔗 الاتصال بقاعدة البيانات
 // =======================
@@ -87,7 +102,12 @@ app.use(session({
     sameSite: 'lax',
     maxAge: 86400000
   },
-  name: 'sessionId'
+  name: 'sessionId',
+  // ✅ إضافة هذه الإعدادات لدعم الجوال
+  genid: function (req) {
+    // استخدام معرف جلسة مخصص للتطبيقات
+    return require('crypto').randomBytes(16).toString('hex');
+  }
 }));
 
 // =======================
@@ -116,19 +136,20 @@ app.use(morgan('dev'));
 const allowedOrigins = [
   'https://top4cryptoshop.giize.com',        // النطاق الرئيسي (بدون port)
   'https://top4cryptoshop.giize.com:10000', // النطاق مع port
+  'http://localhost:10000',
   'http://localhost:8081',
   'http://192.168.43.108:8081',
   'exp://192.168.43.108:8081',
   'http://localhost:19006',
   'http://localhost:19000',
-  'https://top4cryptoshop.onrender.com'     // إذا كان لديك نطاق render أيضًا
+  'https://top4cryptoshop.onrender.com:10000'     // إذا كان لديك نطاق render أيضًا
 ];
 
 app.use(cors({
   origin: function (origin, callback) {
     // السماح لطلبات بدون origin (مثل mobile apps أو curl)
     if (!origin) return callback(null, true);
-    
+
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
@@ -137,7 +158,7 @@ app.use(cors({
     }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-csrf-token', 'x-session-id'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-csrf-token', 'x-session-id', 'credentials'],
   credentials: true,
   maxAge: 86400
 }));
@@ -176,11 +197,6 @@ app.use('/dev', require('./routes/dev'));
 // =======================
 // 📦 مسارات API إضافية
 // =======================
-app.use((req, res, next) => {
-  console.log(`📡 طلب وارد: ${req.method} ${req.url}`);
-  next();
-});
-
 const dataRoutes = ['apps', 'games', 'cryptos', 'balances', 'essential'];
 dataRoutes.forEach(route => {
   app.get(`/api/${route}`, (req, res) => {

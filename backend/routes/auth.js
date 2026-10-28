@@ -18,7 +18,7 @@ const { attachCsrfToken, doubleCsrfProtection } = require('../middlewares/csrfMi
 const { registerUser } = require('../controllers/authController');
 const { body } = require('express-validator');
 const { verifyToken, checkAdmin, checkSession } = require('../middlewares/auth');
-const { createSession, activeSessions } = require('../utils/sessionStore');
+const { createSession } = require('../utils/sessionStore');
 const passport = require('passport');
 require('../config/googleAuth'); // تأكد من إعداد استراتيجية جوجل في هذا الملف
 const speakeasy = require('speakeasy');
@@ -211,7 +211,7 @@ router.post('/login',
       // 🛡️ توليد JWT
       const issuer = user.role === 'admin' ? 'admin-panel' : 'your-app-api';
       const token = jwt.sign(
-        { userId: user._id, role: user.role || 'user' },
+        { userId: user._id, role: user.role || 'user', tokenVersion: user.tokenVersion },
         process.env.JWT_SECRET,
         { expiresIn: '1h', issuer, algorithm: 'HS256' }
       );
@@ -232,7 +232,6 @@ router.post('/login',
         maxAge: 3600000,
         path: '/'
       });
-      console.log('🍪 customSessionId المرسل للمتصفح:', sessionId, 'Token:', token);
       attachCsrfToken(req, res); // توليد رمز CSRF
       const userResponse = {
         id: user._id,
@@ -245,7 +244,6 @@ router.post('/login',
         role: user.role,
         sessionId: sessionId
       };
-      console.log('🧠 الجلسات النشطة:', [...activeSessions.entries()]);
       return handleAuthResponse(req, res, {
         success: true,
         user: userResponse,
@@ -293,7 +291,7 @@ router.get('/google/callback',
 
       const issuer = user.role === 'admin' ? 'admin-panel' : 'your-app-api';
       const token = jwt.sign(
-        { userId: user._id, role: user.role || 'user' },
+        { userId: user._id, role: user.role || 'user', tokenVersion: user.tokenVersion },
         process.env.JWT_SECRET,
         { expiresIn: '1h', issuer, algorithm: 'HS256' }
       );
@@ -456,7 +454,7 @@ router.post('/verify-2fa-login', async (req, res) => {
   createSession(sessionId, user._id.toString(), user.role);
 
   const tokenJWT = jwt.sign(
-    { userId: user._id, role: user.role || 'user' },
+    { userId: user._id, role: user.role || 'user', tokenVersion: user.tokenVersion },
     process.env.JWT_SECRET,
     { expiresIn: '1h', issuer: 'your-app-api', algorithm: 'HS256' }
   );
@@ -527,13 +525,13 @@ router.get('/check-session', checkSession);
 
 // - إضافة endpoints مساعدة
 // ✅ endpoint لفحص الجلسة الحالية
-router.get('/session-info', (req, res) => {
+router.get('/session-info', verifyToken, (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
   res.json({
-    sessionId: req.sessionID,
-    hasCsrfToken: !!req.session.csrfToken,
-    csrfToken: req.session.csrfToken,
-    userId: req.session.userId,
-    sessionData: req.session
+    success: true,
+    isAuthenticated: true,
+    userId: req.user._id,
+    expiresAt: req.auth.expiresAt
   });
 });
 

@@ -1,4 +1,5 @@
 import { STORAGE_KEYS, getFullPathByCategory } from "../utils/appUtils.js";
+import { PurchaseClient } from "../utils/purchaseClient.js";
 
 /**
          * @class DialogPurchase
@@ -17,6 +18,8 @@ export class DialogPurchase {
    */
   constructor(card, options = {}) {
     this.card = card;
+    this.purchaseClient = new PurchaseClient();
+    this.purchaseInFlight = false;
 
     // ✅ استخراج البيانات الأساسية من الكائن
     this.cardName = card.name || 'غير معروف';
@@ -41,6 +44,14 @@ export class DialogPurchase {
     // ✅ بيانات المستخدم والثيم
     this.userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
     this.token = localStorage.getItem(STORAGE_KEYS.USER_TOKEN);
+    try {
+      const saved = this.purchaseClient.pending(this.userId, this.category, this.card.id);
+      if (saved) {
+        const { idempotencyKey, ...original } = saved.payload;
+        this.pendingPurchase = original;
+        this.cardAvailable = true; // A committed-key retry must survive current catalog availability changes.
+      }
+    } catch (_) { this.savedIntentError = true; }
     this.theme = localStorage.getItem('theme') === 'night' ? 'night' : 'day';
 
     // ✅ خيارات إضافية
@@ -139,90 +150,35 @@ export class DialogPurchase {
 
     // ✅ تنفيذ الطلب عند الضغط على زر التأكيد
     $('.confirm-btn')?.addEventListener('click', async () => {
-      if (!this._validateInputs()) return;
-
-      let quantity = parseInt($('.quantity-input')?.value || $('.quantity-select')?.value || '1', 10);
-      let totalPrice = parseFloat(this.cardPrice || 0);
-      let totalUnits = parseInt(this.cardQuantity || this.card?.quantity || 1, 10);
-
-      // ✅ في حالة menuPrice مفعّلة، استخدم الفهرس لاستخراج السعر والكمية
-      if (this.card.menuPrice === true && Array.isArray(this.card.price)) {
-        const priceSelect = $('.price-select');
-        const idx = priceSelect?.selectedIndex ?? 0;
-        totalPrice = parseFloat(this.card.price[idx] || 0);
-        totalUnits = parseInt(this.card.quantity[idx] || 1, 10);
-        quantity = totalUnits; // الكمية تساوي عدد وحدات الحزمة
-      }
-
-      const { valid, message, totalAmount } = this._validateOrder({
-        category: this.category || 'apps',
-        totalPrice,
-        totalUnits,
-        quantity
-      });
-
-      if (!valid) {
-        alert(message);
-        return;
-      }
-
-      const playerId = $('#player-id')?.value.trim();
-      const playerName = $('#player-name')?.value.trim();
+      if (this.purchaseInFlight || !this._validateInputs()) return;
+      const input = this.pendingPurchase || { category: this.category, productId: this.card.id,
+        ...(this.cardMenuPrice ? { packageIndex: $('.price-select').selectedIndex } : { quantity: Number($('.quantity-input').value) }) };
+      if (!this.pendingPurchase && this.card.requiresFulfillmentTarget) input.fulfillmentTarget = { [this.card.fulfillmentSchema]: $('#player-id').value.trim() };
       const confirmBtn = $('.confirm-btn');
+      this.purchaseInFlight = true;
+      confirmBtn.disabled = true;
       confirmBtn.classList.add('button-loading');
-
       try {
-        const balance = await this._getUserBalance();
-        if (balance < totalAmount) {
-          alert('⚠️ رصيدك غير كافٍ، سيتم تحويلك إلى تبويب الدفع');
-          document.dispatchEvent(new CustomEvent('switchTab', { detail: 'wallet' }));
-          return;
-        }
-
-        const reserveRes = await fetch(`/api/users/${this.userId}/reserve`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${this.token}`
-          },
-          body: JSON.stringify({ amount: totalAmount })
-        });
-
-        if (!reserveRes.ok) {
-          alert('❌ فشل في حجز الرصيد');
-          return;
-        }
-
-        const orderResult = await this._saveOrder({
-          type: 'newOrder',
-          userId: this.userId,
-          playerId,
-          quantity,
-          amount: totalAmount,
-          method: this.category,
-          service: this.cardName,
-          playerName,
-        });
-
-        if (orderResult?.status === 'success') {
-          this.close();
-        } else {
-          await fetch(`/api/users/${this.userId}/restore`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${this.token}`
-            },
-            body: JSON.stringify({ amount: totalAmount })
-          });
-          alert('❌ فشل في تنفيذ الطلب، تم استرجاع الرصيد');
-        }
-      } catch (error) {
-        console.error('خطأ أثناء المعالجة:', error);
-        alert('❌ حدث خطأ غير متوقع أثناء المعالجة');
-      } finally {
-        confirmBtn.classList.remove('button-loading');
+        const result = await this.purchaseClient.purchase(input, this.userId);
+        alert(`تم تأكيد نتيجة الشراء ${result.orderId}. المبلغ المؤكد: USD ${result.charge}. راجع سجل الطلبات لمعرفة الحالة الحالية.`);
         this.close();
+      } catch (error) {
+        // Keep the dialog and persisted logical attempt on unknown outcomes. Never issue a compensating money request.
+        try {
+          const saved = this.purchaseClient.pending(this.userId, this.category, this.card.id);
+          if (saved) {
+            const { idempotencyKey, ...original } = saved.payload;
+            this.pendingPurchase = original;
+            this._injectCardData(); // Immediately restore and lock the unresolved intent.
+          }
+        } catch (_) { this.savedIntentError = true; }
+        const errorElement = $('.dialog-error');
+        errorElement.textContent = error.message;
+        errorElement.classList.add('show');
+      } finally {
+        this.purchaseInFlight = false;
+        confirmBtn.disabled = false;
+        confirmBtn.classList.remove('button-loading');
       }
     });
 
@@ -249,7 +205,7 @@ export class DialogPurchase {
           quantity
         });
 
-        $('.dialog-total').textContent = `المجموع: $${totalAmount.toFixed(2)}`;
+        $('.dialog-total').textContent = `المجموع التقديري: $${totalAmount.toFixed(2)}`;
 
         const errorElement = this.overlay.querySelector('.dialog-error');
         const quantityInput = $('.quantity-input');
@@ -287,7 +243,7 @@ export class DialogPurchase {
 
     $('.dialog-title').textContent = this.cardName;
     $('.price').textContent = `السعر: $${this.cardPrice.toFixed(2)}`;
-    $('.dialog-total').textContent = `المجموع: $${(this.cardPrice).toFixed(2)}`;
+    $('.dialog-total').textContent = `المجموع التقديري: $${(this.cardPrice).toFixed(2)}`;
 
     this._generateQuantityInput(this.card); // تمرير الكائن مباشرة
 
@@ -298,17 +254,20 @@ export class DialogPurchase {
         icon.src = `${this.options.iconsBasePath}loading.gif`;
       };
     }
-    // ✅ إخفاء حقل اسم اللاعب إذا كانت الفئة لا تتطلبه
-    const playerNameGroup = this.overlay.querySelector('.player-name-group');
-    if (['cryptos', 'balances'].includes(this.category)) {
-      playerNameGroup.style.display = 'none'; // أو استخدم style.display = 'none';
-    } else {
-      playerNameGroup.style.display = 'block';
-      const playerNameInput = $('.player-name');
-      if (playerNameInput) {
-        playerNameInput.value = this._generatePlayerName();
-        playerNameInput.setAttribute('readonly', true);
-      }
+    this.overlay.querySelector('.player-name-group').style.display = 'none';
+    const target = $('#player-id');
+    const schema = this.pendingPurchase?.fulfillmentTarget ? Object.keys(this.pendingPurchase.fulfillmentTarget)[0] : this.card.fulfillmentSchema;
+    target.closest('.input-group').style.display = (this.pendingPurchase ? !!this.pendingPurchase.fulfillmentTarget : this.card.requiresFulfillmentTarget) ? 'block' : 'none';
+    const labels = { playerId: 'معرف اللاعب', accountId: 'معرف الحساب', walletAddress: 'عنوان المحفظة', phone: 'رقم الهاتف بصيغة + دولية', email: 'البريد الإلكتروني' };
+    this.overlay.querySelector('label[for="player-id"]').textContent = `${labels[schema] || 'وجهة التنفيذ'}${!this.pendingPurchase && this.card.fulfillmentNetwork ? ` — ${this.card.fulfillmentNetwork}` : ''}`;
+    target.maxLength = schema === 'email' ? 254 : 128;
+    if (this.pendingPurchase) {
+      $('.dialog-total').textContent = 'إعادة محاولة الطلب الأصلي — يؤكد الخادم المبلغ والسياسة الأصليين';
+      target.value = this.pendingPurchase.fulfillmentTarget?.[schema] || '';
+      this.overlay.querySelector('.dialog-error').textContent = 'إعادة محاولة الطلب الأصلي بالمفتاح المحفوظ. لا تنشئ طلباً بديلاً قبل تحديد النتيجة.';
+      this.overlay.querySelectorAll('input, select').forEach(element => { element.disabled = true; });
+      if (this.pendingPurchase.quantity !== undefined) $('.quantity-input').value = this.pendingPurchase.quantity;
+      if (this.pendingPurchase.packageIndex !== undefined && $('.price-select')) $('.price-select').selectedIndex = this.pendingPurchase.packageIndex;
     }
   }
 
@@ -382,7 +341,7 @@ export class DialogPurchase {
         });
         const totalElement = this.overlay.querySelector('.dialog-total');
         if (totalElement) {
-          totalElement.textContent = `المجموع: $${totalAmount.toFixed(2)}`;
+          totalElement.textContent = `المجموع التقديري: $${totalAmount.toFixed(2)}`;
         }
         const errorElement = this.overlay.querySelector('.dialog-error');
         if (!errorElement) return;
@@ -426,7 +385,7 @@ export class DialogPurchase {
         });
 
         const totalElement = this.overlay.querySelector('.dialog-total');
-        if (totalElement) totalElement.textContent = `المجموع: $${totalAmount.toFixed(2)}`;
+        if (totalElement) totalElement.textContent = `المجموع التقديري: $${totalAmount.toFixed(2)}`;
 
         const errorElement = this.overlay.querySelector('.dialog-error');
         if (!errorElement) return; // تأكد من وجود عنصر الخطأ
@@ -456,30 +415,15 @@ export class DialogPurchase {
       return false;
     }
 
+    const schema = this.card.fulfillmentSchema;
     const v = value.trim();
-
-    // طول الأدنى
-    if (v.length < 3) {
-      if (errorEl) errorEl.textContent = 'يجب أن يكون الـ ID مكوَّناً من 3 أحرف على الأقل';
-      return false;
-    }
-
-    // أحرف مسموح بها (أرقام وحروف لاتينية و_ فقط)
-    const allowed = /^[A-Za-z0-9_]+$/;
-    if (!allowed.test(v)) {
-      if (errorEl) errorEl.textContent = 'مسموح بالأحرف الإنجليزية والأرقام و "_" فقط';
-      return false;
-    }
-
-    // أسماء محظورة شائعة
-    const forbidden = ['admin', 'root', 'support', 'system'];
-    if (forbidden.includes(v.toLowerCase())) {
-      if (errorEl) errorEl.textContent = 'هذا الـ ID غير مقبول';
-      return false;
-    }
-
-    if (errorEl) errorEl.textContent = '';
-    return true;
+    const maximum = schema === 'email' ? 254 : 128;
+    let valid = value.length <= maximum && /^[\x20-\x7E]+$/.test(value) && !/[<>&'"`\\]/.test(value) && v.length > 0;
+    if (['playerId', 'accountId'].includes(schema)) valid = valid && /^[A-Za-z0-9_-]{3,32}$/.test(v);
+    if (schema === 'phone') valid = valid && /^\+[1-9]\d{6,14}$/.test(v);
+    // Wallet checksums and full email syntax are enforced authoritatively by the server.
+    if (errorEl) errorEl.textContent = valid ? '' : 'وجهة التنفيذ غير صالحة لهذا المنتج';
+    return valid;
   }
 
   /**
@@ -487,7 +431,8 @@ export class DialogPurchase {
    * @returns {boolean} true إذا كانت جميع المدخلات صالحة
    */
   _validateInputs() {
-    //console.log('🔍 التحقق من المدخلات...');
+    if (this.savedIntentError) { alert('Saved purchase requires reconciliation before retrying.'); return false; }
+    if (this.pendingPurchase) return true; // Replay is evaluated before current catalog rules on the server.
     if (!this.overlay) return false;
     const overlay = this.overlay;
     //console.log('✅ مربع الحوار موجود');
@@ -496,8 +441,8 @@ export class DialogPurchase {
     const qtyEl = overlay.querySelector('.quantity-input, .quantity-select');
     //console.log('✅ عناصر الكمية موجودة');
     // التحقق من الكمية
-    const qty = qtyEl ? parseInt(qtyEl.value, 10) : Number(this.initialQuantity || 1);
-    if (isNaN(qty) || qty < 1) {
+    const qty = qtyEl ? Number(qtyEl.value) : Number(this.initialQuantity || 1);
+    if (!Number.isSafeInteger(qty) || qty < 1) {
       if (qtyErrorEl) qtyErrorEl.textContent = '⚠️ الرجاء إدخال كمية صحيحة (أكبر من 0)';
       console.warn('❌ الكمية غير صالحة');
       return false;
@@ -512,7 +457,7 @@ export class DialogPurchase {
     //console.log('✅ الكمية صالحة:', qty);
     // ✅ تحقق من ID اللاعب دائمًا إذا كانت الخدمة تتطلبه
     const playerIdEl = overlay.querySelector('#player-id');
-    if (playerIdEl) {
+    if (playerIdEl && this.card.requiresFulfillmentTarget) {
       const valid = this._validatePlayerId(playerIdEl.value || '');
       //console.log('✅ التحقق من ID اللاعب:', valid);
       // _validatePlayerId يقوم بتحديث رسالة الخطأ في DOM عند الفشل
@@ -532,64 +477,13 @@ export class DialogPurchase {
  * @returns {Object} - نتيجة التحقق
  */
   _validateOrder({ category, totalPrice, totalUnits, quantity }) {
-    const rules = {
-      apps: { min: 0.5, max: 1000 },
-      games: { min: this.card.price[0], max: 500 },
-      cryptos: { min: this.card.minLimit, max: this.card.maxLimit },
-      balances: { min: this.card.minLimit, max: this.card.maxLimit }
-    };
-
-    const { min, max } = rules[category] || rules['apps'];
-
-    // ✅ التحقق من المدخلات
-    const safePrice = isNaN(totalPrice) || totalPrice <= 0 ? 0 : totalPrice;
-    const safeUnits = isNaN(totalUnits) || totalUnits <= 0 ? 1 : totalUnits;
-    const safeQuantity = isNaN(quantity) || quantity < 1 ? 0 : quantity;
-
-    const unitPrice = safePrice / safeUnits;
-    const totalAmount = unitPrice * safeQuantity;
-
-    /**console.log('--- Validation ---', {
-      category,
-      unitPrice: parseFloat(unitPrice.toFixed(6)),
-      quantity: safeQuantity,
-      totalAmount: parseFloat(totalAmount.toFixed(2)),
-      min,
-      max
-    });*/
-
-    if (safeQuantity < 1) {
-      return {
-        valid: false,
-        message: '❌ الكمية يجب أن تكون 1 أو أكثر',
-        totalAmount: 0,
-        unitPrice: parseFloat(unitPrice.toFixed(6))
-      };
-    }
-
-    if (totalAmount < min) {
-      return {
-        valid: false,
-        message: `❌ المجموع أقل من الحد الأدنى (${min}$) لفئة ${category}`,
-        totalAmount: parseFloat(totalAmount.toFixed(2)),
-        unitPrice: parseFloat(unitPrice.toFixed(6))
-      };
-    }
-
-    if (totalAmount > max) {
-      return {
-        valid: false,
-        message: `❌ المجموع يتجاوز الحد الأقصى (${max}$) لفئة ${category}`,
-        totalAmount: parseFloat(totalAmount.toFixed(2)),
-        unitPrice: parseFloat(unitPrice.toFixed(6))
-      };
-    }
-
-    return {
-      valid: true,
-      totalAmount: parseFloat(totalAmount.toFixed(2)),
-      unitPrice: parseFloat(unitPrice.toFixed(6))
-    };
+    // Browser arithmetic is an estimate only; none of these monetary values is submitted.
+    const unitPrice = Number(totalPrice) / Number(totalUnits);
+    const totalAmount = Number.isFinite(unitPrice * quantity) ? unitPrice * quantity : 0;
+    const minQuantity = this.card.minQuantity || 1;
+    const maxQuantity = this.card.maxQuantity || (category === 'apps' ? 1000000 : Number.MAX_SAFE_INTEGER);
+    const valid = Number.isSafeInteger(quantity) && quantity >= minQuantity && quantity <= maxQuantity && totalAmount > 0;
+    return { valid, message: valid ? '' : 'الكمية خارج الحدود. السعر تقديري ويؤكده الخادم.', totalAmount, unitPrice };
   }
 
   /** توليد اسم لاعب عشوائي */
@@ -601,37 +495,7 @@ export class DialogPurchase {
     return '';
   }
 
-  /** جلب رصيد المستخدم */
-  async _getUserBalance() {
-    try {
-      const res = await fetch(`/api/users/${this.userId}/balance`, {
-        headers: { Authorization: `Bearer ${this.token}` }
-      });
-      const data = await res.json();
-      return Number(data.balance) || 0;
-    } catch (err) {
-      console.error('❌ فشل في جلب الرصيد:', err);
-      return 0;
-    }
-  }
-
-  /** حفظ الطلب */
-  async _saveOrder(orderData) {
-    try {
-      const res = await fetch('/api/orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.token}`
-        },
-        body: JSON.stringify(orderData)
-      });
-      return await res.json();
-    } catch (err) {
-      console.error('❌ فشل في حفظ الطلب:', err);
-      return null;
-    }
-  }
+  // PurchaseClient is the sole financial request path. No reserve/create/restore choreography.
 
   _setupUnavailableEvents() {
     const dialog = document.querySelector('.purchase-dialog');
@@ -691,7 +555,7 @@ export class DialogPurchase {
         <div class="price-quantity">
           <div class="dialog-price">
             <span class="price">السعر: $${defaultPrice.toFixed(2)}</span>
-            <span class="dialog-total">المجموع: $${total}</span>
+            <span class="dialog-total">المجموع التقديري: $${total}</span>
           </div>
 
           <label for="quantity">الكمية:</label>
@@ -724,7 +588,7 @@ export class DialogPurchase {
         <!-- ✅ وصف المنتج -->
         <div class="notes">
           <p id="product-description">
-            هذا المنتج يعمل خلال 24 ساعة بشكل أوتوماتيكي، الكمية الافتراضية ${defaultPrice}
+            السعر المعروض تقديري. يؤكد الخادم المبلغ عند الشراء، ثم ينتظر الطلب مراجعة التنفيذ. لا يعني إغلاق النافذة إلغاء الطلب.
           </p>
         </div>
       </div>

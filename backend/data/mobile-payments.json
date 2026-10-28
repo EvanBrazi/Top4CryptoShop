@@ -1,0 +1,8 @@
+{
+  "defaultFulfillmentSchema": "phone",
+  "products": [
+    { "id": 9, "name": "تروكسل", "icon": "turkcell.png", "category": "cryptos", "price": "4.49", "quantity": 1000, "available": true, "menuPrice": false, "minLimit": 10, "maxLimit": 1000000, "requiresFulfillmentTarget": true, "fulfillmentSchema": "phone", "fulfillmentValidationVersion": 1, "fulfillmentNetwork": null },
+    { "id": 10, "name": "تورك تيليكوم", "icon": "turk_telekom.png", "category": "cryptos", "price": "5.49", "quantity": 1000, "available": true, "menuPrice": false, "minLimit": 10, "maxLimit": 1000000, "requiresFulfillmentTarget": true, "fulfillmentSchema": "phone", "fulfillmentValidationVersion": 1, "fulfillmentNetwork": null },
+    { "id": 11, "name": "بايسيل", "icon": "paycell_app_design.png", "category": "cryptos", "price": "3.99", "quantity": 1000, "available": true, "menuPrice": false, "minLimit": 10, "maxLimit": 1000000, "requiresFulfillmentTarget": true, "fulfillmentSchema": "phone", "fulfillmentValidationVersion": 1, "fulfillmentNetwork": null }
+  ]
+}

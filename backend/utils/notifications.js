@@ -13,8 +13,12 @@
  * @lastModified 2025-09-03
  */
 
-const Order = require('../models/Order');
-const Payment = require('../models/Payment');
+// TODO Step 5: Order and Payment notifications remain disabled until shared socket authentication.
+// Never fetch financial resources using client-asserted socket identities.
+function financialPayload(payload) {
+  return /payment|order/i.test(String(payload?.type || '')) || payload?.paymentId !== undefined || payload?.orderId !== undefined ||
+    ['payment', 'order'].includes(payload?.sourceType);
+}
 const PendingNotification = require('../models/PendingNotification');
 
 let wss = null;
@@ -59,7 +63,7 @@ function initNotifications(serverInstance) {
           }
         }
       } catch (err) {
-        console.error('❌ رسالة غير صالحة:', msg);
+        console.error('❌ رسالة WebSocket غير صالحة'); // Never log raw inbound bodies or targets.
       }
     });
 
@@ -76,18 +80,7 @@ function initNotifications(serverInstance) {
  * @param {WebSocket} ws - جلسة الأدمن
  */
 async function sendPendingToAdmin(ws) {
-  const orders = await Order.find({ status: 'pending' }).sort({ createdAt: -1 });
-  const payments = await Payment.find({ status: 'pending' });
-
-  orders.forEach(order => {
-    ws.send(JSON.stringify({ type: 'newOrder', ...order.toObject() }));
-  });
-
-  payments.forEach(payment => {
-    ws.send(JSON.stringify({ type: 'newPayment', ...payment.toObject() }));
-  });
-
-  console.log(`📤 أُرسلت ${orders.length} طلبات و ${payments.length} دفعات للأدمن`);
+  // TODO Step 5: no Order/Payment queries or dispatch for unverified socket roles.
 }
 
 /**
@@ -96,25 +89,7 @@ async function sendPendingToAdmin(ws) {
  * @param {WebSocket} ws - جلسة المستخدم
  */
 async function sendStatusToUser(userId, ws) {
-  try {
-    const [orders, payments] = await Promise.all([
-      Order.find({ userId, status: { $in: ['accepted', 'rejected'] }, notified: false }).lean(),
-      Payment.find({ userId, status: { $in: ['accepted', 'rejected'] }, notified: false }).lean()
-    ]);
-
-    orders.forEach(order => {
-      ws.send(JSON.stringify({ type: 'orderStatus', status: order.status, ...order }));
-    });
-
-    payments.forEach(payment => {
-      ws.send(JSON.stringify({ type: 'paymentStatus', status: payment.status, ...payment }));
-    });
-
-    console.log(`📤 أُرسلت ${orders.length} طلبات و ${payments.length} دفعات جديدة للمستخدم ${userId}`);
-    await updateNotificationStatus(orders, payments);
-  } catch (error) {
-    console.error('❌ خطأ أثناء إرسال إشعارات المستخدم:', error);
-  }
+  // TODO Step 5: financial status reads require real shared socket authentication.
 }
 
 /**
@@ -123,9 +98,16 @@ async function sendStatusToUser(userId, ws) {
  * @param {WebSocket} ws - جلسة المستخدم
  */
 async function sendPendingToUser(userId, ws) {
-  const pending = await PendingNotification.find({ userId, notified: false }).limit(10);
+  // Exclude disabled financial entries before the limit so they cannot starve unrelated notices.
+  const pending = await PendingNotification.find({ userId, notified: false, $nor: [
+    { type: /payment|order/i }, { 'payload.type': /payment|order/i },
+    { 'payload.paymentId': { $exists: true } }, { 'payload.orderId': { $exists: true } },
+    { 'payload.sourceType': { $in: ['payment', 'order'] } }
+  ] }).limit(10);
 
   for (const notif of pending) {
+    // Also suppress old queued financial payloads; removing route dispatch alone is insufficient.
+    if (financialPayload(notif) || financialPayload(notif.payload)) continue;
     ws.send(JSON.stringify(notif.payload));
     notif.notified = true;
     notif.notificationSentAt = new Date();
@@ -141,24 +123,8 @@ async function sendPendingToUser(userId, ws) {
  * @param {Array} orders - قائمة الطلبات
  * @param {Array} payments - قائمة الدفعات
  */
-async function updateNotificationStatus(orders, payments) {
-  const now = new Date();
-
-  const orderUpdates = orders.map(order =>
-    Order.updateOne({ _id: order._id }, {
-      $set: { notified: true, notificationSentAt: now },
-      $inc: { notificationAttempts: 1 }
-    })
-  );
-
-  const paymentUpdates = payments.map(payment =>
-    Payment.updateOne({ _id: payment._id }, {
-      $set: { notified: true, notificationSentAt: now },
-      $inc: { notificationAttempts: 1 }
-    })
-  );
-
-  await Promise.all([...orderUpdates, ...paymentUpdates]);
+async function updateNotificationStatus(orders) {
+  // TODO Step 5: no notification-state mutations against immutable financial resources.
 }
 
 /**
@@ -168,7 +134,7 @@ async function updateNotificationStatus(orders, payments) {
  * @param {String|null} targetUserId - معرف المستخدم المستهدف
  */
 async function notify(payload, targetRole = null, targetUserId = null) {
-  if (!wss) return;
+  if (financialPayload(payload) || !wss) return; // TODO Step 5: do not send OR queue Orders/Payments.
 
   const message = JSON.stringify(payload);
   let delivered = false;
@@ -201,14 +167,7 @@ async function notify(payload, targetRole = null, targetUserId = null) {
  * @param {Boolean} useCustomId - هل نستخدم paymentId بدلًا من _id
  */
 async function markNotificationSent(modelName, id, useCustomId = false) {
-  const models = { Payment, Order };
-  const Model = models[modelName];
-  const query = useCustomId ? { paymentId: id } : { _id: id };
-
-  await Model.updateOne(query, {
-    $set: { notified: true, notificationSentAt: new Date() },
-    $inc: { notificationAttempts: 1 }
-  });
+  // TODO Step 5: both Payment and Order notification-state writes are disabled.
 }
 
 module.exports = {

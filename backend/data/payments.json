@@ -1,0 +1,9 @@
+{
+  "defaultFulfillmentSchema": "accountId",
+  "products": [
+    { "id": 1, "name": "شام كاش", "icon": "cham_cash.webp", "category": "cryptos", "price": "4.99", "quantity": 1000, "available": true, "menuPrice": false, "minLimit": 10, "maxLimit": 1000000, "requiresFulfillmentTarget": true, "fulfillmentSchema": "accountId", "fulfillmentValidationVersion": 1, "fulfillmentNetwork": null },
+    { "id": 2, "name": "حوالات مالية", "icon": "transfer.png", "category": "cryptos", "price": "3.99", "quantity": 1000, "available": true, "menuPrice": false, "minLimit": 10, "maxLimit": 1000000, "requiresFulfillmentTarget": true, "fulfillmentSchema": "accountId", "fulfillmentValidationVersion": 1, "fulfillmentNetwork": null },
+    { "id": 7, "name": "بايير", "icon": "payeer.png", "category": "cryptos", "price": "5.99", "quantity": 1000, "available": true, "menuPrice": false, "minLimit": 10, "maxLimit": 1000000, "requiresFulfillmentTarget": true, "fulfillmentSchema": "accountId", "fulfillmentValidationVersion": 1, "fulfillmentNetwork": null },
+    { "id": 8, "name": "بيرفكت موني", "icon": "perfect_money.png", "category": "cryptos", "price": "6.99", "quantity": 1000, "available": true, "menuPrice": false, "minLimit": 10, "maxLimit": 1000000, "requiresFulfillmentTarget": true, "fulfillmentSchema": "accountId", "fulfillmentValidationVersion": 1, "fulfillmentNetwork": null }
+  ]
+}

@@ -2,7 +2,8 @@
  * PortfolioTab - فئة لإدارة تبويب المحفظة
  * تقوم بجلب البيانات الحقيقية من الخوادم وعرضها بطريقة تفاعلية
  */
-import { STORAGE_KEYS } from '../utils/appUtils.js'
+import { STORAGE_KEYS } from '../utils/appUtils.js';
+import { OrderClient } from '../utils/orderClient.js';
 export class PortfolioTab {
     /**
      * @constructor
@@ -15,6 +16,8 @@ export class PortfolioTab {
         this.userId = userId;
         this.config = config;
         this.token = localStorage.getItem(STORAGE_KEYS.USER_TOKEN) || '';
+        this.orderClient = new OrderClient();
+        document.addEventListener('purchaseConfirmed', () => this.loadData(30));
         this.theme = localStorage.getItem('theme') || 'day';
 
         // عناصر DOM
@@ -218,7 +221,7 @@ export class PortfolioTab {
 
             // ✅ الرصيد
             const balanceRes = await fetch(`/api/users/${this.userId}/balance`, {
-                headers: { Authorization: `Bearer ${this.token}` }
+                headers: this.orderClient.headers(), credentials: 'include'
             });
 
             if (!balanceRes.ok) throw new Error('فشل في جلب بيانات الرصيد');
@@ -226,7 +229,7 @@ export class PortfolioTab {
 
             // ✅ الدفع
             const paymentsRes = await fetch(`/api/payments?userId=${this.userId}`, {
-                headers: { Authorization: `Bearer ${this.token}` }
+                headers: this.orderClient.headers(), credentials: 'include'
             });
 
             if (!paymentsRes.ok) throw new Error('فشل في جلب بيانات الدفعات');
@@ -234,12 +237,12 @@ export class PortfolioTab {
             const totalPayments = payments.reduce((sum, p) => sum + parseFloat(p.amountInUSD), 0);
 
             // ✅ الشراء
-            const ordersRes = await fetch(`/api/orders?userId=${this.userId}`, {
-                headers: { Authorization: `Bearer ${this.token}` }
+            const ordersRes = await fetch('/api/orders?limit=100', {
+                headers: this.orderClient.headers(), credentials: 'include'
             });
 
             if (!ordersRes.ok) throw new Error('فشل في جلب بيانات الطلبات');
-            const orders = (await ordersRes.json()).filter(o => new Date(o.createdAt) >= new Date(fromISO));
+            const orders = (await ordersRes.json()).filter(o => !o.legacy && ['pending', 'completed'].includes(o.status) && new Date(o.createdAt) >= new Date(fromISO));
             const totalPurchases = orders.reduce((sum, o) => sum + parseFloat(o.amount), 0);
 
             // إخفاء مؤشر التحميل
@@ -600,13 +603,10 @@ export class PortfolioTab {
 
     async fetchGlobalSummary() {
         try {
-            const [paymentsRes, ordersRes] = await Promise.all([
-                fetch('/api/payments/summary/all'),
-                fetch('/api/orders/summary/all')
-            ]);
-
-            const paymentsSummary = await paymentsRes.json();
-            const ordersSummary = await ordersRes.json();
+            const [paymentsSummary, ordersSummary] = await Promise.all([
+                this.orderClient.read('/api/payments/summary'),
+                this.orderClient.read('/api/orders/summary')
+            ]); // This user portfolio never requests administrator-wide summaries.
 
             return { paymentsSummary, ordersSummary };
         } catch (err) {
@@ -629,11 +629,11 @@ export class PortfolioTab {
         const { paymentsSummary, ordersSummary } = summary;
 
         // ✅ توزيع مخصص حسب نوع البيانات
-        const labels = ['دفعات (USD)', 'طلبات (كمية)', 'طلبات (مبلغ)', 'دفعات (عدد)'];
+        const labels = ['دفعات موثقة (USD)', 'طلبات (عدد)', 'صافي الطلبات (USD)', 'دفعات (عدد)'];
         const data = [
             paymentsSummary.totalInUSD,
-            ordersSummary.totalQuantity,
-            ordersSummary.totalAmount,
+            ordersSummary.pending + ordersSummary.completed + ordersSummary.cancelled,
+            ordersSummary.netCharges,
             paymentsSummary.totalCompleted + paymentsSummary.totalPending + paymentsSummary.totalCancelled
         ];
 

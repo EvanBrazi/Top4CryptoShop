@@ -1,4 +1,6 @@
-[
+{
+  "defaultFulfillmentSchema": "playerId",
+  "products": [
   { 
     "id": 1, 
     "name": "سيريافون", 
@@ -6,7 +8,7 @@
     "category": "balances", 
     "price": "4.99", 
     "quantity": 1000, 
-    "available": true,
+    "available": true, "requiresFulfillmentTarget": true, "fulfillmentSchema": "playerId", "fulfillmentValidationVersion": 1, "fulfillmentNetwork": null,
     "menuPrice": false,
     "minLimit": 1000,
     "maxLimit": 1000000
@@ -18,7 +20,7 @@
     "category": "balances", 
     "price": ["3.99", "7.99", "15.99"], 
     "quantity": [500, 1000, 2000], 
-    "available": true,
+    "available": true, "requiresFulfillmentTarget": true, "fulfillmentSchema": "playerId", "fulfillmentValidationVersion": 1, "fulfillmentNetwork": null,
     "menuPrice": true
   },
   { 
@@ -29,7 +31,7 @@
     "price": "5.99", 
     "quantity": 1000, 
     "maxLimit": 550000, 
-    "available": true,
+    "available": true, "requiresFulfillmentTarget": true, "fulfillmentSchema": "playerId", "fulfillmentValidationVersion": 1, "fulfillmentNetwork": null,
     "menuPrice": false,
     "minLimit": 10000
   },
@@ -40,7 +42,7 @@
     "category": "balances", 
     "price": ["4.49", "8.99", "17.99"], 
     "quantity": [500, 1000, 2000], 
-    "available": true,
+    "available": true, "requiresFulfillmentTarget": true, "fulfillmentSchema": "playerId", "fulfillmentValidationVersion": 1, "fulfillmentNetwork": null,
     "menuPrice": true
   },
   { 
@@ -51,8 +53,9 @@
     "price": "3.99", 
     "quantity": 1000, 
     "maxLimit": 550000, 
-    "available": true,
+    "available": true, "requiresFulfillmentTarget": true, "fulfillmentSchema": "playerId", "fulfillmentValidationVersion": 1, "fulfillmentNetwork": null,
     "menuPrice": false,
     "minLimit": 10000
   }
 ]
+}

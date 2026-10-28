@@ -68,7 +68,16 @@ app.use((req, res, next) => {
 // 🔗 الاتصال بقاعدة البيانات
 // =======================
 mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/Top4CryptoShop')
-  .then(() => console.log('✅ تم الاتصال بقاعدة البيانات'))
+  .then(async () => {
+    console.log('✅ تم الاتصال بقاعدة البيانات');
+    try {
+      await require('./services/financialService').initializeFinancialFoundation();
+      console.log('Financial transaction foundation is ready');
+    } catch (_) {
+      // Unsupported topology/index/probe failures keep financial writes at 503; no fallback.
+      console.error('Financial transaction foundation unavailable; financial writes remain disabled');
+    }
+  })
   .catch(err => {
     console.error('❌ فشل الاتصال بقاعدة البيانات:', err);
     process.exit(1);
@@ -167,8 +176,9 @@ require('./jobs/scheduler');
 // =======================
 // 📁 الملفات الثابتة
 // =======================
+// Block before either static root. No legacy files are migrated/deleted here.
+app.use('/images/payments', (req, res) => res.set('Cache-Control', 'no-store').status(410).json({ code: 'LEGACY_RECEIPT_UNAVAILABLE' }));
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/images/payments', express.static(path.join(__dirname, 'uploads/payments')));
 const staticPath = path.join(__dirname, '../frontend/public');
 if (!fs.existsSync(staticPath)) fs.mkdirSync(staticPath, { recursive: true });
 
@@ -197,13 +207,15 @@ app.use('/dev', require('./routes/dev'));
 // =======================
 // 📦 مسارات API إضافية
 // =======================
-const dataRoutes = ['apps', 'games', 'cryptos', 'balances', 'essential'];
-dataRoutes.forEach(route => {
-  app.get(`/api/${route}`, (req, res) => {
-    fs.readFile(path.join(__dirname, `data/${route}.json`), 'utf8', (err, data) => {
-      if (err) return res.status(500).json({ error: `فشل تحميل ${route}` });
-      res.json(JSON.parse(data));
-    });
+// Purchasable catalogs use the same validated, isolated publication as purchasing.
+require('./services/catalogService').ensureLoaded();
+app.use('/api', require('./routes/catalog'));
+// essential.json is application configuration, never ingested by the purchase catalog.
+app.get('/api/essential', (req, res) => {
+  fs.readFile(path.join(__dirname, 'data/essential.json'), 'utf8', (err, data) => {
+    if (err) return res.status(503).json({ error: 'Configuration unavailable' });
+    try { res.json(JSON.parse(data)); }
+    catch (_) { res.status(503).json({ error: 'Configuration unavailable' }); }
   });
 });
 
@@ -219,13 +231,9 @@ app.post('/api/compare-token', (req, res) => {
 // =======================
 // 🧠 منطق WebSocket
 // =======================
-app.put('/api/users/:id/balance', async (req, res) => {
-  const userId = req.params.id;
-  const newBalance = req.body.balance;
-
-  // ⚠️ تحقق من صلاحيات الأدمن لاحقًا
-  broadcast({ type: 'paymentAccepted', userId, newBalance }, 'admin');
-  res.json({ message: 'تم تعديل الرصيد بنجاح' });
+// Defensive fallback: the users router already disables this route. Never broadcast payment data.
+app.put('/api/users/:id/balance', (req, res) => {
+  res.status(503).json({ code: 'FINANCIAL_UNAVAILABLE', error: 'Balance adjustments remain disabled' });
 });
 
 // =======================

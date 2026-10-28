@@ -6,6 +6,7 @@
  * @lastModified 2025-08-29
  */
 import { STORAGE_KEYS } from "./utils/appUtils.js";
+import { initAdminOrders } from './utils/adminOrders.js';
 
 function initAdminWebSocket() {
   console.log('initAdminWebSocket');
@@ -15,9 +16,7 @@ function initAdminWebSocket() {
     const wsUrl = `${protocol}//${window.location.host}`;
     console.log('📡 محاولة الاتصال بـ WebSocket:', wsUrl);
     const adminSocket = new WebSocket(wsUrl);
-    adminSocket.addEventListener('message', (event) => {
-      console.log('📡 رسالة WebSocket وصلت:', event.data);
-    });
+    // Financial resources are loaded exclusively through authenticated HTTP.
     adminSocket.onopen = () => {
       const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
       if (userId) {
@@ -36,12 +35,8 @@ function initAdminWebSocket() {
     adminSocket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log('إشعار WebSocket للأدمن : ', data);
-        if (data.type === 'newOrder') {
-          renderOrderNotification(data);
-        } else if (data.type === 'newPayment') {
-          renderPaymentNotification(data);
-        } else if (data.type === 'backupStatus') {
+        if (/payment|order/i.test(data.type || '') || data.orderId || data.paymentId) return;
+        if (data.type === 'backupStatus') {
           // ✅ إشعار النسخ الاحتياطي
           showNotification(data.message, data.status);
           renderBackupNotification(data); // يمكنك إنشاء هذه الدالة لعرضه في جدول أو سجل
@@ -181,65 +176,7 @@ function renderPaymentNotification(data) {
  * @param {string} data.status - حالة الطلب (اختياري)
  * @param {string} data.createdAt - تاريخ الإنشاء (اختياري)
  */
-function renderOrderNotification(data) {
-  console.log('📥 تنفيذ renderOrderNotification:', data);
-  const container = document.getElementById('admin-notifications');
-  // التحقق من وجود الحاوية
-  if (!container) {
-    console.error('❌ عنصر admin-notifications غير موجود في DOM');
-    return;
-  }
-
-  // التحقق من عدم وجود الإشعار مسبقاً
-  if (container.querySelector(`[data-order-id="${data.orderId}"]`)) {
-    console.log('⚠️ تم عرض هذا الطلب مسبقاً');
-    return;
-  }
-
-  // إنصراف العنصر
-  const orderBox = document.createElement('div');
-  orderBox.className = 'order-box';
-  orderBox.dataset.orderId = data.orderId;
-
-  // تنسيق التاريخ
-  const orderDate = data.createdAt ? new Date(data.createdAt).toLocaleString('ar-EG') : new Date().toLocaleString('ar-EG');
-
-  // إنشاء محتوى الإشعار
-  orderBox.innerHTML = `
-    <div class="order-header">
-      <h4>طلب جديد #${data.orderId}</h4>
-      <span class="order-time">${orderDate}</span>
-    </div>
-    <div class="order-details">
-      <p><strong>المستخدم:</strong> ${data.userId}</p>
-      <p><strong>اللاعب:</strong> ${data.playerId}</p>
-      <p><strong>الخدمة:</strong> ${data.service}</p>
-      <p><strong>المبلغ:</strong> ${data.amount} $</p>
-      <p><strong>الطريقة:</strong> ${data.method}</p>
-    </div>
-    <div class="order-actions">
-      <button class="accept-order-btn" data-order-id="${data.orderId}">✅ قبول</button>
-      <button class="reject-order-btn" data-order-id="${data.orderId}">❌ رفض</button>
-    </div>
-  `;
-
-  // إضافة الإشعار إلى الحاوية
-  container.appendChild(orderBox);
-
-  // إضافة تأثير ظهور
-  setTimeout(() => {
-    orderBox.classList.add('visible');
-  }, 10);
-
-  // إضافة مستمعي الأحداث للأزرار
-  const acceptBtn = orderBox.querySelector('.accept-order-btn');
-  const rejectBtn = orderBox.querySelector('.reject-order-btn');
-
-  acceptBtn.addEventListener('click', () => handleOrderAction(data.orderId, 'accept'));
-  rejectBtn.addEventListener('click', () => handleOrderAction(data.orderId, 'reject'));
-
-  console.log(`✅ تم عرض إشعار الطلب: ${data.orderId}`);
-}
+// Order queue, private fulfillment rendering, and persisted decisions live in utils/adminOrders.js.
 
 /**
  * 
@@ -266,48 +203,7 @@ function renderBackupNotification(data) {
  * @param {'accept'|'reject'} action - الإجراء المطلوب
  * @returns {Promise<void>}
  */
-async function handleOrderAction(orderId, action) {
-  try {
-    const response = await fetch(`/api/orders/${orderId}/${action}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem(STORAGE_KEYS.USER_TOKEN)}`
-      }
-    });
-
-    if (response.ok) {
-      const result = await response.json();
-
-      // تحديث واجهة المستخدم
-      const orderBox = document.querySelector(`[data-order-id="${orderId}"]`);
-      if (orderBox) {
-        orderBox.classList.add(action === 'accept' ? 'accepted' : 'rejected');
-
-        // إخفاء أزرار القبول/الرفض
-        const actionsDiv = orderBox.querySelector('.order-actions');
-        if (actionsDiv) {
-          actionsDiv.innerHTML = action === 'accept'
-            ? '<span class="status-badge accepted">تم القبول</span>'
-            : '<span class="status-badge rejected">تم الرفض</span>';
-        }
-
-        // إخفاء العنصر بعد فترة
-        setTimeout(() => {
-          orderBox.style.opacity = '0';
-          setTimeout(() => orderBox.remove(), 500);
-        }, 3000);
-      }
-
-      console.log(`✅ تم ${action === 'accept' ? 'قبول' : 'رفض'} الطلب: ${orderId}`);
-    } else {
-      throw new Error(`فشل في ${action === 'accept' ? 'قبول' : 'رفض'} الطلب`);
-    }
-  } catch (error) {
-    console.error(`❌ خطأ في معالجة الطلب:`, error);
-    alert(`❌ حدث خطأ أثناء معالجة الطلب: ${error.message}`);
-  }
-}
+// No legacy accept/reject dispatch: modern decisions require persisted keys and reasons.
 
 /**
  * ✅ تعديل رصيد مستخدم معين
@@ -522,5 +418,6 @@ window.addEventListener('DOMContentLoaded', () => {
   initAdminWebSocket();
   loadUsers();              // تحميل المستخدمين
   loadPendingPayments();    // تحميل الدفعات المعلقة
+  initAdminOrders();         // Authenticated HTTP queue; no financial socket dispatch.
   document.getElementById('test-button').addEventListener('click', sendTestNotification);
 });

@@ -1,4 +1,3 @@
-//Top4CryptoShop/backend/models/User.js
 /**
  * @file routes/users.js
  * @description واجهات REST لإدارة المستخدمين مع تحقق من الهوية وتحديث شامل
@@ -9,21 +8,59 @@ require('dotenv').config();
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
-const { verifyToken } = require('../middlewares/auth');
-const upload = require('../middlewares/upload'); // نفس إعداد multer الذي تستخدمه
-const cloudinary = require('../config/cloudinary');
+const { verifyToken, checkAdmin, requireSelf, requireSelfOrAdmin } = require('../middlewares/auth');
+const { doubleCsrfProtection } = require('../middlewares/csrfMiddleware');
 const { activeSessions } = require('../utils/sessionStore');
-// استيراد jwt للتحقق من التوكن
-const jwt = require('jsonwebtoken');
-const {
-  validateProfileUpdate,
-  handleValidationErrors
-} = require('../middlewares/validation');
+const upload = require('../middlewares/upload');
+const cloudinary = require('../config/cloudinary');
+
+// Step 1 uses the existing process-local session store; a shared store follows separately.
+function invalidateUserSessions(userId) {
+  for (const [sessionId, session] of activeSessions) {
+    if (String(session.userId).toLowerCase() === String(userId).toLowerCase()) activeSessions.delete(sessionId);
+  }
+}
+const projection = '_id username email phone balance theme avatar role accountStatus lastLogin activatedAt createdAt';
+function fail(res, err) {
+  if (err.code === 11000) return res.status(409).json({ success: false, error: 'Username/email/phone already in use' });
+  if (err.name === 'ValidationError' || err.name === 'CastError') return res.status(400).json({ success: false, error: 'Invalid profile values' });
+  if (err.name === 'DocumentNotFoundError' || err.name === 'VersionError') return res.status(409).json({ success: false, error: 'User changed; reload and try again' });
+  return res.status(500).json({ success: false, code: 'USER_UPDATE_FAILED', error: 'User operation failed' });
+}
+function allowFields(body, fields) {
+  return body && typeof body === 'object' && !Array.isArray(body) && Object.keys(body).every(key => fields.includes(key));
+}
+function validBalance(value) {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= Number.MAX_SAFE_INTEGER;
+}
+function editableUserFilter(req) {
+  return { _id: req.params.id, accountStatus: 'active', tokenVersion: req.user.tokenVersion };
+}
+function disabledFinancialEndpoint(req, res) {
+  return res.status(410).json({ success: false, code: 'ENDPOINT_DISABLED', error: 'Balance reserve/restore endpoints have been disabled' });
+}
+async function discardUploadedAvatar(file) {
+  if (typeof file?.filename === 'string' && file.filename.startsWith('payments_receipts/')) {
+    await cloudinary.uploader.destroy(file.filename);
+  }
+}
+function avatarPublicId(avatarUrl) {
+  try {
+    const url = new URL(avatarUrl);
+    if (url.hostname !== 'res.cloudinary.com' ||
+        !url.pathname.startsWith(`/${process.env.CLOUDINARY_NAME}/image/upload/`)) return null;
+    return url.pathname.match(/\/(payments_receipts\/[^/]+)\.[a-z0-9]+$/i)?.[1] || null;
+  } catch (_) { return null; }
+}
+
+// No authentication, database or financial side effects, regardless of HTTP method.
+router.all('/:id/reserve', disabledFinancialEndpoint);
+router.all('/:id/restore', disabledFinancialEndpoint);
 
 // 📥 جلب جميع المستخدمين (للوحة التحكم)
-router.get('/', verifyToken, async (req, res) => {
+router.get('/', verifyToken, checkAdmin, async (req, res) => {
   try {
-    const users = await User.find();
+    const users = await User.find().select(projection);
     res.json(users);
   } catch (err) {
     res.status(500).json({ message: 'فشل تحميل المستخدمين' });
@@ -31,55 +68,12 @@ router.get('/', verifyToken, async (req, res) => {
 });
 
 // ✅ نقطة جلب بيانات المستخدم الحالي
-router.get('/me', async (req, res) => {
-  try {
-    const token = req.headers.authorization?.split(' ')[1];
-    const sessionId = req.headers['x-session-id'];
-
-    if (!token || !sessionId) {
-      return res.status(401).json({ error: 'رمز الجلسة أو التوكن مفقود' });
-    }
-
-    const session = activeSessions.get(sessionId);
-    if (!session) {
-      return res.status(403).json({ error: 'جلسة غير صالحة أو منتهية' });
-    }
-
-    let decoded;
-    try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET);
-    } catch (err) {
-      return res.status(401).json({ error: 'توكن غير صالح أو منتهي' });
-    }
-
-    if (decoded.userId !== session.userId) {
-      return res.status(403).json({ error: 'توكن غير متطابق مع الجلسة' });
-    }
-
-    const user = await User.findById(decoded.userId).select('-password -loginAttempts');
-    if (!user) {
-      return res.status(404).json({ error: 'المستخدم غير موجود' });
-    }
-
-    res.json({
-      id: user._id,
-      username: user.username,
-      email: user.email,
-      avatar: user.avatar,
-      balance: user.balance,
-      role: user.role,
-      lastLogin: user.lastLogin
-    });
-  } catch (err) {
-    console.error('❌ خطأ في /users/me:', err);
-    res.status(500).json({ error: 'فشل في جلب بيانات المستخدم' });
-  }
-});
+router.get('/me', verifyToken, (req, res) => res.json(req.user));
 
 // 📥 جلب مستخدم واحد (لـ usermanager.js)
-router.get('/:id', verifyToken, async (req, res) => {
+router.get('/:id', verifyToken, requireSelfOrAdmin(), async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
+    const user = await User.findById(req.params.id).select(projection);
     if (!user) return res.status(404).json({ message: 'المستخدم غير موجود' });
     res.json(user);
   } catch (err) {
@@ -88,110 +82,64 @@ router.get('/:id', verifyToken, async (req, res) => {
 });
 
 // 🔄 تحديث بيانات المستخدم بالكامل
-router.put('/:id',
-  verifyToken,
-  validateProfileUpdate,
-  handleValidationErrors,
-  async (req, res) => {
-    console.log('📥 الحقول المستلمة:', req.body);
-    try {
-      const allowedFields = ['name', 'email', 'balance', 'theme', 'avatar', 'password'];
-      const fieldLabels = {
-        name: 'الاسم',
-        email: 'البريد الإلكتروني',
-        phone: 'رقم الهاتف',
-        password: 'كلمة المرور',
-        avatar: 'الصورة الشخصية',
-        balance: 'الرصيد',
-        theme: 'الثيم'
-      };
-      const updates = {};
-      const messages = [];
-
-      // ✅ تحقق من الأخطاء
-      const { validationResult } = require('express-validator');
-      const errors = validationResult(req);
-      const rejectedFields = errors.array().map(e => e.param);
-
-      // ✅ مرر فقط الحقول المعدلة والصحيحة
-      Object.entries(fieldLabels).forEach(([key, label]) => {
-        const value = req.body[key]; // ✅ المفتاح الصحيح
-        if (value !== undefined && !rejectedFields.includes(key)) {
-          updates[key] = value;
-          messages.push(`✅ تم حفظ ${label} بنجاح`);
-        } else if (value !== undefined) {
-          messages.push(`❌ تم رفض ${label} لأنه غير صالح`);
-        }
-      });
-
-      // ✅ نفذ التحديث فقط إذا كان هناك حقول صالحة
-      if (Object.keys(updates).length === 0) {
-        return res.status(400).json({
-          success: false,
-          message: '❌ لم يتم تعديل أي حقل بسبب أخطاء التحقق',
-          details: messages
-        });
+router.put('/:id', verifyToken, requireSelf(), doubleCsrfProtection, async (req, res) => {
+  const fields = ['username', 'email', 'phone', 'theme', 'password', 'currentPassword'];
+  if (!allowFields(req.body, fields) || !Object.keys(req.body).length) return res.status(400).json({ success: false, error: 'Only editable profile fields are permitted' });
+  const passwordChanged = Object.hasOwn(req.body, 'password');
+  if ((passwordChanged && (typeof req.body.password !== 'string' || !req.body.password || typeof req.body.currentPassword !== 'string')) ||
+      (!passwordChanged && Object.hasOwn(req.body, 'currentPassword'))) return res.status(400).json({ success: false, error: 'Password changes require currentPassword and a nonempty new password' });
+  try {
+    const user = await User.findById(req.params.id).select('+password');
+    if (!user || user.accountStatus !== 'active' || user.tokenVersion !== req.user.tokenVersion) return res.status(403).json({ success: false, error: 'Account unavailable; sign in again' });
+    if (passwordChanged && (user.provider !== 'local' || !user.password || !(await user.comparePassword(req.body.currentPassword)))) return res.status(403).json({ success: false, error: 'Current password is incorrect or local password change is unavailable' });
+    for (const key of fields) {
+      if (key !== 'currentPassword' && Object.hasOwn(req.body, key)) {
+        if (key === 'theme' ? ![0, 1].includes(req.body[key]) : typeof req.body[key] !== 'string') return res.status(400).json({ success: false, error: 'Invalid profile field type' });
+        user[key] = req.body[key];
       }
-      const user = await User.findByIdAndUpdate(req.params.id, updates, { new: true });
-      if (!user) return res.status(404).json({ message: '❌ المستخدم غير موجود' });
-
-      res.json({
-        success: true,
-        message: '🔄 تم تنفيذ التحديث الجزئي',
-        details: messages,
-        user
-      });
-    } catch (err) {
-      console.error('❌ خطأ في التحديث:', err.message);
-      res.status(500).json({
-        success: false,
-        message: '❌ خطأ في التحديث',
-        error: err.message
-      });
     }
-  }
-);
+    // Reject concurrent password/status changes without writing cached financial fields.
+    user.$where = { tokenVersion: user.tokenVersion, accountStatus: 'active' };
+    await user.save();
+    if (passwordChanged) invalidateUserSessions(user._id);
+    res.json({ success: true, message: 'Profile updated', user, requiresReauthentication: passwordChanged });
+  } catch (err) { fail(res, err); }
+});
 
 // 💰 تعديل الرصيد فقط
-router.put('/:id/balance', verifyToken, async (req, res) => {
-  const balance = parseFloat(req.body.balance);
-  if (isNaN(balance) || balance < 0) {
-    return res.status(400).json({ message: 'رصيد غير صالح' });
-  }
-
+router.put('/:id/balance', verifyToken, checkAdmin, requireSelfOrAdmin(), doubleCsrfProtection, async (req, res) => {
   try {
-    const user = await User.findByIdAndUpdate(req.params.id, { balance }, { new: true });
-    if (!user) return res.status(404).json({ message: 'المستخدم غير موجود' });
-    res.json({ message: '✅ تم تعديل الرصيد', user });
-  } catch (err) {
-    res.status(500).json({ message: '❌ خطأ في تعديل الرصيد' });
-  }
+    if (!allowFields(req.body, ['balance', 'expectedBalance']) || !validBalance(req.body.balance) ||
+        (Object.hasOwn(req.body, 'expectedBalance') && !validBalance(req.body.expectedBalance))) {
+      return res.status(400).json({ success: false, error: 'Invalid balance adjustment fields or values' });
+    }
+    // Never fall back to a direct balance write while the audited financial service is missing.
+    return res.status(503).json({ success: false, code: 'FINANCIAL_UNAVAILABLE', error: 'Balance adjustments are disabled until the financial service is available' });
+  } catch (err) { fail(res, err); }
 });
 
 // 🎨 تحديث الثيم الخاص بالمستخدم
-router.put('/:id/theme', verifyToken, async (req, res) => {
+router.put('/:id/theme', verifyToken, requireSelf(), doubleCsrfProtection, async (req, res) => {
   try {
-    const { theme } = req.body;
-    if (typeof theme !== 'number' || ![0, 1].includes(theme)) {
+    if (!allowFields(req.body, ['theme']) || ![0, 1].includes(req.body.theme)) {
       return res.status(400).json({ message: 'قيمة الثيم يجب أن تكون 0 أو 1' });
     }
-    const updatedUser = await User.findByIdAndUpdate(
-      req.params.id,
-      { theme },
-      { new: true } // يرجع النسخة المحدثة
+    const updatedUser = await User.findOneAndUpdate(
+      editableUserFilter(req),
+      { $set: { theme: req.body.theme } },
+      { new: true, runValidators: true }
     );
 
     if (!updatedUser) return res.status(404).json({ message: 'المستخدم غير موجود' });
 
     res.json({ message: '✅ تم تحديث الثيم بنجاح', user: updatedUser });
-  } catch (err) {
-    res.status(500).json({ message: '❌ خطأ أثناء تحديث الثيم' });
-  }
+  } catch (err) { fail(res, err); }
 });
 
 
 // 🔓 تفعيل المستخدم
-router.put('/:id/activate', verifyToken, async (req, res) => {
+router.put('/:id/activate', verifyToken, checkAdmin, requireSelfOrAdmin(), doubleCsrfProtection, async (req, res) => {
+  if (!allowFields(req.body === undefined ? {} : req.body, [])) return res.status(400).json({ success: false, error: 'Activation does not accept editable fields' });
   try {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: 'المستخدم غير موجود' });
@@ -203,27 +151,26 @@ router.put('/:id/activate', verifyToken, async (req, res) => {
     user.accountStatus = 'active';
     user.loginAttempts = 0;
     user.activatedAt = new Date();
-
+    user.tokenVersion += 1;
     await user.save();
+    invalidateUserSessions(user._id);
     res.json({ message: '✅ تم تفعيل المستخدم', user });
-  } catch (err) {
-    res.status(500).json({ message: '❌ خطأ أثناء التفعيل' });
-  }
+  } catch (err) { fail(res, err); }
 });
 
 // 🗑️ حذف المستخدم
-router.delete('/:id', verifyToken, async (req, res) => {
+router.delete('/:id', verifyToken, checkAdmin, requireSelfOrAdmin(), doubleCsrfProtection, async (req, res) => {
+  if (!allowFields(req.body === undefined ? {} : req.body, [])) return res.status(400).json({ success: false, error: 'Deletion does not accept editable fields' });
   try {
     const user = await User.findByIdAndDelete(req.params.id);
     if (!user) return res.status(404).json({ message: 'المستخدم غير موجود' });
+    invalidateUserSessions(user._id);
     res.json({ message: '🗑️ تم حذف المستخدم' });
-  } catch (err) {
-    res.status(500).json({ message: '❌ خطأ أثناء الحذف' });
-  }
+  } catch (err) { fail(res, err); }
 });
 
 // 📤 جلب رصيد المستخدم فقط
-router.get('/:id/balance', verifyToken, async (req, res) => {
+router.get('/:id/balance', verifyToken, requireSelfOrAdmin(), async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select('balance');
     if (!user) return res.status(404).json({ message: 'المستخدم غير موجود' });
@@ -233,69 +180,36 @@ router.get('/:id/balance', verifyToken, async (req, res) => {
   }
 });
 
-// 💰 حجز رصيد مؤقت قبل تنفيذ الطلب
-router.post('/:id/reserve', verifyToken, async (req, res) => {
-  const amount = parseFloat(req.body.amount);
-  if (isNaN(amount) || amount <= 0) {
-    return res.status(400).json({ message: 'قيمة غير صالحة للحجز' });
-  }
-
-  try {
-    const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ message: 'المستخدم غير موجود' });
-
-    if (user.balance < amount) {
-      return res.status(400).json({ message: 'الرصيد غير كافٍ' });
-    }
-
-    user.balance -= amount;
-    await user.save();
-
-    res.json({ message: '✅ تم حجز الرصيد', balance: user.balance });
-  } catch (err) {
-    res.status(500).json({ message: '❌ خطأ أثناء الحجز' });
-  }
-});
-
-// ♻️ استرجاع الرصيد في حال فشل الطلب
-router.post('/:id/restore', verifyToken, async (req, res) => {
-  const amount = parseFloat(req.body.amount);
-  if (isNaN(amount) || amount <= 0) {
-    return res.status(400).json({ message: 'قيمة غير صالحة للاسترجاع' });
-  }
-
-  try {
-    const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ message: 'المستخدم غير موجود' });
-
-    user.balance += amount;
-    await user.save();
-
-    res.json({ message: '✅ تم استرجاع الرصيد', balance: user.balance });
-  } catch (err) {
-    res.status(500).json({ message: '❌ خطأ أثناء الاسترجاع' });
-  }
-});
-
 /**
  * @route POST /api/users/:id/avatar
  * @desc رفع صورة شخصية للمستخدم وتحديث رابطها
  * @access خاص بالمستخدم
  */
-router.post('/:id/avatar', verifyToken, upload.single('avatar'), async (req, res) => {
+router.post('/:id/avatar', verifyToken, requireSelf(), doubleCsrfProtection, upload.single('avatar'), async (req, res) => {
+  let persisted = false;
   try {
-    const userId = req.params.id;
+    if (!allowFields(req.body === undefined ? {} : req.body, [])) {
+      await discardUploadedAvatar(req.file);
+      return res.status(400).json({ success: false, error: 'Avatar upload does not accept profile fields' });
+    }
     const imageUrl = req.file?.path;
+    if (typeof imageUrl !== 'string' || !imageUrl) return res.status(400).json({ error: 'لم يتم رفع الصورة' });
 
-    if (!imageUrl) return res.status(400).json({ error: 'لم يتم رفع الصورة' });
-
-    const user = await User.findByIdAndUpdate(userId, { avatar: imageUrl }, { new: true });
-    if (!user) return res.status(404).json({ error: 'المستخدم غير موجود' });
-
+    const user = await User.findOneAndUpdate(
+      editableUserFilter(req), { $set: { avatar: imageUrl } },
+      { new: true, runValidators: true, projection: 'avatar' }
+    );
+    if (!user) {
+      await discardUploadedAvatar(req.file);
+      return res.status(404).json({ error: 'المستخدم غير موجود أو الجلسة تغيرت' });
+    }
+    persisted = true;
     res.json({ message: '✅ تم تحديث الصورة الشخصية', avatar: user.avatar });
   } catch (err) {
-    console.error('❌ خطأ في رفع الصورة الشخصية:', err);
-    res.status(500).json({ error: 'فشل رفع الصورة الشخصية' });
+    if (!persisted) {
+      try { await discardUploadedAvatar(req.file); } catch (_) { /* Do not expose storage errors. */ }
+    }
+    fail(res, err);
   }
 });
 
@@ -304,27 +218,21 @@ router.post('/:id/avatar', verifyToken, upload.single('avatar'), async (req, res
  * @desc إزالة الصورة الشخصية من قاعدة البيانات وCloudinary
  * @access خاص بالمستخدم
  */
-router.post('/:id/avatar/remove', verifyToken, async (req, res) => {
+router.post('/:id/avatar/remove', verifyToken, requireSelf(), doubleCsrfProtection, async (req, res) => {
+  if (!allowFields(req.body === undefined ? {} : req.body, [])) return res.status(400).json({ success: false, error: 'Avatar removal does not accept editable fields' });
   try {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ error: 'المستخدم غير موجود' });
+    if (user.accountStatus !== 'active' || user.tokenVersion !== req.user.tokenVersion) return res.status(403).json({ success: false, error: 'Account unavailable; sign in again' });
 
-    // ✅ استخراج public_id من رابط Cloudinary
-    const avatarUrl = user.avatar;
-    if (avatarUrl && avatarUrl.includes('cloudinary.com')) {
-      const parts = avatarUrl.split('/');
-      const publicIdWithExtension = parts.slice(-1)[0]; // مثل receipt-abc123.jpg
-      const publicId = publicIdWithExtension.split('.')[0]; // إزالة الامتداد
-
-      await cloudinary.uploader.destroy(`payments_receipts/${publicId}`);
-    }
+    const publicId = avatarPublicId(user.avatar);
     user.avatar = '';
+    user.$where = { tokenVersion: user.tokenVersion, accountStatus: 'active' };
     await user.save();
+    // Only delete an asset from this application's Cloudinary account after the guarded save succeeds.
+    if (publicId) await cloudinary.uploader.destroy(publicId);
     res.json({ message: '✅ تم إزالة الصورة الشخصية', avatar: '' });
-  } catch (err) {
-    console.error('❌ خطأ في إزالة الصورة من Cloudinary:', err);
-    res.status(500).json({ error: 'فشل إزالة الصورة الشخصية' });
-  }
+  } catch (err) { fail(res, err); }
 });
 
 module.exports = router;

@@ -2,6 +2,7 @@
  * كلاس مسؤول عن إدارة تبويب "طلباتي" للمستخدم
  * يعرض الطلبات حسب الحالة، ويدير نافذة التفاصيل
  */
+import { OrderClient } from '../utils/orderClient.js';
 export class OrdersTab {
     /**
      * @param {string} containerId - معرف عنصر التبويب في DOM
@@ -18,7 +19,15 @@ export class OrdersTab {
         this.options = options;
         this.pollInterval = 10000;
         this.orders = [];
-
+        this.client = new OrderClient();
+        this.onPurchase = () => this.loadOrders();
+        document.addEventListener('purchaseConfirmed', this.onPurchase);
+        if (this.filterSelect) {
+            this.filterSelect.replaceChildren();
+            for (const [value, label] of [['all', 'الكل'], ['pending', 'بانتظار التنفيذ'], ['completed', 'تم التنفيذ'], ['cancelled', 'ملغي ومسترد'], ['reconciliation_required', 'قديم — مراجعة']]) {
+                const option = document.createElement('option'); option.value = value; option.textContent = label; this.filterSelect.appendChild(option);
+            }
+        }
         this.init();
     }
 
@@ -39,13 +48,35 @@ export class OrdersTab {
      * تحميل الطلبات من السيرفر
      */
     async loadOrders() {
-        await fetch(`/api/orders?userId=${this.userId}`)
-            .then(async res => await res.json())
-            .then(data => {
-                this.orders = Array.isArray(data) ? data : [];
-                this.renderOrders();
-            })
-            .catch(err => console.error('❌ فشل تحميل الطلبات:', err));
+        try {
+            await this.client.verifyOwner(this.userId);
+            const data = await this.client.read('/api/orders?limit=100');
+            this.orders = Array.isArray(data) ? data : [];
+            this.renderOrders();
+            this.renderSavedPurchases();
+        } catch (_) {
+            this.orders = [];
+            this.tbody.replaceChildren();
+            const row = document.createElement('tr'), cell = document.createElement('td');
+            cell.colSpan = 5; cell.textContent = 'تعذر تحميل الطلبات — تحقق من تسجيل الدخول'; row.appendChild(cell); this.tbody.appendChild(row);
+        }
+    }
+
+    renderSavedPurchases() {
+        this.container.querySelector('.saved-purchases')?.remove();
+        const box = document.createElement('div'); box.className = 'saved-purchases';
+        for (const attempt of this.client.pendingPurchases(this.userId)) {
+            const { idempotencyKey, ...input } = attempt.payload;
+            const button = document.createElement('button'); button.textContent = `إعادة محاولة الطلب المحفوظ: ${input.category} #${input.productId}`;
+            button.onclick = async () => {
+                button.disabled = true;
+                try { await this.client.purchase(input, this.userId); await this.loadOrders(); }
+                catch (_) { button.textContent = 'النتيجة غير محددة — أعد نفس الطلب المحفوظ'; }
+                finally { button.disabled = false; }
+            };
+            box.appendChild(button);
+        }
+        this.container.prepend(box);
     }
 
     /**
@@ -68,15 +99,12 @@ export class OrdersTab {
         }
 
         filtered.forEach(order => {
-            console.log('render new Order: ', order);
             const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${order.orderId}</td>
-                <td>${this.formatDate(order.createdAt)}</td>
-                <td>${this.translateStatus(order.status)}</td>
-                <td>${order.amount} 💵</td>
-                <td><button class="details-btn" data-id="${order.orderId}">عرض التفاصيل</button></td>
-            `;
+            for (const text of [order.orderId, this.formatDate(order.createdAt), this.translateStatus(order.status), order.legacy ? 'غير موثق' : `USD ${order.charge}`]) {
+                const cell = document.createElement('td'); cell.textContent = text ?? '-'; row.appendChild(cell);
+            }
+            const cell = document.createElement('td'), button = document.createElement('button');
+            button.className = 'details-btn'; button.dataset.id = order.orderId; button.textContent = 'عرض التفاصيل'; cell.appendChild(button); row.appendChild(cell);
             this.tbody.appendChild(row);
         });
 
@@ -110,17 +138,14 @@ export class OrdersTab {
         modal.classList.remove('exit');
         modalContent.classList.remove('exit');
         // تعبئة البيانات
-        modal.querySelector('.modal-body').innerHTML = `
-  <div class="modal-grid">
-    <div><span>رقم العملية:</span><strong>${order.orderId}</strong></div>
-    <div><span>الخدمة:</span><strong>${order.service}</strong></div>
-    <div><span>الكمية:</span><strong>${order.quantity}</strong></div>
-    <div><span>السعر الإجمالي:</span><strong>${order.amount} 💵</strong></div>
-    <div><span>ايدي اللاعب:</span><strong>${order.playerId}</strong></div>
-    <div><span>📌 الحالة:</span><strong class="status ${order.status}">${this.translateStatus(order.status)}</strong></div>
-    <div><span>📅 التاريخ:</span><strong>${this.formatDate(order.createdAt)}</strong></div>
-  </div>
-`;
+        const body = modal.querySelector('.modal-body'); body.replaceChildren();
+        for (const [label, value] of [['رقم العملية', order.orderId], ['الخدمة', order.service], ['الكمية', order.quantity], ['المبلغ USD', order.legacy ? 'غير موثق' : order.charge], ['الحالة', this.translateStatus(order.status)], ['التاريخ', this.formatDate(order.createdAt)]]) {
+            const line = document.createElement('p'); line.textContent = `${label}: ${value ?? '-'}`; body.appendChild(line);
+        }
+        const target = document.createElement('p'); target.textContent = order.legacy ? 'بيانات قديمة غير موثقة' : 'جاري تحميل بيانات التسليم'; body.appendChild(target);
+        if (!order.legacy) this.client.read(`/api/orders/${encodeURIComponent(order.orderId)}/fulfillment`).then(({ fulfillmentSnapshot: snapshot }) => {
+            target.textContent = snapshot ? `${snapshot.schema}${snapshot.network ? ` (${snapshot.network})` : ''}: ${snapshot.target[snapshot.schema]}` : 'لا توجد وجهة تسليم مطلوبة';
+        }).catch(() => { target.textContent = 'تعذر تحميل بيانات التسليم'; });
         // إظهار المودال
         setTimeout(() => modal.classList.add('show'), 10);
         // إغلاق بزر الإغلاق
@@ -182,8 +207,9 @@ export class OrdersTab {
     translateStatus(status) {
         switch (status) {
             case 'pending': return '⏳ قيد الانتظار';
-            case 'accepted': return '✅ تم القبول';
-            case 'rejected': return '❌ تم الرفض';
+            case 'completed': return '✅ تم التنفيذ';
+            case 'cancelled': return '↩️ ملغي — مسترد بالكامل';
+            case 'reconciliation_required': return 'طلب قديم — يتطلب مراجعة';
             default: return '❔ غير معروف';
         }
     }

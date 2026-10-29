@@ -59,6 +59,8 @@ jspm_packages/
 
 # ✅ ملفات القفل
 package-lock.json
+# Keep the independent root remediation baseline reproducible.
+!/package-lock.json
 yarn.lock
 
 # ✅ ملفات خاصة بـ MongoDB

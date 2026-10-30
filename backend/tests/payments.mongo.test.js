@@ -1,7 +1,11 @@
 'use strict';
 
-// Real HTTP/authentication, Multer, Sharp, Mongoose and owned replica-set transactions.
-// Only Cloudinary transport and the process-local application session store are isolated.
+// Unported Mongo payment-route regressions: real HTTP, Multer, Sharp, Mongoose
+// and owned replica-set transactions; Cloudinary transport is controlled.
+// Pin TEST-ONLY legacy auth/CSRF, not the current PostgreSQL middleware.
+// Current authentication and CSRF binding are tested in auth-http.pg.test.js.
+jest.mock('../middlewares/auth', () => jest.requireActual('./helpers/legacyMongoAuth'));
+jest.mock('../middlewares/csrfMiddleware', () => jest.requireActual('./helpers/legacyCsrf'));
 jest.mock('../utils/sessionStore', () => ({ activeSessions: new Map() }));
 jest.mock('../config/cloudinary', () => {
   const { Writable } = require('node:stream');
@@ -73,7 +77,7 @@ live('Payments: real HTTP and owned MongoDB replica-set integration', () => {
     });
     const app = express();
     app.use(express.json());
-    // Test-only Express session adapter; shared CSRF middleware itself is real and exercised.
+    // Legacy fixture session consumed only by the explicitly pinned TEST-ONLY CSRF adapter.
     app.use((req, res, next) => { req.session = { csrfToken: 'isolated-csrf' }; next(); });
     app.use('/api/payments', require('../routes/payments'));
     http = await new Promise(resolve => { const server = app.listen(0, '127.0.0.1', () => resolve(server)); });

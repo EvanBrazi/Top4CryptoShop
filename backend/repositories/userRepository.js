@@ -327,6 +327,7 @@ function createUserRepository({ poolProvider = getPool, financialScopeAuthority 
     ...authentication.methods,
     listUsers: input => require('./private/userListing').listUsers(poolProvider, safeUser, input, cursorSecret ?? process.env.CURSOR_SECRET),
     internal: Object.freeze({ forFinancialTransaction,
+      projectAuthenticatedUser: safeUser,
       authenticationSnapshot: authentication.snapshot,
     claimAuthentication: authentication.claim, claimPendingAuthentication: authentication.claimPending, consumeAuthentication: authentication.consume }) });
 }

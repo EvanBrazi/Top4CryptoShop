@@ -1,4 +1,8 @@
 'use strict';
+// Unported Mongo order-route regressions: explicitly pin TEST-ONLY legacy
+// authentication/CSRF. Current PostgreSQL auth is tested in auth-http.pg.test.js.
+jest.mock('../middlewares/auth', () => jest.requireActual('./helpers/legacyMongoAuth'));
+jest.mock('../middlewares/csrfMiddleware', () => jest.requireActual('./helpers/legacyCsrf'));
 jest.mock('../utils/sessionStore', () => ({ activeSessions: new Map() }));
 const fs = require('node:fs');
 const os = require('node:os');

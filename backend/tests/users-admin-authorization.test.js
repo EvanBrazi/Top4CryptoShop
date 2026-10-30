@@ -1,4 +1,8 @@
-/** Real shared auth/model; mocked MongoDB and upload storage; no network connections. */
+/** Unported users/admin route fixtures pin the legacy test-only auth adapter.
+ * Current shared authentication is verified separately through real HTTP/PostgreSQL.
+ * Real legacy model hooks; mocked MongoDB/upload storage; no network connections. */
+jest.mock('../middlewares/auth', () => jest.requireActual('./helpers/legacyMongoAuth'));
+jest.mock('../middlewares/csrfMiddleware', () => jest.requireActual('./helpers/legacyCsrf'));
 jest.mock('../utils/sessionStore', () => ({ activeSessions: new Map() }));
 jest.mock('../config/cloudinary', () => ({ uploader: { destroy: jest.fn().mockResolvedValue({ result: 'ok' }) } }));
 jest.mock('../middlewares/upload', () => ({

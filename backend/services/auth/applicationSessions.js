@@ -1,12 +1,12 @@
 'use strict';
 const A = require('./persistence');
-function createApplicationSessions({ poolProvider, express, verify, tokenDigest }) {
-  async function authenticate(input, bound = false) {
+function createApplicationSessions({ poolProvider, express, verify, tokenDigest, userRepository }) {
+  async function authenticate(input, bound = false, withUser = false) {
     A.fields(input, bound ? ['token', 'sessionId', 'expressSid', 'csrfToken'] : ['token', 'sessionId']); const c = verify(input.token);
     const values = [express.digest('application', input.sessionId), tokenDigest(input.token), c.userId, c.tokenVersion, c.iat, c.exp];
     if (bound) values.push(express.digest('express', input.expressSid));
     let row;
-    try { row = A.one(await poolProvider().query({ text: `SELECT u.id, u.role, u.account_status, u.token_version, a.expires_at${bound ? ", e.session_data->>'csrfToken' AS csrf" : ''}
+    try { row = A.one(await poolProvider().query({ text: `SELECT u.id, u.role, u.account_status, u.token_version, a.expires_at${withUser ? ', u.username, u.email, u.email_verified, u.phone, u.provider, u.theme, u.balance_cents, u.balance, u.avatar, u.two_fa_status, u.last_login, u.activated_at, u.row_version, u.created_at, u.updated_at' : ''}${bound ? ", e.session_data->>'csrfToken' AS csrf" : ''}
       FROM public.application_sessions a JOIN public.express_sessions e ON e.id = a.express_session_id AND e.user_id = a.user_id
       JOIN public.users u ON u.id = a.user_id
       WHERE a.session_digest = $1 AND a.token_digest = $2 AND a.user_id = $3::UUID AND a.token_version = $4::BIGINT
@@ -18,7 +18,8 @@ function createApplicationSessions({ poolProvider, express, verify, tokenDigest 
     if (!row) throw A.fail('AUTH_SESSION_INVALID', 401);
     if (bound && !require('./pendingState').equal(input.csrfToken, row.csrf)) throw A.fail('CSRF_INVALID', 403);
     const result = Object.freeze({ principal: Object.freeze({ userId: row.id, tokenVersion: row.token_version }),
-      role: row.role, accountStatus: row.account_status, expiresAt: row.expires_at.toISOString() });
+      role: row.role, accountStatus: row.account_status, expiresAt: row.expires_at.toISOString(),
+      ...(withUser ? { user: userRepository.internal.projectAuthenticatedUser(row) } : {}) });
     if (bound) require('./authenticatedRequests').register(result, [...values, input.csrfToken]);
     return result;
   }
@@ -36,7 +37,9 @@ function createApplicationSessions({ poolProvider, express, verify, tokenDigest 
       return Object.freeze({ revoked: true });
     });
   }
-  return { authenticate: input => authenticate(input), authenticateForExpressSession: input => authenticate(input, true), revokeAuthenticatedSession,
+  return { authenticate: input => authenticate(input), authenticateWithUser: input => authenticate(input, false, true),
+    authenticateForExpressSession: input => authenticate(input, true), revokeAuthenticatedSession,
+    ...require('./parentCsrf').createParentCsrf({ poolProvider, express }),
     ...require('./sessionMaintenance').createMaintenance({ poolProvider }) };
 }
 module.exports = { createApplicationSessions };

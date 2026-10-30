@@ -1,6 +1,10 @@
 'use strict';
-// Real HTTP, shared JWT/session/CSRF auth, Multer and Cloudinary v2 configuration.
-// Only database access and the external Cloudinary transport are isolated.
+// Unported Mongo users/avatar-route regressions: real HTTP, Multer and
+// Cloudinary v2 configuration; database I/O and Cloudinary transport isolated.
+// Pin TEST-ONLY legacy auth/CSRF. Current PostgreSQL authentication/session
+// binding is tested separately in auth-http.pg.test.js.
+jest.mock('../middlewares/auth', () => jest.requireActual('./helpers/legacyMongoAuth'));
+jest.mock('../middlewares/csrfMiddleware', () => jest.requireActual('./helpers/legacyCsrf'));
 jest.mock('../utils/sessionStore', () => ({ activeSessions: new Map() }));
 jest.mock('../config/cloudinary', () => {
   const { Writable } = require('node:stream');

@@ -7,7 +7,7 @@ function createIssuance({ poolProvider, userRepository, express, jwtSecret, toke
   // PRIVATE composition helper, never exported by the public session service.
   // Caller owns the account and parent locks and has verified all factors.
   async function issueForLockedParent(q, u, parent, parentDigest) {
-    if (Object.hasOwn(parent.session_data, PENDING)) throw A.fail('AUTH_CHALLENGE_INVALID', 401);
+    if (Object.hasOwn(parent.session_data, PENDING) || Object.hasOwn(parent.session_data, '__top4GoogleOAuthState')) throw A.fail('AUTH_CHALLENGE_INVALID', 401);
     const iat = Math.floor(Date.now() / 1000), exp = Math.min(iat + tokenTtlSeconds, Math.floor(parent.expires_at.getTime() / 1000));
     if (exp <= iat) throw A.fail('SESSION_NOT_ACTIVE');
     const token = jwt.sign({ userId: u.id, tokenVersion: u.token_version, role: u.role, iat, exp, jti: randomBytes(16).toString('hex') }, jwtSecret,

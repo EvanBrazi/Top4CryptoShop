@@ -83,6 +83,22 @@ function createPendingChallenges({ poolProvider, userRepository, express, lookup
       return Object.freeze({ authenticated: true, ...issued, expressSid });
     });
   }
-  return { beginPendingAuthentication, completePendingAuthentication };
+  async function describePendingAuthentication(input) {
+    A.fields(input, ['expressSid', 'challengeId']);
+    const hash = express.digest('express', input.expressSid), digest = express.digest('pending-2fa', input.challengeId);
+    let p;
+    try { p = A.one(await poolProvider().query({ text: `SELECT e.id,e.session_data,e.expires_at,statement_timestamp() AS now,
+      u.token_version AS owner_token_version,u.row_version AS owner_row_version
+      FROM public.express_sessions e JOIN public.users u ON u.id::TEXT=e.session_data->'${PENDING}'->>'userId'
+      WHERE e.sid_digest=$1 AND e.user_id IS NULL AND e.revoked_at IS NULL AND e.expires_at>statement_timestamp()
+      AND u.account_status='active' AND u.two_fa_status='enabled' AND u.two_fa_attempts<5`, values: [hash], query_timeout: 5000 })); }
+    catch (_) { throw A.fail('AUTH_UNAVAILABLE', 503); }
+    if (!p) throw A.fail('AUTH_CHALLENGE_INVALID', 401);
+    const state = codec.check(p.session_data[PENDING], hash, p.id, p.session_data.csrfToken);
+    if (!equal(digest, state.challengeDigest) || p.now.getTime() >= state.expiresAt || state.expiresAt > p.expires_at.getTime() ||
+        state.tokenVersion !== p.owner_token_version || state.rowVersion !== p.owner_row_version) throw A.fail('AUTH_CHALLENGE_INVALID', 401);
+    return Object.freeze({ expiresAt: new Date(state.expiresAt).toISOString() });
+  }
+  return { beginPendingAuthentication, completePendingAuthentication, describePendingAuthentication };
 }
 module.exports = { createPendingChallenges };

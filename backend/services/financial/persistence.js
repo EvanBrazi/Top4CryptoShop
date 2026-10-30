@@ -203,4 +203,5 @@ function createPersistence(query) {
   }
   return Object.freeze({ readReplay, findOwner, prelock, lockResource, insertJournal, insertOrder, decide, verifyBalance });
 }
-module.exports = { createPersistence };
+// Shared only with private read persistence; never expose a query/write facade.
+module.exports = { createPersistence, JOURNAL: Object.freeze(JOURNAL), ORDER: Object.freeze(ORDER), PAYMENT: Object.freeze(PAYMENT), projection, extract };

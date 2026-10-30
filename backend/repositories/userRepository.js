@@ -3,6 +3,7 @@
 const bcrypt = require('bcryptjs');
 const validator = require('validator');
 const { getPool } = require('../db/pg');
+const { createUserAuthentication } = require('./private/userAuthentication');
 const { MAX_CENTS, parseMoney, formatMoney } = require('../utils/money');
 const MAX_INTEGER = BigInt(MAX_CENTS);
 const PASSWORD_COST = 12;
@@ -135,7 +136,7 @@ function oneRow(result, absentCode) {
  * It must attest a live transaction, stable frozen context and exclusively owned
  * client, and revoke scopes after COMMIT/ROLLBACK. No coordinator is supplied here.
  */
-function createUserRepository({ poolProvider = getPool, financialScopeAuthority = null } = {}) {
+function createUserRepository({ poolProvider = getPool, financialScopeAuthority = null, googleIdentityAuthority = null, cursorSecret } = {}) {
   if (typeof poolProvider !== 'function') throw fail('USER_REPOSITORY_CONFIG_INVALID');
   if (financialScopeAuthority !== null && (!Object.isFrozen(financialScopeAuthority) ||
       typeof financialScopeAuthority.resolve !== 'function')) throw fail('USER_REPOSITORY_CONFIG_INVALID');
@@ -146,6 +147,7 @@ function createUserRepository({ poolProvider = getPool, financialScopeAuthority 
     try { return await pool.query(sql, parameters); }
     catch (error) { throw databaseError(error, writeKind); }
   }
+  const authentication = createUserAuthentication({ poolProvider, query, safeUser, username, email, phone, password, googleIdentityAuthority });
   async function findById(id) {
     const row = oneRow(await query(`SELECT ${SAFE_COLUMNS} FROM public.users WHERE id = $1::UUID`, [uuid(id)]));
     return row ? safeUser(row) : null;
@@ -178,15 +180,19 @@ function createUserRepository({ poolProvider = getPool, financialScopeAuthority 
       loginAttempts: row.login_attempts, accountStatus: row.account_status, role: row.role, lastLogin: user.lastLogin });
     if (!Number.isInteger(authState.loginAttempts) || authState.loginAttempts < 0 || authState.loginAttempts > 5) throw fail('USER_STATE_INVALID');
     // The hash stays in a closure, not in any returned/serializable object.
-    return Object.freeze({ user,
+    const handle = Object.freeze({ user,
       getAuthState: () => authState,
       async verifyPassword(candidate) {
-        if (typeof candidate !== 'string' || !candidate || Buffer.byteLength(candidate, 'utf8') > 72 || hash === null) return false;
-        try { return await bcrypt.compare(candidate, hash); }
-        catch (_) { throw fail('USER_PASSWORD_CHECK_FAILED'); }
+        return authentication.compare(handle, async () => {
+          if (typeof candidate !== 'string' || !candidate || Buffer.byteLength(candidate, 'utf8') > 72 || hash === null) return false;
+          try { return await bcrypt.compare(candidate, hash); }
+          catch (_) { throw fail('USER_PASSWORD_CHECK_FAILED'); }
+        });
       },
       toJSON: () => user
     });
+    authentication.register(handle, row);
+    return handle;
   }
   async function createUser(input) {
     fields(input, ['username', 'email', 'password', 'phone'], 'INVALID_USER_CREATE_FIELDS', ['username', 'email', 'password']);
@@ -318,7 +324,11 @@ function createUserRepository({ poolProvider = getPool, financialScopeAuthority 
   }
 
   return Object.freeze({ findById, findByEmail, findByUsername, findForAuth, createUser, updateProfile,
-    internal: Object.freeze({ forFinancialTransaction }) });
+    ...authentication.methods,
+    listUsers: input => require('./private/userListing').listUsers(poolProvider, safeUser, input, cursorSecret ?? process.env.CURSOR_SECRET),
+    internal: Object.freeze({ forFinancialTransaction,
+      authenticationSnapshot: authentication.snapshot,
+    claimAuthentication: authentication.claim, consumeAuthentication: authentication.consume }) });
 }
 
 // No authority is installed in this default instance. No route/server imports it.

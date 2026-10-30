@@ -49,11 +49,15 @@ const MIGRATIONS = [
   [
     '004_create_orders_table.sql',
     '0e5b70f44cd832bc6b671109bf4aeead465f0edff498da75bcd5ba0f24b1ed70'
-  ]
+  ],
+  ['005_create_auth_session_tables.sql', '2b14cb8e91faff6c53ce0f54f9f917b8b0678b070c9c3659a8c3b2b6e69f580c']
 ];
 
-// These are existing functions from migrations 001–004, not new schema objects.
+// Reset all five approved migrations without leaving dangling auth foreign keys.
 const DOMAIN_FUNCTIONS = [
+  'public.express_session_guard()',
+  'public.application_session_guard()',
+  'public.token_revocation_guard()',
   'public.users_metadata_guard()',
   'public.financial_append_only_guard()',
   'public.payment_immutable_guard()',
@@ -302,6 +306,9 @@ async function resetDomainTables() {
     // The administrative schema_migrations ledger is deliberately preserved.
     await client.query(`
       DROP TABLE
+        public.application_sessions,
+        public.token_revocations,
+        public.express_sessions,
         public.orders,
         public.payments,
         public.financial_operations,

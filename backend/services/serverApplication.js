@@ -9,13 +9,18 @@ const { verifyRuntime } = require('../db/verify-runtime');
 const { createAuthContext } = require('./auth/httpContext');
 const { createAuthRouter } = require('../routes/auth');
 const { createUsersRouter } = require('../routes/users');
+const { createOrdersRouter } = require('../routes/orders');
+const { createPaymentsRouter } = require('../routes/payments');
+const { createFinancialContext } = require('./financial/httpContext');
 const ORIGINS = ['https://top4cryptoshop.giize.com', 'https://top4cryptoshop.giize.com:10000',
   'http://localhost:10000', 'http://localhost:8081', 'http://192.168.43.108:8081',
   'exp://192.168.43.108:8081', 'http://localhost:19006', 'http://localhost:19000',
   'https://top4cryptoshop.onrender.com:10000'];
-function createApplication({ poolProvider = getPool, authOptions = {}, avatarOptions = {},
+function createApplication({ poolProvider = getPool, authOptions = {}, avatarOptions = {}, financialOptions = {},
   allowedOrigins = ORIGINS, trustProxy = false, staticFiles = true } = {}) {
   const context = createAuthContext({ ...authOptions, poolProvider });
+  const financial = createFinancialContext(context, { ...financialOptions, poolProvider,
+    cursorSecret: authOptions.cursorSecret ?? process.env.CURSOR_SECRET });
   const app = express(); app.disable('x-powered-by'); app.set('trust proxy', trustProxy);
   const server = http.createServer(app);
   let ready = false, starting = false;
@@ -40,14 +45,14 @@ function createApplication({ poolProvider = getPool, authOptions = {}, avatarOpt
     if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
     callback(Object.assign(new Error('CORS_FORBIDDEN'), { code: 'CORS_FORBIDDEN' }));
   }, credentials: true, methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-csrf-token', 'x-session-id', 'x-row-version'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-csrf-token', 'x-session-id', 'x-row-version', 'x-submission-id'],
   exposedHeaders: ['x-csrf-token'], maxAge: 86400 }));
   app.use(require('cookie-parser')());
   app.use('/api', require('express-rate-limit').rateLimit({ windowMs: 15 * 60 * 1000, limit: 10000,
     message: { success: false, code: 'RATE_LIMITED', error: 'RATE_LIMITED' } }));
-  // C2 TODO: PostgreSQL financial routes. DO NOT import routes/orders or payments.
-  app.use('/api/orders', unavailable);
-  app.use('/api/payments', unavailable);
+  // C2: reviewed sessions and PostgreSQL-only financial routes; no notifications.
+  app.use('/api/orders', context.sessionMiddleware, createOrdersRouter(context, financial));
+  app.use('/api/payments', context.sessionMiddleware, createPaymentsRouter(context, financial));
   // C3/C4 TODO: notifications and WebSocket initialization remain DISABLED.
   // C3/C4 TODO: backups and jobs/scheduler remain DISABLED (no Mongo imports).
   // C3/C4 TODO: routes/security and routes/icons remain DISABLED (no imports).

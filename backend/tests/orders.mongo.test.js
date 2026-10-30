@@ -43,7 +43,7 @@ live('Orders: real HTTP and owned MongoDB replica-set purchasing', () => {
     await Order.collection.createIndex({ orderId: 1 }, { name: 'orderId_1', unique: true });
     await service.initializeFinancialFoundation();
     await RevokedToken.createCollection();
-    router = require('../routes/orders');
+    router = require('./helpers/legacyOrdersRoutes');
     const app = express(); app.use(express.json({ limit: '8kb' }));
     app.use((req, res, next) => { req.session = { csrfToken: 'isolated-csrf' }; next(); });
     app.use('/api/orders', router); app.use('/api', require('../routes/catalog'));

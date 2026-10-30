@@ -79,7 +79,7 @@ live('Payments: real HTTP and owned MongoDB replica-set integration', () => {
     app.use(express.json());
     // Legacy fixture session consumed only by the explicitly pinned TEST-ONLY CSRF adapter.
     app.use((req, res, next) => { req.session = { csrfToken: 'isolated-csrf' }; next(); });
-    app.use('/api/payments', require('../routes/payments'));
+    app.use('/api/payments', require('./helpers/legacyPaymentsRoutes'));
     http = await new Promise(resolve => { const server = app.listen(0, '127.0.0.1', () => resolve(server)); });
     origin = `http://127.0.0.1:${http.address().port}/api/payments`;
   }, 60000);

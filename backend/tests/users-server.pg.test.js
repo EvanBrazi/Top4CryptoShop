@@ -82,7 +82,8 @@ afterAll(async () => { await db?.close(); });
 test('entry import is inert and current composition never imports disabled Mongo modules', () => {
   expect(runtime.server.listening).toBe(false);
   const files = Object.keys(require.cache);
-  for (const name of ['/models/User.js', '/routes/orders.js', '/routes/payments.js', '/routes/security.js', '/routes/icons.js', '/routes/admin.js', '/routes/cards.js', '/routes/dev.js', '/utils/notifications.js', '/jobs/scheduler.js', '/tests/helpers/legacyUsersRoutes.js', '/mongoose/']) expect(files.some(f => f.includes(name))).toBe(false);
+  for (const name of ['/models/', '/services/financialService.js', '/routes/security.js', '/routes/icons.js', '/routes/admin.js', '/routes/cards.js', '/routes/dev.js', '/utils/notifications.js', '/jobs/scheduler.js', '/tests/helpers/legacyUsersRoutes.js', '/tests/helpers/legacyOrdersRoutes.js', '/tests/helpers/legacyPaymentsRoutes.js', '/mongoose/']) expect(files.some(f => f.includes(name))).toBe(false);
+  for (const name of ['/routes/orders.js', '/routes/payments.js']) expect(files.some(f => f.endsWith(name))).toBe(true);
 });
 test('health is 503 before verification, 200 after it, without session writes', async () => {
   const unready = createApplication(options());
@@ -150,8 +151,14 @@ test('live health outage is sanitized and can recover without a session', async 
   try { fault = 'read'; const r = await request(healthy.app).get('/health').expect(503); expect(r.body).toEqual({ status: 'NOT_READY', ready: false }); fault = null; await request(healthy.app).get('/health').expect(200); }
   finally { await healthy.close(); }
 });
-test.each(['/api/orders', '/api/orders/purchase', '/api/payments', '/api/payments/submit', '/api/notifications', '/api/backups', '/api/security', '/api/icons', '/api/admin', '/api/cards', '/dev'])('temporary stub %s rejects without persistence or legacy imports', async url => {
-  for (const method of ['get', 'post', 'put', 'delete']) expect((await request(app)[method](url).send({ arbitrary: true }).expect(503)).body.code).toBe('FEATURE_UNAVAILABLE');
+test.each(['/api/orders', '/api/orders/purchase', '/api/payments', '/api/payments/submit', '/api/notifications', '/api/backups', '/api/security', '/api/icons', '/api/admin', '/api/cards', '/dev'])('financial mount or remaining disabled feature %s rejects without persistence or legacy imports', async url => {
+  for (const method of ['get', 'post', 'put', 'delete']) {
+    const financial = url.startsWith('/api/orders') || url.startsWith('/api/payments');
+    const legacyCreate = url === '/api/orders' && method === 'post';
+    const status = legacyCreate ? 410 : financial ? 401 : 503;
+    const code = legacyCreate ? 'LEGACY_ORDER_CREATION_DISABLED' : financial ? 'MISSING_CREDENTIALS' : 'FEATURE_UNAVAILABLE';
+    expect((await request(app)[method](url).send({ arbitrary: true }).expect(status)).body.code).toBe(code);
+  }
   expect((await db.pool.query('SELECT count(*) AS n FROM public.express_sessions')).rows[0].n).toBe('0'); await noFinancialChanges();
 });
 test.each(['reserve', 'restore'])('disabled %s is 410 for all methods without authentication or writes', async name => {

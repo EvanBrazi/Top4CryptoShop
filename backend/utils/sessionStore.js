@@ -1,41 +1,12 @@
-/**
- * @file sessionStore.js
- * @description إدارة الجلسات النشطة باستخدام ذاكرة مؤقتة (Map)
- * @version 2.0.0
- * @author Evan Brazi
- */
+'use strict';
 
-const activeSessions = new Map(); // customSessionId => { userId, role, expiresAt }
+// TODO C3: Retire legacy in-memory session callers in favor of services/sessionStore.js.
+// This disabled store holds no sessions and registers no expiry timer.
+const UNAVAILABLE = Object.freeze({ unavailable: true, reason: 'POSTGRES_MIGRATION_PENDING' });
 
-/**
- * ✅ إنشاء جلسة جديدة
- * @param {string} sessionId - معرف الجلسة
- * @param {string} userId - معرف المستخدم
- * @param {string} role - دور المستخدم
- * @param {number} durationMs - مدة الجلسة بالميلي ثانية (افتراضي: ساعة واحدة)
- */
-function createSession(sessionId, userId, role, durationMs = 60 * 60 * 1000) {
-  activeSessions.set(sessionId, {
-    userId,
-    role,
-    expiresAt: Date.now() + durationMs
-  });
-  console.log('✅ جلسة جديدة مسجلة:', sessionId);
+function createSession() {
+  return UNAVAILABLE;
 }
 
-/**
- * ✅ تنظيف الجلسات المنتهية كل دقيقة
- */
-setInterval(() => {
-  const now = Date.now();
-  for (const [sessionId, session] of activeSessions.entries()) {
-    if (session.expiresAt && session.expiresAt < now) {
-      activeSessions.delete(sessionId);
-    }
-  }
-}, 60000); // كل دقيقة
-
-module.exports = {
-  activeSessions,
-  createSession
-};
+// Compatibility marker only, not a Map or an authentication authority.
+module.exports = { activeSessions: UNAVAILABLE, createSession };

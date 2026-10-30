@@ -1,26 +1,9 @@
-/**
- * ملف routes/icons.js
- * إصدار: 2.0
- * وصف: مسارات إدارة الأيقونات (معدل لاستخدام الأيقونات المحلية فقط)
- */
+'use strict';
 
-const express = require('express');
-const router = express.Router();
-const Icon = require('../models/Icon');
-const { verifyToken } = require('../middlewares/auth');
+// TODO C3: Port icon persistence to PostgreSQL before enabling these routes.
+const router = require('express').Router();
+const UNAVAILABLE = Object.freeze({ unavailable: true, reason: 'POSTGRES_MIGRATION_PENDING' });
 
-
-router.get('/', async (req, res) => {
-  const icons = await Icon.find();
-  res.json(icons);
-});
-
-router.put('/:id/retry', verifyToken, async (req, res) => {
-  const icon = await Icon.findById(req.params.id);
-  icon.status = 'pending';
-  icon.attempts += 1;
-  await icon.save();
-  res.json({ message: 'تمت إعادة المحاولة', icon });
-});
+router.use((req, res) => res.status(503).json(UNAVAILABLE));
 
 module.exports = router;

@@ -41,7 +41,9 @@ const User = require('../models/User');
 const RevokedToken = require('../models/RevokedToken');
 const cloudinary = require('../config/cloudinary');
 const { activeSessions } = require('../utils/sessionStore');
-const users = require('../routes/users');
+// Historical upload regressions retain the pre-C1 route fixture; current
+// PostgreSQL persistence/authorization is covered by users-server.pg.test.js.
+const users = require('./helpers/legacyUsersRoutes');
 const OWNER = 'abcdef0123456789abcdef01', OTHER = 'abcdef0123456789abcdef02', ADMIN = 'abcdef0123456789abcdef03';
 const secretBefore = process.env.JWT_SECRET;
 let records, server, origin, image;

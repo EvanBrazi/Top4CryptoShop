@@ -7,10 +7,10 @@ function createAuthContext({ poolProvider = getPool, lookupSecret = process.env.
   secureCookies = process.env.NODE_ENV === 'production', tokenTtlSeconds = 3600,
   challengeTtlSeconds = 300, googleStateTtlSeconds = 300,
   googleConfig = { clientId: process.env.GOOGLE_CLIENT_ID, clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackUrl: process.env.GOOGLE_CALLBACK_URL }, googleTransport } = {}) {
+    callbackUrl: process.env.GOOGLE_CALLBACK_URL }, googleTransport, cursorSecret = process.env.CURSOR_SECRET } = {}) {
   const google = require('./googleOAuth').createGoogleOAuth({ poolProvider, lookupSecret, config: googleConfig,
     transport: googleTransport, stateTtlSeconds: googleStateTtlSeconds });
-  const userRepository = require('../../repositories/userRepository').createUserRepository({ poolProvider, googleIdentityAuthority: google.identityAuthority });
+  const userRepository = require('../../repositories/userRepository').createUserRepository({ poolProvider, googleIdentityAuthority: google.identityAuthority, cursorSecret });
   const sessionStore = require('../sessionStore').createSessionStore({ poolProvider, userRepository, lookupSecret, jwtSecret, tokenTtlSeconds, challengeTtlSeconds });
   const adapter = require('./httpSessionAdapter').createHttpSessionAdapter({ sessionStore, sessionSecret, secureCookies, maxAge: tokenTtlSeconds * 1000 });
   const auth = require('../../middlewares/auth').createAuthMiddleware({ sessionStore, adapter });

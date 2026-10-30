@@ -25,7 +25,8 @@ const jwt = require('../node_modules/jsonwebtoken');
 const { activeSessions } = require('../utils/sessionStore');
 const cloudinary = require('../config/cloudinary');
 const upload = require('../middlewares/upload');
-const usersRouter = require('../routes/users');
+// Historical pre-C1 contracts only; current routes use users-server.pg.test.js.
+const usersRouter = require('./helpers/legacyUsersRoutes');
 const adminRouter = require('../routes/admin');
 const avatarUpload = upload.single.mock.results[0].value;
 

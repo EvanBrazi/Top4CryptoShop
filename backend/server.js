@@ -1,299 +1,32 @@
-/**
- * Top4CryptoShop\backend\server.js
- * ملف التشغيل الرئيسي لتطبيق Top4CryptoShop
- *
- * @author: Evan Brazi
- * @version: 2.3.0
- * @lastModified: 2025-08-28
- * @description:
- * - إعدادات الخادم، الأمان، الجلسات، WebSocket، المسارات، والملفات الثابتة
- */
+'use strict';
+// C1 PostgreSQL-only entry. Importing this file never connects or listens.
+// The extracted composition owns reviewed sessions, read-only bootstrap
+// verification, financial stubs, and explicit disabled-feature TODOs.
+const { createApplication } = require('./services/serverApplication');
+const { closePool } = require('./db/pg');
 
-require('dotenv').config();
-
-// =======================
-// 📚 استيراد المكتبات الأساسية
-// =======================
-const express = require('express');
-const mongoose = require('mongoose');
-const path = require('path');
-const fs = require('fs');
-const helmet = require('helmet');
-const cors = require('cors');
-const hpp = require('hpp');
-const cookieParser = require('cookie-parser');
-const session = require('express-session');
-const passport = require('passport');
-require('./config/googleAuth'); // إعداد الاستراتيجية
-const MongoStore = require('connect-mongo');
-const compression = require('compression');
-const morgan = require('morgan');
-const rateLimit = require('express-rate-limit');
-const favicon = require('serve-favicon');
-const http = require('http');
-const { initNotifications } = require('./utils/notifications');
-
-// =======================
-// 🧠 الوظائف الداخلية
-// =======================
-const securityHeaders = require('./middleware/security');
-const { WebSocketServer } = require('ws');
-const { verifyToken, checkAdmin } = require('./middlewares/auth');
-
-// =======================
-// 🚀 تهيئة التطبيق والخادم
-// =======================
-const app = express();
-const server = http.createServer(app);
-//const { broadcast, sendToAdmins } = setupWebSocket(server);
-const wss = new WebSocketServer({ server });
-initNotifications(wss); // ✅ تهيئة الإشعارات
-
-// ✅ middleware لتتبع الجلسات للتطبيقات
-app.use((req, res, next) => {
-  console.log(`📡 طلب وارد: ${req.method} ${req.url}`);
-  res.setHeader('Access-Control-Allow-Headers', 'x-csrf-token, x-session-id, Content-Type, Authorization');
-  res.setHeader('Access-Control-Expose-Headers', 'x-csrf-token');
-  // للتطبيقات التي لا تدعم الكوكيز، استخدام الهيدرات
-  const sessionIdFromHeader = req.headers['x-session-id'];
-
-  if (sessionIdFromHeader && !req.sessionID) {
-    // محاولة استعادة الجلسة من الهيدر
-    req.sessionID = sessionIdFromHeader;
+if (require.main === module) {
+  require('dotenv').config();
+  let runtime, shutdown;
+  function stop(exitCode = 0) {
+    shutdown ||= (async () => {
+      process.exitCode = exitCode;
+      try { await runtime?.close(); }
+      catch (_) { console.error('SERVER_SHUTDOWN_UNAVAILABLE'); process.exitCode = 1; }
+      try { await closePool(); }
+      catch (_) { console.error('PG_SHUTDOWN_UNAVAILABLE'); process.exitCode = 1; }
+    })();
+    return shutdown;
   }
-  next();
-});
-
-// =======================
-// 🔗 الاتصال بقاعدة البيانات
-// =======================
-mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/Top4CryptoShop')
-  .then(async () => {
-    console.log('✅ تم الاتصال بقاعدة البيانات');
-    try {
-      await require('./services/financialService').initializeFinancialFoundation();
-      console.log('Financial transaction foundation is ready');
-    } catch (_) {
-      // Unsupported topology/index/probe failures keep financial writes at 503; no fallback.
-      console.error('Financial transaction foundation unavailable; financial writes remain disabled');
-    }
-  })
-  .catch(err => {
-    console.error('❌ فشل الاتصال بقاعدة البيانات:', err);
-    process.exit(1);
+  (async () => {
+    runtime = createApplication();
+    await runtime.start(); // Connectivity, ledger and catalog verification BEFORE listen.
+    console.log('PostgreSQL API is ready');
+    for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => { void stop(); });
+  })().catch(async error => {
+    const known = ['PG_BOOTSTRAP_LEDGER_MISMATCH', 'PG_BOOTSTRAP_SCHEMA_MISMATCH', 'PG_BOOTSTRAP_TLS_UNVERIFIED'];
+    console.error(known.includes(error?.code) ? error.code : 'SERVER_BOOTSTRAP_UNAVAILABLE');
+    await stop(1); // Never log raw errors, connection targets, SQL or credentials.
   });
-
-// =======================
-// 🛡️ إعدادات الأمان
-// =======================
-app.use(securityHeaders); // ✅ تفعيل إعدادات الحماية من ملف middleware/security.js
-app.set('trust proxy', 1);
-
-// =======================
-// 🍪 إعداد الجلسات
-// =======================
-const sessionStore = MongoStore.create({
-  client: mongoose.connection.getClient(),
-  dbName: 'Top4CryptoShop',
-  collectionName: 'sessions',
-  ttl: 24 * 60 * 60,
-  autoRemove: 'native'
-});
-
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'dev-secret-key',
-  store: sessionStore,
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: true,
-    sameSite: 'lax',
-    maxAge: 86400000
-  },
-  name: 'sessionId',
-  // ✅ إضافة هذه الإعدادات لدعم الجوال
-  genid: function (req) {
-    // استخدام معرف جلسة مخصص للتطبيقات
-    return require('crypto').randomBytes(16).toString('hex');
-  }
-}));
-
-// =======================
-// 🚦 تحديد معدل الطلبات
-// =======================
-app.use(rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10000,
-  message: { error: 'تم تجاوز الحد المسموح من الطلبات' }
-}));
-
-// =======================
-// 🔄 وسائط تحليل الطلبات
-// =======================
-app.use(express.json({ limit: '2mb' }));
-app.use(express.urlencoded({ extended: true, limit: '2mb' }));
-app.use(cookieParser());
-app.use(hpp());
-app.use(compression());
-app.use(morgan('dev'));
-
-// =======================
-// 🌐 إعداد CORS
-// =======================
-// في backend/server.js - تحديث allowedOrigins
-const allowedOrigins = [
-  'https://top4cryptoshop.giize.com',        // النطاق الرئيسي (بدون port)
-  'https://top4cryptoshop.giize.com:10000', // النطاق مع port
-  'http://localhost:10000',
-  'http://localhost:8081',
-  'http://192.168.43.108:8081',
-  'exp://192.168.43.108:8081',
-  'http://localhost:19006',
-  'http://localhost:19000',
-  'https://top4cryptoshop.onrender.com:10000'     // إذا كان لديك نطاق render أيضًا
-];
-
-app.use(cors({
-  origin: function (origin, callback) {
-    // السماح لطلبات بدون origin (مثل mobile apps أو curl)
-    if (!origin) return callback(null, true);
-
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      console.log('CORS Blocked Origin:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-csrf-token', 'x-session-id', 'credentials'],
-  credentials: true,
-  maxAge: 86400
-}));
-
-require('./jobs/scheduler');
-// =======================
-// 📁 الملفات الثابتة
-// =======================
-// Block before either static root. No legacy files are migrated/deleted here.
-app.use('/images/payments', (req, res) => res.set('Cache-Control', 'no-store').status(410).json({ code: 'LEGACY_RECEIPT_UNAVAILABLE' }));
-app.use(express.static(path.join(__dirname, 'public')));
-const staticPath = path.join(__dirname, '../frontend/public');
-if (!fs.existsSync(staticPath)) fs.mkdirSync(staticPath, { recursive: true });
-
-app.use(favicon(path.join(staticPath, 'assets/images/favicon.ico')));
-app.use(express.static(staticPath, {
-  maxAge: '1d',
-  setHeaders: res => {
-    res.set('Access-Control-Allow-Origin', '*');
-    res.set('Cache-Control', 'public, max-age=86400');
-  }
-}));
-
-// =======================
-// 🔀 المسارات الديناميكية
-// =======================
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/admin', require('./routes/admin'));
-app.use('/api/users', require('./routes/users'));
-app.use('/api/icons', require('./routes/icons'));
-app.use('/api/cards', require('./routes/cards'));
-app.use('/api/orders', require('./routes/orders'));
-app.use('/api/payments', require('./routes/payments')); // ✅ يدعم رفع الصور + WebSocket
-app.use('/api/security', require('./routes/security')); // ← الآن المسارات تبدأ بـ /api/security
-app.use('/dev', require('./routes/dev'));
-
-// =======================
-// 📦 مسارات API إضافية
-// =======================
-// Purchasable catalogs use the same validated, isolated publication as purchasing.
-require('./services/catalogService').ensureLoaded();
-app.use('/api', require('./routes/catalog'));
-// essential.json is application configuration, never ingested by the purchase catalog.
-app.get('/api/essential', (req, res) => {
-  fs.readFile(path.join(__dirname, 'data/essential.json'), 'utf8', (err, data) => {
-    if (err) return res.status(503).json({ error: 'Configuration unavailable' });
-    try { res.json(JSON.parse(data)); }
-    catch (_) { res.status(503).json({ error: 'Configuration unavailable' }); }
-  });
-});
-
-app.post('/api/compare-token', (req, res) => {
-  const clientToken = req.body.clientToken;
-  const cookieToken = req.cookies.session_token;
-
-  const match = clientToken && cookieToken && clientToken === cookieToken;
-
-  res.json({ match });
-});
-
-// =======================
-// 🧠 منطق WebSocket
-// =======================
-// Defensive fallback: the users router already disables this route. Never broadcast payment data.
-app.put('/api/users/:id/balance', (req, res) => {
-  res.status(503).json({ code: 'FINANCIAL_UNAVAILABLE', error: 'Balance adjustments remain disabled' });
-});
-
-// =======================
-// 🔐 إعدادات المصادقة باستخدام Google OAuth 2.0
-// =======================
-app.use(passport.initialize());
-app.use(passport.session());
-
-// =======================
-// 📄 صفحات الواجهة
-// =======================
-const servePage = page => (req, res) => {
-  res.sendFile(path.join(staticPath, `${page}.html`), err => {
-    if (err) res.status(404).send('الصفحة غير موجودة');
-  });
-};
-
-app.get('/', servePage('dashboard'));
-app.get('/dashboard', servePage('dashboard'));
-app.get('/register', servePage('register'));
-app.get('/login', servePage('login'));
-// ✅ نقطة تسجيل الخروج
-//app.get('/logout', servePage('logout'));
-
-app.get('/homepage', (req, res) => {
-  if (!req.session?.user || req.session.user.role !== 'admin') {
-    return res.redirect('/login');
-  }
-  res.sendFile(path.join(staticPath, 'homepage.html'));
-});
-
-app.get('/admin', verifyToken, checkAdmin, (req, res) => {
-  res.sendFile(path.join(__dirname, 'protectedViews', 'admin.html'));
-});
-
-// =======================
-// ❤️ نقطة فحص الصحة
-// =======================
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'UP',
-    db: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-    memory: process.memoryUsage(),
-    uptime: process.uptime(),
-    timestamp: new Date().toISOString()
-  });
-});
-
-// =======================
-// ❌ معالجة الأخطاء
-// =======================
-app.use((err, req, res, next) => {
-  console.error('❌ خطأ في الخادم:', err.stack);
-  res.status(500).json({ error: 'حدث خطأ في الخادم' });
-});
-
-// =======================
-// 🚀 تشغيل الخادم
-// =======================
-const PORT = process.env.PORT || 10000;
-server.listen(PORT, () => {
-  console.log(`🚀 Server + WebSocket يعمل على http://localhost:${PORT}`);
-});
+}
+module.exports = { createApplication };

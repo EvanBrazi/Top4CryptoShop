@@ -1,5 +1,7 @@
 # C3.2 coverage ledger — C3.2a deletion checkpoint
 
+**Checkpoint history:** the C3.2a summary, source rows, destination status and verification below are preserved as approved historical accounting. Later completion records at the end supersede the applicable planned/not-implemented statuses without erasing source obligations. See **C3.2b1 — avatar completion** for the avatar conversion.
+
 ## Scope, authority and counting
 
 Source checkpoint: `7439b8d` (C3.1, 690 passing PostgreSQL cases). This pass changes only this ledger and unreferenced retired test files/helpers. No runtime, migration, package, PG suite or remaining Mongo-dependent test is edited.
@@ -1365,3 +1367,70 @@ Additional expected references to C3.1-deleted models/service or removed Mongoos
 | `helpers/legacyUsersRoutes.js` | L11 `models/User` |
 
 `financial-http.pg.test.js:140` and `users-server.pg.test.js:85` contain negative `require.cache` path assertions, **not imports**. Ledger/source-name references and the historical documentation mention are not executable importers. All of these files remain untouched. C3.2b has not begun.
+
+## C3.2b1 — avatar completion
+
+Source checkpoint: `09b8142` (approved C3.2a). This section supersedes the avatar-specific pending status of **D118–D129** and the old avatar importer findings above; all other C3.2a accounting remains historical and unchanged. C3.2b2 has not begun.
+
+### Implemented allocation
+
+`backend/tests/avatar-upload.pg.test.js` contains **45 expanded Jest cases across 15 registrations**, with the approved exact split:
+
+| Group | Cases | Registration/source lines |
+|---|---:|---|
+| Success/MIME policy | 7 | L205–218: six allowed MIME cases plus a real large-image provider transformation |
+| Auth/ownership/CSRF/CAS | 9 | L223–241: anonymous, ordinary/admin cross-user, missing/wrong CSRF, missing/noncanonical/stale CAS, invalid UUID |
+| Invalid multipart/MIME | 11 | L247–269: three denied MIME cases, seven invalid multipart cases, malformed boundary |
+| Provider failures/evidence | 11 | L274–292: four transport failures and seven exact legacy evidence contradictions |
+| Cleanup/races/timeout/unknown outcome | 7 | L297–404: duplicate callbacks, known rollback, changed authority, CAS race, interruption, timeout, unknown COMMIT |
+| **Total** | **45** | **No skipped or focused tests** |
+
+Line numbers refer to the new suite. Exact title templates and variants below provide the authoritative destinations; group ranges are navigation aids.
+
+### Complete avatar obligation closure
+
+All **37 original avatar obligations (AV-001–AV-037)** are preserved. The original 36 pending replacement obligations now have real-PG implementation destinations; AV-001 also retains its existing users-server coverage. The historical 524-row inventory is not enlarged by assertion-loop iterations or by new regressions.
+
+| Historical source IDs | Exact destination in `avatar-upload.pg.test.js` | Assertion/evidence preserved |
+|---|---|---|
+| AV-001 | L206 `accepted avatar MIME policy persists through PostgreSQL CAS: %s` — `image/png`; L214 `provider JPEG transformation limits a genuine large image without changing the uploaded bytes` | Exact upload options/formats, original bytes, server-generated owned UUID, safe HTTPS URL, complete PG account snapshot/CAS, unchanged money and non-owner accounts, no deletion, continued authentication |
+| AV-002–AV-006 / D118 | L206 `accepted avatar MIME policy persists through PostgreSQL CAS: %s` — JPEG, WebP, BMP, x-ms-bmp, TIFF advertised MIME variants | All five original allowed MIME variants, plus PNG; real multipart parsing and provider-side JPEG processing |
+| AV-007–AV-010 / D119 | L234 `avatar authorization failure prevents provider and PostgreSQL writes: %p` — anonymous, ordinary cross-user, administrator cross-user, missing parent CSRF | No upload/cleanup call, identical entire account and persisted session-graph snapshots; additional wrong-CSRF/CAS/UUID cases are independently asserted |
+| AV-011–AV-013 / D120 | L248 `unsupported avatar MIME rejects before provider or persistence: %s` — SVG, GIF, octet-stream | Fixed 400 INVALID_AVATAR and no provider or persistence effects |
+| AV-014–AV-020 / D121 | L256 `invalid avatar multipart prevents provider and persistence: %p` — field after/before file, second file, wrong file field, 5 MiB+1 byte file, empty file, missing file | Every original multipart variant, real Multer limits, no provider calls or account effects; symbolic byte labels resolve to actual Buffers in the test |
+| AV-021 / D122 | L263 `malformed avatar boundary creates no asset or persistence` | Actual malformed wire boundary, fixed rejection and no upload/write |
+| AV-022–AV-025 / D123 | L275 `avatar provider failure is sanitized and cleans only owned ID: %s` — throw, callback-error, stream-error, sync-error | Real Writable transport fault paths, fixed error body without raw secrets, exact owned cleanup options; synchronous error sends zero bytes and destroys the stream |
+| AV-026–AV-032 / D124 | L287 `contradictory avatar provider evidence cannot persist or delete foreign assets: %p` — foreign ID, wrong delivery type/resource/format, NaN bytes, attacker URL, foreign-cloud URL | Exact original seven contradictions, complete unchanged-account snapshots, cleanup only of the generated owned ID, never the foreign returned ID |
+| AV-033 / D125 | L297 `duplicate provider success cannot delete or persist an accepted avatar twice` | Two immediate callbacks plus a third confirmation after committed persistence: one real avatar UPDATE/version increment, no deletion or later account change |
+| AV-034 / D126 | L305 `known avatar rollback cleans only returned owned asset` | Real UPDATE followed by PostgreSQL-raised 23514 and confirmed ROLLBACK; cleanup attempt occurs afterward, on the owned ID only. Cleanup transport failure remains best effort and sanitized; full account and session snapshots remain unchanged |
+| AV-035 / D127 | L319 `token-version change during avatar upload prevents persistence` | Independently exercise token-version change and account deactivation while the provider holds its reply; fresh PG authority rejects both before avatar DML, preserves the newer account, cleans owned upload and rejects old credentials |
+| AV-036 / D128 | L349 `avatar interruption and late provider confirmation clean only owned ID` | Actual HTTP fetch abortion, destroyed provider stream, one initial and one late-confirmation cleanup of the same owned ID, no avatar DML or account change |
+| AV-037 / D129 | L364 `avatar provider timeout is bounded and does not persist` | Assert the middleware schedules its fixed 30,000 ms deadline; accelerate only that timer to 150 ms. PG/session/HTTP timers remain real. Fixed 504, destroyed stream, owned cleanup including late callback, no DML/account change |
+
+The extra eight cases relative to the 37 original cases are the large-image transform, five extra guard cases, post-upload CAS race, and unknown actual COMMIT. Their addition follows the approved **45-case** allocation; nothing was dropped to meet the budget. Account deactivation is an additional independently asserted sequence within the token-version case, not an extra Jest case.
+
+Additional exact destinations:
+
+- L338 `CAS change during upload preserves newer profile and rejects the owned avatar`: newer committed theme/version wins; no stale avatar write; owned upload is cleaned; fresh credentials remain usable.
+- L383 `unknown actual avatar COMMIT retains the possibly accepted asset without replacement writes`: the wrapper performs a real COMMIT then loses its acknowledgement; fixed AUTH_OUTCOME_UNKNOWN, broken-client release, one committed avatar/version increment, no asset deletion, no replacement upload/write, read-only HTTP recovery.
+
+### Implementation boundary and clarified contracts
+
+- Real `createApplication` initialization/listening, current HTTP CSRF bootstrap/login, UUIDs, canonical decimal-string `x-row-version`, real PostgreSQL repositories and parent/child sessions. Fault wrappers forward genuine PG results and never disable guards or manufacture rows.
+- Only Cloudinary external upload/cleanup transport is controlled (`upload_stream` and `destroy` spies). Real Cloudinary SDK configuration, real Writable streams, multipart/Multer and Sharp are used; no repository/session/auth/Multer/Sharp mock or legacy fixture.
+- **Sharp clarification:** the unchanged avatar runtime streams source bytes to Cloudinary and requests JPEG/800px transformation; it does not contain server-side Sharp decoding. Real Sharp creates genuine fixtures and performs the controlled provider transformation. These tests do not claim application-side Sharp processing or a live Cloudinary-network integration.
+- The allowed MIME policy remains advertised-MIME allowlisting, not newly invented content sniffing. A genuine PNG under each allowed advertised MIME preserves the exact legacy policy. Original image bytes and transformed JPEG bytes are asserted separately, including no enlargement and a genuine 1600×1200 to 800×600 transformation.
+- Legacy persistence failure/authority-change statuses are translated to the current fixed PG contracts: known rollback is 503 AUTH_UNAVAILABLE, changed locked authority is 403 AUTH_FORBIDDEN, and unknown COMMIT is 503 AUTH_OUTCOME_UNKNOWN. Financial and owned-asset invariants are strengthened, not weakened.
+
+### C3.2b1 verification
+
+- Initial new-suite run: **45/45 passing, one suite, 0 snapshots, 13.181 s** against disposable verified-TLS PG18; all five migrations applied.
+- Final new-suite run, including post-COMMIT duplicate callback and rollback-before-cleanup assertions: **45/45 passing, one suite, 0 snapshots, 12.413 s** — `bash backend/tests/run-disposable-pg.sh backend/tests/avatar-upload.pg.test.js`.
+- Deleted `backend/tests/avatar-upload.test.js` **only after the final replacement suite passed**. No remaining importers/references outside the historical ledger were found for that deleted test.
+- Retain all three legacy helpers: the only remaining executable consumers are unchanged `users-admin-authorization.test.js:4` (`legacyMongoAuth`), `:5` (`legacyCsrf`), and `:29` (`legacyUsersRoutes`). Negative PG `require.cache` assertions and ledger references are not importers. C3.2b2 will remove these consumers; no helper is deleted prematurely.
+- Static inventory independently verifies **45 cases / 15 registrations / exact 7,9,11,11,7 split**, with no unresolved tables or skipped/focused tests.
+- Final full-PG verification after legacy deletion: **PASS — 8/8 suites, 735/735 tests (690 existing + 45 avatar), 0 snapshots, 117.383 s** — `bash backend/tests/run-disposable-pg.sh backend/tests/*.pg.test.js`. All five migrations applied to the disposable verified-TLS PG18 database; no skips or Mongo fallback.
+- Protected-file checks: **PASS** — exactly the new avatar PG suite, old avatar suite deletion, and this ledger update. Every other tracked file matches HEAD, including users-admin, all existing PG suites, all retained helpers, runtime, packages and migrations; no staged changes. `git diff --check` passes. All 524 historical source rows remain byte-for-byte unchanged and all new exact destination titles/lines resolve.
+- Final new-suite SHA256: `dfc1a92eb41b355694b7aa48de4c4d4225dc1cbd9ea1a5947250ac95f4206f9e`.
+- Cumulative obligation status: **127 existing PG / 15 existing non-PG / 280 pending new / 41 changed disabled / 61 retired = 524**. Only the 36 formerly pending avatar obligations move to existing PG; AV-001 was already covered. The approved C3.2a summary above remains its historical checkpoint, not an assertion that completed avatar replacements are still pending.
+- No runtime, package, migration, existing PG suite, users-admin, financial, payment, Nodemailer or disabled-feature code is changed. C3.2b2 requires separate approval.

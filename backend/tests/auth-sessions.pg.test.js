@@ -133,7 +133,7 @@ test('session fixation is rejected: issuance requires fresh unbound Express SID'
 });
 test('failed comparison and stale row-version proofs cannot issue', async () => {
   const p=await anonymous(), handle=await proof(H.OWNER,'wrong'); await expect(sessions.issueAuthenticatedSession({authenticationProof:handle,expressSid:p.sid})).rejects.toMatchObject({code:'AUTH_PROOF_REQUIRED'});
-  const good=await proof(); await db.pool.query("UPDATE public.users SET theme='dark' WHERE id=$1::UUID",[H.OWNER]);
+  const good=await proof(); await db.pool.query("UPDATE public.users SET theme=1 WHERE id=$1::UUID",[H.OWNER]);
   await expect(sessions.issueAuthenticatedSession({authenticationProof:good,expressSid:p.sid})).rejects.toMatchObject({code:'USER_VERSION_CONFLICT'});
 });
 test.each(['userId','tokenVersion','admin'])('body-supplied %s cannot influence issuance', async field => {

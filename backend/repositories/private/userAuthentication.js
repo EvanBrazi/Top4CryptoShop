@@ -14,6 +14,7 @@ function createUserAuthentication(dependencies) {
     return Object.freeze({ userId: r.userId, tokenVersion: r.tokenVersion, rowVersion: r.rowVersion, twoFactorVerified: r.totpVerified === true });
   }
   function claim(handle) { const value = snapshot(handle); credentials.get(handle).busy = true; return value; }
+  function claimPending(handle) { const value = claim(handle); return Object.freeze({ ...value, expiresAt: credentials.get(handle).expiresAt }); }
   function consume(handle) { const r = credentials.get(handle); if (r) { r.consumed = true; r.busy = false; } }
   function register(handle, row) {
     credentials.set(handle, { kind: 'credential', userId: row.id, tokenVersion: row.token_version, rowVersion: row.row_version,
@@ -62,7 +63,7 @@ function createUserAuthentication(dependencies) {
       });
     } finally { r.busy = false; r.consumed = true; }
   }
-  return { register, compare, snapshot, claim, consume, methods: {
+  return { register, compare, snapshot, claim, claimPending, consume, methods: {
     findAuthStateById, findForGoogleAuth, incrementLoginAttempts: x => bookkeeping(x, 'failure'), resetLoginAttempts: x => bookkeeping(x, 'reset'), updateLastLogin: x => bookkeeping(x, 'last'),
     ...require('./userSecurityMutations').createMutations(dependencies),
     ...require('./userTwoFactor').createTwoFactor({ ...dependencies, record, factors })

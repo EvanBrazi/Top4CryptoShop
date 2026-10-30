@@ -41,7 +41,7 @@ async function revokeGraph(q, userId, reason, parentId = null) {
     WHERE user_id = $1::UUID AND revoked_at IS NULL AND ($3::UUID IS NULL OR express_session_id = $3::UUID)`, [userId, reason, parentId]);
 }
 // Confirmed rollback is the prerequisite for retry. Unknown COMMIT never retries.
-async function transaction(poolProvider, work, { readOnlySnapshot = false } = {}) {
+async function transaction(poolProvider, work, { readOnlySnapshot = false, onRollbackConfirmed = null } = {}) {
   const deadline = Date.now() + 30000;
   for (let attempt = 0; attempt < 3; attempt++) {
     let client, begun = false, broken = false, committing = false, confirmed = false, rejected = false, busy = false;
@@ -92,6 +92,8 @@ async function transaction(poolProvider, work, { readOnlySnapshot = false } = {}
       if (rolledBack && ['40001', '40P01'].includes(e.databaseCode || e.code) && attempt < 2 && Date.now() < deadline) {
         await new Promise(r => setTimeout(r, 25 * 2 ** attempt)); continue;
       }
+      // Private observer: only the FINAL positively rolled-back failure, not a retry.
+      if (rolledBack && onRollbackConfirmed) { try { onRollbackConfirmed(); } catch (_) {} }
       if (e instanceof AuthPersistenceError || e.name === 'UserRepositoryError' || e.name === 'FinancialCoordinatorError') throw e;
       if (e.code === '23505') throw fail('AUTH_CONFLICT');
       if (['40001', '40P01'].includes(e.code)) throw fail('AUTH_RETRY_EXHAUSTED', 503);

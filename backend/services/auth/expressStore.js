@@ -3,6 +3,7 @@ const session = require('express-session');
 const { createHmac, timingSafeEqual } = require('node:crypto');
 const A = require('./persistence');
 const META = '__top4StoreRevision';
+const { PENDING } = require('./pendingState');
 function validateJson(value, depth = 0) {
   if (depth > 20) throw A.fail('INVALID_SESSION_DATA', 400);
   if (!value || typeof value !== 'object') return;
@@ -54,10 +55,14 @@ function createExpressStore({ poolProvider, lookupSecret }) {
         const bytes = JSON.stringify(plain); if (Buffer.byteLength(bytes) > 65536) throw A.fail('INVALID_SESSION_DATA', 400);
         const json = JSON.parse(bytes); validateJson(json);
         const m = data[META] ? checked(hash, data[META]) : null;
+        if (!m && Object.hasOwn(json, PENDING)) throw A.fail('INVALID_SESSION_DATA', 400);
         const row = await A.transaction(poolProvider, async q => m
           ? A.one(await q(`UPDATE public.express_sessions SET session_data = $1::JSONB, expires_at = $2::TIMESTAMPTZ
               WHERE id = $3::UUID AND sid_digest = $4 AND row_version = $5::BIGINT AND revoked_at IS NULL
-              AND expires_at > statement_timestamp() AND (user_id IS NULL OR
+              AND expires_at > statement_timestamp()
+              AND (session_data->'${PENDING}') IS NOT DISTINCT FROM (($1::JSONB)->'${PENDING}')
+              AND (NOT (session_data ? '${PENDING}') OR session_data->'csrfToken' = ($1::JSONB)->'csrfToken')
+              AND (user_id IS NULL OR
                 (session_data->'userId' = ($1::JSONB)->'userId' AND session_data->'csrfToken' = ($1::JSONB)->'csrfToken'))
               AND NOT EXISTS (SELECT 1 FROM public.application_sessions a
                 WHERE a.express_session_id = $3::UUID AND a.revoked_at IS NULL AND a.expires_at > $2::TIMESTAMPTZ)

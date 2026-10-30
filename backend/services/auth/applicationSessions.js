@@ -1,22 +1,26 @@
 'use strict';
 const A = require('./persistence');
 function createApplicationSessions({ poolProvider, express, verify, tokenDigest }) {
-  async function authenticate(input) {
-    A.fields(input, ['token', 'sessionId']); const c = verify(input.token);
+  async function authenticate(input, bound = false) {
+    A.fields(input, bound ? ['token', 'sessionId', 'expressSid', 'csrfToken'] : ['token', 'sessionId']); const c = verify(input.token);
     const values = [express.digest('application', input.sessionId), tokenDigest(input.token), c.userId, c.tokenVersion, c.iat, c.exp];
+    if (bound) values.push(express.digest('express', input.expressSid));
     let row;
-    try { row = A.one(await poolProvider().query({ text: `SELECT u.id, u.role, u.account_status, u.token_version, a.expires_at
+    try { row = A.one(await poolProvider().query({ text: `SELECT u.id, u.role, u.account_status, u.token_version, a.expires_at${bound ? ", e.session_data->>'csrfToken' AS csrf" : ''}
       FROM public.application_sessions a JOIN public.express_sessions e ON e.id = a.express_session_id AND e.user_id = a.user_id
       JOIN public.users u ON u.id = a.user_id
       WHERE a.session_digest = $1 AND a.token_digest = $2 AND a.user_id = $3::UUID AND a.token_version = $4::BIGINT
-      AND a.issued_at = to_timestamp($5) AND a.expires_at = to_timestamp($6)
+      AND a.issued_at = to_timestamp($5) AND a.expires_at = to_timestamp($6) ${bound ? 'AND e.sid_digest = $7' : ''}
       AND a.revoked_at IS NULL AND a.expires_at > statement_timestamp() AND e.revoked_at IS NULL AND e.expires_at > statement_timestamp()
       AND u.account_status = 'active' AND u.token_version = a.token_version
       AND NOT EXISTS (SELECT 1 FROM public.token_revocations r WHERE r.token_digest = a.token_digest)`, values, query_timeout: 5000 })); }
     catch (_) { throw A.fail('AUTH_UNAVAILABLE', 503); }
     if (!row) throw A.fail('AUTH_SESSION_INVALID', 401);
-    return Object.freeze({ principal: Object.freeze({ userId: row.id, tokenVersion: row.token_version }),
+    if (bound && !require('./pendingState').equal(input.csrfToken, row.csrf)) throw A.fail('CSRF_INVALID', 403);
+    const result = Object.freeze({ principal: Object.freeze({ userId: row.id, tokenVersion: row.token_version }),
       role: row.role, accountStatus: row.account_status, expiresAt: row.expires_at.toISOString() });
+    if (bound) require('./authenticatedRequests').register(result, [...values, input.csrfToken]);
+    return result;
   }
   async function revokeAuthenticatedSession(input) {
     A.fields(input, ['token', 'sessionId']); const c = verify(input.token);
@@ -32,7 +36,7 @@ function createApplicationSessions({ poolProvider, express, verify, tokenDigest 
       return Object.freeze({ revoked: true });
     });
   }
-  return { authenticate, revokeAuthenticatedSession,
+  return { authenticate: input => authenticate(input), authenticateForExpressSession: input => authenticate(input, true), revokeAuthenticatedSession,
     ...require('./sessionMaintenance').createMaintenance({ poolProvider }) };
 }
 module.exports = { createApplicationSessions };

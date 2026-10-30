@@ -328,7 +328,7 @@ function createUserRepository({ poolProvider = getPool, financialScopeAuthority 
     listUsers: input => require('./private/userListing').listUsers(poolProvider, safeUser, input, cursorSecret ?? process.env.CURSOR_SECRET),
     internal: Object.freeze({ forFinancialTransaction,
       authenticationSnapshot: authentication.snapshot,
-    claimAuthentication: authentication.claim, consumeAuthentication: authentication.consume }) });
+    claimAuthentication: authentication.claim, claimPendingAuthentication: authentication.claimPending, consumeAuthentication: authentication.consume }) });
 }
 
 // No authority is installed in this default instance. No route/server imports it.

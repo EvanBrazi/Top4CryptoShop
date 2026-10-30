@@ -6,7 +6,7 @@ const SAFE = `id, username, email, email_verified, phone, provider, theme, balan
  account_status, two_fa_status, last_login, activated_at, row_version, created_at, updated_at`;
 function createMutations({ poolProvider, query, safeUser, username, email, phone, password, googleIdentityAuthority = null }) {
   async function mutate(input, kind) {
-    const admin = kind === 'activate' || kind === 'deactivate';
+    const admin = ['activate', 'deactivate', 'suspend'].includes(kind);
     const field = { username: 'username', email: 'email', phone: 'phone', password: 'newPassword' }[kind];
     A.fields(input, ['principal', 'expectedRowVersion', ...(admin ? ['userId'] : [field]), ...(kind === 'password' ? ['currentPassword'] : [])]);
     const p = A.principal(input.principal), id = admin ? A.uuid(input.userId) : p.userId, version = A.integer(input.expectedRowVersion);
@@ -31,7 +31,7 @@ function createMutations({ poolProvider, query, safeUser, username, email, phone
       if (kind === 'email' && u.provider === 'google') throw A.fail('GOOGLE_ACCOUNT_LINK_REQUIRED');
       if (kind === 'password' && credentialVersion !== u.token_version) throw A.fail('USER_VERSION_CONFLICT');
       const set = { username: 'username = $3', email: 'email = $3, email_verified = FALSE', phone: 'phone = $3', password: 'password_hash = $3',
-        activate: "account_status = 'active', login_attempts = 0, activated_at = statement_timestamp()", deactivate: "account_status = 'deactivated'" }[kind];
+        activate: "account_status = 'active', login_attempts = 0, activated_at = statement_timestamp()", deactivate: "account_status = 'deactivated'", suspend: "account_status = 'suspended'" }[kind];
       const params = [id, version]; if (!admin) params.push(value);
       const row = A.one(await q(`UPDATE public.users SET ${set}, token_version = token_version + 1
         WHERE id = $1::UUID AND row_version = $2::BIGINT RETURNING ${SAFE}`, params), 'USER_VERSION_CONFLICT');
@@ -57,6 +57,7 @@ function createMutations({ poolProvider, query, safeUser, username, email, phone
   }
   return { findByGoogleId, createGoogleUser,
     updatePassword: x => mutate(x, 'password'), updateUsername: x => mutate(x, 'username'), updateEmail: x => mutate(x, 'email'), updatePhone: x => mutate(x, 'phone'),
-    activateAccount: x => mutate(x, 'activate'), deactivateAccount: x => mutate(x, 'deactivate') };
+    activateAccount: x => mutate(x, 'activate'), deactivateAccount: x => mutate(x, 'deactivate'), suspendAccount: x => mutate(x, 'suspend'),
+    updateProfileAtomic: require('./userProfileAtomic').createProfileAtomic({ poolProvider, query, safeUser, username, email, phone, password }) };
 }
 module.exports = { createMutations };

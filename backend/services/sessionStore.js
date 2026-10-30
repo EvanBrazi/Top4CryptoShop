@@ -5,7 +5,7 @@ const { createHash } = require('node:crypto');
 const { getPool } = require('../db/pg');
 const A = require('./auth/persistence');
 function createSessionStore({ poolProvider = getPool, userRepository, lookupSecret = process.env.SESSION_LOOKUP_SECRET,
-  jwtSecret = process.env.JWT_SECRET, tokenTtlSeconds = 3600 } = {}) {
+  jwtSecret = process.env.JWT_SECRET, tokenTtlSeconds = 3600, challengeTtlSeconds = 300 } = {}) {
   if (typeof jwtSecret !== 'string' || Buffer.byteLength(jwtSecret) < 32) throw A.fail('JWT_SECRET_REQUIRED', 503);
   if (!Number.isInteger(tokenTtlSeconds) || tokenTtlSeconds < 60 || tokenTtlSeconds > 86400) throw A.fail('INVALID_SESSION_EXPIRY', 400);
   const express = require('./auth/expressStore').createExpressStore({ poolProvider, lookupSecret });
@@ -21,8 +21,11 @@ function createSessionStore({ poolProvider = getPool, userRepository, lookupSecr
     if (!Number.isSafeInteger(c.iat) || !Number.isSafeInteger(c.exp) || c.exp <= c.iat || c.exp - c.iat > 86400 || c.iat > Math.floor(Date.now() / 1000) + 5) throw A.fail('INVALID_AUTH_TOKEN', 401);
     return c;
   }
-  const deps = { poolProvider, userRepository, express, jwtSecret, tokenDigest, tokenTtlSeconds, verify };
-  return Object.freeze({ expressStore: express.store, issueAuthenticatedSession: require('./auth/sessionIssuance').createIssuance(deps),
+  if (!Number.isInteger(challengeTtlSeconds) || challengeTtlSeconds < 1 || challengeTtlSeconds > 300) throw A.fail('INVALID_CHALLENGE_EXPIRY', 400);
+  const deps = { poolProvider, userRepository, express, jwtSecret, tokenDigest, tokenTtlSeconds, verify, lookupSecret, challengeTtlSeconds };
+  const issuance = require('./auth/sessionIssuance').createIssuance(deps);
+  return Object.freeze({ expressStore: express.store, issueAuthenticatedSession: issuance.issueAuthenticatedSession,
+    ...require('./auth/pendingChallenges').createPendingChallenges({ ...deps, issueForLockedParent: issuance.issueForLockedParent }),
     ...require('./auth/applicationSessions').createApplicationSessions(deps) });
 }
 module.exports = { createSessionStore };

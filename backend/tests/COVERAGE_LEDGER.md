@@ -1858,3 +1858,165 @@ Planning budget remains approximately **73 new cases**: **16** in `disabled-feat
 - **Notification units (~24):** reconcile all **23 PN historical obligations** to the current wholly disabled utility contract, then add one genuine contract gap for the frozen, uniform unavailable result. Financial and generic/nonfinancial dispatch both remain unavailable. Initialization adds no listeners; notify neither sends nor queues; markNotificationSent performs no read/write. Use inert/hostile inputs and side-effect assertions, not legacy Mongo fixtures or real sockets.
 - **Approval/verification gates:** obtain user approval before creating or changing tests; map exact cases and credit existing coverage before implementation; run targeted units/PG and full PG, check zero deleted-model imports and unchanged protected files, and update ledger with executed counts only after passing output. If normal execution is safety-blocked, supply the exact approved harness commands for manual execution; never override safety or bypass harness guards.
 - **Nodemailer is deferred and untouched.** Its retained real SMTP coverage and obsolete controller coupling require a separately approved phase. No C3.2d implementation has begun.
+
+## C3.2d1 — approved implementation checkpoint and verified allocation
+
+**Current acceptance: FULLY VERIFIED / CLOSED at 2026-10-31T08:39:21+03:00.** This is the result-recording timestamp, not the user's execution start/end time. The verified allocation and PN statuses below supersede their original pending status; the original blocked-command checkpoint is retained as history. See the acceptance record below for exact supplied results and the independent unit rerun.
+
+**Recorded at 2026-10-31T08:19:07+03:00** (checkpoint timestamp, not an execution timestamp). The user approved disabled-feature PG/unit and notification replacements after committing verified C3.2c2. This record supersedes the preceding d1 plan's not-authorized/not-started status. The user acknowledged the **160 unreconciled historical entries as documentation debt, not runtime gaps or a d1 blocker**; they remain transparently tracked without artificial closure. C3.2d2/Nodemailer remains outside this approval.
+
+### Verified counts — all executed cases PASSING
+
+| Suite relative to backend/tests/ | Registrations | Expanded cases | Current verification (recorded 2026-10-31T08:39:21+03:00) |
+|---|---:|---:|---|
+| `disabled-features.pg.test.js` | 4 | 16 PG | EXECUTED / PASSING — user targeted PG and full-PG runs |
+| `disabled-features.test.js` | 13 | 33 independent units | EXECUTED / PASSING — user targeted units and independent unit rerun |
+| `payment-notifications.test.js` | 12 | 24 independent units | EXECUTED / PASSING — user targeted units and independent unit rerun; PN-001–PN-023 CLOSED |
+
+**29 registrations / 73 cases = 16 PG + 57 independent unit cases.** Counts match the checkpoint's source AST expansion and the reviewed parameter tables; the independent Jest JSON confirms 33 and 24 passing unit cases separately. Parameterized rows count separately; credential/method/body loops within a registration do not add cases. Full PG acceptance is **791 + 16 = 807/807 tests across 11/11 suites**. The targeted 16 PG cases are a subset of that total, not additional executions to add to 807. Previously selected 273 units are historical verified results and were not rerun here; 57 is not a repository-wide unit count.
+
+The notification API is the actual `initNotifications`, `notify`, `markNotificationSent` utility; **notifyUser/notifyAdmin are not exports of that module**. No aliases or runtime behavior were added to accommodate proposed names. The separate `utils/notifyAdmin.js` entrypoint is covered by D-unit U22 below. Both generic/nonfinancial and financial dispatch remain unavailable.
+
+### Existing PG credits — no quota duplication
+
+| Obligation or contract credited | Existing executed destination | New-suite boundary |
+|---|---|---|
+| Anonymous ordinary-method rejection at existing disabled mounts; inert server composition | `users-server.pg.test.js` L154: `financial mount or remaining disabled feature %s rejects without persistence or legacy imports`; L82: `entry import is inert and current composition never imports disabled Mongo modules` | Existing anonymous/base-mount behavior is credited. PG01–PG07 add non-admin authenticated/stale/suspended nested-path and zero-query/full-session-snapshot contracts, plus compare-token, rather than recreating standalone base-prefix cases. |
+| Application-boundary portions of UA-002, UA-003, UA-005, UA-006, UA-007, UA-052, UA-067, UA-069, UA-071, UA-073, UA-076 / D132, D161, D223 | `users-admin-authorization.pg.test.js` L316: `exact disabled admin paths and reserve HEAD preflight never consult session or account storage` | No new disabled-admin PG cases. Direct legacy admin terminal validation and retained middleware wiring are separately unit-tested, without claiming handler units executed authentication. |
+| UA-074, UA-075 / D158, D159: reserve/restore ordinary methods, bodyless HEAD and real composition preflight | `users-server.pg.test.js` L164: `disabled %s is 410 for all methods without authentication or writes`; `users-admin-authorization.pg.test.js` L316: `exact disabled admin paths and reserve HEAD preflight never consult session or account storage` | No new reserve/restore PG, HEAD or preflight repetitions. PG08–PG15 cover different disabled-feature boundaries, not these previously executed 410 contracts. |
+
+These are existing credits, not new executions or additions to the 524-source rollup.
+
+### New disabled-feature PG allocation
+
+All **PG01–PG16** destinations in this table are **EXECUTED / PASSING**, recorded at **2026-10-31T08:39:21+03:00**, in `disabled-features.pg.test.js` (user-supplied targeted and full-PG runs). The status applies to every expanded case in each allocation row.
+
+| Allocation | Exact title template and registration | Expanded cases | Added obligation |
+|---|---|---:|---|
+| PG01–PG07 | L74: `disabled %s ignores anonymous active stale and suspended credentials without any SQL or session effects` | 7 | `/api/notifications`, `/api/backups`, `/api/security`, `/api/icons`, `/api/cards`, `/dev`, `/api/compare-token`: real anonymous, active owner/admin, stale owner and suspended admin inputs; nested POST and malformed-credential PATCH; fixed 503/no-store and no auth/cookie leakage. |
+| PG08–PG14 | L92: `disabled %s HEAD is bodyless no-store and cannot refresh an authenticated session` | 7 | Same seven non-admin prefixes, anonymous and genuinely logged-in owner: bodyless 503, exact content length, no-store, allowed credentialed CORS/Vary and no session refresh/cookie publication. |
+| PG15 | L110: `compare-token composition preflight is handled by CORS before disabled authentication and rejects unapproved origins` | 1 | Real CORS returns bodyless 204 with exact approved credential/method/header/max-age behavior for anonymous/authenticated callers; rejects unapproved origin with 403 CORS_FORBIDDEN. Does not demand prefix-handler no-store on preflight ended earlier by CORS. |
+| PG16 | L137: `disabled mounts match path segments without shadowing adjacent paths or an enabled authenticated route` | 1 | Adjacent segment names return 404 rather than unavailable; a real logged-in `/api/users/me` remains 200 with actual PG authentication; disabled requests before/after it remain SQL/session-inert. |
+
+The observed provider delegates to the real guarded TLS PostgreSQL pool, records pool and checked-out-client SQL, and preserves the real client connection. Disabled request batches require **zero provider lookups, checkouts and SQL**, stronger than no DML. Complete before/after snapshots include users, all three session/revocation tables, journal, orders and payments. Setup/login/status changes and independent snapshot SELECTs are outside each observed request window. No generated column, trigger, constraint, runtime or migration is altered.
+
+### Independent disabled-unit allocation
+
+All **U01–U33** destinations are **EXECUTED / PASSING**, recorded at **2026-10-31T08:39:21+03:00**, in `disabled-features.test.js` (user-supplied targeted units and independent unit rerun). The status applies to every expanded case in each allocation row. There is no PG harness or real database, HTTP listener or SMTP server.
+
+| Allocation | Exact title template and registration | Expanded cases | Contract |
+|---|---|---:|---|
+| U01–U12 | L54: `cold import %s is inert without timers connections writes or messages` | 12 | Cold isolated imports of notifications, notifyAdmin, cleanupNotifications, scheduler, backupUsers, security router/controller, icons, admin, dev, old socket and old session store, with active connection/listen/timer/write/request/random/log guards. |
+| U13–U17 | L68, title L69: `disabled securityController.%s returns frozen 503 without reading secrets or request data` | 5 | generateQR, verifyToken, send2FAKeyByEmail, verify2FAFromEmail, disable2FA aliases ignore hostile input and preserve frozen migration marker; no secret/email/persistence activation. |
+| U18–U20 | L76, title L77: `backupUsers.%s never reads writes uploads or logs and returns the fixed marker` | 3 | backupUsers, backupUsersToDrive, logBackupStatus remain unavailable and ignore hostile inputs. |
+| U21 | L81: `cleanupNotifications does not inspect retention inputs or delete stored notifications` | 1 | No cleanup read/delete or input access. |
+| U22 | L85: `notifyAdmin ignores financial and generic inputs without storage or dispatch` | 1 | Separate actual notifyAdmin export rejects payment, order, nonfinancial and hostile inputs uniformly. |
+| U23 | L93: `scheduler repeated starts cannot register cron work timers or callbacks` | 1 | Repeated starts return the same frozen marker without callback/timer/network work. |
+| U24 | L100: `old socket setup never registers listeners opens a connection or sends to clients` | 1 | Test-owned inert server/client spies remain untouched; exported activeSessions aliases the disabled old store. |
+| U25 | L111: `old session store is a frozen compatibility marker not a mutable Map or an expiry authority` | 1 | No Map API, key mutation or expiry timer; repeated createSession returns the frozen marker. |
+| U26–U28 | L124: `isolated %s router preserves migration 503 for every method including HEAD and OPTIONS` | 3 | security, icons and dev terminal middleware contracts for all methods. These response-spy units are not claims about HTTP body stripping or application CORS preflight. |
+| U29–U30 | L132: `guarded legacy admin %s terminal handler is migration-unavailable rather than a listing or page` | 2 | /users and /panel terminal handlers return frozen migration 503; authorization is not bypassed in a mounted application. |
+| U31 | L140: `legacy admin balance terminal handler preserves valid-input FINANCIAL_UNAVAILABLE without writes` | 1 | Direct terminal valid-value contract remains unchanged. |
+| U32 | L149: `legacy admin balance terminal handler retains strict body types bounds and allowlist` | 1 | Direct terminal invalid-value matrix retains the existing 400 response; assertion loops count once. |
+| U33 | L159: `legacy admin router retains real authentication admin authorization ownership and CSRF guards` | 1 | Actual verifyToken/checkAdmin identities, observed real requireSelfOrAdmin('userId') factory argument and returned delegate identity, and CSRF wiring retained; not a fabricated authenticated router or a claim of DB-free credential verification. |
+
+The only mocked database interface is the **live `db/pg` provider**, with refusing query/checkout spies. No deleted model is imported or mocked. Cold imports execute under side-effect guards; terminal handlers and old stub functions execute without opening sockets or contacting SMTP/Cloud/Drive providers. Existing enabled TOTP/security and current durable sessions are not modified or replaced by legacy behavior.
+
+### Exact PN reconciliation — all 23 historical obligations CLOSED
+
+All **23 historical PN obligations** have one exact **EXECUTED / PASSING / CLOSED** replacement below, recorded at **2026-10-31T08:39:21+03:00**. The user's 57/57 targeted unit result and the independent 57/57 rerun close the prior execution gate; the independent Jest JSON contains all 23 exact expanded names below plus the new uniform/frozen case. Every case asserts the actual fixed unavailable result; shared assertions require no provider/query/checkout, no server/socket listeners/sends/closes, no client/queue reads and no fixture saves. Role assertions are inert inputs, not verified authentication. Queue-shaped arrays are test-owned historical input fixtures, not an activated queue or Mongo mocks. Old queue filtering and synthetic socket authentication mechanics retire without discarding no-dispatch/no-write obligations.
+
+| Historical obligation | Exact replacement title in payment-notifications.test.js | Registration | Status |
+|---|---|---|---|
+| PN-001 / D201 | `direct newPayment returns unavailable without sending queueing or database access` | L40, title L41 | EXECUTED / PASSING / CLOSED — 2026-10-31T08:39:21+03:00 |
+| PN-002 / D201 | `direct paymentAccepted returns unavailable without sending queueing or database access` | L40, title L41 | EXECUTED / PASSING / CLOSED — 2026-10-31T08:39:21+03:00 |
+| PN-003 / D201 | `direct paymentRejected returns unavailable without sending queueing or database access` | L40, title L41 | EXECUTED / PASSING / CLOSED — 2026-10-31T08:39:21+03:00 |
+| PN-004 / D201 | `direct paymentStatus returns unavailable without sending queueing or database access` | L40, title L41 | EXECUTED / PASSING / CLOSED — 2026-10-31T08:39:21+03:00 |
+| PN-005 / D201 | `direct PAYMENT returns unavailable without sending queueing or database access` | L40, title L41 | EXECUTED / PASSING / CLOSED — 2026-10-31T08:39:21+03:00 |
+| PN-006 / D202 | `paymentId under an unrelated type remains unavailable without payload serialization` | L46 | EXECUTED / PASSING / CLOSED — 2026-10-31T08:39:21+03:00 |
+| PN-007 / D203 | `client-asserted administrator initialization cannot query or dispatch pending payments` | L52 | EXECUTED / PASSING / CLOSED — 2026-10-31T08:39:21+03:00 |
+| PN-008 / D204 | `client-asserted user cannot replay queued newPayment payment payloads or save notification state` | L57, title L58 | EXECUTED / PASSING / CLOSED — 2026-10-31T08:39:21+03:00 |
+| PN-009 / D204 | `client-asserted user cannot replay queued paymentAccepted payment payloads or save notification state` | L57, title L58 | EXECUTED / PASSING / CLOSED — 2026-10-31T08:39:21+03:00 |
+| PN-010 / D204 | `client-asserted user cannot replay queued paymentRejected payment payloads or save notification state` | L57, title L58 | EXECUTED / PASSING / CLOSED — 2026-10-31T08:39:21+03:00 |
+| PN-011 / D204 | `client-asserted user cannot replay queued paymentStatus payment payloads or save notification state` | L57, title L58 | EXECUTED / PASSING / CLOSED — 2026-10-31T08:39:21+03:00 |
+| PN-012 / D205 | `stored Payment type and embedded paymentId both remain unread rather than activating queue filtering` | L64 | EXECUTED / PASSING / CLOSED — 2026-10-31T08:39:21+03:00 |
+| PN-013 / D206 | `markNotificationSent Payment returns unavailable without reading or updating state` | L69 | EXECUTED / PASSING / CLOSED — 2026-10-31T08:39:21+03:00 |
+| PN-014 / D207 | `direct newOrder returns unavailable without sending queueing or database access` | L73, title L74 | EXECUTED / PASSING / CLOSED — 2026-10-31T08:39:21+03:00 |
+| PN-015 / D207 | `direct orderAccepted returns unavailable without sending queueing or database access` | L73, title L74 | EXECUTED / PASSING / CLOSED — 2026-10-31T08:39:21+03:00 |
+| PN-016 / D207 | `direct orderRejected returns unavailable without sending queueing or database access` | L73, title L74 | EXECUTED / PASSING / CLOSED — 2026-10-31T08:39:21+03:00 |
+| PN-017 / D207 | `direct orderStatus returns unavailable without sending queueing or database access` | L73, title L74 | EXECUTED / PASSING / CLOSED — 2026-10-31T08:39:21+03:00 |
+| PN-018 / D207 | `direct ORDER returns unavailable without sending queueing or database access` | L73, title L74 | EXECUTED / PASSING / CLOSED — 2026-10-31T08:39:21+03:00 |
+| PN-019 / D208 | `client-asserted admin initialization cannot query Orders or activate dispatch` | L79 | EXECUTED / PASSING / CLOSED — 2026-10-31T08:39:21+03:00 |
+| PN-020 / D208 | `client-asserted user initialization cannot query Orders or activate dispatch` | L79 | EXECUTED / PASSING / CLOSED — 2026-10-31T08:39:21+03:00 |
+| PN-021 / D209 | `old queued order types and embedded identifiers remain unread with no saves or dispatch` | L84 | EXECUTED / PASSING / CLOSED — 2026-10-31T08:39:21+03:00 |
+| PN-022 / D210 | `markNotificationSent Order returns unavailable without reading or updating state` | L90 | EXECUTED / PASSING / CLOSED — 2026-10-31T08:39:21+03:00 |
+| PN-023 / D211 | `nonfinancial notice dispatch also returns unavailable without serialization sending or queueing` | L94 | EXECUTED / PASSING / CLOSED — 2026-10-31T08:39:21+03:00 |
+| New uniform/frozen gap (not a historical PN row) | `all actual notification entrypoints return one frozen uniform marker that hostile inputs cannot change` | L102 | EXECUTED / PASSING / CLOSED — 2026-10-31T08:39:21+03:00 |
+
+PN-023 deliberately preserves the **current wholly disabled** contract, not its obsolete title's generic-notice success. No nonfinancial dispatch was restored. No PN obligations are credited merely to a nearby PG title; all 23 have independent passing non-PG replacement executions above. The new uniform/frozen case is a verified additional regression, not a 24th historical PN obligation. These exact replacements supersede D201–D211's original planned/not-implemented templates without changing the historical source rows or destination index.
+
+### Original blocked verification checkpoint and boundaries — superseded by acceptance below
+
+- Syntax checks for all three suites and `git diff --check`: **PASS**, static only. Source AST expansion: **PASS — 16 / 33 / 24 cases, 4 / 13 / 12 registrations**. This is not Jest execution.
+- Targeted unit command: `npx jest backend/tests/disabled-features.test.js backend/tests/payment-notifications.test.js --runInBand` — **BLOCKED BEFORE EXECUTION** by unavailable safety checker; expected **57 cases / 2 suites**, no executed result.
+- Targeted PG command: `bash backend/tests/run-disposable-pg.sh backend/tests/disabled-features.pg.test.js` — **BLOCKED BEFORE EXECUTION**; expected **16 cases / 1 suite**, no executed result.
+- Full PG command: `bash backend/tests/run-disposable-pg.sh backend/tests/*.pg.test.js` — **BLOCKED BEFORE EXECUTION**; expected **807 cases / 11 suites**, no executed result.
+- No safety override, alternate runner, application .env sourcing or harness bypass was used. Exact normal commands are supplied to the user for manual execution. D1 acceptance and PN closure remain pending successful output.
+- Implementation SHA256: disabled PG `ac8e692d5e583fd86749899015931a3e3b6b04b542203f3463ba4725b7957c87`; disabled units `09f09f6feac4b535bbfa96b8b022d7b469b662a4dec6ec280e04f741c5d87b91`; notifications `d6a203ffd2ec5bb23a05e7e654ba5a28eaac45ab38f2446d2761aac05a08ae67`.
+- The conservative executed source rollup stays **251 PG / 27 non-PG / 160 pending new / 25 changed disabled / 61 retired = 524** until actual new verification evidence exists. No earlier failed or blocked run is relabeled passing, and the 160 documentation-debt entries remain unchanged.
+- Allowed changes are only the two new disabled-feature suites, the replacement notification suite and this ledger. No runtime, migration, package, preserved feature, helper, Nodemailer or other existing suite is edited or deleted. No commit performed. **C3.2d2 has not begun and requires separate approval.**
+
+## C3.2d1 — verified acceptance and closure
+
+**Acceptance recorded at 2026-10-31T08:39:21+03:00** (recording/observation timestamp, not the user's test execution start/end time). The external interruption and original safety-blocked commands remain historical facts; they are not relabeled as passing executions. The following actual passing results supersede the pending acceptance gate:
+
+| Verification | Evidence source | Executed result | Snapshots | Time |
+|---|---|---|---:|---:|
+| Targeted disabled + notification units | User-supplied manual run | EXECUTED / PASSING — 2/2 suites, 57/57 tests | 0 | 0.907 s |
+| Targeted disabled-feature PG | User-supplied manual run | EXECUTED / PASSING — 1/1 suite, 16/16 tests | 0 | 4.287 s |
+| Full `backend/tests/*.pg.test.js` | User-supplied manual run | EXECUTED / PASSING — 11/11 suites, 807/807 tests | 0 | 129.588 s |
+| Independent targeted unit rerun in this session | `npx jest backend/tests/disabled-features.test.js backend/tests/payment-notifications.test.js --runInBand --json --outputFile=/tmp/top4cryptoshop-c3-2d1-unit-verification.json` | EXECUTED / PASSING — 2/2 suites, 57/57 tests; Jest JSON separately confirms 33 disabled + 24 notification cases, all passing, no pending/todo cases | 0 | 0.832 s |
+
+The PG results are accepted from the user's normal disposable-harness runs; no new PG rerun is claimed in this ledger-only acceptance pass. The auxiliary static AST/report command in this session was safety-blocked before execution; it adds no verification claim. Source review, the earlier AST checkpoint, actual unit JSON and the supplied targeted PG count independently agree on **16 / 33 / 24**, with no case-count deviation. The existing 791 cases plus the 16 new PG cases explain the full 807 total exactly; targeted and full-PG totals are not additive.
+
+### Deliverable and obligation closure
+
+- **C3.2d1: FULLY VERIFIED / CLOSED.** All **PG01–PG16**, **U01–U33**, **PN-001–PN-023** and the new uniform/frozen notification case are EXECUTED / PASSING at the recording timestamp above. All 23 PN obligations are CLOSED at their exact expanded names in the reconciliation table; none relies on a nearby PG title or generic suite-level credit.
+- Both new disabled-feature suites are recorded above with exact allocations, registration lines, expanded counts and execution evidence. PN remains wholly disabled for financial and nonfinancial inputs; no successful generic dispatch, synthetic authenticated listener or queue filtering was restored.
+- **No unapproved scope/count deviation.** Existing disabled admin and reserve/restore PG credits were reused rather than duplicated. The actual notification API (`initNotifications`, `notify`, `markNotificationSent`) replaced speculative alias names without runtime changes. CORS ends approved composition preflight with 204 before the prefix's no-store handler; direct router HEAD/OPTIONS units assert terminal-handler contracts, not HTTP body stripping or application preflight. These are documented contract clarifications, not weakened assertions.
+- Current conservative source-obligation rollup: **251 executed/credited PG / 50 executed/credited non-PG / 160 pending new / 2 changed disabled / 61 retired = 524**. Only PN's 23 changed-disabled obligations move to executed non-PG in this pass. The 24th notification case and 49 new disabled-feature cases do not enlarge the historical inventory or automatically close other source rows.
+- The two unreconciled changed-disabled source rows are **OM-100 / D077** (historical creation-disabled credit, requiring exact final reconciliation) and **SMTP-006 / D217** (deferred legacy email-controller replacement). The **160 documentation-debt entries** remain **9 financial-models.mongo + 23 financial-service.mongo + 69 orders.mongo + 59 payments.mongo**; no blanket closure is claimed. The overall historical ledger is therefore not wholly closed.
+
+### Static verification and protected boundaries
+
+- All three suite SHA256 values match the implementation checkpoint exactly. Fresh `node --check` for each suite and `git diff --check` passed before ledger edits. No deleted-model/helper import or mock exists in these suites; the `models|mongoose` cache-path expression is a negative assertion, not an importer.
+- **Nodemailer is untouched and unexecuted in d1.** `backend/tests/nodemailer.test.js` still matches its historical SHA256 `e274ce163db8be1243c5826c852f9c09c2bfe75272de71abe61ed0de39c3b221`; its five retained transport/configuration cases and obsolete sixth controller case have not been changed or credited as d1 executions.
+- Protected runtime/controllers/services/utils, migrations, packages, helpers and other suites were not changed by this acceptance pass. No assertions were edited, weakened, skipped or focused. No safety override, alternate PG runner, application `.env` sourcing or harness bypass was used.
+- Git advanced during inspection to **`d6b72fb`**, which records the three approved d1 suites; their fingerprints remained identical. Only this ledger is now modified. This assistant performed no commit, reset, staging, deletion or test-code edit in the acceptance pass.
+- **C3.2d2 implementation has NOT begun.** The proposal below is documentation only and requires separate approval.
+
+## C3.2d2 — proposed plan only; awaiting approval
+
+**Allowed future implementation scope:** `backend/tests/nodemailer.test.js` and this ledger only. No Nodemailer dependency/configuration/runtime change, migration/package edit, deleted model mock, enabled legacy 2FA/email behavior or weakened assertion is authorized.
+
+### Nodemailer suite — approximately 10 cases (5 retained + 5 disabled controllers)
+
+1. **Retain all five real transport/configuration cases (SMTP-001–SMTP-005 / D212–D216)** with their exact existing names and substantive assertions unchanged:
+   - `the existing Gmail service configuration still selects authenticated TLS on port 465`
+   - `verify uses the real SMTP authentication handshake`
+   - `sendMail delivers bounded HTML/text/attachment MIME over the local SMTP transport`
+   - `SMTP authentication rejection is a safe rejected promise, not a successful send`
+   - `required TLS cannot silently downgrade to an unencrypted server`
+   Keep real installed Nodemailer and the bounded test-owned loopback SMTP fixture, never Gmail/provider requests. Scope listener/transport/socket setup and cleanup to these transport tests so disabled-controller units do not start a server or make a real connection.
+2. **Remove only obsolete test coupling** to deleted `models/User` and `routes/SecurityLog`, and replace the obsolete successful email-controller test. Do not restore or mock those removed models and do not reactivate email enrollment to satisfy a historical success assertion.
+3. **Add five parameterized disabled-controller cases** for `generateQR`, `verifyToken`, `send2FAKeyByEmail`, `verify2FAFromEmail`, and `disable2FA`, proposed exact title template: `disabled securityController.%s returns frozen migration 503 without SMTP transport secret generation or persistence`. Assert exactly one 503 response with the frozen `{ unavailable: true, reason: 'POSTGRES_MIGRATION_PENDING' }` marker, hostile request/secret inputs unread, no live PG provider/query/checkout, no Nodemailer transport creation or mail invocation, and no socket/timer/random-secret side effects. Use refusing spies at live boundaries; no real SMTP server in this block. Restore every spy/environment change after each case.
+4. **Accounting:** `send2FAKeyByEmail` closes **SMTP-006 / D217** at its exact new executed title. The other four controller variants are additional SMTP-boundary regressions, not invented historical SMTP obligations. D1 already covers the five aliases' general disabled contracts; d2 adds direct real-Nodemailer boundary isolation and resolves this suite's obsolete coupling. Do not count these as five new historical obligations or five PG cases. The suite target is **10 total = 5 retained + 5 controller cases**, not ten newly added tests.
+
+### Verification and final ledger closure summary
+
+- After approval, execute `npx jest backend/tests/nodemailer.test.js --runInBand`, then the combined independent acceptance command `npx jest backend/tests/nodemailer.test.js backend/tests/disabled-features.test.js backend/tests/payment-notifications.test.js --runInBand` (expected **10** targeted and **67** combined cases; forecasts until executed).
+- Execute the normal full-PG harness `bash backend/tests/run-disposable-pg.sh backend/tests/*.pg.test.js` (expected unchanged **807 tests / 11 suites**, not a promised result). If safety blocks execution, give those exact normal commands for manual execution; do not override or bypass guards.
+- Verify exact expanded titles/counts, zero removed-model/helper importers in the converted suite, cleanup/no skip or focus, unchanged retained transport assertions, unchanged d1 fingerprints and protected files, and `git diff --check`. Record actual results and observation timestamps only after passing evidence.
+- Close **SMTP-001–SMTP-006** with exact executed titles while distinguishing five retained source obligations from the four extra controller variants. Reconcile **OM-100 / D077** against its exact existing executed disabled-creation test and full-PG evidence rather than inferring coverage from a filename. Only close it if the source requirement is fully demonstrated; otherwise report the residual explicitly.
+- Present the final approved-deliverable closure summary for C3.2b/c/d, final verified PG/unit totals without double-counting reruns or extra regressions, unchanged deletion inventory, and explicit remaining historical accounting. The acknowledged **160 documentation-debt entries remain open** unless separately authorized exact reconciliation is completed; neither d2 nor final summary may declare the entire 524-obligation ledger wholly closed by passing totals alone.
+- **STOP for approval:** no C3.2d2 code, Nodemailer edit or Nodemailer execution has been performed. Approval is required before beginning this plan.

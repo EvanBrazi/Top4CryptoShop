@@ -1,6 +1,6 @@
 # C3.2 coverage ledger — C3.2a deletion checkpoint
 
-**Checkpoint history:** the C3.2a summary, source rows, destination status and verification below are preserved as approved historical accounting. Later completion records at the end supersede the applicable planned/not-implemented statuses without erasing source obligations. See **C3.2b1 — avatar completion** for the avatar conversion.
+**Checkpoint history:** the C3.2a summary, source rows, destination status and verification below are preserved as approved historical accounting. Later completion records at the end supersede the applicable planned/not-implemented statuses without erasing source obligations. See **C3.2b1 — avatar completion** and **C3.2b2 — users/admin authorization completion** for the completed conversions and current helper deletion status.
 
 ## Scope, authority and counting
 
@@ -1434,3 +1434,119 @@ Additional exact destinations:
 - Final new-suite SHA256: `dfc1a92eb41b355694b7aa48de4c4d4225dc1cbd9ea1a5947250ac95f4206f9e`.
 - Cumulative obligation status: **127 existing PG / 15 existing non-PG / 280 pending new / 41 changed disabled / 61 retired = 524**. Only the 36 formerly pending avatar obligations move to existing PG; AV-001 was already covered. The approved C3.2a summary above remains its historical checkpoint, not an assertion that completed avatar replacements are still pending.
 - No runtime, package, migration, existing PG suite, users-admin, financial, payment, Nodemailer or disabled-feature code is changed. C3.2b2 requires separate approval.
+
+## C3.2b2 — users/admin authorization completion
+
+Completed **2026-10-31**. This record supersedes the users-specific pending destinations **D135–D138, D142–D144, D149–D151, D153, D155–D157, D219–D220, D222**, and the application-boundary portions of **D132, D159, D161, D223**. Original source rows and checkpoint summaries remain historical, not current pending claims. Direct disabled-handler/unit obligations from other source files remain pending in their separately approved phases; these HTTP assertions do not reactivate or convert those suites.
+
+### Allocation and executed cases
+
+The original **36-slot users planning target** is reconciled as **20 new expanded Jest cases + 16 planning slots credited to existing passing coverage**. The credits below are coverage slots, not 16 additional Jest executions or a claim that one source obligation always equals one test. The new suite has **19 registrations / 20 expanded cases**; its only parameterized registration expands into ordinary/admin avatar-removal cases. Assertion-loop iterations are not extra Jest cases. All 20 cases were executed and passed both independently and in the full PG run.
+
+| New case | Group | Exact title in `users-admin-authorization.pg.test.js` | Result |
+|---|---|---|---|
+| N01 / L145 | Read | anonymous users listing rejects before enumeration or session persistence | PASS |
+| N02 / L152 | Cross-user | ordinary cross-user profile and theme mutations cannot write any account | PASS |
+| N03 / L159 | Cross-user | cross-user avatar removal has no exception for Owner_U | PASS |
+| N04 / L159 | Cross-user | cross-user avatar removal has no exception for Admin_A | PASS |
+| N05 / L167 | Profile/password/guards | remaining profile forbidden fields reject the entire otherwise valid patch | PASS |
+| N06 / L177 | Profile/password/guards | null array empty and string profile bodies leave accounts and sessions unchanged | PASS |
+| N07 / L185 | Profile/password/guards | identity CAS changes only allowlisted columns and never rehashes the password | PASS |
+| N08 / L196 | Profile/password/guards | password change revokes every owner parent and child but preserves admin and other graphs | PASS |
+| N09 / L211 | Profile/password/guards | missing current and empty new passwords fail without account or graph writes | PASS |
+| N10 / L220 | Profile/password/guards | Google-only HTTP authenticated account cannot acquire a local password | PASS |
+| N11 / L230 | Profile/password/guards | losing password CAS preserves the hash and graph after a real concurrent theme commit | PASS |
+| N12 / L240 | Profile/password/guards | theme and avatar removal require exact parent CSRF before effects | PASS |
+| N13 / L252 | Profile/password/guards | theme endpoint rejects extra financial fields and null body without partial mutation | PASS |
+| N14 / L259 | Profile/password/guards | avatar removal rejects injected fields without clearing or deleting the owned asset | PASS |
+| N15 / L267 | Lifecycle/targets | activation allowlist and revocation affect only the target session graph | PASS |
+| N16 / L281 | Lifecycle/targets | DELETE rejects extra financial fields without deleting or deactivating the target | PASS |
+| N17 / L285 | Lifecycle/targets | missing lifecycle UUIDs return 404 without account or session mutations | PASS |
+| N18 / L293 | Lifecycle/targets | lifecycle and disabled balance reject malformed and legacy ObjectId targets before target queries | PASS |
+| N19 / L307 | Disabled contracts | authorized disabled balance ignores every historical body without account or graph writes | PASS |
+| N20 / L316 | Disabled contracts | exact disabled admin paths and reserve HEAD preflight never consult session or account storage | PASS |
+| **Total** | **1 read + 3 cross-user + 10 profile/password/guards + 4 lifecycle/targets + 2 disabled** | **20 executed new cases** | **20/20 PASS** |
+
+### Existing passing coverage credited to the remaining 16 planning slots
+
+Paths below are relative to `backend/tests/`. Titles are exact source templates; each selected variant was included in the passing full PG run. A credit may cite multiple cases to close a compound capability rather than duplicating them in the new suite.
+
+| Credit slot | Existing exact destination and selected variants | Coverage credited |
+|---|---|---|
+| E01 | `users-server.pg.test.js:168` — `administrative list is bounded, cursor-paginated and safely projected` | Positive safe administrator listing |
+| E02 | `users-server.pg.test.js:184` — `regular users cannot list and a demoted current admin cannot rely on the JWT role` | Ordinary-user denial and fresh-role enforcement |
+| E03 | `users-server.pg.test.js:189` — `self read %s returns exact string money/version without secrets` (`/me`, self detail, self balance) | Safe owner reads |
+| E04 | `users-server.pg.test.js:193` — `detail ownership is enforced for %s` (detail and `/balance`) | Cross-user read denial, current-admin access, missing and malformed read targets |
+| E05 | `users-server.pg.test.js:231` — `self-only mutation %s rejects even another administrator` (profile and `/theme`) | No administrator cross-user profile/theme exception |
+| E06 | `avatar-upload.pg.test.js:234` — `avatar authorization failure prevents provider and PostgreSQL writes: %p` (`ordinary cross-user` and `administrator cross-user`) | No cross-user avatar-upload exception |
+| E07 | `users-server.pg.test.js:212` — `profile rejects forbidden field %s without effects` (`role`, `accountStatus`, `balance`, `tokenVersion`, `avatar`); `integration-prerequisites.pg.test.js:271` — `profile cannot mutate protected/unsupported field %s` (`provider`, `twoFAStatus`) | Existing exact forbidden-field variants; the six remaining variants are N05 |
+| E08 | `users-server.pg.test.js:252` — `incorrect current password rejects the whole mixed profile mutation`; `integration-prerequisites.pg.test.js:278` — `wrong current password prevents every identity field from changing` | Wrong-current-password rejection without partial mutation |
+| E09 | `integration-prerequisites.pg.test.js:275` — `invalid combined patch changes nothing: %j` (weak password with correct current password, and current-password-only patch) | Existing weak/current-only password variants |
+| E10 | `users-server.pg.test.js:234` — `profile requires exact parent-bound CSRF before JSON parsing or persistence` | Exact profile CSRF; theme/removal are independently N12 |
+| E11 | `avatar-upload.pg.test.js:234` — `avatar authorization failure prevents provider and PostgreSQL writes: %p` (`missing parent CSRF` and `wrong parent CSRF`) | Exact avatar-upload CSRF |
+| E12 | `users-server.pg.test.js:227` — `theme-only update keeps token version, sessions and money unchanged` | Successful financially inert theme change |
+| E13 | `avatar-upload.pg.test.js:256` — `invalid avatar multipart prevents provider and persistence: %p` (extra fields before/after file and missing file); `users-server.pg.test.js:296` — `multipart %s cannot create a provider asset` | Strict uploaded-file-only contract |
+| E14 | `users-server.pg.test.js:325` — `avatar removal commits DB CAS before best-effort provider cleanup`; `:333` — `removal never deletes foreign URL %s` (foreign host and foreign cloud) | Removal success, cleanup ordering, and foreign-asset protection; injected-field rejection is N14 |
+| E15 | `users-server.pg.test.js:273` — `lifecycle %s %s is admin-only, CSRF-protected and CAS`; `:255` — `manual balance remains admin/CSRF protected and never writes money` | Existing lifecycle and disabled-balance authority/CSRF/CAS guards |
+| E16 | `users-server.pg.test.js:260` — `DELETE logically deactivates and preserves user/money while revoking only target sessions` | Current logical DELETE success; injected-field rejection is independently N16 |
+
+Existing password-hash-cost/new-password-login assertions (`users-server.pg.test.js:245`, D140) and repository password-change/version assertions (`auth-sessions.pg.test.js:220`, D141) also support N08; they are not added again to the 16-slot accounting.
+
+### Complete users obligation closure
+
+All **76 historical users obligations (UA-001–UA-076)** now have executed current-contract destinations. Their original disposition was **15 existing PG + 45 pending new + 16 changed contracts**. The latter 61 obligations are closed by the new cases and cited surviving PG coverage; no legacy source row is dropped to fit the planning budget.
+
+| Historical source IDs / destinations | Executed current destination | Closure / preserved assertion |
+|---|---|---|
+| UA-001 / D219 | N01 | Anonymous listing rejects before SQL or session persistence |
+| UA-002–UA-003, UA-005–UA-007 / D132, D130 | N20; E01 for UA-007 enabled listing | Exact `/api/admin/users` and `/api/admin/panel` unavailable for anonymous, ordinary, current-admin and stale/inactive callers, with zero SQL; enabled listing remains safe |
+| UA-004 / D131 | E02 | Fresh database role, not asserted/JWT administrator role |
+| UA-008–UA-009 / D133; UA-010 / D134 | E04; E03 | Ownership and safe exact-money reads |
+| UA-011–UA-014 / D135 | N02; E06 ordinary upload; N03 removal | All four ordinary cross-user mutation paths reject |
+| UA-015–UA-018 / D136 | E05; E06 administrator upload; N04 removal | No admin exception on all four mutation paths |
+| UA-019–UA-031 / D137 | E07 for balance/role/status/version/provider/twoFAStatus/avatar; N05 for googleId/twoFASecret/trustedDevices/resetPasswordToken/loginAttempts/unexpected | All 13 original forbidden-field variants retain write-free rejection; remaining six also reject otherwise valid patches atomically |
+| UA-032–UA-035 / D138 | N06 | All four literal malformed/empty body variants leave entire account/session snapshots unchanged |
+| UA-036 / D139 | N07; `users-server.pg.test.js:199` — `identity profile update is atomic, clears email verification and revokes every old session` | Full account allowlist/hash preservation, current identity-change token/version/verification/revocation contract, no money writes |
+| UA-037 / D220, D140, D141 | N08; existing hash/authentication assertions cited above | Every owner parent/child revoked, exact single account version increment, admin and other accounts/graphs survive |
+| UA-038–UA-042 / D142 | N09 for missing current/empty new; E08 for wrong current; E09 for weak/current-only | All five password input variants reject without partial account mutation; current missing-password contract is 403 CURRENT_PASSWORD_INVALID, not old 400 |
+| UA-043 / D143 | N10 | Real Google HTTP authentication; local hash remains NULL and graph unchanged after rejected mutation |
+| UA-044 / D144 | N11 | Real separately committed theme/version race beats password CAS; old hash and graph survive |
+| UA-045 / D145; UA-047 / D146 | E10; E11 | Exact profile and avatar-upload parent CSRF |
+| UA-046, UA-048 / D222 | N12 | Theme and avatar removal independently exercise missing and wrong CSRF before effects |
+| UA-049–UA-051 / D147, D148 | E15 | Exact activation/DELETE/manual-balance authority and CSRF paths |
+| UA-052 / D223 | N20 | Application admin balance prefix rejects before authentication/storage regardless of body |
+| UA-053 / D149 | N13 + E12 | Theme extra-field/null rejection plus existing successful theme-only preservation |
+| UA-054 / D150 | E13 | Extra/missing upload payload rejected without provider or persistence work |
+| UA-055 / D151; UA-056 / D152 | N14 + E14; E14 foreign-cloud variant | Injected removal field rejected; successful cleanup follows DB commit and never deletes foreign asset |
+| UA-057–UA-059 / D147, D148 | E15 | Ordinary users cannot perform lifecycle/manual balance operations |
+| UA-060 / D153 | N15 | Activation field allowlist, suspension bookkeeping, exact target version increment and target-only graph revocation |
+| UA-061 / D154 | N16 + E16 | DELETE rejects injection; successful contract is logical deactivation with preserved user/money, not physical Mongo deletion |
+| UA-062 / D155 | N17 | Both missing lifecycle UUID paths are 404 and leave account/session snapshots unchanged |
+| UA-063–UA-065 / D156 | N18 | Malformed and historical ObjectId mutation targets reject before target queries; current-authentication queries are not falsely claimed absent |
+| UA-066 / D156 | E04 `/balance` malformed-target sequence | Existing GET balance UUID rejection, not credited to a mutation-only case |
+| UA-067, UA-069, UA-071, UA-073 / D223 | N20 | Exact valid/invalid admin balance URLs and historical caller/body variants stay unavailable without SQL |
+| UA-068, UA-070 / D148 | E15; N19 supports full no-write snapshots | Authorized disabled balance remains 503; ordinary caller remains forbidden |
+| UA-072 / D157 | N19 | All historical body categories ignored after proper auth/CSRF; fixed FINANCIAL_UNAVAILABLE and unchanged money/accounts/graphs |
+| UA-074–UA-075 / D158, D159 | `users-server.pg.test.js:164` — `disabled %s is 410 for all methods without authentication or writes`; N20 | Both reserve/restore keep 410 for ordinary methods, bodyless 410 HEAD and composition CORS 204 preflight, without SQL/cookies |
+| UA-076 / D160, D161 | `auth-http.pg.test.js:360` — `HTTP rejects current pair after %s`; `:344` — `%s issued pair is rejected after database version changes` (password, Google, 2FA); N20 | Enabled routes reject stale/revoked/inactive credentials; disabled admin paths stay unavailable before credential consultation |
+
+Cumulative closed-obligation accounting: **188 existing PG / 15 existing non-PG / 235 pending new / 25 changed disabled / 61 retired = 524**. Compared with C3.2b1, **45 pending users replacements + 16 users changed-contract obligations** now have executed PG coverage. This counts historical obligations, not the 755 expanded PG tests. Historical C3.2a summaries/source rows and the C3.2b1 completion record remain intact.
+
+### Execution and cleanup verification
+
+- User-supplied manual standalone run: **PASS — 1/1 suite, 20/20 tests, 0 snapshots, 5.833 s** — `bash backend/tests/run-disposable-pg.sh backend/tests/users-admin-authorization.pg.test.js`.
+- User-supplied manual full run before cleanup: **PASS — 9/9 suites, 755/755 tests, 0 snapshots, 121.991 s** — `bash backend/tests/run-disposable-pg.sh backend/tests/*.pg.test.js`.
+- These successful runs satisfied the conditional deletion gate. Deleted `users-admin-authorization.test.js`, then scanned the repository before deleting its three helpers. **Zero remaining executable importers** were found for each helper. A second post-deletion scan confirms the same result.
+- General name grep, excluding dependency/git directories and this historical ledger: `legacyMongoAuth` — **0 matches**; `legacyCsrf` — **0 matches**; `legacyUsersRoutes` — **1 non-import match** at unchanged `users-server.pg.test.js:85`, a negative `require.cache` path assertion. Import-oriented grep for `require`, `jest.requireActual` and static/dynamic `import` combined with any helper name — **0 matches**. No test/cache assertion was edited to manufacture a zero-reference count.
+- Deleted files, relative to `backend/tests/` (**4 total**): `users-admin-authorization.test.js`, `helpers/legacyMongoAuth.js`, `helpers/legacyCsrf.js`, `helpers/legacyUsersRoutes.js`.
+- Assistant-executed final full PG run **after all four deletions**: **PASS — 9/9 suites, 755/755 tests (735 previous + 20 new), 0 snapshots, 120.416 s** — `bash backend/tests/run-disposable-pg.sh backend/tests/*.pg.test.js`. All five migrations applied to disposable verified-TLS PG18; no Mongo fallback or skipped suites.
+- New suite SHA256: `d2f8c3ba1854c59c38a0b71a16e84c5c6bee710f97d923f7a3a911f58e6e83fc`. Cleanup did not edit the already manually verified new suite.
+- Static/protected-file verification: **PASS** — all 524 historical source rows match HEAD byte-for-byte; the completion table maps all 76 users IDs exactly once; explicit existing PG title/line citations resolve; the unchanged new suite has 19 registrations / 20 cases without skip/focus. Tracked changes are exactly this ledger and the four authorized deletions, with no staged changes. `git diff --check` passes.
+- Change boundary: this ledger update and exactly four authorized deletions, with the pre-existing untracked new users PG suite retained. Runtime, migrations, package files, other PG suites/helpers, financial/payment/Nodemailer/disabled-feature suites and every preserved feature remain unchanged. No C3.2c implementation is included.
+
+### C3.2c — proposed only; approval required
+
+1. Reconcile `financial-models.test.js` (78 expanded historical obligations) into `financial-invariants.pg.test.js` (**approximately 28 real-PG cases**) and `money-contracts.test.js` (**approximately 36 independent unit cases**). Preserve exact source variants and credit already-covered capabilities instead of mechanically copying Mongo middleware tests. PG destinations include mandatory/bounded cents, generated mirror/delta/replay evidence, journal source/type/effect and key/hash constraints, durable uniqueness/history and append-only behavior. Pure contracts include strict cents/money parsing, precision/coercion/negative-zero/unsafe bounds, exact formatting and numeric mirror round trips. Generated/NOT NULL states must not be disabled to fabricate impossible legacy damage; retained migration-shaped audit evidence must not become a lazy runtime migration API.
+2. Map all portable obligations in `financial-service.test.js` (64 historical obligations) to existing coordinator/readiness coverage or **approximately 8 new cases** in `financial-coordinator.pg.test.js`. Proposed gap groups: malformed input before acquiring PG; current administrator authority; stale expected balance; historical replay after a later committed adjustment; changed canonical payload under one key; authorization change after retryable rollback; unavailable recovery read preserving unknown outcome; precommit authority/infrastructure failure preserving rollback/no published success. Exact registration/matrix allocation requires source-to-assertion reconciliation before implementation; eight is a planning target, not permission to discard a gap.
+3. Delete `financial-models.test.js` and `financial-service.test.js` only after their mapped replacements pass and importer checks permit deletion; update this ledger without erasing source obligations. Run targeted PG/unit replacements, then full PG acceptance. If all proposed PG additions are new, the forecast is **791 PG cases / 10 suites** (755 + 28 + 8), plus about 36 unit cases outside that PG count; this is not an executed result.
+4. No runtime, migrations, package files, financial HTTP/payment/notification/Nodemailer/disabled-feature suites or preserved features will be edited. Future approval must explicitly authorize only the two replacement suites, the coordinator PG additions, two retired-source deletions and ledger accounting. **Wait for user approval before implementation.**

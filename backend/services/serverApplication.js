@@ -104,7 +104,7 @@ function createApplication({ poolProvider = getPool, authOptions = {}, avatarOpt
     const result = await verifyRuntime({ poolProvider });
     ready = true; return result;
   }
-  async function start({ port = Number(process.env.PORT || 10000), host = '127.0.0.1' } = {}) {
+  async function start({ port = Number(process.env.PORT || 10000), host = (process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1') } = {}) {
     if (starting || server.listening) throw new Error('SERVER_ALREADY_STARTED');
     starting = true;
     try {

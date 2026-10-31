@@ -1658,3 +1658,164 @@ Conservative cumulative status for explicitly reassessed source obligations: **2
 - Coordinator suite SHA256: `882a2496368283f961831ae2e2dff64ece6908c871e8f6b70149c4804b68a2fe`.
 - Static/protected-file checks: **PASS** — all 524 historical source rows remain byte-for-byte unchanged; all 64 FS IDs are mapped exactly once; every original coordinator byte is preserved as a prefix; eight new PG registrations and 25 money registrations have no skip/focus; existing/new title and registration-line citations resolve. Verified suite hashes match this record. Tracked changes are exactly the coordinator additions, legacy financial-service deletion and ledger, plus the new money suite; other tracked files match HEAD, with no staged changes. `git diff --check` passes.
 - Only the new money contract suite, appended coordinator gaps, this ledger and the authorized legacy financial-service suite deletion are changed. No runtime, migrations, packages, financial models/invariants, other PG suites, disabled features, payments/notifications/Nodemailer or preserved feature is edited. C3.2c2 requires separate approval after this sub-phase's verification and completion.
+
+## C3.2c2 — implementation checkpoint (superseded by verified cleanup record below)
+
+The user approved C3.2c2 after committing C3.2c1. `backend/tests/financial-invariants.pg.test.js` is now implemented with **20 registrations / 28 expanded Jest cases**: 17 ordinary registrations and three literal `test.each` tables expanding to 4 + 3 + 4 cases. Assertion loops are not additional Jest cases. **PG execution is blocked before execution by the unavailable safety checker; none of these 28 cases is reported passing yet.** The previous verified checkpoint remains **763 PG tests / 9 suites**. The expected acceptance count is **763 + 28 = 791 / 10 suites**, not an executed result.
+
+The mappings below supersede the applicable historical planned destination titles at the source-present/implementation level only. They do **not** close pending obligations until PG acceptance. All 524 historical source rows remain unchanged. `financial-models.test.js` remains present, byte-for-byte unchanged, pending the deletion gate. No runtime, migrations, package files, other PG/unit suites, protected notifications/Nodemailer/disabled-feature suites, or preserved features are modified.
+
+### Implemented invariants allocation — awaiting PG PASS
+
+All paths in this table are `backend/tests/financial-invariants.pg.test.js`; titles are exact registrations.
+
+| Case | Registration line / exact title | Cases | Intended invariant and distinct gap |
+|---|---|---:|---|
+| I01 | L125 `zero registration and exact cents generate the required NUMERIC balance mirror` | 1 | Mandatory zero initialization plus all five historical exact-cent variants (0, 1, 29, 100, 12345); SQL-generated decimal mirror |
+| I02 | L133 `negative user cents fail the balance constraint on insert and update without side effects` | 1 | Exact balance CHECK rejection on both write paths, full unchanged snapshots |
+| I03 | L139 `MAX_SAFE_INTEGER cents retain an exact SQL mirror and the next cent is rejected` | 1 | Exact SQL MAX mirror is valid even when a JavaScript numeric mirror is lossy; MAX+1 fails INSERT and UPDATE |
+| I04 | L147 `generated user balance cannot be supplied or independently overwritten` | 1 | Generated-column rejection for all three historical mismatch/precision amounts, without disabling generation |
+| I05 | L154 `authoritative user cents reject NULL on insertion and removal` | 1 | Exact NOT NULL column errors on INSERT and UPDATE |
+| I06 | L160 `exhausted row_version freezes money and metadata while caller overrides cannot reset versions` | 1 | Exhausted row blocks money/theme/reset attempts; ordinary caller version override is replaced by automatic +1 |
+| I07 | L171 `source-free journal generates exact signed deltas and canonical replay evidence without writable metadata` | 1 | Positive/zero/full-boundary signed deltas, canonical USD/replay evidence; delta/result/source projections cannot be assigned; no arbitrary extra/result SQL metadata column |
+| I08 | L191 `journal before and after cents enforce mandatory integer and safe bounds independently` | 1 | Each authoritative journal input has mandatory/safe/integer rejection with valid actor/owner and source-free surroundings |
+| I09 | L205 `journal keys hashes currency and reasons reject malformed evidence with valid actors and owners` | 1 | Exact malformed-key/hash/reason/currency constraints, including terminal newline and oversized key |
+| I10 | L219 `journal source groups type effect owner and delta direction cannot contradict valid source fixtures` | 1 | All-or-none adjustment sources; missing source-backed identity; type/effect/owner/direction checks use actual existing order/payment/user fixtures |
+| I11 | L242 `migration-shaped journal evidence preserves value and identifies the actual existing target` | 1 | SQL audit contract only: value preservation and actual target; no Mongoose/lazy runtime migration |
+| I12 | L251 `journal rejects identity and evidence rewrites deletion and cascading truncation while retaining every row` | 1 | Immutable identity/key/hash/cents/time/resource fields, DELETE and TRUNCATE with real referencing rows; existing reason-UPDATE case is credited rather than copied |
+| I13 | L272 `journal idempotency is scoped by actor operation and case-sensitive key while source-free rows coexist` | 1 | Duplicate keys including changed hash fail the exact unique guard; distinct actor/type/case and independent source-free rows are valid; real history index keys/direction and retention support |
+| I14 | L290 `source-effect uniqueness spans actors but separates source types and original debit from refund` | 1 | Actual duplicate source/effect across actors fails; same UUID across user/adjustment/order/payment source types is valid; paired debit/refund share an order source without collision |
+| I15 | L307 `order cross-table evidence rejects mismatched receipts and unpaired refunds and rolls back account writes` | 1 | Deferred amount/key/hash/resource/balance/reference/owner mismatches, uncancelled refund and existing wrong-kind refund FK; attempted account writes and new evidence roll back, prior rows survive |
+| I16 | L335 `payment cross-table evidence rejects mismatched credits and pending-source credits with complete fixtures` | 1 | Deferred amount/actor/owner/key/hash/reason/resource/balance/reference mismatches, unapproved pending credit; attempted account writes/new evidence roll back; valid control shows generated claim/USD/replay mirrors |
+| I17 | L359 `resource guards retain immutable claims snapshots and terminal decisions across update delete and truncate` | 1 | Payment claims/receipts/terminal decisions, order catalog/request/charge/owner immutability, resource DELETE/TRUNCATE; existing order fulfillment UPDATE is credited instead |
+| I18 | L442, title L447 `journal index readiness rejects %s without weakening enforcement or repairing schema` | 4 | D191: missing, notUnique, wrongPartial, wrongKeyOrder |
+| I19 | L452, title L456 `payment decision index readiness rejects %s without weakening enforcement or repairing schema` | 3 | D192: missing, notUnique, wrongPartial |
+| I20 | L463, title L468 `order replay index readiness rejects %s without weakening enforcement or repairing schema` | 4 | D193: missing, notUnique, wrongPartial, wrongKeyOrder |
+| **Total** | **20 registrations; no skip/focus** | **28** | **Implemented, awaiting actual PG execution** |
+
+### All 11 reserved schema-index obligations — exact implemented cases, execution pending
+
+Each historical obligation maps once to an expanded case below. These remain **pending PG verification**, not discarded or credited to the previous fake-catalog unit fixtures.
+
+| Historical obligation | Destination | Exact expanded title in financial-invariants.pg.test.js |
+|---|---|---|
+| FS-013 / D191 | I18 / missing | `journal index readiness rejects missing without weakening enforcement or repairing schema` |
+| FS-014 / D191 | I18 / notUnique | `journal index readiness rejects notUnique without weakening enforcement or repairing schema` |
+| FS-015 / D191 | I18 / wrongPartial | `journal index readiness rejects wrongPartial without weakening enforcement or repairing schema` |
+| FS-017 / D191 | I18 / wrongKeyOrder | `journal index readiness rejects wrongKeyOrder without weakening enforcement or repairing schema` |
+| FS-020 / D192 | I19 / missing | `payment decision index readiness rejects missing without weakening enforcement or repairing schema` |
+| FS-021 / D192 | I19 / notUnique | `payment decision index readiness rejects notUnique without weakening enforcement or repairing schema` |
+| FS-022 / D192 | I19 / wrongPartial | `payment decision index readiness rejects wrongPartial without weakening enforcement or repairing schema` |
+| FS-026 / D193 | I20 / missing | `order replay index readiness rejects missing without weakening enforcement or repairing schema` |
+| FS-027 / D193 | I20 / notUnique | `order replay index readiness rejects notUnique without weakening enforcement or repairing schema` |
+| FS-028 / D193 | I20 / wrongPartial | `order replay index readiness rejects wrongPartial without weakening enforcement or repairing schema` |
+| FS-030 / D193 | I20 / wrongKeyOrder | `order replay index readiness rejects wrongKeyOrder without weakening enforcement or repairing schema` |
+
+Index drift does **not** drop/disable the real required guards: the original unique index/constraint is retained under a temporary name, with its valid/ready/unique status, predicate and definition asserted unchanged. Missing means missing the required catalog name; nonunique/wrong-key/wrong-predicate variants add a same-named incompatible shadow alongside the retained guard. `verifyRuntime` uses a real independently checked-out TLS client and its genuine READ ONLY transaction; refusal must be sanitized `PG_BOOTSTRAP_SCHEMA_MISMATCH`, followed by ROLLBACK and clean release, with no COMMIT/DDL/DML or automatic repair. All account/resource/journal rows and the migration ledger must remain identical. Finally only test-created shadow indexes are dropped and original names restored; exact index catalog equality and successful readiness are required. The order wrongPartial variant targets the actual **decision** partial index; purchase uniqueness is unconditional SQL and is not weakened or replaced with an invented Mongo-shaped partial purchase rule.
+
+### financial-models.test.js — all 78 historical obligations mapped once
+
+New I-cases below are implemented, **not yet executed**. Existing independent unit credits are intentionally retained as unit coverage, not recounted as PG. Retired mechanisms keep their original rationale and, where applicable, independent portable protection; no Mongoose behavior is recreated.
+
+| Historical source IDs | Exact implemented / existing destination | Portable obligation and current status |
+|---|---|---|
+| FM-001 | Retired hydration mechanism; I01/I05 independently protect mandatory SQL cents | No nullable-cent Mongoose hydration/default/migration API |
+| FM-002 / D162 | I01 | Explicit zero initialization and generated mirror — awaiting PG PASS |
+| FM-003–FM-014 / D163 | `money-contracts.test.js:65` — `invalid cents reject the entire historical coercion and unsafe-value matrix` | All 12 JavaScript invalid/coerced-cent variants closed in verified C3.2c1; not PG executions |
+| FM-015–FM-019 / D164 | I01 | All five exact generated-mirror cent variants — awaiting PG PASS |
+| FM-020–FM-022 / D165, D166 | I04 + `money-contracts.test.js:48` — `string precision beyond two digits is rejected even for trailing zeros`; `:53` — `numeric excess precision and nonfinite or signed amounts are rejected` | SQL generated protection plus executed unit precision rejection; compound closure awaits PG PASS |
+| FM-023 / D167 | `user-repository.test.js:419` — `unrepresentable numeric mirrors are rejected before a cents update`; `financial-coordinator.pg.test.js:1432` — `malformed adjustment matrix rejects before pool acquisition or account effects` | Existing verified write-boundary rejection; I03 separately proves exact SQL MAX remains valid |
+| FM-024 | Retired Mongoose validation-disable option; I04 independently protects generated mirrors | No save-validation flag or middleware analogue |
+| FM-025 / D168, D169 | `financial-coordinator.pg.test.js:1008` — `production scope authority rejects forgeries and revokes committed handles`; `user-repository.test.js:345` — `financial cents compare-and-swap uses one scoped client and neither writes mirrors nor commits` | Existing PG scope and supporting unit CAS; do not duplicate |
+| FM-026 / D169, D012 | `user-repository.test.js:345`; `:432` — `financial stale versions and changed before cents fail before mutation` | Existing verified independent CAS/read-state unit credit; not an extra PG test |
+| FM-027–FM-031 | Retired document markModified/lazy migration and overwritten legacy-float mechanisms; I01/I04 and executed money precision cases independently protect current representation | No legacy writable pair adoption/hydration path |
+| FM-032 / D011 | `user-repository.test.js:82` — `safe mappings reject coerced BIGINT and inconsistent generated balance, without creating defaults` | Existing verified unit corrupt-read evidence; do not disable generation to fabricate impossible SQL drift |
+| FM-033 | Retired partial hydrated document migration; existing safe mapping at `user-repository.test.js:82` | No partial-document source/default fabrication |
+| FM-034 / D170 | I05 | Mandatory cents cannot be removed — awaiting PG PASS |
+| FM-035–FM-046 | Retired Mongo operator/session matrix; I04 and existing scope/CAS cases independently protect current writes | No operator emulation or arbitrary Mongo ClientSession |
+| FM-047 / D168, D171 | `financial-coordinator.pg.test.js:1008`; `:1067` — `rollback also revokes its scope and balance handle` | Existing verified active private scope and rollback revocation |
+| FM-048–FM-052 / D172 | I04/I15/I16 + `financial-coordinator.pg.test.js:1432` | Existing strict canonical intent validation plus generated mirror and scoped rollback/evidence protection; compound SQL closure awaits PG PASS, no writable Mongo pair syntax |
+| FM-053–FM-057 | Retired implicit/explicit $set session forwarding and query-driven legacy migration/defaults; existing scoped-client/CAS and safe mapping units remain | No query hydration or migration API |
+| FM-058 / D011 | `user-repository.test.js:82` | Existing verified unit inconsistent read-evidence rejection |
+| FM-059 | Retired Mongoose upsert/multi-account/untargeted model APIs; existing `financial-coordinator.pg.test.js:1008` protects owner-bound scope | No new balance setter/upsert API |
+| FM-060 / D173 | `users-server.pg.test.js:227` — `theme-only update keeps token version, sessions and money unchanged` | Existing verified ordinary nonfinancial mutation |
+| FM-061 / D174 | I07 | Source-free canonical USD/replay evidence — awaiting PG PASS |
+| FM-062–FM-064 / D175 | I07/I08 + executed `money-contracts.test.js:65`, `financial-coordinator.test.js:155` — `noncanonical or invalid desired cents %s are rejected before connecting` | Mandatory safe SQL before/after, nonwritable generated delta, strict independent application cents; SQL transport strings are not public coercion acceptance; compound closure awaits PG PASS |
+| FM-065 / D176, D177 | I07/I10/I11 + executed `money-contracts.test.js:100` — `addition is exact at the safe boundary and rejects overflow`; `:106` — `subtraction permits exact zero but rejects underflow` | Exact signed generated full-boundary deltas and directional contracts plus checked unit arithmetic — awaiting PG PASS |
+| FM-066–FM-067 / D178 | I09 + existing `financial-coordinator.test.js:168` — `invalid key %j is rejected without acquiring a client` | Real SQL evidence/key/hash grammar plus application coercion rejection — awaiting PG PASS |
+| FM-068 / D179 | I10 | Complete or absent adjustment source — awaiting PG PASS |
+| FM-069 / D180 | I10 | Source-backed identity cannot be omitted — awaiting PG PASS |
+| FM-070 / D181 | I10 | Source/type/effect/owner/direction consistency — awaiting PG PASS |
+| FM-071 / D182 | I11 | Migration-shaped audit preserves value/actual target — awaiting PG PASS |
+| FM-072 / D183 | I07 | Canonical generated replay balance, not an independently writable result — awaiting PG PASS |
+| FM-073 / D184 | I07 + existing `financial-coordinator.test.js:161` — `unknown privileged field %s is rejected before any connection` | Fixed SQL columns/generated evidence and narrow JS allowlists replace StrictModeError/metadata APIs — awaiting PG PASS |
+| FM-074 / D013, D185 | `financial-coordinator.pg.test.js:466` — `adjustment atomically commits exact balance, version and journal`; `financial-coordinator.test.js:62` — `BEGIN, limits, sorted locks, financial DML, evidence check and COMMIT precede one clean release` | Existing PG atomic transaction/scoped client, supporting unit sequence |
+| FM-075 | Retired Mongoose save-validation option; I08/I09 independently protect SQL evidence | No save-validation bypass API |
+| FM-076 / D013, D186 | `financial-coordinator.pg.test.js:466`; `:1392` — `append-only and immutable guards remain enabled in the disposable schema`; I12 supplies additional immutable/DELETE/TRUNCATE paths | Existing PG shared transaction and append-only guard credit, without duplicating original reason/fulfillment UPDATE |
+| FM-077 / D187 | I12 | Real immutable row UPDATE/DELETE/TRUNCATE protection; model bulk/hydrate/replace syntax retires — awaiting PG PASS |
+| FM-078 / D001 | I13/I14/I12 + I18–I20 | Real unique/source/history definitions, scope behavior and durable retention; no autoIndex/autoCreate/TTL emulation — awaiting PG PASS |
+
+Historical FM accounting remains unchanged until verification: 5 existing PG / 4 existing non-PG / 42 new / 27 retired = 78. C3.2c1 already closed 12 of the 42 new via executed money units; **30 FM compound/SQL obligations and all 11 FS schema obligations await this pass's PG acceptance**. Once verified, the intended FM reconciliation is **35 executed/credited PG + 16 executed non-PG + 27 retired = 78**, and FS becomes **38 executed/credited PG + 4 executed non-PG + 22 retired = 64**. These are projected dispositions, not current pass claims. Other historical inventories are not silently reclassified merely because they share a destination. Current verified cumulative accounting remains **210 PG / 27 non-PG / 201 pending new / 25 changed disabled / 61 retired = 524** until acceptance.
+
+### Allocation deviations and isolation
+
+- Original forecast 6 user + 8 journal + 6 uniqueness + 8 append/resource = 28 is reconciled as **6 user + 6 journal/generated + 5 scope/resource + 11 real index-readiness = 28**. The 11 required schema variants receive their own executions rather than disappearing inside a generic unit credit. Related matrices share one registration; no assertion loop is counted as multiple cases.
+- Existing reason UPDATE, order fulfillment UPDATE, scoped authority/CAS, successful coordinator atomic writes and nonfinancial mutation are credited, not reimplemented. New immutable identity/evidence columns, DELETE/TRUNCATE and negative cross-table contracts add genuine SQL gaps.
+- Negative resource cases have successful complete control pairs, actual existing actor/owner/source/FK targets, intended CHECK/trigger error assertions and complete before/after snapshots after rollback. Wrong-kind refund references a real existing journal, not a missing UUID. TRUNCATE uses actual dependent rows with CASCADE so the append guard, not an unrelated FK refusal, is tested.
+- Index drift retains original enforcement; neither triggers nor constraints/generated columns are disabled. Historical Mongoose casts/defaults/save hooks and Mongo-only index options retire, while portable money/evidence/security obligations remain mapped independently.
+
+### Verification status and safe deletion gate
+
+- `node --check backend/tests/financial-invariants.pg.test.js`: **PASS** (syntax only, not Jest/PG execution).
+- New suite SHA256: `3556debfece3c3449ce15caeabd068ec92f65ec5bf781af312317729d3034355`.
+- `financial-models.test.js` SHA256 remains `edd7d8175945d3e303bff3f23934c2d52f1a9c5a003c85cbfea49f41d793c6a9`; **not deleted** because the required new-suite/full-PG gate has not run.
+- Whole-tree importer/reference scan: `grep -RIn --exclude=COVERAGE_LEDGER.md --exclude-dir=node_modules -- 'financial-models' backend/tests/` — **zero matches** before any deletion. A fresh scan is required again immediately before authorized cleanup after acceptance.
+- `money-contracts.test.js` SHA256 remains `069b1ca21962c0327854a9a882fd5ce8ccf835a593755c0c2bbbc479b154d281`; no unit test code changed. Previous verified counts remain 36/36 money and 237/237 supporting units; they are not claimed rerun in C3.2c2.
+- Targeted command (blocked before execution; awaiting actual output): `bash backend/tests/run-disposable-pg.sh backend/tests/financial-invariants.pg.test.js` — expected 28 cases / 1 suite.
+- Full command (blocked before execution; awaiting actual output): `bash backend/tests/run-disposable-pg.sh backend/tests/*.pg.test.js` — expected 791 cases / 10 suites.
+- Static reconciliation: **PASS** — all 524 historical source rows byte-for-byte unchanged; all 78 FM IDs mapped exactly once; all 11 pending FS schema IDs mapped exactly once; exact I-case titles/registration lines resolve; 17 plain registrations plus 11 table expansions; no skip/focus, trigger disabling, constraint dropping, replication-role bypass or generated-column override.
+- Final `git diff --check`: **PASS**. Working tree changes are only this ledger and the new invariants suite; the legacy models suite and every other tracked file remain unchanged. No commit performed in this pass.
+- Safety-check failures did not execute the commands; no override or harness bypass used. The exact commands were provided to the user for manual execution. Deletion and passing/closed ledger statuses remain gated on real passing output. C3.2d has not begun.
+
+## C3.2c2 — verified targeted completion and authorized cleanup
+
+**This completion record supersedes every pending/not-executed status in the C3.2c2 implementation checkpoint above, and the applicable historical planned destinations, without rewriting the 524 historical source rows.** All **I01–I20** allocation rows above are now **executed PG PASS**: 17 ordinary cases plus 4 + 3 + 4 index-table expansions = **28/28 passing cases across 20 registrations**. Assertion loops remain one Jest case, not additional executions. The corrected targeted result was supplied by the user from the real disposable PG18 harness: **1/1 suite, 28/28 tests, 0 snapshots, 4.757 s**, with all five migrations applied. Final full-PG cleanup acceptance is recorded separately and remains pending until a successful result exists.
+
+### Exact executed allocation and index closure
+
+Executed breakdown: **6 user-balance/frozen-version + 6 journal/generated-contract + 5 scope/resource-evidence + 11 real index-readiness = 28 PG cases**. All exact I-case titles, registration lines and the complete 78-row FM reconciliation remain in the implementation table above; their new PG destinations are now PASS, not pending. Existing scope/CAS, atomic writes, reason UPDATE, order fulfillment UPDATE, nonfinancial mutation, strict money/unit validation and safe read mapping are credited at their exact surviving destinations rather than duplicated.
+
+All **11 formerly pending schema-index obligations are now closed** by these exact expanded passing names in `financial-invariants.pg.test.js`:
+
+| Historical obligation | Executed PG PASS destination |
+|---|---|
+| FS-013 / D191 | `journal index readiness rejects missing without weakening enforcement or repairing schema` |
+| FS-014 / D191 | `journal index readiness rejects notUnique without weakening enforcement or repairing schema` |
+| FS-015 / D191 | `journal index readiness rejects wrongPartial without weakening enforcement or repairing schema` |
+| FS-017 / D191 | `journal index readiness rejects wrongKeyOrder without weakening enforcement or repairing schema` |
+| FS-020 / D192 | `payment decision index readiness rejects missing without weakening enforcement or repairing schema` |
+| FS-021 / D192 | `payment decision index readiness rejects notUnique without weakening enforcement or repairing schema` |
+| FS-022 / D192 | `payment decision index readiness rejects wrongPartial without weakening enforcement or repairing schema` |
+| FS-026 / D193 | `order replay index readiness rejects missing without weakening enforcement or repairing schema` |
+| FS-027 / D193 | `order replay index readiness rejects notUnique without weakening enforcement or repairing schema` |
+| FS-028 / D193 | `order replay index readiness rejects wrongPartial without weakening enforcement or repairing schema` |
+| FS-030 / D193 | `order replay index readiness rejects wrongKeyOrder without weakening enforcement or repairing schema` |
+
+The complete FM map above remains authoritative. The **30 remaining FM compound/SQL obligations** now closed are **FM-002, FM-015–FM-022, FM-034, FM-048–FM-052, FM-061–FM-073 and FM-077–FM-078**. Their exact I-case and supporting existing-unit/PG destinations are unchanged; every new I-case now has executed evidence. FM-003–FM-014 were already closed by the 12 verified C3.2c1 money-unit obligations. Existing FM credits and all 27 retired mechanisms retain their original independent rationale; no Mongoose casts/defaults/save hooks, writable mirrors, lazy migration, Mongo operator emulation or TTL options were recreated.
+
+Current **FM reconciliation: 35 executed/credited PG + 16 executed non-PG + 27 retired = 78**. Current **FS reconciliation: 38 executed/credited PG + 4 executed non-PG + 22 retired = 64**. No portable FM or FS obligation remains pending. Conservative current cumulative accounting for explicitly reassessed source obligations: **251 PG / 27 non-PG / 160 pending new / 25 changed disabled / 61 retired = 524**. This pass moves **41 obligations** (30 FM + 11 FS) from pending to executed/credited PG; it does **not** claim 41 new tests. Other historical inventories are not silently reclassified merely because they share a destination.
+
+### Corrected test query, deletion and verification gate
+
+- Earlier manual targeted run: **27 passed / 1 failed / 28 total**. Earlier full manual run: **790 passed / 1 failed / 791 total; 9 suites passed / 1 failed / 10 total**. Every other PG suite passed; the sole failure was the new I15 test query's shared UUID/VARCHAR parameter typing, not runtime/schema/trigger/constraint behavior. These failed runs are not relabeled as passing.
+- The only test fix was at **L330** in the query beginning at L327: `decision_result_operation_reference=$4` became `decision_result_operation_reference=$4::UUID::TEXT`, matching the UUID typing already required by `refund_operation_id=$4::UUID`. The expected `23514 / ORDER_REFUND_EVIDENCE_MISMATCH` assertion was not weakened. No other query, assertion, test file, runtime, migration, package or preserved feature was changed by the fix.
+- Corrected targeted manual run: **PASS — 28/28 tests, 1/1 suite, 0 snapshots, 4.757 s** — `bash backend/tests/run-disposable-pg.sh backend/tests/financial-invariants.pg.test.js`. Exact 28 passing titles and all five applied migrations were supplied by the user; the previously failing I15 now passes.
+- Corrected invariants suite SHA256: `825030dd8d0111749a43ce9158dd5ab47deb9e8a39fc6ce10f0f09dadd6aee39` (supersedes the pre-fix hash in the implementation checkpoint).
+- A fresh whole-tree pre-deletion scan — `grep -RIn --exclude=COVERAGE_LEDGER.md --exclude-dir=node_modules -- 'financial-models' backend/tests/` — found **zero references/importers outside this ledger**. The unchanged pre-deletion legacy SHA256 was `edd7d8175945d3e303bff3f23934c2d52f1a9c5a003c85cbfea49f41d793c6a9`.
+- **Deleted only `backend/tests/financial-models.test.js`**, after the user's corrected 28/28 PASS and the fresh zero-importer scan, as explicitly authorized. The earlier checkpoint's retained-file/pending-deletion statements are superseded. No additional helper or test was deleted.
+- Unit test code is unaffected. `money-contracts.test.js` SHA256 remains `069b1ca21962c0327854a9a882fd5ce8ccf835a593755c0c2bbbc479b154d281`. Prior verified counts remain **36/36 money + 237/237 supporting units**; these are not claimed rerun in this cleanup pass.
+- Final full PG run **after deletion**: **PENDING successful execution/result** — `bash backend/tests/run-disposable-pg.sh backend/tests/*.pg.test.js`; expected **763 + 28 = 791 tests / 10 suites**. The normal tool attempt was blocked before execution by the unavailable safety checker; the exact command was given to the user for manual execution. No safety override, application .env sourcing or harness bypass was used; 791/10 is not yet claimed as an all-passing full run.
+- Allocation deviations are exactly those recorded above: consolidate related matrices and credit existing PG cases to allocate **11 distinct schema-readiness executions** within the 28-case target. The order wrongPartial case tests the actual **decision** partial index; purchase uniqueness remains unconditional SQL. Real enforcing indexes are retained, triggers/constraints/generated columns stay enabled, and negative resource fixtures fail for their intended invariant.
+- Post-deletion whole-tests-tree reference/importer scan: **zero matches outside this ledger**. The authorized file is confirmed absent.
+- Final static reconciliation and syntax checks: **PASS** — all 524 historical source rows byte-for-byte unchanged; all 78 FM IDs and all 11 FS schema IDs mapped exactly once in their respective reconciliation records; exact I-case titles/lines and corrected suite hash resolve; obligation totals balance; only the ledger, new invariants suite and legacy models deletion differ from HEAD; no staged changes. `git diff --check` passes.
+- Protected boundaries remain unchanged: no runtime/migration/package edits, no edits to payment-notifications/Nodemailer/disabled-feature suites or other preserved features. No commit performed in this pass. **C3.2d has not begun and requires user approval.**

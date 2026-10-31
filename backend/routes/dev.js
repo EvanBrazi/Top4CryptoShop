@@ -1,21 +1,10 @@
-// routes/dev.js أو أي ملف مناسب
-const express = require('express');
-const router = express.Router();
-const { notify } = require('../utils/notifications'); // تأكد من استيراد دالة notify
+'use strict';
 
-/**
- * @route POST /dev/simulate-notification
- * @desc إرسال إشعار وهمي لأي مستخدم أو دور
- */
-router.post('/simulate-notification', (req, res) => {
-  const { type, payload, targetRole, targetUserId } = req.body;
+// TODO C3: Restore simulation only after approved notification persistence and socket authentication.
+// Notification simulation remains disabled and never dispatches or queues payloads.
+const router = require('express').Router();
+const UNAVAILABLE = Object.freeze({ unavailable: true, reason: 'POSTGRES_MIGRATION_PENDING' });
 
-  if (!type || !payload) {
-    return res.status(400).json({ error: 'النوع والمحتوى مطلوبان' });
-  }
-  console.log('✅ تم إرسال الإشعار التجريبي بنجاح', type, payload);
-  notify({ type, ...payload }, targetRole, targetUserId);
-  res.json({ success: true, message: '✅ تم إرسال الإشعار التجريبي بنجاح' });
-});
+router.use((req, res) => res.status(503).json(UNAVAILABLE));
 
 module.exports = router;

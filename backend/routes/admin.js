@@ -7,9 +7,13 @@
  */
 
 const express = require('express');
-const path = require('path');
 const router = express.Router();
-const User = require('../models/User');
+
+// TODO C3: Port legacy admin user listing/panel routes to PostgreSQL before enabling them.
+const UNAVAILABLE = Object.freeze({ unavailable: true, reason: 'POSTGRES_MIGRATION_PENDING' });
+function unavailable(req, res) {
+  return res.status(503).json(UNAVAILABLE);
+}
 const { verifyToken, checkAdmin, requireSelfOrAdmin } = require('../middlewares/auth');
 const { doubleCsrfProtection } = require('../middlewares/csrfMiddleware');
 
@@ -42,32 +46,13 @@ router.put('/update-balance/:userId', requireSelfOrAdmin('userId'), doubleCsrfPr
  * @route GET /users
  * @access Admin
  */
-router.get('/users', async (req, res) => {
-  try {
-    const users = await User.find({}, '_id username balance');
-    res.json({
-      success: true,
-      count: users.length,
-      users
-    });
-  } catch (err) {
-    console.error('❌ خطأ في جلب المستخدمين:', err.message);
-    res.status(500).json({
-      success: false,
-      error: 'فشل في جلب البيانات',
-      message: 'حدث خطأ أثناء محاولة جلب قائمة المستخدمين'
-    });
-  }
-});
+router.get('/users', unavailable);
 
 /**
  * ✅ عرض صفحة الأدمن المحمية
  * @route GET /panel
  * @access Admin
  */
-router.get('/panel', (req, res) => {
-  const adminPagePath = path.join(__dirname, '..', 'protectedViews', 'admin.html');
-  res.sendFile(adminPagePath);
-});
+router.get('/panel', unavailable);
 
 module.exports = router;

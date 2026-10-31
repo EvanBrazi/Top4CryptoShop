@@ -1,85 +1,114 @@
 'use strict';
-
-jest.mock('../models/Order', () => ({ find: jest.fn(), updateOne: jest.fn().mockResolvedValue({}) }));
-jest.mock('../models/Payment', () => ({ find: jest.fn(), updateOne: jest.fn() }));
-jest.mock('../models/PendingNotification', () => ({ find: jest.fn(), create: jest.fn() }));
-const { EventEmitter } = require('node:events');
-const Order = require('../models/Order');
-const Payment = require('../models/Payment');
-const Pending = require('../models/PendingNotification');
+// C3.2d1: PN-001..PN-023 retained as portable disabled contracts, plus one
+// frozen/uniform-result gap. No removed models, real sockets or listeners.
+jest.mock('../db/pg', () => {
+  const refused = () => { throw new Error('UNIT_DATABASE_ACTIVITY_REFUSED'); };
+  const pool = { query: jest.fn(refused), connect: jest.fn(refused) };
+  return { getPool: jest.fn(() => pool), pool };
+});
+const database = require('../db/pg');
 const notifications = require('../utils/notifications');
+const MARKER = { unavailable: true, reason: 'POSTGRES_MIGRATION_PENDING' };
+let server, socket, queue, readClients, readQueue;
 
-let server, socket, queue;
 beforeEach(() => {
   jest.clearAllMocks();
-  jest.spyOn(console, 'log').mockImplementation(() => {});
-  jest.spyOn(console, 'error').mockImplementation(() => {});
+  socket = { readyState: 1, send: jest.fn(), on: jest.fn(), once: jest.fn(), addListener: jest.fn(), close: jest.fn() };
   queue = [];
-  Order.find.mockReturnValue({ sort: async () => [], lean: async () => [] });
-  Pending.find.mockImplementation(() => ({ limit: async () => queue }));
-  server = new EventEmitter();
-  socket = new EventEmitter();
-  socket.readyState = 1;
-  socket.send = jest.fn();
-  server.clients = new Set([socket]);
-  notifications.initNotifications(server);
-  server.emit('connection', socket);
+  readClients = jest.fn(() => new Set([socket])); readQueue = jest.fn(() => queue);
+  server = { on: jest.fn(), once: jest.fn(), addListener: jest.fn() };
+  Object.defineProperties(server, { clients: { get: readClients }, pendingNotifications: { get: readQueue } });
 });
-afterEach(() => { socket.emit('close'); jest.restoreAllMocks(); });
-async function authenticate(role) {
-  await socket.listeners('message')[0](JSON.stringify({ type: 'auth', role, userId: 'unverified-client-identity' }));
+afterEach(() => {
+  for (const spy of [database.getPool, database.pool.query, database.pool.connect,
+    server.on, server.once, server.addListener, socket.on, socket.once, socket.addListener,
+    socket.send, socket.close, readClients, readQueue]) expect(spy).not.toHaveBeenCalled();
+  for (const entry of queue) expect(entry.save).not.toHaveBeenCalled();
+});
+function fixed(value) { expect(value).toEqual(MARKER); }
+function initialize(role) {
+  // Client assertions are inert inputs, not verified authentication. There is
+  // deliberately no listener to invoke and no synthetic connection/message event.
+  return notifications.initNotifications(server, { type: 'auth', role, userId: 'unverified-client-identity' });
 }
-test.each(['newPayment', 'paymentAccepted', 'paymentRejected', 'paymentStatus', 'PAYMENT'])('direct %s dispatch is a no-op and cannot enqueue', async type => {
-  await notifications.notify({ type, paymentId: 'private-payment' }, 'user', 'unverified-client-identity');
-  expect(socket.send).not.toHaveBeenCalled();
-  expect(Pending.create).not.toHaveBeenCalled();
-  expect(Payment.find).not.toHaveBeenCalled();
+function queued(type, payload) {
+  const entry = { type, payload, save: jest.fn() };
+  queue.push(entry); return entry;
+}
+
+// PN-001..PN-005
+test.each(['newPayment', 'paymentAccepted', 'paymentRejected', 'paymentStatus', 'PAYMENT'])(
+  'direct %s returns unavailable without sending queueing or database access', async type => {
+    fixed(initialize('user'));
+    fixed(await notifications.notify({ type, paymentId: 'private-payment' }, 'user', 'unverified-client-identity'));
+  });
+// PN-006
+test('paymentId under an unrelated type remains unavailable without payload serialization', async () => {
+  const serialize = jest.fn(() => { throw new Error('PRIVATE_PAYLOAD_SERIALIZATION_REFUSED'); });
+  fixed(await notifications.notify({ type: 'status', paymentId: 'private-payment', toJSON: serialize }));
+  expect(serialize).not.toHaveBeenCalled();
 });
-test('paymentId payload is blocked even under an unrelated type', async () => {
-  await notifications.notify({ type: 'status', paymentId: 'private-payment' });
-  expect(socket.send).not.toHaveBeenCalled();
+// PN-007
+test('client-asserted administrator initialization cannot query or dispatch pending payments', () => {
+  queued('Payment', { paymentId: 'private-payment' });
+  fixed(initialize('admin'));
 });
-test('client-asserted administrator authentication cannot query or dispatch pending payments', async () => {
-  await authenticate('admin');
-  expect(Payment.find).not.toHaveBeenCalled();
-  expect(socket.send).not.toHaveBeenCalled();
+// PN-008..PN-011
+test.each(['newPayment', 'paymentAccepted', 'paymentRejected', 'paymentStatus'])(
+  'client-asserted user cannot replay queued %s payment payloads or save notification state', async type => {
+    const entry = queued(type, { type, paymentId: 'private-payment' });
+    fixed(initialize('user'));
+    fixed(await notifications.notify(entry.payload, 'user', 'unverified-client-identity'));
+  });
+// PN-012
+test('stored Payment type and embedded paymentId both remain unread rather than activating queue filtering', () => {
+  queued('Payment', { type: 'generic' }); queued('generic', { paymentId: 'private-payment' });
+  fixed(initialize('user'));
 });
-test.each(['newPayment', 'paymentAccepted', 'paymentRejected', 'paymentStatus'])('client-asserted user cannot replay queued %s payment payloads', async type => {
-  const notification = { type, payload: { type, paymentId: 'private-payment' }, save: jest.fn() };
-  queue.push(notification);
-  await authenticate('user');
-  expect(Payment.find).not.toHaveBeenCalled();
-  expect(socket.send).not.toHaveBeenCalled();
-  expect(notification.save).not.toHaveBeenCalled();
+// PN-013
+test('markNotificationSent Payment returns unavailable without reading or updating state', async () => {
+  fixed(await notifications.markNotificationSent('Payment', 'private-id'));
 });
-test('queue filtering checks both stored type and embedded paymentId', async () => {
-  queue.push({ type: 'Payment', payload: { type: 'generic' }, save: jest.fn() });
-  queue.push({ type: 'generic', payload: { paymentId: 'private-payment' }, save: jest.fn() });
-  await authenticate('user');
-  expect(socket.send).not.toHaveBeenCalled();
+// PN-014..PN-018
+test.each(['newOrder', 'orderAccepted', 'orderRejected', 'orderStatus', 'ORDER'])(
+  'direct %s returns unavailable without sending queueing or database access', async type => {
+    fixed(initialize('user'));
+    fixed(await notifications.notify({ type, orderId: 'private-order' }, 'user', 'unverified-client-identity'));
+  });
+// PN-019..PN-020
+test.each(['admin', 'user'])('client-asserted %s initialization cannot query Orders or activate dispatch', role => {
+  queued('Order', { orderId: 'private-order' });
+  fixed(initialize(role));
 });
-test('markNotificationSent Payment is a no-op', async () => {
-  await notifications.markNotificationSent('Payment', 'private-id');
-  expect(Payment.updateOne).not.toHaveBeenCalled();
+// PN-021
+test('old queued order types and embedded identifiers remain unread with no saves or dispatch', async () => {
+  queued('newOrder', { type: 'generic' }); queued('generic', { orderId: 'private-order' });
+  fixed(initialize('user'));
+  fixed(await notifications.notify({ type: 'generic', orderId: 'private-order' }));
 });
-test.each(['newOrder', 'orderAccepted', 'orderRejected', 'orderStatus', 'ORDER'])('direct %s dispatch cannot send or enqueue', async type => {
-  await notifications.notify({ type, orderId: 'private-order' }, 'user', 'unverified-client-identity');
-  expect(socket.send).not.toHaveBeenCalled(); expect(Pending.create).not.toHaveBeenCalled();
+// PN-022
+test('markNotificationSent Order returns unavailable without reading or updating state', async () => {
+  fixed(await notifications.markNotificationSent('Order', 'private-id'));
 });
-test.each(['admin', 'user'])('client-asserted %s cannot query Orders', async role => {
-  await authenticate(role);
-  expect(Order.find).not.toHaveBeenCalled(); expect(Order.updateOne).not.toHaveBeenCalled();
+// PN-023: previous title is obsolete; generic notices are disabled too.
+test('nonfinancial notice dispatch also returns unavailable without serialization sending or queueing', async () => {
+  const serialize = jest.fn();
+  fixed(initialize('admin'));
+  fixed(await notifications.notify({ type: 'notice', message: 'Unrelated notice', toJSON: serialize }));
+  expect(serialize).not.toHaveBeenCalled();
 });
-test('old queued order payloads and identifiers are suppressed without writes', async () => {
-  const entries = [{ type: 'newOrder', payload: { type: 'generic' }, save: jest.fn() }, { type: 'generic', payload: { orderId: 'private-order' }, save: jest.fn() }];
-  queue.push(...entries); await authenticate('user');
-  expect(socket.send).not.toHaveBeenCalled(); entries.forEach(item => expect(item.save).not.toHaveBeenCalled());
-  expect(Pending.find.mock.calls[0][0].$nor).toEqual(expect.arrayContaining([{ 'payload.orderId': { $exists: true } }]));
-});
-test('Order notification-state writes are disabled', async () => {
-  await notifications.markNotificationSent('Order', 'private-id'); expect(Order.updateOne).not.toHaveBeenCalled();
-});
-test('nonfinancial notice dispatch is preserved', async () => {
-  const notice = { type: 'notice', message: 'Unrelated notice' }; await notifications.notify(notice);
-  expect(socket.send).toHaveBeenCalledWith(JSON.stringify(notice));
+// New contract gap. Do not invent notifyUser/notifyAdmin exports: notify is the
+// actual utility API; separate utils/notifyAdmin.js is covered in disabled units.
+test('all actual notification entrypoints return one frozen uniform marker that hostile inputs cannot change', async () => {
+  expect(Object.keys(notifications).sort()).toEqual(['initNotifications', 'markNotificationSent', 'notify']);
+  const reads = jest.fn(() => { throw new Error('DISABLED_INPUT_MUST_NOT_BE_READ'); });
+  const input = new Proxy({}, { get: reads, ownKeys: reads });
+  const result = notifications.initNotifications(server, input);
+  fixed(result); expect(Object.isFrozen(result)).toBe(true);
+  expect(await notifications.notify(input, input, input)).toBe(result);
+  expect(await notifications.markNotificationSent(input, input)).toBe(result);
+  expect(() => { result.unavailable = false; }).toThrow(TypeError);
+  expect(() => { result.reason = 'ENABLED'; }).toThrow(TypeError);
+  expect(reads).not.toHaveBeenCalled();
+  fixed(await notifications.notify({ type: 'notice' }));
 });

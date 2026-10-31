@@ -1,5 +1,12 @@
 import { login } from './auth.js';
-import { STORAGE_KEYS, isValidToken } from './utils/appUtils.js';
+import { STORAGE_KEYS } from './utils/appUtils.js';
+import { secureFetch } from './securefetch.js';
+
+function loginRedirectFor(user) {
+    if (user.role === 'admin') return '/homepage.html';
+    // TODO(C5): Replace with user dashboard when built
+    return '/';
+}
 // ✅ عناصر الواجهة
 const spinner = document.getElementById('spinner');
 const btnText = document.getElementById('btnText');
@@ -7,10 +14,11 @@ const submitBtn = document.getElementById('submitBtn');
 
 // ✅ تطبيق الثيم المحفوظ
 document.addEventListener('DOMContentLoaded', () => {
-    const TOKEN = localStorage.getItem(STORAGE_KEYS.USER_TOKEN);
     (async () => {
-        if (await isValidToken(TOKEN)) {
-            window.location.href = '/homepage.html';
+        const result = await secureFetch('/api/auth/check-session');
+        if (result.success && result.data.isAuthenticated === true &&
+            result.data.user?.id && typeof result.data.user.role === 'string') {
+            window.location.href = loginRedirectFor(result.data.user);
         }
     })();
     /**
@@ -44,64 +52,15 @@ if (appleBtn) {
     });
 }
 
-async function generateDeviceToken(userId) {
-    const encoder = new TextEncoder();
-    const raw = `${userId}-${navigator.userAgent}`;
-    const data = encoder.encode(raw);
-
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const token = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    return token;
-}
-
-function show2FAInput(userId, deviceId, rememberDevice) {
-    const overlay = document.getElementById('twofa-overlay');
-    overlay.style.display = 'flex';
-
-    document.getElementById('verify-2fa-login-btn').onclick = async () => {
-        const token = document.getElementById('twofa-token-input').value.trim();
-        const res = await secureFetch('/api/auth/verify-2fa-login', {
-            method: 'POST',
-            body: JSON.stringify({ userId, token, deviceId, rememberDevice })
-        });
-
-        const status = document.getElementById('twofa-status-message');
-        if (!res.success) {
-            status.textContent = '❌ رمز غير صحيح، حاول مرة أخرى';
-            status.style.color = '#d9534f';
-            return;
-        }
-
-        status.textContent = '✅ تم التحقق بنجاح، جاري تسجيل الدخول...';
-        status.style.color = '#28a745';
-        setTimeout(() => {
-            overlay.style.display = 'none';
-            window.location.href = res.redirectTo || '/homepage.html';
-        }, 1000);
-    };
-
-    document.getElementById('cancel-2fa-btn').onclick = () => {
-        overlay.style.display = 'none';
-    };
-}
-
 /**
  * حفظ بيانات الجلسة في التخزين المحلي
  * @param {object} user - بيانات المستخدم
  * @param {string} token - رمز التوثيق
  */
 function saveSession(userId, token, sessionId) {
-    console.log('Save Session Id at internal Storage', sessionId);
     localStorage.setItem(STORAGE_KEYS.USER_ID, userId);
     localStorage.setItem(STORAGE_KEYS.USER_TOKEN, token);
     localStorage.setItem(STORAGE_KEYS.SESSION_ID, sessionId)
-}
-
-function removeOldSession() {
-    localStorage.removeItem(STORAGE_KEYS.USER_ID);
-    localStorage.removeItem(STORAGE_KEYS.USER_TOKEN);
-    localStorage.removeItem(STORAGE_KEYS.SESSION_ID);
 }
 
 /**
@@ -227,12 +186,7 @@ async function loginUser(username, password) {
     submitBtn.disabled = true;
 
     try {
-        // ✅ توليد رمز الجهاز قبل إرسال الطلب
-        const rememberDevice = document.getElementById('rememberDevice')?.checked;
-        const deviceId = localStorage.getItem('trustedDevice') || generateDeviceToken(username);
-
-        // ⬅️ استدعاء الدالة الموسعة مع جميع المعاملات
-        const result = await login(username, password, deviceId, rememberDevice);
+        const result = await login(username, password);
 
         // ✅ معالجة الأخطاء المعروفة
         if (result.error === "يجب توفير رمز الجلسة") {
@@ -283,44 +237,23 @@ async function loginUser(username, password) {
             shakeElement('passwordInput');
             return;
         }
-        
-        if (result.status === 401 || result.status === 403) {
-            console.log('Expired!', result);
-            removeOldSession();
-            window.location.href = '/login.html';
-        }
 
-        // ✅ إذا كان المستخدم فعّل 2FA
-        if (result.requires2FA) {
-            if (rememberDevice) {
-                localStorage.setItem('trustedDevice', deviceId);
-            }
-            show2FAInput(result.user.id, deviceId, rememberDevice); // ← تمرير القيم إلى مربع التحقق
-            return;
-        }
-        // ✅ تسجيل الدخول ناجح
-        saveSession(result.user.id, result.token, result.user.sessionId);
-
-        const roleRedirects = {
-            admin: '/protectedViews/admin.html',
-            user: '/homepage.html',
-            moderator: '/moderator/dashboard.html',
-            support: '/support/center.html'
-        };
+        // ✅ تسجيل الدخول ناجح؛ sessionId موجود في المستوى الأعلى للاستجابة
+        saveSession(result.user.id, result.token, result.sessionId);
 
         setTimeout(() => {
             spinner.style.display = 'none';
             btnText.style.display = 'inline';
             submitBtn.disabled = false;
 
-            const redirectPath = result.redirectTo || roleRedirects[result.user.role] || '/homepage.html';
+            const redirectPath = loginRedirectFor(result.user);
             window.location.href = redirectPath;
         }, 2100);
 
         showToastNotification(`👋 أهلاً بعودتك يا ${username} 🌟`, 'success', 2000);
     } catch (err) {
         const msg = extractErrorMessage(err.message || err);
-        console.error("🚨 خطأ أثناء تسجيل الدخول:", msg);
+        console.error('Login request failed');
         showAlert('error', 'فشل تسجيل الدخول', msg);
         showToastNotification(`🚨 ${msg}`, 'error', 3000);
         shakeElement('usernameInput');

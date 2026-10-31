@@ -25,9 +25,6 @@ byId('googleSignIn').addEventListener('click', () => {
     // ...
 });
 
-// 🔧 إعدادات الثيم
-const THEME_KEY = 'theme';
-
 const spinner = byId('spinner');
 const btnText = byId('btnText');
 const submitBtn = byId('submitBtn');
@@ -50,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // السماح فقط بـ + في البداية ثم أرقام
         if (!/^\+?\d*$/.test(value)) {
-            e.target.value = value.replace(/[^+\d]/g, "").replace(/^([^+])/, "");
+            e.target.value = value.replace(/[^+\d]/g, "").replace(/(?!^)\+/g, "");
         }
     });
 });
@@ -81,11 +78,6 @@ function showError(elementId, message) {
     setTimeout(() => (element.style.animation = ''), 300);
 }
 
-function saveSession(user, token) {
-    localStorage.setItem('user_id', user.id);
-    localStorage.setItem('user_token', token);
-}
-
 /**
  * عرض رسالة خطأ عامة
  */
@@ -110,19 +102,22 @@ function validateForm(data) {
     const { username, password, email, countryCode, phoneNumber } = data;
 
     if (!username) errors.usernameError = 'يرجى إدخال اسم المستخدم';
-    else if (username.length < 3 || username.length > 20)
-        errors.usernameError = 'اسم المستخدم يجب أن يكون بين 3 و 20 حرفًا';
+    else if (!/^[A-Za-z0-9_]{3,30}$/.test(username))
+        errors.usernameError = 'اسم المستخدم يجب أن يكون بين 3 و 30 حرفًا (حروف إنجليزية، أرقام، أو _)';
 
     if (!password) errors.passwordError = 'يرجى إدخال كلمة المرور';
-    else if (password.length < 6)
-        errors.passwordError = 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
+    else if (password.length < 8 || new TextEncoder().encode(password).length > 72 ||
+        !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/.test(password))
+        errors.passwordError = 'كلمة المرور يجب أن تكون 8 أحرف على الأقل، وتحتوي على حرف كبير وصغير ورقم ورمز، ولا تتجاوز 72 بايت';
 
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+    if (!email) errors.emailError = 'يرجى إدخال البريد الإلكتروني';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
         errors.emailError = 'صيغة البريد الإلكتروني غير صحيحة';
 
-    if (!countryCode) errors.phoneError = 'يرجى اختيار رمز الدولة';
-    else if (!phoneNumber) errors.phoneError = 'يرجى إدخال رقم الجوال';
-    else if (!/^\+\d{8,15}$/.test(`${countryCode}${phoneNumber}`))
+    // Both blank is valid; providing either part requires the other.
+    if (phoneNumber && !countryCode) errors.phoneError = 'يرجى اختيار رمز الدولة';
+    else if (countryCode && !phoneNumber) errors.phoneError = 'يرجى إدخال رقم الجوال';
+    else if (phoneNumber && !/^\+\d{8,15}$/.test(`${countryCode}${phoneNumber}`))
         errors.phoneError = 'يرجى إدخال رقم هاتف بصيغة دولية تبدأ بـ +';
 
     return errors;
@@ -181,10 +176,6 @@ function showToastNotification(message, type = 'info', duration = 3000) {
 byId('registerForm').addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    spinner.style.display = 'inline-block';
-    btnText.style.display = 'none';
-    submitBtn.disabled = true;
-
     // 🧹 تنظيف الأخطاء السابقة
     document.querySelectorAll('.error-message').forEach((el) => {
         el.classList.remove('show');
@@ -200,24 +191,23 @@ byId('registerForm').addEventListener('submit', async (e) => {
     const countryCode = byId('countryCode').value;
     const phoneNumberRaw = byId('phoneNumber').value;
     const phoneNumber = digitsOnly(phoneNumberRaw);
-    const fullPhoneNumber = `${countryCode}${phoneNumber}`;
-    const themeRaw = typeof window.dashboardTheme !== 'undefined'
-        ? window.dashboardTheme
-        : localStorage.getItem(THEME_KEY);
-    const theme = !isNaN(themeRaw) ? Number(themeRaw) : 0;
+    const fullPhoneNumber = countryCode && phoneNumber ? `${countryCode}${phoneNumber}` : undefined;
 
     // ✅ التحقق من صحة البيانات
     const errors = validateForm({ username, password, email, countryCode, phoneNumber });
+    if (phoneNumberRaw.trim() && !phoneNumber) errors.phoneError = 'يرجى إدخال رقم هاتف صحيح';
     if (Object.keys(errors).length > 0) {
         Object.entries(errors).forEach(([id, msg]) => showError(id, msg));
         return;
     }
 
-    // ⏳ حالة تحميل مؤقتة
+    // ⏳ حالة تحميل مؤقتة بعد نجاح التحقق المحلي
+    spinner.style.display = 'inline-block';
+    btnText.style.display = 'none';
     submitBtn.disabled = true;
     submitBtn.textContent = 'جاري التسجيل...';
     try {
-        const result = await register(username, password, email, fullPhoneNumber, theme);
+        const result = await register(username, password, email, fullPhoneNumber);
         if (!result.success) {
             const msg = result.error || 'حدث خطأ أثناء التسجيل';
             showToastNotification(msg, 'error', 1500);
@@ -244,7 +234,7 @@ byId('registerForm').addEventListener('submit', async (e) => {
             return;
         }
 
-        saveSession(result.user, result.token);
+        // Registration creates an account only; authentication starts on the login page.
         setTimeout(() => {
             spinner.style.display = 'none';
             btnText.style.display = 'inline';
@@ -255,10 +245,9 @@ byId('registerForm').addEventListener('submit', async (e) => {
         }, 1600);
         showToastNotification(`👋 تم إنشاء الحساب بنجاح! سيتم تحويلك الآن... 🌟`, 'success', 1500);
         showAlert('success', 'تم التسجيل', 'تم إنشاء الحساب بنجاح! سيتم تحويلك الآن...');
-    } catch (err) {
-        console.error('❌ خطأ غير متوقع أثناء التسجيل:', err);
-        const msg = extractErrorMessage(err.message || err);
-        showGeneralError(msg);
+    } catch {
+        console.error('Registration request failed');
+        showGeneralError('حدث خطأ أثناء التسجيل، يرجى التحقق من النتيجة قبل المحاولة مجددًا');
     } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = 'تسجيل';

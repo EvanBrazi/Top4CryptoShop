@@ -2125,3 +2125,167 @@ The ledger itself is an additional created documentation artifact, not a seventh
 - Final historical-row preservation, ledger totals, deleted-file inventory, zero removed-model/helper executable imports in the converted test corpus, protected-file diff and `git diff --check` are verified without altering runtime or packages. Negative cache-path assertions and historical ledger mentions are not executable imports.
 - **C3.2 APPROVED SCOPE: COMPLETE / FULLY VERIFIED**, with the explicitly accepted 160 historical documentation debts still OPEN. Ready to propose **C3.3 — `/health` PostgreSQL-only contract and final runtime verification**.
 - **C3.3 has NOT begun. STOP for separate user approval before any C3.3 implementation or runtime change.**
+
+## C3.3 — PostgreSQL-only health implementation checkpoint (superseded by final acceptance below)
+
+**Recorded at 2026-10-31T09:21:20+03:00** (observation/recording timestamp, not a test execution start/end time). The user approved C3.3 after committing the complete C3.2 checkpoint as `82f1589`. This record supersedes the preceding not-authorized/not-started C3.3 gate, but does **not** claim final C3.3/C3 completion without passing full-PG evidence. The full-PG command and its normal retry were safety-blocked before execution; targeted PG and both requested/final-checklist unit runs executed and passed normally.
+
+### Health contract before and after
+
+Only the `/health` handler in `backend/services/serverApplication.js:32` changes. All runtime bytes outside that handler are unchanged. It remains mounted after security headers but **before readiness gating, CORS, cookie parsing, session middleware and authenticated routes**.
+
+```diff
+- { status: healthy ? 'UP' : 'NOT_READY', ready: healthy }
++ { status: healthy ? 'ok' : 'NOT_READY', ready: healthy, database: 'postgresql' }
+```
+
+- The required public `database` field is always the literal engine label **`"postgresql"`**, never a database name or connection identifier. Exactly `status`, `ready`, and `database` are returned. The requested example changes the success token from `UP` to `ok`; failure remains `NOT_READY`, and the readiness/HTTP success-failure semantics are preserved.
+- **503 / `{ status: 'NOT_READY', ready: false, database: 'postgresql' }`** before initialization, while verification is pending, after verification fails, when a live probe fails, and after readiness is cleared by shutdown.
+- **200 / `{ status: 'ok', ready: true, database: 'postgresql' }`** only after the existing real verified-TLS migration-ledger/schema readiness verifier succeeds **and** a live `SELECT 1 AS connected` query succeeds with the unchanged **2000 ms query timeout**.
+- Readiness is rechecked after the awaited live query, so shutdown/reinitialization that clears readiness during the probe cannot publish stale success. Probe/provider errors are caught without returning names, hosts, URLs, credentials, SQL, error objects or raw messages. All responses retain **`Cache-Control: no-store`**; Express HEAD uses the same handler/status/representation length with no body.
+- Health requests never invoke session middleware, authenticate callers, create/refresh/revoke session rows or publish cookies. A session-store outage does not turn a successful independent PostgreSQL probe into a health failure.
+- `backend/tests/users-server.pg.test.js:151` changes only its existing exact health-outage assertion by adding `database: 'postgresql'`. Its failure status/readiness and all other assertions remain unchanged; no protected auth/users/orders/payments route is edited.
+
+### Health case mappings — 10 registrations / 10 cases
+
+All following cases in **`backend/tests/health.pg.test.js`** are now **EXECUTED / PASSING / FULLY ACCEPTED / CLOSED**, recorded at **2026-10-31T09:28:29+03:00**, following the user-supplied **817/817 full-PG acceptance across 12/12 suites**. This is the exact result-recording timestamp, not a supplied execution start/end time. The initial targeted 10/10 result at 09:21:20 remains historical evidence; final acceptance supersedes its pending full-PG gate. These are new C3.3 contract IDs, not additions to the 524 historical source inventory. Exact names and registrations below are unchanged; assertion loops do not add cases.
+
+| Contract ID | Exact executed test title | Registration | Demonstrated obligation / closure mapping | Final acceptance status |
+|---|---|---|---|---|
+| HC-001 | `health ready response requires real verification and one bounded live PostgreSQL probe` | L108 | Five migrations verified, real readiness COMMIT/catalog checks, zero Mongo/model modules in runtime require.cache, exact ok/true/postgresql JSON, exactly one bounded live query and no request-window checkout/session query. | EXECUTED / PASSING / CLOSED — 2026-10-31T09:28:29+03:00 |
+| HC-002 | `health before initialization is fixed PostgreSQL 503 without a provider lookup or session` | L123 | Uninitialized runtime is not listening; exact fixed 503/false/postgresql and no provider/query/checkout. Extends the existing D189 startup contract with the engine/shape/no-probe guarantee. | EXECUTED / PASSING / CLOSED — 2026-10-31T09:28:29+03:00 |
+| HC-003 | `health during pending startup stays 503 until real readiness verification commits before listen` | L129 | A test-owned deferred gate wraps the real PG checkout, not a fake verifier. Pending start cannot listen or report healthy; release completes real verification/COMMIT before the running server reports exact 200. | EXECUTED / PASSING / CLOSED — 2026-10-31T09:28:29+03:00 |
+| HC-004 | `health cannot report ready merely because PostgreSQL answers when migration verification failed` | L145 | Controlled checksum drift in the disposable database's ledger fails verification despite a real successful SELECT; health remains 503 without probing until restoration and successful reinitialization. No migration file is modified; checksum restoration is in finally. | EXECUTED / PASSING / CLOSED — 2026-10-31T09:28:29+03:00 |
+| HC-005 | `health after a real verified PostgreSQL pool ends is sanitized PostgreSQL 503` | L157 | A separately owned, real verified-TLS Pool is initialized then ended; health becomes exact 503 despite prior verification success. The harness pool/advisory lock remain intact and the owned pool/runtime are cleaned up. | EXECUTED / PASSING / CLOSED — 2026-10-31T09:28:29+03:00 |
+| HC-006 | `health hides hostile provider and query errors and recovers only after a new real live probe` | L171 | Provider and query faults carrying private names/host/URL/password/SQL/messages yield only fixed 503 fields; each recovery needs a fresh real probe. No fake returned SQL rows or verifier success. | EXECUTED / PASSING / CLOSED — 2026-10-31T09:28:29+03:00 |
+| HC-007 | `health cannot publish stale success if shutdown clears readiness during an in-flight live probe` | L186 | A deferred real-query gate holds a health request across runtime.close(); completing the live query cannot override cleared readiness. Subsequent health remains 503 without a provider lookup. | EXECUTED / PASSING / CLOSED — 2026-10-31T09:28:29+03:00 |
+| HC-008 | `anonymous health creates no session rows and leaves full user session and financial snapshots unchanged` | L197 | No cookies/authentication required; exact 200 with only the probe. Full user, express/application session, revocation, financial operation, order and payment snapshots are unchanged; session tables remain empty. | EXECUTED / PASSING / CLOSED — 2026-10-31T09:28:29+03:00 |
+| HC-009 | `health ignores signed and malformed credentials even when the real session store is unavailable` | L205 | Real login supplies existing signed cookies; session-only SQL faults are active. Signed, malformed and anonymous health calls succeed with only three probes and unchanged full snapshots. A real session-info 503 SESSION_UNAVAILABLE control proves the store fault is active. | EXECUTED / PASSING / CLOSED — 2026-10-31T09:28:29+03:00 |
+| HC-010 | `health HEAD preserves status fixed JSON length and no-store without body or session effects` | L225 | Before-init HEAD 503 without SQL; ready HEAD 200 and outage HEAD 503, all bodyless with exact JSON content length/no-store/no cookies and unchanged complete snapshots. | EXECUTED / PASSING / CLOSED — 2026-10-31T09:28:29+03:00 |
+
+Exact three-field shape, forbidden sensitive/error fields, private-marker absence in response body/headers, no-store and absent cookie/auth/redirect headers are shared assertions across every applicable phase. Existing D189/D190 and other users-server startup/health regressions retain their prior exact historical coverage credit; no debt row is closed merely because health now has a suite.
+
+### Actual execution and safety-blocked final gate
+
+| Verification | State | Suites / tests | Snapshots | Jest time |
+|---|---|---|---:|---:|
+| Initial targeted health | EXECUTED / PASSING before adding the extra runtime-cache assertion | 1/1 suites; 10/10 tests | 0 | 2.292 s |
+| Final targeted health, including the runtime-cache assertion | EXECUTED / PASSING | 1/1 suites; 10/10 tests | 0 | 2.247 s |
+| Requested money/disabled/PN/Nodemailer units | EXECUTED / PASSING | 4/4 suites; 103/103 tests | 0 | 0.773 s |
+| Additional full selected C3.2 unit checklist | EXECUTED / PASSING | 7/7 suites; 340/340 tests | 0 | 3.061 s |
+| Full `backend/tests/*.pg.test.js`, then one normal retry | BLOCKED BEFORE EXECUTION by unavailable safety checker; no full-PG result | Expected 12 suites; 817 tests | Not executed | Not executed |
+
+Commands that actually passed:
+
+```bash
+bash backend/tests/run-disposable-pg.sh backend/tests/health.pg.test.js
+npx jest backend/tests/money-contracts.test.js backend/tests/disabled-features.test.js backend/tests/payment-notifications.test.js backend/tests/nodemailer.test.js --runInBand
+npx jest backend/tests/nodemailer.test.js backend/tests/disabled-features.test.js backend/tests/payment-notifications.test.js backend/tests/money-contracts.test.js backend/tests/financial-coordinator.test.js backend/tests/user-repository.test.js backend/tests/pg-financial-schema-verification.test.js --runInBand --json --outputFile=/tmp/top4cryptoshop-c3-3-final-units.json
+```
+
+**Exact manual full-PG acceptance command from repository root:**
+
+```bash
+bash backend/tests/run-disposable-pg.sh backend/tests/*.pg.test.js
+```
+
+The 10-case choice is within the approved approximately 8–10 allocation: expected final PG is **807 + 10 = 817 across 12 suites**, not the rough 815 forecast. It is **not** a passing claim until that full run executes. The full-PG safety failures did not execute migrations or tests; no safety override, different full runner, application `.env` sourcing or harness bypass was used. Targeted runs used the same normal guarded verified-TLS disposable PG18 harness and verified all existing migrations 001–005. An initial combined file-write/targeted command was also blocked before execution; the file was created through the normal edit tool and targeted verification then passed normally.
+
+### Static verification and unchanged protected boundaries
+
+- **PASS:** syntax checks, no skip/focus/todo, exactly 10 ordinary health registrations, final `git diff --check`, and exact existing-health-assertion additive change.
+- **PASS:** static AST audit of **80 first-party runtime JavaScript files / 244 literal imports**, with **zero executable MongoDB/Mongoose/model imports**. The final targeted HC-001 also confirms zero `/models/`, `/mongoose/` and `/mongodb/` modules in the actual runtime cache. Negative cache assertions and TODO/documentation mentions are not imports.
+- **PASS:** all runtime bytes outside the health handler match the committed C3.2 checkpoint. Auth/users/orders/payments routes, controllers, repositories, auth services, migrations 001–005 and package/lock files remain unchanged; no disabled feature is enabled.
+- Health composition SHA256: `19e4c15ba9c8e788779336788748e82afbf3a384c33f299913c55a4abe442f47`; final health suite SHA256: `3530e9512d0243797fb060b4443bbc4f1bfb13c7de7c19afdf7cd787c502e741`.
+- Changes are only the health handler, the necessary existing health assertion, new health suite and this ledger. No commit, staging, deletion, production connection, deployment or Render configuration change is performed.
+
+### C3 completion accounting and C4 approval gate
+
+| Phase | Current state | Verified acceptance / remaining gate |
+|---|---|---|
+| C3.1 | COMPLETE — historical committed checkpoint | 690 PG tests across 7 suites; C3.2 subsequently preserved and extended that baseline. |
+| C3.2 | COMPLETE / FULLY VERIFIED — user-accepted committed checkpoint | 807 PG across 11 suites; 340 selected units across 7 suites; 14 deleted files, 6 new suites; PN/SMTP/OM closures remain intact. |
+| C3.3 | IMPLEMENTED / TARGETED VERIFIED; FINAL ACCEPTANCE PENDING | 10/10 final health PG; 103/103 requested units; 340/340 selected unit checklist; full 817/12 PG manual result still required. |
+
+**C3 OVERALL FINAL COMPLETION IS NOT YET CLAIMED.** The only outstanding execution gate in this approved pass is the safety-blocked full-PG acceptance. Once the exact manual command passes, its actual output/timestamp can close C3.3 and total C3 without further runtime scope expansion. This is a safety-blocked verification gate, not a reported test failure.
+
+The **160 accepted historical documentation-debt entries remain transparently OPEN**: 9 financial-models.mongo + 23 financial-service.mongo + 69 orders.mongo + 59 payments.mongo. Current source rollup remains **252 executed/credited PG + 51 executed/credited non-PG + 160 OPEN documentation debts + 0 pending changed-disabled + 61 retired = 524**. All 524 source rows remain byte-for-byte unchanged. Current ledger table-data count is **859 = 524 source + 26 original supporting + 309 completion/reconciliation rows**; new HC/execution/phase rows do not enlarge the source inventory. C3 completion after full acceptance will not artificially close these accepted debts.
+
+**Ready-for-C4 checklist, subject to the remaining full-PG gate:**
+
+- PostgreSQL-only first-party runtime, zero Mongo imports: **VERIFIED**.
+- Existing migrations 001–005, verified-TLS and exact ledger/schema readiness: **VERIFIED in targeted disposable PG**; migration files unchanged.
+- All 817 PG tests / 12 suites: **PENDING manual full acceptance**; prior 807/11 is historical C3.2 acceptance, not a rerun of the current tree.
+- All 340 selected units / 7 suites: **FRESH PASS**; requested 103/4 subset also **FRESH PASS**.
+- `/health` explicitly reflects PostgreSQL-only readiness/live probe and session-store independence: **TARGETED VERIFIED**.
+- Production Neon deployment and Render fix: **NOT STARTED / REQUIRES C4 APPROVAL**, after full C3 acceptance. No production readiness/deployment outcome is claimed from local tests alone.
+
+**STOP: C4 has not begun. Await the manual full-PG result to finalize C3.3/C3, then separate user approval before production Neon or Render work.**
+
+
+## C3.3 — final full-PG acceptance; C3 COMPLETE
+
+**Acceptance recorded at 2026-10-31T09:28:29+03:00.** This is the exact observation/ledger-recording timestamp, not an invented execution start/end timestamp: the user supplied the result without wall-clock execution times. The user's normal manual disposable-harness run provides the missing final acceptance evidence. This completion record supersedes every C3.3/C3 pending-full-PG/not-complete status in the historical implementation checkpoint above. The safety-blocked attempts remain blocked historical attempts; they are not relabeled as executions.
+
+| Verification | Evidence source | Executed suites | Executed tests | Snapshots | Jest time |
+|---|---|---:|---:|---:|---:|
+| Final full `backend/tests/*.pg.test.js` acceptance | User-supplied manual run of `bash backend/tests/run-disposable-pg.sh backend/tests/*.pg.test.js` | 12/12 PASSING | 817/817 PASSING | 0 | 133.884 s (estimated 137 s) |
+
+**Final full-PG acceptance: EXECUTED / PASSING.** The health composition and suite hashes still match the verified implementation: `19e4c15ba9c8e788779336788748e82afbf3a384c33f299913c55a4abe442f47` and `3530e9512d0243797fb060b4443bbc4f1bfb13c7de7c19afdf7cd787c502e741`. No runtime/test change or new test rerun is performed in this ledger-only acceptance pass. The exact 817 count is **807 existing + 10 health cases**, all in the full run, not a targeted/full subtotal to count twice.
+
+### Fully accepted HC closure and total C3 state
+
+**HC-001–HC-010 are all FULLY ACCEPTED / EXECUTED / PASSING / CLOSED**, at their exact names and registration lines in the updated allocation table above, with the 09:28:29 recording timestamp on each row. Targeted shape, startup, outage, sanitized-error/recovery, readiness-race, anonymous/session-store independence and HEAD checks are now also covered by the accepted full-PG run, including the necessary additive existing-health assertion. No approved C3.3 deliverable or execution gate remains pending.
+
+| Phase | Final state | Accepted evidence |
+|---|---|---|
+| C3.1 | COMPLETE / CLOSED | Historical committed 690/690 PG acceptance across 7 suites; preserved and extended by C3.2/C3.3. |
+| C3.2 | COMPLETE / FULLY VERIFIED / CLOSED | User-accepted 807/807 PG across 11 suites; 340/340 selected units across 7 suites; all PN/SMTP and OM-100 closures; 14 test/helper deletions and 6 created test suites. |
+| C3.3 | COMPLETE / FULLY VERIFIED / CLOSED | Final 817/817 PG across 12 suites; all ten HC closures; 103/103 requested unit subset and 340/340 full selected unit checklist. |
+
+**C3 (C3.1 + C3.2 + C3.3): OFFICIALLY COMPLETE / FULLY VERIFIED in the approved scope.** There are no outstanding approved-phase execution gates. This does not turn the accepted historical documentation debts into closed obligations or claim a production deployment has already been validated.
+
+### Final C3 acceptance summary and inventory
+
+- **817 passing PG tests / 12 suites**, final full acceptance **133.884 s**, 0 snapshots.
+- **340 passing selected unit tests / 7 suites**, latest C3.3 checklist run **3.061 s**, 0 snapshots. The requested **103/103 / 4-suite** unit run (**0.773 s**) is a subset of 340, not additional tests. No unit implementation changed in this ledger-only pass; the recorded 340 is not a repository-wide unit inventory claim.
+- **14 test/helper files deleted** in the verified C3 cleanup inventory since the C3.1 checkpoint: 4 Mongo suites + 4 converted legacy suites + 6 helpers. C3.3 and this closure delete no files.
+- **7 test suites created**: `money-contracts.test.js`, `financial-invariants.pg.test.js`, `disabled-features.pg.test.js`, `disabled-features.test.js`, `users-admin-authorization.pg.test.js`, `avatar-upload.pg.test.js`, and `health.pg.test.js`. The ledger is an additional created documentation artifact, not an eighth test suite. The untracked health suite is included in the current working-tree inventory; no commit/staging is performed here.
+- **Migrations 001–005 verified** on the normal guarded verified-TLS disposable PG18 harness, including exact migration ledger/checksums and required schema readiness. Files remain unchanged; this is local/disposable verification, not a claim that production Neon has been inspected.
+- **Zero executable MongoDB/Mongoose/model imports confirmed**: the unchanged runtime AST audit covers 80 first-party runtime JavaScript files / 244 literal imports, and final accepted HC-001 confirms the actual runtime require.cache excludes models/Mongoose/MongoDB. Health requires verified PostgreSQL and a successful live probe, independent of request-session storage; no disabled feature is enabled.
+- **Final ledger table-data rows: 863 = 524 historical source + 26 original supporting + 313 completion/reconciliation rows**, excluding headers/separators. All **524 historical source rows are byte-for-byte unchanged**. The new HC statuses and final acceptance/phase rows do not enlarge that historical inventory.
+- Source disposition rollup stays **252 executed/credited PG + 51 executed/credited non-PG + 160 transparently OPEN documentation debts + 0 pending changed-disabled + 61 retired = 524**. Exactly **160 accepted historical documentation debts remain OPEN**, not hidden, failed or artificially closed: **9 financial-models.mongo + 23 financial-service.mongo + 69 orders.mongo + 59 payments.mongo**.
+- Only this ledger changes during final acceptance. Existing health/runtime/test fingerprints remain unchanged; no route, auth, migration, package, preserved feature, production credential, deployment configuration or Git history is modified. No commit, push or C4 execution is performed.
+
+## C4 — proposed production plan only; awaiting separate user approval
+
+**C4 has NOT begun.** The local read-only source review below supports planning only; no Neon/Render connection, remote validation, production data write, configuration change, deployment, browser transaction or main-branch commit has occurred. Approval is required before any C4 step.
+
+### C4.1 — verify the existing Neon production database
+
+- Confirm the intended existing Neon project/branch/database and the deployment's runtime/migration roles privately; do not recreate or reset a database. Validate that runtime `DATABASE_URL` and non-pooled `DIRECT_URL` identify the intended existing database. No credentials or full URLs in reports/logs.
+- Perform **read-only** exact migrations 001–005 ledger/checksum and runtime schema/catalog verification, with certificate-verified TLS and a bounded live PostgreSQL probe. Check role permissions are sufficient and consistent with the current verifier. Distinguish direct migration/ledger access from the chosen runtime endpoint; no migrations or grants are applied automatically at startup.
+- Verify the deployed `/health` probe only when an approved application deployment is available; database readiness can be verified independently first. Expected application result is 200 with exactly `{ status: 'ok', ready: true, database: 'postgresql' }`, no-store, and no private identifiers.
+- If a ledger/schema/permission mismatch is discovered, **STOP and report the sanitized discrepancy**. Preparation here is verification of an already-existing database, not blanket authorization to alter schemas, grants or production data. Any corrective migration/permission change needs explicit approval and a recovery plan.
+
+### C4.2 — diagnose and fix Render deployment
+
+- Treat **`SERVER_BOOTSTRAP_UNAVAILABLE` as a sanitized symptom, not a proven database root cause**. The current entry can emit it for application composition/configuration failures as well as database bootstrap failures. Correlate deployed revision, build/start command, runtime version, and redacted startup evidence before deciding the fix.
+- Review configuration presence/format privately: `DATABASE_URL`, `DIRECT_URL`, `SESSION_LOOKUP_SECRET`, `JWT_SECRET`, `SESSION_SECRET`, `CURSOR_SECRET`, relevant Google OAuth callback/configuration, `NODE_ENV`, Render `PORT`, allowed public origin, and financial receipt/storage provider settings needed for the smoke path. Confirm cookie/proxy/public-origin behavior without changing unrelated auth or financial contracts.
+- Validate URL percent-encoding, whitespace/options, direct-vs-pooler host selection and strict SSL verification. The current parser accepts only supported `sslmode` values and `channel_binding=prefer`; a Neon-generated `channel_binding=require` is currently rejected. Do not disable certificate verification, set `NODE_TLS_REJECT_UNAUTHORIZED=0`, or silently relax the URL/TLS contract to make deployment pass.
+- Review bind-address/startup behavior: current `start()` defaults to **127.0.0.1**, while Render normally requires binding **0.0.0.0** at its supplied `PORT`. This is a planning observation, not a confirmed cause of the bootstrap message. Make only the approved minimal deployment/runtime fix, with regression tests; never log raw driver errors, SQL, secrets or full URLs.
+- Redeploy the reviewed revision; verify successful readiness-before-listen and external GET/HEAD health responses. Keep a prior known release/configuration rollback path. Do not enable disabled notifications/jobs/security features.
+
+### C4.3 — end-to-end browser smoke test
+
+- Use explicitly approved controlled user/admin accounts, a legitimately funded test account and bounded test amounts/receipt fixtures. Agree on production write limits and cleanup/recovery before performing transactions; no direct SQL balance adjustment, security bypass or real financial-provider charge is implied.
+- Exercise **login → browse → purchase → payment submission → admin approval** with separate user/admin sessions. Confirm public UI/API responses, CSRF and secure cookie behavior, correct balance/journal/order/payment state, bounded receipt handling and authorization boundaries. Verify replay/refresh does not duplicate charges or approvals using existing supported idempotency behavior.
+- Confirm disabled endpoints remain unavailable, private receipts/secrets are not exposed, `/health` remains PostgreSQL-only/no-store, and browser/network/Render evidence contains no sensitive disclosures. Record outcomes with redacted screenshots/logs and approved cleanup actions.
+
+### C4.4 — final production verification and reviewed main release
+
+- Recheck production readiness/health, expected migration ledger/schema, TLS/URL and role configuration, session behavior, financial evidence invariants, smoke results and operational rollback instructions. Verify no Mongo fallback or disabled feature activation has been introduced.
+- Run the complete local regression gates against the final approved code revision and record exact results; distinguish disposable acceptance from production read-only verification and approved production smoke writes.
+- Present a final reviewed change list and production acceptance summary. Only after approval, create/promote the first C4 release commit on **`main`** through the agreed normal Git workflow from the current `postgres-migration` branch. Exclude secrets/environment files and temporary artifacts; do not force-push, rewrite history or overwrite unrelated work. Deployment/push authorization and rollback must be explicit.
+
+**STOP FOR APPROVAL: C3 is COMPLETE; C4.1–C4.4 are proposals only. No C4 step, production deployment or main-branch commit will begin without user approval.**

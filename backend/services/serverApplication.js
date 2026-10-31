@@ -32,10 +32,14 @@ function createApplication({ poolProvider = getPool, authOptions = {}, avatarOpt
   app.get('/health', async (req, res) => {
     let healthy = ready;
     if (healthy) {
-      try { await poolProvider().query({ text: 'SELECT 1 AS connected', query_timeout: 2000 }); }
-      catch (_) { healthy = false; }
+      try {
+        await poolProvider().query({ text: 'SELECT 1 AS connected', query_timeout: 2000 });
+        healthy = ready; // Shutdown/reinitialization during the live probe must not publish stale readiness.
+      } catch (_) { healthy = false; }
     }
-    res.set('Cache-Control', 'no-store').status(healthy ? 200 : 503).json({ status: healthy ? 'UP' : 'NOT_READY', ready: healthy });
+    res.set('Cache-Control', 'no-store').status(healthy ? 200 : 503).json({
+      status: healthy ? 'ok' : 'NOT_READY', ready: healthy, database: 'postgresql'
+    });
   });
   app.use((req, res, next) => {
     if (ready) return next();

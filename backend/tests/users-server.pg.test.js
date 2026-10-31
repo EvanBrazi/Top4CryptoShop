@@ -148,7 +148,7 @@ test('listen occurs only after real ledger/catalog verification commits', async 
 });
 test('live health outage is sanitized and can recover without a session', async () => {
   const healthy = createApplication(options(faultProvider)); await healthy.initialize();
-  try { fault = 'read'; const r = await request(healthy.app).get('/health').expect(503); expect(r.body).toEqual({ status: 'NOT_READY', ready: false }); fault = null; await request(healthy.app).get('/health').expect(200); }
+  try { fault = 'read'; const r = await request(healthy.app).get('/health').expect(503); expect(r.body).toEqual({ status: 'NOT_READY', ready: false, database: 'postgresql' }); fault = null; await request(healthy.app).get('/health').expect(200); }
   finally { await healthy.close(); }
 });
 test.each(['/api/orders', '/api/orders/purchase', '/api/payments', '/api/payments/submit', '/api/notifications', '/api/backups', '/api/security', '/api/icons', '/api/admin', '/api/cards', '/dev'])('financial mount or remaining disabled feature %s rejects without persistence or legacy imports', async url => {

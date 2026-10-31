@@ -2020,3 +2020,108 @@ The PG results are accepted from the user's normal disposable-harness runs; no n
 - Close **SMTP-001–SMTP-006** with exact executed titles while distinguishing five retained source obligations from the four extra controller variants. Reconcile **OM-100 / D077** against its exact existing executed disabled-creation test and full-PG evidence rather than inferring coverage from a filename. Only close it if the source requirement is fully demonstrated; otherwise report the residual explicitly.
 - Present the final approved-deliverable closure summary for C3.2b/c/d, final verified PG/unit totals without double-counting reruns or extra regressions, unchanged deletion inventory, and explicit remaining historical accounting. The acknowledged **160 documentation-debt entries remain open** unless separately authorized exact reconciliation is completed; neither d2 nor final summary may declare the entire 524-obligation ledger wholly closed by passing totals alone.
 - **STOP for approval:** no C3.2d2 code, Nodemailer edit or Nodemailer execution has been performed. Approval is required before beginning this plan.
+
+
+## C3.2d2 — Nodemailer verified completion and final C3.2 closure
+
+**FULLY VERIFIED / CLOSED — acceptance recorded at 2026-10-31T09:03:28+03:00.** This is the observation/ledger-recording timestamp, not an invented execution start/end time. The user approved d2 after committing d1's verified ledger in `5174fd7`. This completion record supersedes the d2 proposal's not-started/not-authorized status, D212–D217's historical destination status/lines and OM-100's pending final credit. All earlier blocked/failed checkpoints remain historical records. The 524 original source-obligation rows are preserved, not rewritten.
+
+### Nodemailer allocation — exactly 5 retained + 5 disabled replacements = 10 passing cases
+
+`backend/tests/nodemailer.test.js` now has **6 registrations / 10 expanded cases**: five ordinary retained transport cases and one five-alias `test.each` registration. The five retained test call ASTs, including all names, inputs and assertions, match `5174fd7` exactly after ignoring source-position/comment metadata. Only their fixture scope changes. No assertion is weakened, skipped, focused or discarded. Five disabled variants replace the one obsolete successful controller registration; this adds four net cases, not five new historical SMTP obligations.
+
+The following are **exact Jest full names**, including their enclosing `describe` names, verified against the actual combined-run JSON. Every row is EXECUTED / PASSING at the recorded timestamp. SMTP-001–SMTP-006 are each CLOSED once at the indicated exact destination; the other four rows are additional regressions, not source inventory additions.
+
+| Allocation | Historical obligation / destination | Exact executed full name in nodemailer.test.js | Registration | Status |
+|---|---|---|---|---|
+| N01 / retained | SMTP-001 / D212 | `retained real Nodemailer transport contracts the existing Gmail service configuration still selects authenticated TLS on port 465` | L61 | EXECUTED / PASSING / CLOSED — 2026-10-31T09:03:28+03:00 |
+| N02 / retained | SMTP-002 / D213 | `retained real Nodemailer transport contracts verify uses the real SMTP authentication handshake` | L67 | EXECUTED / PASSING / CLOSED — 2026-10-31T09:03:28+03:00 |
+| N03 / retained | SMTP-003 / D214 | `retained real Nodemailer transport contracts sendMail delivers bounded HTML/text/attachment MIME over the local SMTP transport` | L68 | EXECUTED / PASSING / CLOSED — 2026-10-31T09:03:28+03:00 |
+| N04 / retained | SMTP-004 / D215 | `retained real Nodemailer transport contracts SMTP authentication rejection is a safe rejected promise, not a successful send` | L77 | EXECUTED / PASSING / CLOSED — 2026-10-31T09:03:28+03:00 |
+| N05 / retained | SMTP-005 / D216 | `retained real Nodemailer transport contracts required TLS cannot silently downgrade to an unencrypted server` | L82 | EXECUTED / PASSING / CLOSED — 2026-10-31T09:03:28+03:00 |
+| N06 / disabled replacement | Additional alias gap | `disabled legacy security controllers disabled securityController.generateQR returns frozen migration 503 without SMTP transport secret generation or persistence` | L120 | EXECUTED / PASSING — 2026-10-31T09:03:28+03:00 |
+| N07 / disabled replacement | Additional alias gap | `disabled legacy security controllers disabled securityController.verifyToken returns frozen migration 503 without SMTP transport secret generation or persistence` | L120 | EXECUTED / PASSING — 2026-10-31T09:03:28+03:00 |
+| N08 / disabled replacement | SMTP-006 / D217 | `disabled legacy security controllers disabled securityController.send2FAKeyByEmail returns frozen migration 503 without SMTP transport secret generation or persistence` | L120 | EXECUTED / PASSING / CLOSED — 2026-10-31T09:03:28+03:00 |
+| N09 / disabled replacement | Additional alias gap | `disabled legacy security controllers disabled securityController.verify2FAFromEmail returns frozen migration 503 without SMTP transport secret generation or persistence` | L120 | EXECUTED / PASSING — 2026-10-31T09:03:28+03:00 |
+| N10 / disabled replacement | Additional alias gap | `disabled legacy security controllers disabled securityController.disable2FA returns frozen migration 503 without SMTP transport secret generation or persistence` | L120 | EXECUTED / PASSING — 2026-10-31T09:03:28+03:00 |
+
+**All six historical SMTP obligations are CLOSED.** SMTP-001–SMTP-005 retain real installed Nodemailer 10.2.1 dependency/configuration behavior; SMTP-006 closes specifically at N08 (`send2FAKeyByEmail`) under the current wholly disabled controller contract, not its obsolete email-enrollment success title.
+
+- The real test-owned SMTP server, ephemeral loopback port, transports, sockets, messages and command logs are scoped only to `retained real Nodemailer transport contracts`. Gmail configuration is inspected without a provider connection. Local authentication, MIME delivery, auth rejection and required-TLS refusal still exercise the real installed library. Transport/socket/server cleanup completes before the disabled-controller block.
+- Each alias (`generateQR`, `verifyToken`, `send2FAKeyByEmail`, `verify2FAFromEmail`, `disable2FA`) asserts exactly one 503 and exactly one frozen `{ unavailable: true, reason: 'POSTGRES_MIGRATION_PENDING' }` JSON response; mutation attempts fail and the marker remains unchanged. A hostile request proxy records/refuses property/secret reads, enumeration and mutation; it is never touched.
+- Every disabled case runs under refusing real-Nodemailer `createTransport` and `Mail.prototype.sendMail` spies, real Speakeasy/crypto secret-generation spies, socket/server/connect/listen and HTTP/HTTPS request guards, all three timer-start guards, filesystem-write guards and a mocked live `db/pg` provider with refusing query/checkout methods. After each case every spy is asserted untouched and restored. No SMTP fixture starts in this block; no mail, persistence, secret, connection or timer is activated.
+- The obsolete deleted `models/User` and `routes/SecurityLog` imports and their success-path mocks are removed, not re-mocked. No environment credentials are set or read to activate a mail controller. Existing enabled security/2FA/runtime behavior is untouched.
+
+### Explicit OM-100 / D077 disabled-creation reconciliation
+
+**OM-100: EXECUTED / PASSING / CLOSED**, recorded at **2026-10-31T09:03:28+03:00**. Its historical requirement is **“Historical order creation stays disabled without persistence.”** The exact executed destination is `backend/tests/financial-http.pg.test.js:524`:
+
+`legacy creation and manual balance writes remain disabled; no financial notifications`
+
+This is an existing credit, not a new d2 PG test. L525 uses a genuinely logged-in owner and actual composed application to `POST /api/orders` with `purchaseBody()`, requiring **410**. L526 separately requires **503** for the authenticated admin's manual balance write, and L527 requires **503** for the notification endpoint, then calls `untouched()`. That helper at L57–L60 asserts the owner's unchanged **10000 cents**, **zero orders**, **zero payments** and **zero financial_operations** using the real disposable PG database. Thus the exact legacy creation-disable/no-persistence source obligation is demonstrated; neither a nearby title nor blanket suite-level inference supplies this credit. This exact case was executed in the passing 807/807 full-PG acceptance below. No legacy creation route was restored and no enabled purchase behavior was changed.
+
+### Exact verification results — all executed in this pass
+
+| Verification | Executed suites | Executed tests | Snapshots | Jest time |
+|---|---:|---:|---:|---:|
+| Targeted Nodemailer | 1/1 PASSING | 10/10 PASSING | 0 | 0.610 s |
+| Combined Nodemailer + disabled + notification units | 3/3 PASSING | 67/67 PASSING | 0 | 0.903 s |
+| Full guarded disposable PG | 11/11 PASSING | 807/807 PASSING | 0 | 134.340 s |
+| Additional final selected C3.2 unit acceptance | 7/7 PASSING | 340/340 PASSING | 0 | 3.287 s |
+
+Commands actually executed from repository root:
+
+```bash
+npx jest backend/tests/nodemailer.test.js --runInBand
+npx jest backend/tests/nodemailer.test.js backend/tests/disabled-features.test.js backend/tests/payment-notifications.test.js --runInBand --json --outputFile=/tmp/top4cryptoshop-c3-2d2-combined.json
+bash backend/tests/run-disposable-pg.sh backend/tests/*.pg.test.js
+npx jest backend/tests/nodemailer.test.js backend/tests/disabled-features.test.js backend/tests/payment-notifications.test.js backend/tests/money-contracts.test.js backend/tests/financial-coordinator.test.js backend/tests/user-repository.test.js backend/tests/pg-financial-schema-verification.test.js --runInBand --json --outputFile=/tmp/top4cryptoshop-c3-2-final-units.json
+```
+
+The two JSON reports separately confirm the per-suite counts and no pending/todo cases. The normal verified-TLS disposable PG18 harness applied all five existing migrations only to its guarded test database, then ran all 11 PG suites. No application `.env` was sourced, no migration file was edited, and no alternate runner, safety override or harness bypass was used. All execution commands succeeded normally; no manual fallback is required.
+
+### Final C3.2 test totals and file inventory
+
+**PG: 807 passing cases across 11 suites**, unchanged by d2. Against the C3.1 690 baseline, the 117 additional PG cases are **45 avatar + 20 users/admin + 8 coordinator gaps + 28 financial invariants + 16 disabled features**. These allocations are already included in 807, never added again to the final acceptance total.
+
+**Selected C3.2 independent unit acceptance: 340 passing cases across 7 suites**, freshly executed together in this pass:
+
+| Unit suite relative to backend/tests/ | Executed passing cases |
+|---|---:|
+| `disabled-features.test.js` | 33 |
+| `payment-notifications.test.js` | 24 |
+| `money-contracts.test.js` | 36 |
+| `financial-coordinator.test.js` | 72 |
+| `user-repository.test.js` | 140 |
+| `pg-financial-schema-verification.test.js` | 25 |
+| `nodemailer.test.js` | 10 |
+
+**33 + 24 + 36 + (72 + 140 + 25) + 10 = 57 + 36 + 237 + 10 = 340.** This is the requested selected C3.2 acceptance set, not a repository-wide unit inventory claim. Targeted 10 and combined 67 are subsets/reruns of 340, not additions. Final selected PG + unit acceptance covers **1147 unique cases across 18 suites**; historical source obligations are a separate accounting dimension.
+
+**Exactly 14 files deleted across C3.2**, verified against `7439b8d`: four Mongo suites, four converted legacy suites and six helpers, as enumerated in the verified deletion inventory above. D2 deletes no files.
+
+**Six test suites created across C3.2** (all paths relative to `backend/tests/`):
+
+- `money-contracts.test.js`
+- `financial-invariants.pg.test.js`
+- `disabled-features.pg.test.js`
+- `disabled-features.test.js`
+- `users-admin-authorization.pg.test.js`
+- `avatar-upload.pg.test.js`
+
+The ledger itself is an additional created documentation artifact, not a seventh test suite. Existing coordinator PG, payment-notification and Nodemailer suites were modified rather than counted as created suites. This pass changes only `nodemailer.test.js` and this ledger; no commit, staging, runtime, migration, package, preserved-feature or helper edit is performed.
+
+### Final ledger row accounting and transparently open documentation debt
+
+- **524 historical source-obligation rows remain byte-for-byte unchanged.** Final ledger table-data count is **841 = 524 historical source rows + 26 original supporting rows + 291 later completion/reconciliation rows**; headers and separator rows are excluded. Added execution/allocation rows do not enlarge the source inventory. Earlier row counts remain accurate historical checkpoints.
+- Current conservative source disposition rollup: **252 executed/credited PG / 51 executed/credited non-PG / 160 transparently OPEN historical documentation-debt entries / 0 pending changed-disabled / 61 retired = 524**. D2 moves only **OM-100** to executed PG and **SMTP-006** to executed non-PG; the other five SMTP obligations were already non-PG dispositions and now have fresh exact execution closure. No other deleted-Mongo source entry is silently reclassified.
+- **364 source obligations are reconciled (303 executed/credited + 61 retired); 160 remain transparently OPEN accepted documentation debts**, not test failures, hidden obligations or falsely closed runtime gaps. Their exact distribution remains **9 financial-models.mongo + 23 financial-service.mongo + 69 orders.mongo + 59 payments.mongo = 160**. The original row-level mappings and pending variants remain available above. Completion of approved C3.2 deliverables does **not** mean the entire historical inventory is wholly closed.
+- All approved avatar/users/admin, FM/FS, financial money/invariants/coordinator, PN, disabled-feature and SMTP deliverables are verified and closed. All 23 PN and all six SMTP historical obligations have exact executed destinations. OM-100 has the explicit existing-PG reconciliation above. No approved C3.2 execution gate or changed-disabled source obligation remains pending.
+
+### Protected-boundary verification and C3.3 gate
+
+- Nodemailer suite SHA256: `41e7b2fdc029712fc515653626b59b780e028cd84cf87f94b5f7547dd2e7d83c`. Syntax check, retained-case AST equality, exact 10-case expansion and no skip/focus/todo: **PASS**.
+- D1 suite fingerprints remain unchanged: disabled PG `ac8e692d5e583fd86749899015931a3e3b6b04b542203f3463ba4725b7957c87`; disabled units `09f09f6feac4b535bbfa96b8b022d7b469b662a4dec6ec280e04f741c5d87b91`; PN `d6a203ffd2ec5bb23a05e7e654ba5a28eaac45ab38f2446d2761aac05a08ae67`.
+- Final historical-row preservation, ledger totals, deleted-file inventory, zero removed-model/helper executable imports in the converted test corpus, protected-file diff and `git diff --check` are verified without altering runtime or packages. Negative cache-path assertions and historical ledger mentions are not executable imports.
+- **C3.2 APPROVED SCOPE: COMPLETE / FULLY VERIFIED**, with the explicitly accepted 160 historical documentation debts still OPEN. Ready to propose **C3.3 — `/health` PostgreSQL-only contract and final runtime verification**.
+- **C3.3 has NOT begun. STOP for separate user approval before any C3.3 implementation or runtime change.**

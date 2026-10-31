@@ -1550,3 +1550,111 @@ Cumulative closed-obligation accounting: **188 existing PG / 15 existing non-PG 
 2. Map all portable obligations in `financial-service.test.js` (64 historical obligations) to existing coordinator/readiness coverage or **approximately 8 new cases** in `financial-coordinator.pg.test.js`. Proposed gap groups: malformed input before acquiring PG; current administrator authority; stale expected balance; historical replay after a later committed adjustment; changed canonical payload under one key; authorization change after retryable rollback; unavailable recovery read preserving unknown outcome; precommit authority/infrastructure failure preserving rollback/no published success. Exact registration/matrix allocation requires source-to-assertion reconciliation before implementation; eight is a planning target, not permission to discard a gap.
 3. Delete `financial-models.test.js` and `financial-service.test.js` only after their mapped replacements pass and importer checks permit deletion; update this ledger without erasing source obligations. Run targeted PG/unit replacements, then full PG acceptance. If all proposed PG additions are new, the forecast is **791 PG cases / 10 suites** (755 + 28 + 8), plus about 36 unit cases outside that PG count; this is not an executed result.
 4. No runtime, migrations, package files, financial HTTP/payment/notification/Nodemailer/disabled-feature suites or preserved features will be edited. Future approval must explicitly authorize only the two replacement suites, the coordinator PG additions, two retired-source deletions and ledger accounting. **Wait for user approval before implementation.**
+
+## C3.2c1 — money contracts and coordinator gap cases
+
+Approved and implemented **2026-10-31** as the first of two sequential financial conversion sub-phases. This completion record supersedes the money-only portion of the C3.2c proposal and operational destinations **D014, D016, D017, D194, D195, D197–D199**. The historical inventory/source rows above remain unchanged. **C3.2c2 has not begun**: `financial-invariants.pg.test.js` is not created and `financial-models.test.js` is not deleted or edited.
+
+### Money contracts — executed, 36/36 passing
+
+`money-contracts.test.js` imports **only `../utils/money`**. It contains **25 registrations / 36 expanded cases**, with three literal parameter tables (4, 6 and 4 entries). Matrices inside an assertion loop are not additional Jest cases. No database/repository/HTTP imports, mocks of money.js, skipped tests, or weakened runtime contracts.
+
+| Group | Cases | Exact registration/title destinations in `money-contracts.test.js` |
+|---|---:|---|
+| Canonical decimals | 4 | L13–18 `parses %s without changing exact cents` — zero, whole amounts, one fractional digit, two fractional digits |
+| Noncanonical syntax | 6 | L24–31 `rejects %s rather than normalizing input` — signs, whitespace (including final newline), exponents, leading zeros, incomplete decimals, other numeric spellings |
+| Coercion / precision | 4 | L37 `non-string non-number amounts cannot be coerced`; L42 `hostile coercion hooks are never called`; L48 `string precision beyond two digits is rejected even for trailing zeros`; L53 `numeric excess precision and nonfinite or signed amounts are rejected` |
+| Cents / amount bounds | 4 | L61 `safe nonnegative integer cents include zero and MAX_SAFE_INTEGER`; L65 `invalid cents reject the entire historical coercion and unsafe-value matrix`; L71 `maximum decimal amount parses exactly without a floating-point intermediate`; L75 `amount overflow is distinct from rejected overlong input` |
+| Formatting / string round trips | 2 | L84 `formatting always emits an integer part and exactly two fractional digits`; L89 `decimal-string round trips preserve cents through the safe-integer boundary` |
+| Checked arithmetic | 6 | L100 `addition is exact at the safe boundary and rejects overflow`; L106 `subtraction permits exact zero but rejects underflow`; L111 `multiplication is exact and accepts zero and identity factors`; L117 `multiplication checks the BigInt result rather than truncating overflow`; L121 `every arithmetic entry point validates cents before calculating`; L130 `multipliers reject coercion negative zero fractional and unsafe factors` |
+| Multiply/divide half-up | 6 | L138 `fractions below one half round down including a zero numerator`; L143 `exact half-cent ties round up once`; L148 `fractions above one half round up without floating-point calculation`; L153 `an intermediate product above MAX_CENTS is legal when the final quotient fits`; L157 `overflow is checked after half-up rounding as well as after division`; L163 `division requires a positive denominator and strict integer factors` |
+| Numeric display mirrors | 4 | L173–178 `%s retains its explicit numeric round-trip result` — zero mirror, fractional mirror, large representable mirror, large unrepresentable mirror |
+| **Total** | **36** | **All executed/passing** |
+
+Contract clarifications: `parseMoney` accepts both plain decimal strings and exact finite Number amounts; `assertCents` requires safe-integer Number cents and rejects string/bigint/coerced values and negative zero. Tests preserve that distinction. `money.js` has no numeric-mirror rejection API: the mirror cases explicitly compare cents with `parseMoney(Number(formatMoney(cents)))`. At MAX_CENTS the exact decimal string remains valid while the numeric mirror loses one cent; rejection before mutation is independently covered by the repository/coordinator cases below. Large BigInt intermediate products are valid if the divided result fits; a result of MAX_CENTS + 0.5 must overflow after half-up rounding, not clamp.
+
+### Eight genuine coordinator gaps — executed, 8/8 passing
+
+All original **26 registrations / 27 expanded PG cases** in `financial-coordinator.pg.test.js` remain unchanged. Eight nonparameterized registrations are appended, for **34 registrations / 35 expanded cases**. The existing verified-disposable/TLS/migration gates and real repository/transaction machinery are reused. No runtime or other PG suite is edited.
+
+| Gap / exact title in `financial-coordinator.pg.test.js` | Cases | New assertion beyond existing coverage |
+|---|---:|---|
+| G01 / L1432 `malformed adjustment matrix rejects before pool acquisition or account effects` | 1 | All 11 legacy malformed-input categories translated to current UUID/canonical-cent contracts, plus malformed bodies, wrong token-version type, and unrepresentable numeric mirror; zero provider/acquisition calls and complete unchanged account/evidence snapshots |
+| G02 / L1459 `adjustment requires a present current active administrator and exact token version` | 1 | Missing/ordinary/demoted/suspended/version-revoked actors independently rejected on the adjustment path, before financial DML; fixture authority changes are real separately committed PG writes |
+| G03 / L1482 `stale adjustment expected balance preserves every account column and all evidence` | 1 | Existing rollback-scope case has a monetary tuple; this case checks every account column and complete journal/order/payment rows, with no financial DML or COMMIT |
+| G04 / L1493 `adjustment replay retains the first receipt after a later committed balance change` | 1 | Two genuine committed adjustments, then first-key replay: exact original frozen receipt, unchanged entire accounts/evidence, no financial DML/COMMIT; existing target-ineligibility replay does not change money |
+| G05 / L1512 `changed adjustment balance expected balance or reason conflicts under the same key` | 1 | All three adjustment fingerprint changes independently return 409 IDEMPOTENCY_CONFLICT, preserve prior evidence, and never update money; existing conflict case covers purchase intent |
+| G06 / L1525 `token version revoked after a real retryable rollback forbids the next adjustment attempt` | 1 | Real PG 40001 after money UPDATE/journal/receipt read, actual ROLLBACK, independently committed administrator token revocation, then fresh second-attempt 403; no aborted receipt published or financial effect retained |
+| G07 / L1557 `recovery read outage preserves unknown COMMIT without a replacement adjustment` | 1 | Lost COMMIT transport followed by a failed recovery connection/read, for both undispatched and genuinely committed outcomes; sanitized 503 FINANCIAL_OUTCOME_UNKNOWN, broken clients discarded, resolution has zero DML; only an explicit identical-key new invocation may retry/replay |
+| G08 / L1607 `precommit PG failure rolls back new evidence and never publishes the pending receipt` | 1 | Real PG 57014 after money UPDATE/journal/verified receipt but before COMMIT, sanitized 503, confirmed ROLLBACK, no published success, all prior account/evidence rows intact; explicit same-key retry proves no partial idempotency evidence |
+| **Total added** | **8** | **All executed/passing; no duplicated original PG registration** |
+
+### Existing executed coverage credits
+
+Paths below are relative to `backend/tests/`. Supporting independent/unit suites were actually executed separately; they are not falsely included in the PG test count.
+
+| Credit | Exact surviving destination | Why not duplicate it |
+|---|---|---|
+| C01 / D189, D190 | `users-server.pg.test.js:88` — `health is 503 before verification, 200 after it, without session writes`; `:97` — `unavailable real PostgreSQL refuses to listen and remains not ready` | Current startup/readiness fail-closed contract replaces removed Mongo initialization |
+| C02 / D013, D169 | `financial-coordinator.pg.test.js:466` — `adjustment atomically commits exact balance, version and journal`; `user-repository.test.js:345` — `financial cents compare-and-swap uses one scoped client and neither writes mirrors nor commits` | Exact authoritative cents/CAS/generated mirror and same scoped transaction |
+| C03 / D020 | `financial-coordinator.pg.test.js:678` — `real adjustment-journal 23505 rolls back before clean replay resolution` | Recognized duplicate resolution already proves real rollback before clean replay |
+| C04 / D029 | `financial-coordinator.pg.test.js:936` — `disconnect at COMMIT without evidence returns unknown and never repeats the write` | Existing no-evidence unknown outcome, not a recovery-read outage |
+| C05 / D030 | `financial-coordinator.pg.test.js:895` — `lost response after real COMMIT destroys the client and resolves the receipt` | Existing durable receipt recovery, not a recovery-read outage |
+| C06 | `financial-coordinator.pg.test.js:796` — `PostgreSQL-raised %s exhausts three attempts without effects` (40001, 40P01); `:849` — `repository-mapped 40001 retries and then commits exactly once` | Bounded retries and successful retried commit already exist; only mid-retry authority change is new |
+| C07 | `financial-coordinator.pg.test.js:1267` — `adjustment replay precedes current target eligibility checks`; `:1288` — `same key with different purchase intent is a conflict, not another debit`; `:1306` — `fresh token authorization is required even for a replay`; `:1368` — `approval replay returns historical balance after a later adjustment` | Credit exact existing resource/path contracts, not a generic substitute for new adjustment-specific sequences |
+| C08 / D188 | `financial-coordinator.test.js:57` — `default import is lazy and exposes only operations, construction and sanitized error type` | Narrow/lazy API is an independent unit obligation |
+| C09 / D167 | `user-repository.test.js:419` — `unrepresentable numeric mirrors are rejected before a cents update` | Existing actual write-boundary rejection; new money-only tests demonstrate conversion/round-trip behavior, not a nonexistent guard |
+| C10 / D196 | `financial-coordinator.test.js:145` — `unknown unique constraints do not enter idempotency recovery` | Existing unrelated-constraint rejection is unit coverage |
+| C11 / D200 | `financial-coordinator.test.js:134` — `cleanup failure cannot erase a confirmed financial commit` | Existing post-confirmation cleanup semantics are unit coverage |
+| C12 (support only) | `pg-financial-schema-verification.test.js:161` — `rejects %s` (invalid unique index, wrong idempotency keys, wrong partial predicate); `:97` — `verifies four checksums and catalog guards with metadata-only SELECTs in a read-only transaction` | Fake-catalog unit fixtures support schema obligations but do not execute incompatible real-PG financial/payment/order index definitions; D191–D193 remain reserved for C3.2c2 |
+
+### financial-service.test.js — exact obligation reconciliation
+
+The original **64 source rows** are preserved. **22 formerly pending operational obligations** now have executed PG destinations. **11 incompatible-schema/index obligations remain explicitly pending for C3.2c2**; they are not silently discarded or counted as coordinator successes. The 22 retired obligations are only removed Mongo topology/ClientSession/probe/cache mechanisms, with portable transaction/security obligations mapped independently.
+
+| Historical source IDs | Current exact destination / status | Preserved obligation |
+|---|---|---|
+| FS-001 | C08 — existing unit PASS | Narrow coordinator API, no callback/notification/standalone-money capability |
+| FS-002 | C01 — existing PG credit | Server cannot serve/listen before current PostgreSQL verification |
+| FS-003–FS-012 | Retired mechanism, historical rationale unchanged | Mongo topology/session/init/probe machinery has no current API |
+| FS-013–FS-015, FS-017 | D191 — **PENDING C3.2c2**, C12 supporting unit PASS only | Real journal missing/nonunique/incorrect-predicate/wrong-key-order readiness variants |
+| FS-016, FS-018–FS-019 | Retired mechanism | Mongo collation/TTL options are not recreated; durable SQL retention remains separately obligated |
+| FS-020–FS-022 | D192 — **PENDING C3.2c2**, C12 supporting verifier unit coverage only | Real payment decision index missing/nonunique/wrong-predicate readiness variants |
+| FS-023–FS-025 | Retired mechanism | Mongo-only collation/TTL options |
+| FS-026–FS-028, FS-030 | D193 — **PENDING C3.2c2**, C12 supporting verifier unit coverage only | Real order replay index missing/nonunique/wrong-predicate/wrong-key-order readiness variants |
+| FS-029, FS-031–FS-035 | Retired mechanism | Removed Mongo collation/TTL/build-repair/client-generation/readiness cache |
+| FS-036–FS-046 / D194 | G01 — new PG PASS | Each missing balance expectation, precision/sign/coercion, UUID, hostile target, key, reason and unknown-field input rejects before acquisition |
+| FS-047 | C09 + money numeric-mirror group; G01 additional support — existing unit PASS | Numeric mirror loss is explicit, exact string money stays valid, incompatible mutation is rejected |
+| FS-048–FS-050 / D195 | G02 — new PG PASS | Missing/nonadministrator/inactive current authority, plus fresh role and token-version checks |
+| FS-051 / D016 | G03 — new PG PASS | Full unchanged-account/evidence snapshot for stale expected balance |
+| FS-052 | C02 — existing PG/unit PASS | Scoped atomic cents/CAS/journal, generated mirror rather than a writable Mongo money pair |
+| FS-053 / D014, D015 | G04 — new PG PASS; historical unit replay remains supporting coverage | Replay is the original historical receipt after another committed adjustment |
+| FS-054–FS-056 / D017 | G05 — new PG PASS | Balance, expected balance and reason each independently conflict under one key |
+| FS-057 | C03 — existing PG PASS | Recognized duplicate resolution follows actual rollback and clean transaction |
+| FS-058 | C10 — existing unit PASS | Unrelated uniqueness constraint cannot become idempotency success |
+| FS-059 | C04 — existing PG PASS | Unknown COMMIT without receipt requires identical-key recovery and never repeats mutation internally |
+| FS-060 | C05 — existing PG PASS | Actual durable COMMIT acknowledgement loss resolves original receipt |
+| FS-061 / D197 | G06 — new PG PASS | Fresh authorization after retryable rollback; revoked actor token is not reused |
+| FS-062 / D198 | G07 — new PG PASS | Unavailable recovery read stays unknown, never definite failure or hidden replacement write |
+| FS-063 / D199 | G08 — new PG PASS | Precommit infrastructure failure rolls back and never publishes the pending receipt |
+| FS-064 | C11 — existing unit PASS | Cleanup failure does not erase confirmed success |
+
+Current FS allocation: **27 executed/credited PG + 4 executed existing non-PG + 11 pending C3.2c2 + 22 retired = 64**. This intentionally differs from the historical 5/4/33/22 allocation without changing its original source rows.
+
+Money-only historical closure: **FM-003–FM-014 / D163** (all 12 original invalid/coerced cents variants) now have executed non-PG coverage at `money-contracts.test.js:65`. **D165** precision parsing, **D175** underlying numeric validation and **D177** checked arithmetic have executed money-only support, but compound FM-020–FM-022, FM-062–FM-065 still require generated mirror/journal/SQL destinations in C3.2c2. No pure money test is falsely credited as a real journal or repository integration.
+
+Conservative cumulative status for explicitly reassessed source obligations: **210 existing PG / 27 existing non-PG / 201 pending new / 25 changed disabled / 61 retired = 524**. Only the 22 FS operational and 12 FM cents obligations move dispositions in this sub-phase; other financial source inventories and compound SQL requirements retain their pending status until their owning phase reconciles them.
+
+### Verification and deletion gate
+
+- New money suite: **PASS — 1/1 suite, 36/36 tests, 0 snapshots, 0.506 s** — `npx jest backend/tests/money-contracts.test.js --runInBand`.
+- Targeted coordinator PG suite: **PASS — 1/1 suite, 35/35 tests (27 existing + 8 new), 0 snapshots, 4.662 s** — `bash backend/tests/run-disposable-pg.sh backend/tests/financial-coordinator.pg.test.js`. All five migrations applied against the verified-TLS disposable PG18 database.
+- Unchanged supporting unit suites: **PASS — 3/3 suites, 237/237 tests, 0 snapshots, 2.541 s** — `npx jest backend/tests/financial-coordinator.test.js backend/tests/user-repository.test.js backend/tests/pg-financial-schema-verification.test.js --runInBand`. These are extra credit verification, not additions to the 36 new unit or PG counts.
+- Full-PG acceptance before deletion: **PASS — 9/9 suites, 763/763 tests (755 + 8), 0 snapshots, 121.449 s** — `bash backend/tests/run-disposable-pg.sh backend/tests/*.pg.test.js`. Two earlier safety-check timeouts prevented execution; the subsequent successful run applied all five migrations and satisfied the deletion gate.
+- Deleted **only `backend/tests/financial-service.test.js`** after the passing full PG run and a fresh importer scan. **Zero references/importers** outside this historical ledger were found before deletion, excluding dependency/git directories. Post-deletion grep confirms the same zero result. `financial-models.test.js` remains unchanged for C3.2c2.
+- Final money verification after deletion: **PASS — 1/1 suite, 36/36 tests, 0 snapshots, 0.288 s** — `npx jest backend/tests/money-contracts.test.js --runInBand`.
+- Final full-PG verification **after deletion**: **PASS — 9/9 suites, 763/763 tests (755 existing + 8 new), 0 snapshots, 121.365 s** — `bash backend/tests/run-disposable-pg.sh backend/tests/*.pg.test.js`. All five migrations applied to disposable verified-TLS PG18; no skipped tests or Mongo fallback.
+- Money suite SHA256: `069b1ca21962c0327854a9a882fd5ce8ccf835a593755c0c2bbbc479b154d281`.
+- Coordinator suite SHA256: `882a2496368283f961831ae2e2dff64ece6908c871e8f6b70149c4804b68a2fe`.
+- Static/protected-file checks: **PASS** — all 524 historical source rows remain byte-for-byte unchanged; all 64 FS IDs are mapped exactly once; every original coordinator byte is preserved as a prefix; eight new PG registrations and 25 money registrations have no skip/focus; existing/new title and registration-line citations resolve. Verified suite hashes match this record. Tracked changes are exactly the coordinator additions, legacy financial-service deletion and ledger, plus the new money suite; other tracked files match HEAD, with no staged changes. `git diff --check` passes.
+- Only the new money contract suite, appended coordinator gaps, this ledger and the authorized legacy financial-service suite deletion are changed. No runtime, migrations, packages, financial models/invariants, other PG suites, disabled features, payments/notifications/Nodemailer or preserved feature is edited. C3.2c2 requires separate approval after this sub-phase's verification and completion.

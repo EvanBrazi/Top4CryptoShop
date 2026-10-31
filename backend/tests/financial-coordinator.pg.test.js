@@ -1416,3 +1416,220 @@ test('append-only and immutable guards remain enabled in the disposable schema',
 
   expect((await account()).balance_cents).toBe('9000');
 });
+
+// C3.2c1: eight adjustment-specific gaps. Existing registrations above stay
+// unchanged. These snapshots read every column, not just the monetary tuple.
+async function financialGapSnapshot() {
+  const result = {};
+  for (const table of ['users', 'financial_operations', 'orders', 'payments']) {
+    result[table] = (await pool.query(`SELECT * FROM public.${table} ORDER BY id`)).rows;
+  }
+  return result;
+}
+const gapWrites = events => events.filter(({ text }) =>
+  text.startsWith('UPDATE public.users SET balance_cents') || text.includes('financial:journal'));
+
+test('malformed adjustment matrix rejects before pool acquisition or account effects', async () => {
+  const connect = jest.fn(() => pool.connect());
+  const provider = jest.fn(() => ({ connect }));
+  const local = createCoordinator({ poolProvider: provider });
+  const before = await financialGapSnapshot();
+  const variants = [
+    [null, 'INVALID_FINANCIAL_INPUT'], [[], 'INVALID_FINANCIAL_INPUT'], [{}, 'INVALID_FINANCIAL_INPUT'],
+    ['invalid', 'INVALID_FINANCIAL_INPUT'],
+    [adjustment({ expectedBalanceCents: undefined }), 'INVALID_CENTS'],
+    ...['1.005', -1, true, null, undefined].map(value => [adjustment({ newBalanceCents: value }), 'INVALID_CENTS']),
+    [adjustment({ principal: { userId: 'not-an-id', tokenVersion: '1' } }), 'INVALID_FINANCIAL_INPUT'],
+    [adjustment({ principal: { userId: ADMIN_A, tokenVersion: 1 } }), 'INVALID_TOKEN_VERSION'],
+    [adjustment({ userId: { $ne: null } }), 'INVALID_FINANCIAL_INPUT'],
+    [adjustment({ idempotencyKey: 'x\n' }), 'INVALID_IDEMPOTENCY_KEY'],
+    [adjustment({ idempotencyKey: '' }), 'INVALID_IDEMPOTENCY_KEY'],
+    [adjustment({ reason: '   ' }), 'INVALID_FINANCIAL_REASON'],
+    [adjustment({ reason: 'x'.repeat(501) }), 'INVALID_FINANCIAL_REASON'],
+    [adjustment({ role: 'admin' }), 'INVALID_FINANCIAL_INPUT'],
+    [adjustment({ newBalanceCents: '9007199254740991' }), 'MONEY_MIRROR_UNREPRESENTABLE']
+  ];
+  for (const [input, code] of variants) {
+    await expect(local.adjustBalance(input)).rejects.toMatchObject({ status: 400, code });
+    expect(provider).not.toHaveBeenCalled(); expect(connect).not.toHaveBeenCalled();
+    expect(await financialGapSnapshot()).toEqual(before);
+  }
+});
+
+test('adjustment requires a present current active administrator and exact token version', async () => {
+  const variants = [
+    ['missing', '00000000-0000-4000-8000-000000000099', 'admin', 'active', '1'],
+    ['ordinary', OWNER, 'admin', 'active', '1'],
+    ['demoted', ADMIN_A, 'user', 'active', '1'],
+    ['suspended', ADMIN_A, 'admin', 'suspended', '1'],
+    ['revoked version', ADMIN_A, 'admin', 'active', '2']
+  ];
+  for (const [_name, actorId, role, status, version] of variants) {
+    // Fixture authority changes are committed separately from the request.
+    await pool.query('UPDATE public.users SET role=$2, account_status=$3, token_version=$4 WHERE id=$1::UUID',
+      [ADMIN_A, role, status, version]);
+    const before = await financialGapSnapshot();
+    const wrapped = interceptedCoordinator((_raw, _query, next) => next());
+    await expect(wrapped.coordinator.adjustBalance(adjustment({ principal: principal(actorId) })))
+      .rejects.toMatchObject({ status: 403, code: 'FINANCIAL_FORBIDDEN' });
+    expect(await financialGapSnapshot()).toEqual(before);
+    expect(gapWrites(wrapped.events)).toEqual([]);
+    expect(wrapped.events.some(({ text }) => text === 'COMMIT')).toBe(false);
+    expect(wrapped.releases).toEqual([false]);
+  }
+});
+
+test('stale adjustment expected balance preserves every account column and all evidence', async () => {
+  const before = await financialGapSnapshot();
+  const wrapped = interceptedCoordinator((_raw, _query, next) => next());
+  await expect(wrapped.coordinator.adjustBalance(adjustment({ expectedBalanceCents: '9999' })))
+    .rejects.toMatchObject({ status: 409, code: 'EXPECTED_BALANCE_MISMATCH' });
+  expect(await financialGapSnapshot()).toEqual(before);
+  expect(gapWrites(wrapped.events)).toEqual([]);
+  expect(wrapped.events.at(-1).text).toBe('ROLLBACK');
+  expect(wrapped.events.some(({ text }) => text === 'COMMIT')).toBe(false);
+});
+
+test('adjustment replay retains the first receipt after a later committed balance change', async () => {
+  const wrapped = interceptedCoordinator((_raw, _query, next) => next());
+  const original = await wrapped.coordinator.adjustBalance(adjustment());
+  await wrapped.coordinator.adjustBalance(adjustment({
+    expectedBalanceCents: '12000', newBalanceCents: '14000', idempotencyKey: 'later-adjustment'
+  }));
+  const beforeReplay = await financialGapSnapshot();
+  expect(await account()).toEqual({ balance_cents: '14000', balance: '140.00', row_version: '2' });
+  expect(beforeReplay.financial_operations).toHaveLength(2);
+  wrapped.events.length = 0;
+  const replay = await wrapped.coordinator.adjustBalance(adjustment({ reason: ' Reviewed adjustment ' }));
+  expect(replay).toEqual({ ...original, replayed: true });
+  expect(replay.balanceCents).toBe('12000'); expect(Object.isFrozen(replay)).toBe(true);
+  expect(await financialGapSnapshot()).toEqual(beforeReplay);
+  expect(gapWrites(wrapped.events)).toEqual([]);
+  expect(wrapped.events.at(-1).text).toBe('ROLLBACK');
+  expect(wrapped.events.some(({ text }) => text === 'COMMIT')).toBe(false);
+});
+
+test('changed adjustment balance expected balance or reason conflicts under the same key', async () => {
+  await coordinator.adjustBalance(adjustment());
+  const before = await financialGapSnapshot();
+  for (const patch of [{ newBalanceCents: '12100' }, { expectedBalanceCents: '9999' }, { reason: 'Different reason' }]) {
+    const wrapped = interceptedCoordinator((_raw, _query, next) => next());
+    await expect(wrapped.coordinator.adjustBalance(adjustment(patch)))
+      .rejects.toMatchObject({ status: 409, code: 'IDEMPOTENCY_CONFLICT' });
+    expect(await financialGapSnapshot()).toEqual(before);
+    expect(gapWrites(wrapped.events)).toEqual([]);
+    expect(wrapped.events.some(({ text }) => text === 'COMMIT')).toBe(false);
+  }
+});
+
+test('token version revoked after a real retryable rollback forbids the next adjustment attempt', async () => {
+  const before = await financialGapSnapshot();
+  let faulted = false, revocations = 0, afterRevocation;
+  const wrapped = interceptedCoordinator(async (raw, query, next) => {
+    if (query.text === 'SET CONSTRAINTS ALL IMMEDIATE' && !faulted) {
+      faulted = true;
+      // Real PG raises 40001 after the money UPDATE, journal and receipt read.
+      return raw.query("DO $$ BEGIN RAISE EXCEPTION USING ERRCODE='40001', MESSAGE='private retry fault'; END $$");
+    }
+    const result = await next();
+    if (query.text === 'ROLLBACK' && faulted && revocations === 0) {
+      revocations++;
+      await pool.query('UPDATE public.users SET token_version=token_version+1 WHERE id=$1::UUID', [ADMIN_A]);
+      afterRevocation = await financialGapSnapshot();
+    }
+    return result;
+  });
+  const published = jest.fn();
+  await expect(wrapped.coordinator.adjustBalance(adjustment()).then(published))
+    .rejects.toMatchObject({ status: 403, code: 'FINANCIAL_FORBIDDEN' });
+  expect(published).not.toHaveBeenCalled(); expect(revocations).toBe(1);
+  expect(afterRevocation.users.find(row => row.id === ADMIN_A).token_version).toBe('2');
+  expect(afterRevocation.users.filter(row => row.id !== ADMIN_A)).toEqual(before.users.filter(row => row.id !== ADMIN_A));
+  expect(await financialGapSnapshot()).toEqual(afterRevocation);
+  expect(afterRevocation.financial_operations).toEqual([]);
+  expect(wrapped.events.filter(({ text }) => text.startsWith('BEGIN'))).toHaveLength(2);
+  expect(wrapped.events.filter(({ text }) => text === 'ROLLBACK')).toHaveLength(2);
+  expect(wrapped.events.filter(({ text }) => text.includes('financial:journal'))).toHaveLength(1);
+  expect(wrapped.events.some(({ text }) => text === 'COMMIT')).toBe(false);
+  expect(wrapped.releases).toEqual([false, false]);
+});
+
+test('recovery read outage preserves unknown COMMIT without a replacement adjustment', async () => {
+  for (const disposition of ['not-dispatched', 'committed']) {
+    const input = adjustment({ idempotencyKey: `unknown-read-${disposition}`,
+      ...(disposition === 'committed' ? { expectedBalanceCents: '12000', newBalanceCents: '14000' } : {}) });
+    const before = await financialGapSnapshot();
+    let unknown = false, failedRecoveryReads = 0;
+    const wrapped = interceptedCoordinator(async (raw, query, next) => {
+      if (query.text === 'COMMIT') {
+        if (disposition === 'committed') await next(); // Genuine committed transaction.
+        unknown = true;
+        raw.connection.stream.destroy();
+        throw Object.assign(new Error('private lost COMMIT transport'), { code: 'ECONNRESET' });
+      }
+      if (unknown && query.text.includes('financial:replay:adjust')) {
+        failedRecoveryReads++;
+        raw.connection.stream.destroy();
+        throw Object.assign(new Error('private unavailable recovery read'), { code: 'ECONNRESET' });
+      }
+      return next();
+    });
+    const published = jest.fn();
+    const error = await wrapped.coordinator.adjustBalance(input).then(published).catch(caught => caught);
+    expect(error).toMatchObject({ status: 503, code: 'FINANCIAL_OUTCOME_UNKNOWN', retryWithSameKey: true });
+    expect(error.cause).toBeUndefined(); expect(JSON.stringify(error)).not.toContain('private');
+    expect(published).not.toHaveBeenCalled(); expect(failedRecoveryReads).toBe(1);
+    expect(wrapped.releases).toEqual([true, true]);
+    expect(wrapped.events.filter(({ text }) => text.startsWith('BEGIN'))).toHaveLength(2);
+    expect(wrapped.events.filter(({ text }) => text === 'COMMIT')).toHaveLength(1);
+    expect(wrapped.events.filter(({ text }) => text.includes('financial:journal'))).toHaveLength(1);
+    const recoveryStart = wrapped.events.findIndex(({ text }, index) => index > 0 && text.startsWith('BEGIN'));
+    expect(gapWrites(wrapped.events.slice(recoveryStart))).toEqual([]);
+    const after = await financialGapSnapshot();
+    if (disposition === 'not-dispatched') expect(after).toEqual(before);
+    else {
+      expect(after.users.filter(row => row.id !== OWNER)).toEqual(before.users.filter(row => row.id !== OWNER));
+      expect(after.financial_operations).toHaveLength(before.financial_operations.length + 1);
+      expect(await account()).toEqual({ balance_cents: '14000', balance: '140.00', row_version: '2' });
+    }
+    // An explicit identical-key retry is a new invocation, never a hidden
+    // replacement write by the failed recovery. It discovers actual durability.
+    const retry = interceptedCoordinator((_raw, _query, next) => next());
+    const receipt = await retry.coordinator.adjustBalance(input);
+    expect(receipt.replayed).toBe(disposition === 'committed');
+    if (disposition === 'committed') {
+      expect(await financialGapSnapshot()).toEqual(after);
+      expect(gapWrites(retry.events)).toEqual([]);
+    }
+  }
+});
+
+test('precommit PG failure rolls back new evidence and never publishes the pending receipt', async () => {
+  await coordinator.adjustBalance(adjustment());
+  const before = await financialGapSnapshot();
+  const input = adjustment({ expectedBalanceCents: '12000', newBalanceCents: '14000', idempotencyKey: 'precommit-failure' });
+  let raised;
+  const wrapped = interceptedCoordinator(async (raw, query, next) => {
+    if (query.text === 'SET CONSTRAINTS ALL IMMEDIATE') {
+      // Genuine PG cancellation after UPDATE, journal, balance verification and
+      // receipt construction, but strictly before COMMIT. No fabricated result.
+      try { return await raw.query("DO $$ BEGIN RAISE EXCEPTION USING ERRCODE='57014', MESSAGE='private precommit cancellation'; END $$"); }
+      catch (error) { raised = error.code; throw error; }
+    }
+    return next();
+  });
+  const published = jest.fn();
+  const error = await wrapped.coordinator.adjustBalance(input).then(published).catch(caught => caught);
+  expect(error).toMatchObject({ status: 503, code: 'FINANCIAL_UNAVAILABLE', retryWithSameKey: true });
+  expect(JSON.stringify(error)).not.toContain('private'); expect(raised).toBe('57014');
+  expect(published).not.toHaveBeenCalled(); expect(await financialGapSnapshot()).toEqual(before);
+  expect(gapWrites(wrapped.events)).toHaveLength(2);
+  expect(wrapped.events.filter(({ text }) => text.includes('financial:replay:adjust'))).toHaveLength(3);
+  expect(wrapped.events.at(-1).text).toBe('ROLLBACK');
+  expect(wrapped.events.some(({ text }) => text === 'COMMIT')).toBe(false);
+  expect(wrapped.releases).toEqual([false]);
+  const receipt = await coordinator.adjustBalance(input);
+  expect(receipt.replayed).toBe(false);
+  expect(await counts()).toEqual({ journal: 2, orders: 0, payments: 0 });
+  expect(await account()).toEqual({ balance_cents: '14000', balance: '140.00', row_version: '2' });
+});

@@ -70,3 +70,6 @@ yarn.lock
 # ✅ ملفات خاصة بـ Git
 .gitignore
 .gitattributes
+
+# One-time, local-only production verification diagnostic.
+/backend/db/verify-production.js

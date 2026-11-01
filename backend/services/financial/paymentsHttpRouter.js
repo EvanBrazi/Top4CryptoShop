@@ -50,12 +50,12 @@ function createPaymentsRouter(context, financial) {
     } catch (_) { throw C.fail('INVALID_APPROVED_AMOUNT', 400); }
     const result = await coordinator.approvePayment({ principal: h.principal(req), paymentId: req.params.id,
       approvedAmountCents, idempotencyKey: req.body.idempotencyKey, reason: req.body.reason });
-    h.committed(req, res, result);
+    h.committed(req, res, { success: true, ...result });
   }));
   router.put('/:id/reject', auth.checkAdmin, ...unsafe, json, wrap(async (req, res) => {
     h.fields(req.query, []); h.fields(req.body, ['idempotencyKey', 'reason'], ['idempotencyKey', 'reason']);
     const result = await coordinator.rejectPayment({ ...req.body, principal: h.principal(req), paymentId: req.params.id });
-    h.committed(req, res, result);
+    h.committed(req, res, { success: true, ...result });
   }));
   router.use(h.errors);
   return router;

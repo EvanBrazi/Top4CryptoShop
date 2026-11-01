@@ -149,6 +149,29 @@ test('purchase is 201, exact committed receipt; replay is 200 with one debit', a
   expect(j).toMatchObject({ id: first.body.operationId, user_id: H.OWNER, source_id: o.id, effect: 'debit', before_cents: '10000', after_cents: '9901', delta_cents: '-99' });
   expect(o.debit_operation_id).toBe(j.id);
 });
+test.each(['purchase', 'purchase replay', 'order completion', 'order cancellation', 'payment approval', 'payment rejection'])
+('HTTP acknowledgment includes success and preserves receipt: %s', async command => {
+  const owner = await logged();
+  if (command === 'purchase' || command === 'purchase replay') {
+    if (command === 'purchase replay') await buy(owner).expect(201);
+    const r = await buy(owner).expect(command === 'purchase' ? 201 : 200);
+    expect(r.body).toEqual({ success: true, orderId: expect.any(String), userId: H.OWNER,
+      status: 'pending', replayed: command === 'purchase replay', chargeCurrency: 'USD',
+      chargeCents: '99', charge: '0.99', quantity: 60, balanceCents: '9901', balance: '99.01',
+      operationId: expect.any(String) });
+    return;
+  }
+  const admin = await logged('Admin_A'), kind = command.startsWith('order') ? 'orders' : 'payments';
+  const created = kind === 'orders' ? await buy(owner).expect(201) : await submit(owner).expect(201);
+  const idField = kind === 'orders' ? 'orderId' : 'paymentId', id = created.body[idField];
+  const action = ['order completion', 'payment approval'].includes(command) ? 'accept' : 'reject';
+  const extra = command === 'payment approval' ? { approvedAmount: '15.00' } : {};
+  const r = await decide(admin, kind, id, action, extra).expect(200);
+  expect(r.body).toMatchObject({ success: true, [idField]: id, userId: H.OWNER,
+    status: action === 'accept' ? 'completed' : 'cancelled', replayed: false });
+  const replay = await decide(admin, kind, id, action, extra).expect(200);
+  expect(replay.body).toEqual({ ...r.body, success: true, replayed: true });
+});
 test('insufficient funds is 409 without partial writes', async () => {
   const b = await logged();
   expect((await buy(b, { category: 'apps', productId: 1, quantity: 195000, packageIndex: undefined, fulfillmentTarget: { accountId: 'Acct_123' } }).expect(409)).body.code).toBe('INSUFFICIENT_FUNDS');

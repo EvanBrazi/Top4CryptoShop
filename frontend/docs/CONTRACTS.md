@@ -1,6 +1,6 @@
 # C5b — Frontend contracts
 
-Baseline: `frontend-overhaul`, HEAD `fcbd810`, 2026-11-01. Current source contracts, not desired migration contracts. Documentation only; no new live-browser/database verification. C5a's user-verified authentication/visual results remain separate from these static findings.
+Baseline audit: `frontend-overhaul`, HEAD `fcbd810`, 2026-11-01. Current source contracts, not desired migration contracts. C5b.1 updates the five coordinator-backed mutation HTTP envelopes after the approved Option B fix: financial HTTP 196/196 and full PostgreSQL 829/829 passed. No new live-browser verification; C5a's user-verified authentication/visual results remain separate.
 
 Companions: [BINDINGS.md](BINDINGS.md), [GAPS.md](GAPS.md). `C-*` are contract identifiers; `N01`–`N60` cover every inventoried fetch/secureFetch/fetcher/read call site. All citations are repository-relative; `js/` abbreviates `frontend/public/assets/js/`.
 
@@ -62,16 +62,16 @@ Queries (`backend/services/financial/httpCommon.js:20–29`): owner list optiona
 
 ## C-RESULT — committed financial acknowledgment
 
-HTTP sends coordinator results unchanged (`backend/services/financial/httpCommon.js:32–35`; `backend/services/financialCoordinator.js:207,230–232`). `backend/services/financial/contracts.js:219–226` projects:
+Coordinator receipts remain pure financial projections without a success field (`backend/services/financial/contracts.js:219–226`; `backend/services/financialCoordinator.js:207,230–232`), unchanged in C5b.1. The HTTP routers add success:true to a new object while preserving every receipt field (`backend/services/financial/ordersHttpRouter.js:14,34`; `backend/services/financial/paymentsHttpRouter.js:53,58`). The committed helper still sends its supplied value unchanged (`backend/services/financial/httpCommon.js:32–35`). HTTP acknowledgment shape:
 
 ```text
-{orderId OR paymentId:string,userId:string,status:string,replayed:boolean,
+{success:true,orderId OR paymentId:string,userId:string,status:string,replayed:boolean,
  [purchase/cancel] chargeCurrency:'USD',chargeCents:integer-string,charge:decimal-string,quantity:number,
  [payment approve] currency:'USD',amountCents:integer-string,
  [journal-backed] balanceCents:integer-string,balance:decimal-string,operationId:string}
 ```
 
-**No success field.** Purchase replay reports original pending snapshot; decision results report decided status. Non-journal decisions need not have balance fields. Both financial clients require result.success===true, incompatible with actual live success (**G-P0-01**). The 25 mocked purchase tests do not establish live DTO compatibility. No guard/transport/storage changes are authorized by this document.
+Purchase replay reports the original pending snapshot; decision results report decided status. Non-journal decisions need not have balance fields. **All five mutation endpoints and their replays include success:true only in the HTTP envelope**; upload submission and all read/recovery shapes remain unchanged. Both frontend result.success===true guards are unchanged and now compatible (**G-P0-01 RESOLVED**). Live HTTP acknowledgment assertions pass in financial-http.pg.test.js (196/196), alongside the unchanged 25/25 frontend suite and 829/829 full PostgreSQL gate.
 
 ## C-AUTH — local authentication/session flows
 
@@ -104,7 +104,7 @@ Catalog card click opens PurchaseDialog; confirm-btn click `js/dialogs/purchaseD
 
 N58 POST `/api/orders/purchase`, exact saved JSON, no query, auth+CSRF+rate limit. Required target exactly one matching property accountId|playerId|walletAddress|email|phone:string. Server validates/canonicalizes and derives network bitcoin-mainnet/ethereum-mainnet/tron-mainnet/bsc-mainnet; no target for products not requiring one. Server derives quantity/pricing/limits/availability.
 
-Success201 new/200 replay **C-RESULT without success flag**, currently rejected by client (G-P0-01). Intended frontend success alert orderId/charge, close, purchaseConfirmed event; current failure stays dialog/restores safe-text saved selection/target. Errors400 input/key/target;409 funds/conflict/product/reconciliation;401/403 auth/CSRF;429;503 configuration/unknown/unavailable.
+Success201 new/200 replay **C-RESULT with success:true**; replay also has replayed:true (G-P0-01 RESOLVED). The unchanged client accepts the acknowledgment, emits purchaseConfirmed, and the dialog success handler alerts orderId/charge and closes. Failure stays dialog/restores safe-text saved selection/target. Errors400 input/key/target;409 funds/conflict/product/reconciliation;401/403 auth/CSRF;429;503 configuration/unknown/unavailable.
 
 PurchaseClient (`js/utils/purchaseClient.js:32–69`) checks owner/session first, saves exact intent/key before dispatch, marks unknown before network, rejects replacing saved selection; in-flight suppressed by dialog. Unknown transport/JSON retains key. New definite400 or INSUFFICIENT_FUNDS may clear; prior unknown remains on later auth/business/503. Replayed historical balance must not replace current balance. These invariants constrain any C5c repair.
 
@@ -117,7 +117,7 @@ PurchaseClient (`js/utils/purchaseClient.js:32–69`) checks owner/session first
 | Admin startup/generated refresh N51 | GET `/api/orders/admin?limit=100`, admin | Pending Page<OrderDTO>; adminOrders expects array (G-DATA-01) |
 | Recover saved decision absent from queue N52 | GET `/api/orders/admin/:orderId`, no query, admin | Plain OrderDTO; error notification, no redirect |
 | Generated admin fulfillment button N53 | GET `/api/orders/admin/:orderId/fulfillment`, no query, admin | Same authorized private shape, not list target |
-| Generated admin accept/reject/retry N56 | PUT `/api/orders/:orderId/accept` or reject; required idempotencyKey,reason strings; no query,admin+CSRF | 200 C-RESULT, completed/cancelled; cancellation journal refund; guard incorrectly requires success flag (G-P0-01) |
+| Generated admin accept/reject/retry N56 | PUT `/api/orders/:orderId/accept` or reject; required idempotencyKey,reason strings; no query,admin+CSRF | 200 C-RESULT with success:true; accept status completed, reject status cancelled; cancellation journal refund; identical-decision replays retain success:true/replayed:true (G-P0-01 RESOLVED) |
 
 Reason string, trimmed/nonempty≤500 chars; order decisions also reject control characters and `<>&'"` plus backtick. Key grammar as purchase (`backend/services/financial/contracts.js:58–61`). OrderClient (`js/utils/orderClient.js:31–48`) verifies original actor, saves action/reason/key decision-UUID before dispatch, retains rejection/unknown for reconciliation, retries identical intent, never applies historical balance. Errors400 invalid input/key/reason,404 resource,409 already-decided/conflict/reconciliation,429,503 and auth/CSRF. Backend `backend/services/financial/ordersHttpRouter.js:8–35`.
 
@@ -137,7 +137,7 @@ GET `/api/payments/submissions/:submissionId`, authenticated,no query/body→`{o
 
 - N29 PaymentsTab init/filter GET `/api/payments?userId=<stored-id>`: invalid owner query; live Page<PaymentDTO>, client bare array/quiet[] fallback, accepted/rejected/receiptImage assumptions. Details button reads cache, not server detail/receipt (G-DATA-02).
 - N05 admin pending GET `/api/payments/admin`: admin Page<PaymentDTO>, legacy array renderer (G-DATA-01).
-- N10/N11 admin generated accept/reject PUT `/api/payments/:paymentId/accept|reject`, JSON content type **no body/CSRF**. Live accept requires approvedAmount decimal-string,idempotencyKey string,reason string; reject requires key/reason; admin+CSRF,no query,200 C-RESULT. Current notification removed in finally even failure/unknown (G-PAYMENT-02). Errors400 fields/amount/key/reason,403,409 already-decided/conflict/reconciliation,503 unknown,429.
+- N10/N11 admin generated accept/reject PUT `/api/payments/:paymentId/accept|reject`, JSON content type **no body/CSRF**. Live accept requires approvedAmount decimal-string,idempotencyKey string,reason string; reject requires key/reason; admin+CSRF,no query,200 C-RESULT with success:true (accept status completed, reject status cancelled), including success:true/replayed:true on identical-decision replay. Current notification removed in finally even failure/unknown (G-PAYMENT-02). Errors400 fields/amount/key/reason,403,409 already-decided/conflict/reconciliation,503 unknown,429.
 - GET `/api/payments/:paymentId/receipt`, owner/admin,no query/body→`{url:string,expiresAt:epoch-ms}`, signed provider URL about60 seconds, Referrer-Policy:no-referrer. No current caller. Legacy `/images/payments`410 LEGACY_RECEIPT_UNAVAILABLE is not a substitute.
 - Other list/detail/summary variants are C-RESOURCE; backend `backend/services/financial/paymentsHttpRouter.js:19–58`. No frontend authority over approved credit from FX.
 

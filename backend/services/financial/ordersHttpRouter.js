@@ -11,7 +11,7 @@ function createOrdersRouter(context, financial) {
     h.fields(req.query, []);
     const input = normalizePurchase(req.body);
     const result = await coordinator.purchaseOrder({ ...input, principal: h.principal(req) });
-    h.committed(req, res, result, result.replayed ? 200 : 201);
+    h.committed(req, res, { success: true, ...result }, result.replayed ? 200 : 201);
   }));
   for (const [path, method, admin, pending, summary] of [
     ['/', 'listForOwner', false], ['/summary', 'summarizeForOwner', false, false, true],
@@ -31,7 +31,7 @@ function createOrdersRouter(context, financial) {
     router.put(path, auth.checkAdmin, ...unsafe, json, wrap(async (req, res) => {
       h.fields(req.query, []); h.fields(req.body, ['idempotencyKey', 'reason'], ['idempotencyKey', 'reason']);
       const result = await coordinator[method]({ ...req.body, principal: h.principal(req), orderId: req.params.id });
-      h.committed(req, res, result);
+      h.committed(req, res, { success: true, ...result });
     }));
   router.use(h.errors);
   return router;

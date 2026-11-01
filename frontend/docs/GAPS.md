@@ -1,6 +1,6 @@
 # C5b — Gap register and binding audit
 
-Baseline `frontend-overhaul` / `fcbd810`, audited 2026-11-01. Documentation only: **no P0 fix implemented**, no frontend/backend/storage/financial-client changes, no design/features, no commit/push. The five pre-existing backend/db modifications must remain byte-for-byte untouched.
+Baseline `frontend-overhaul` / `fcbd810`, audited 2026-11-01. C5b was documentation only. **C5b.1 implements the approved G-P0-01 Option B HTTP acknowledgment fix**: four router-line replacements, HTTP regressions and documentation updates only. No coordinator/frontend/storage/design/feature changes, no commit/push. The five pre-existing backend/db modifications remain byte-for-byte untouched.
 
 Companions: [CONTRACTS.md](CONTRACTS.md) (`C-*`, N01–N60 request sites), [BINDINGS.md](BINDINGS.md) (172 static ID rows, dynamic IDs, selector/listener census). All paths repository-relative; `js/` = `frontend/public/assets/js/`. Findings are static unless explicitly marked user-reported; no fresh live-browser/database reproduction is claimed.
 
@@ -13,13 +13,25 @@ Companions: [CONTRACTS.md](CONTRACTS.md) (`C-*`, N01–N60 request sites), [BIND
 - **C6:** locked legacy UserManager/auth migration boundary. Current TODO(C5b) cookie-migration comments are historical labels, not approval to migrate in this documentation phase.
 - **Intentional / dormant / candidate:** not a live critical bug without reachable evidence. Literal non-use is not proof of dead code.
 
-## G-P0-01 — committed purchase/order response rejected by clients (review only)
+## Resolved
 
-**Critical documented success-path mismatch.** PurchaseClient requires result.success===true (`js/utils/purchaseClient.js:54–64`); OrderClient decisions do too (`js/utils/orderClient.js:43–47`). Backend committed financial projection contains no success property (`backend/services/financial/contracts.js:219–226`); HTTP sends it unchanged (`backend/services/financial/httpCommon.js:32–35`; `backend/services/financialCoordinator.js:207,230–232`). Purchase route201/200 replay and decisions200 (`backend/services/financial/ordersHttpRouter.js:10–14,30–34`).
+### G-P0-01 — RESOLVED: committed purchase/order HTTP acknowledgment
 
-Thus a committed success is treated as unresolved/refused, confirmation not emitted, saved key retained. This is **not** evidence of duplicate charging; saved-key replay protections are still present. Mocked test receipt explicitly adds success:true (`backend/tests/purchase-client.test.js:18,23`), so 25/25 does not cover live response compatibility. C-RESULT/C-PURCHASE/C-ORDERS.
+**Original P0:** PurchaseClient and OrderClient require result.success===true (`js/utils/purchaseClient.js:59`; `js/utils/orderClient.js:46`), but successful coordinator receipts omit success (`backend/services/financial/contracts.js:219–226`). Previously the HTTP layer sent those receipts unchanged, so committed purchases/decisions were reported as rejected or unresolved and saved keys remained. This was not evidence of duplicate charging. C-RESULT/C-PURCHASE/C-ORDERS.
 
-Possible guard changes touch two lines but would also alter acceptance of malformed HTTP200 responses; robust validation, tests and reconciliation review may exceed five lines and therefore belong in C5c. **Do not remove guards, wrap backend responses, or swap transports now. User review required before any code fix.**
+Resolution: Option B — HTTP acknowledgment wrapper in ordersHttpRouter.js and paymentsHttpRouter.js. 4 lines added, 4 removed. No coordinator/financial-layer changes. Verified by financial-http.pg.test.js assertions.
+
+The HTTP layer now adds success:true for purchase201/replay200, order completion/cancellation200, and payment approval/rejection200, including decision replays. All original receipt fields and status codes are preserved. Payment upload submission, submission recovery, read endpoints and success:false failures remain unchanged. Frontend guards, saved-intent/storage behavior, contracts.js and financialCoordinator.js are untouched.
+
+| C5b.1 verification | Exact result |
+|---|---|
+| Six new HTTP acknowledgment cases before fix | Expected **6 failed**, 190 skipped, solely missing success:true; 3.171 s |
+| Same six cases after fix | **6 passed**, 190 skipped; 2.478 s; purchase201/replay200 full receipt and four decisions plus their replays |
+| Unchanged frontend purchase/decision suite | **25/25 passed**, 1/1 suites, 0 snapshots; 0.358 s |
+| Full financial HTTP suite | **196/196 passed**, 1/1 suites, 0 snapshots; 37.266 s |
+| Full PostgreSQL gate | **829/829 passed**, 13/13 suites, 0 failures/skips/snapshots; 131.82 s; includes coordinator and invariants |
+
+G-P0-01 is resolved; manual verification and commit/push approval remain pending. G-STORAGE-01 remains **P0-Deferred-to-C5c**, with no storage/logout changes.
 
 ## Request/response discrepancies (both sides)
 
@@ -37,7 +49,7 @@ Possible guard changes touch two lines but would also alter acceptance of malfor
 | G-PROFILE-02 P1 legacy completion form | complete-profile.html:40–48 fullName/country/phone, no CSRF/version, :54 homepage redirect | auth/httpRouter.js:124–129 accepts expectedRowVersion + username/phone; serverApplication.js:88 homepage admin-only | Existing form not live compatible; C5c/C5e. C-PROFILE |
 | G-USER-01 locked legacy UserManager (C6) | usermanager.js:59–69 disabled probe; :82 gate; :108 numeric balance, :125 .toFixed; :169–172 entire user PUT; :190 null write before try; :192 _id/theme/no version | serverApplication.js:64 probe disabled503; userRepository.js:95–104 id/string balance; users/httpRouter.js:62–72 version/self/CSRF | Load/save blocked, theme may throw on null user; not landing probe. No executable UserManager edit here; coordinated C6/C5c review. C-LEGACY/C-PROFILE |
 | G-ADMIN-01 P1 old user actions | admin.js:212 balance, :245 PUT status, :271 delete no version/CSRF, :288 POST unban, :100–102 _id buttons | users/httpRouter.js:74–84 unavailable balance/activate/delete; auth/httpRouter.js:131–137 status route; userRepository.js:98 public id | Disabled/missing route and DTO mismatches; C5c admin bindings, no backend balance feature implementation. C-ADMIN-USERS |
-| G-STORAGE-01 critical recovery concern, review C5c/C6 | usermanager.js:223,227 calls clearBrowserData(false) on logout success **and failure**; appUtils.js:16–26 localStorage.clear/sessionStorage.clear/cookie deletion | auth.js:76–78 intends auth-only cleanup preserving financial intents; purchaseClient.js:40–51 and orderClient.js:34–39 persist exact unresolved keys there | Broad cleanup can destroy unresolved purchase/decision keys; existing behavior, no runtime reproduction. Explicit storage restriction means no fix here; recovery policy cannot be settled by a ≤5-line cleanup patch. C-AUTH/C-PURCHASE |
+| G-STORAGE-01 P0-Deferred-to-C5c (critical recovery concern; C6 boundary retained) | usermanager.js:223,227 calls clearBrowserData(false) on logout success **and failure**; appUtils.js:16–26 localStorage.clear/sessionStorage.clear/cookie deletion | auth.js:76–78 intends auth-only cleanup preserving financial intents; purchaseClient.js:40–51 and orderClient.js:34–39 persist exact unresolved keys there | Broad cleanup can destroy unresolved purchase/decision keys; existing behavior, no runtime reproduction. Explicit storage restriction means no fix here; recovery policy cannot be settled by a ≤5-line cleanup patch. C-AUTH/C-PURCHASE |
 | G-ADMIN-02 P2 order amount display | adminOrders.js:25 line('المبلغ USD',order.charge) | resourceReads.js:53–54 OrderDTO amount/chargeCents, no charge property (C-RESULT has charge but list does not) | List amount displays '-' despite value; C5c DTO/C5d display, not backend modification |
 
 Backend paths abbreviated in table: auth/*=`backend/services/auth/*`; financial/*=`backend/services/financial/*`; users/*=`backend/services/users/*`; resourceReads=`backend/repositories/private/resourceReads.js`; userRepository=`backend/repositories/userRepository.js`; serverApplication=`backend/services/serverApplication.js`. Frontend names are `js/` unless `.html` explicitly named.
@@ -127,7 +139,7 @@ Orders/payments router prefix `backend/services/financial/`; auth/users as above
 
 C5a closed as fully verified and committed: one startup banner, no Token:false, no landing compare-token503, local registration/login/persistence/logout working, visuals unchanged, purchase tests25/25. User deferred raw USER_USERNAME_TAKEN and login-page check-session401 to C5c, nonadmin missing dashboard to C5e. Static discrepancies above do not invalidate those manual results; they expose flows/DTO assumptions not covered by that report.
 
-## Verification and scope
+## Verification and scope (historical C5b documentation audit)
 
 | Check | Result |
 |---|---|
@@ -140,4 +152,4 @@ C5a closed as fully verified and committed: one startup banner, no Token:false, 
 | Protected backend/db files | **PASS** all five SHA-256 hashes exactly match C5b start; their pre-existing local modifications remain untouched |
 | Browser/live backend/visual testing | Not rerun in C5b; this documentation audit reports static discrepancies, not new runtime reproductions |
 
-The first audit-checker run needed to recognize a valid external HTTPS import and correct an obsolete documentation-only contract label; no application test failed or source fix was made. Documentation findings are not implementation approvals. **No commit/push** until user verification; all P0 proposals remain paused for individual review.
+The first audit-checker run needed to recognize a valid external HTTPS import and correct an obsolete documentation-only contract label; no application test failed or source fix was made. Documentation findings are not implementation approvals. The individually approved C5b.1 G-P0-01 fix and current verification are recorded in Resolved above; no C5c work has begun. **No commit/push** until user verification; G-STORAGE-01 remains P0-Deferred-to-C5c with storage/logout untouched.

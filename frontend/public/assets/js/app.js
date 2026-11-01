@@ -1,4 +1,4 @@
-import { STORAGE_KEYS, isValidToken } from './utils/appUtils.js';
+console.info('[Top4] v1.0.0 loaded');
 // عناصر DOM
 const menuBtn = document.getElementById('menuBtn');
 const closeBtn = document.getElementById('closeBtn');
@@ -138,14 +138,6 @@ document.addEventListener('DOMContentLoaded', loadSettings());
 
 // تحويل المستخدم عند النقر على أزرار التسجيل/الدخول
 document.addEventListener('DOMContentLoaded', function () {
-    const TOKEN = localStorage.getItem(STORAGE_KEYS.USER_TOKEN);
-    (async () => {
-        console.log('Token : ', await isValidToken(TOKEN));
-        if (await isValidToken(TOKEN)) {
-            alert('You will go home!', TOKEN)
-            window.location.href = '/homepage.html';
-        }
-    })();
     if (loginBtn) {
         loginBtn.addEventListener('click', function () {
             window.location.href = '/login.html';

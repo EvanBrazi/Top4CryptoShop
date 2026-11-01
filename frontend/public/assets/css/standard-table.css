@@ -203,36 +203,10 @@ body.night-theme {
   box-shadow: 0 0 6px rgba(0, 0, 0, 0.15);
 }
 
-.modal-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px 12px;
-  margin-top: 10px;
-  color: var(--modal-text); /* أو لون ثابت مثل #555 */
-}
 
-.modal-grid-content {
-  color: var(--modal-text);
-}
 
-.modal-grid div {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.95rem;
-  border-bottom: 1px solid var(--divider-color);
-  padding: 6px 0;
-  color: var(--modal-text);
-}
 
-.modal-grid span {
-  color: var(--text-color);
-  font-weight: bold;
-}
 
-.modal-grid strong {
-  color: var(--modal-text-color);
-  font-weight: 600;
-}
 
 .modal-info-grid {
   display: flex;
@@ -243,9 +217,6 @@ body.night-theme {
   color: var(--modal-text); /* أو لون ثابت مثل #555 */
 }
 
-.modal-info-grid-content {
-  color: var(--modal-text);
-}
 
 .modal-info-grid div {
   display: flex;

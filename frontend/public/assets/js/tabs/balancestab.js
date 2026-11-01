@@ -31,7 +31,7 @@ export class BalancesTab {
             themeColor: options.themeColor || '#6a5acd',
             onCardClick: typeof options.onCardClick === 'function'
                 ? options.onCardClick
-                : () => console.log('🖱️ تم النقر على الرصيد')
+                : () => {}
         };
 
         this.isInitialized = false;
@@ -50,14 +50,12 @@ export class BalancesTab {
 
         // ✅ منع التهيئة إذا كانت الشبكة موجودة مسبقًا
         if (this.container.querySelector('.grid-layout')) {
-            console.log('⚠️ الشبكة موجودة مسبقًا، لن تتم إعادة التهيئة');
             return;
         }
 
         await this._renderBalancesGrid();
         await this._setupLazyLoading();
 
-        console.log('✅ تم تهيئة تبويب الرصيد');
         this.isInitialized = true;
     }
 

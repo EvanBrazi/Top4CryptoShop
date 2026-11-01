@@ -300,7 +300,6 @@ export class PortfolioTab {
 
         orders.forEach(order => {
             const desc = order.method?.toLowerCase() || order.service?.toLowerCase();
-            console.log('Order desc:', desc);
             if (desc.includes('دردشة')) {
                 categories['تطبيقات دردشة'] += parseFloat(order.amount);
             } else if (desc.includes('لعبة') || desc.includes('game')) {
@@ -757,7 +756,6 @@ export class PortfolioTab {
      */
     exportAsPNG() {
         // يمكن استخدام مكتبة مثل html2canvas لالتقاط لقطة للشاشة
-        console.log('جاري التصدير كصورة PNG...');
         alert('جاري التصدير كصورة PNG (هذه ميزة تجريبية)');
     }
 
@@ -836,7 +834,6 @@ export class PortfolioTab {
         // إزالة مستمعي الأحداث
         // (يجب إضافة منطق إزالة مستمعي الأحداث هنا إذا لزم الأمر)
 
-        console.log('✅ تم تدمير تبويب المحفظة بنجاح');
     }
 }
 

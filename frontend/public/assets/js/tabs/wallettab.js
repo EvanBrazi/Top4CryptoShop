@@ -128,7 +128,6 @@ export class WalletTab {
                 this.exchangeRatesFromAPI = rates;
             });
             const amountUSD = !isNaN(amount) ? (parseFloat(amount) / this.exchangeRatesFromAPI[details.currency]).toFixed(2) : '0.00';
-            console.log('From fun:', amountUSD);
             this.amountInDolField.style.display = 'block';
             this.amountInDolField.value = `${amountUSD} $`;
         } else {

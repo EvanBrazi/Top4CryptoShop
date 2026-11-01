@@ -1,9 +1,4 @@
 /* تنسيقات عامة للمحفظة */
-.portfolio-container {
-  padding: 20px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  direction: rtl;
-}
 
 /* رأس المحفظة */
 .portfolio-header {
@@ -350,9 +345,6 @@
 }
 
 @media (max-width: 480px) {
-  .portfolio-container {
-    padding: 10px;
-  }
 
   .balance-info,
   .portfolio-actions,

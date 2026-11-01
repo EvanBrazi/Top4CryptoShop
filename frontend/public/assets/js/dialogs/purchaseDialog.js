@@ -463,7 +463,6 @@ export class DialogPurchase {
       // _validatePlayerId يقوم بتحديث رسالة الخطأ في DOM عند الفشل
       if (!valid) return false;
     }
-    console.log('✅ جميع المدخلات صالحة');
     return true;
   }
 

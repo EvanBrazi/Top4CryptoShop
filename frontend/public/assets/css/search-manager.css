@@ -167,25 +167,8 @@
 }
 
 /* 🔎 أيقونة البحث */
-.search__icon {
-  width: 40px;
-  aspect-ratio: 1;
-  border-left: var(--search-icon-border-left);
-  border-radius: 50%;
-  padding-left: 10px;
-  margin-left: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 
-.search__icon:hover {
-  border-left: var(--search-icon-hover-border-left);
-}
 
-.search__icon path {
-  fill: var(--search-icon-path-fill);
-}
 
 /* 📋 قائمة الاقتراحات */
 .search-suggestions {
@@ -266,17 +249,6 @@
   box-shadow: var(--suggestion-card-hover-img-box-shadow);
 }
 
-.suggestion-card .icon-placeholder {
-  width: 36px;
-  height: 36px;
-  border-radius: 6px;
-  background: var(--suggestion-card-icon-placeholder-bg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--suggestion-card-icon-placeholder-color);
-  font-size: 18px;
-}
 
 .suggestion-card .title {
   font-size: 16px;
@@ -405,14 +377,7 @@
   }
 }
 
-.pulse-effect {
-  animation: pulseGlow 4s ease-in-out infinite;
-}
 
-.animated-gradient {
-  background-size: 300% 300%;
-  animation: gradientShift 8s ease infinite;
-}
 
 /* ❌ لا توجد نتائج */
 .no-results-message {
@@ -462,10 +427,6 @@
     padding: 8px 12px;
   }
 
-  .search__icon {
-    width: 36px;
-    padding-left: 8px;
-  }
 
   .search-suggestion-item {
     padding: 8px 12px;

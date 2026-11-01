@@ -3,9 +3,6 @@
   margin-top: var(--space-md);
 }
 
-.tabs-header {
-  display: none !important;
-}
 
 .tabs-content {
   padding: 0;
@@ -36,11 +33,7 @@
 
 
 /* أنماط المحتوى داخل التبويبات */
-.wallet-content,
-.payments-list,
-.portfolio-stats,
 .orders-table,
-.security-settings,
 .about-content {
   margin-top: 15px;
 }

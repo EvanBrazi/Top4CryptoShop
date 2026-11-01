@@ -52,6 +52,7 @@ class UserManager {
     return localStorage.getItem(STORAGE_KEYS.USER_TOKEN);
   }
 
+  // TODO(C6): Migrate to cookie-based session check. See CLEANUP_REPORT.md.
   async isValidToken(token) {
     if (!token || token.length < 16) return false;
     try {

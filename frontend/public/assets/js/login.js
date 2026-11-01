@@ -58,6 +58,7 @@ if (appleBtn) {
  * @param {string} token - رمز التوثيق
  */
 function saveSession(userId, token, sessionId) {
+    // TODO(C5b): Migrate to cookie-only. See CLEANUP_REPORT.md.
     localStorage.setItem(STORAGE_KEYS.USER_ID, userId);
     localStorage.setItem(STORAGE_KEYS.USER_TOKEN, token);
     localStorage.setItem(STORAGE_KEYS.SESSION_ID, sessionId)

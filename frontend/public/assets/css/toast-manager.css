@@ -56,19 +56,8 @@
   color: #212529;
 }
 
-.toast-hidden {
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.5s ease;
-}
 
-.toast-slide-in {
-  animation: slideIn 0.5s forwards;
-}
 
-.toast-slide-out {
-  animation: slideOut 0.5s forwards;
-}
 
 .custom-toast {
   position: fixed;

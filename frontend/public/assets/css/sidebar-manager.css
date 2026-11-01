@@ -32,11 +32,6 @@
   z-index: 0;
 }
 
-.sidebar-content {
-  height: 100%;
-  width: 100%;
-  background: var(--sidebar-content-color);
-}
 
 .profile-header {
   width: 100%;

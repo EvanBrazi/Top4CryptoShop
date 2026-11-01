@@ -113,7 +113,6 @@ export class HomeTab {
         this.container.appendChild(grid);
         this._adjustCardsToScreenSize();
 
-        console.log('✅ تم عرض بطاقات الصفحة الرئيسية');
     }
 
     /**

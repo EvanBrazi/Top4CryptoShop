@@ -221,7 +221,6 @@ export class CacheManager {
         const entry = this.localCache.get(key);
 
         if (!entry) {
-            console.log(`ℹ️ No cache data for ${iconName}`);
             return;
         }
 
@@ -249,6 +248,5 @@ export class CacheManager {
             }
         }
 
-        console.log(`🧹 Removed ${removedCount} items from local cache`);
     }
 }

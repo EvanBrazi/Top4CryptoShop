@@ -1,5 +1,4 @@
 /* النوافذ المنبثقة */
-.payments-modal,
 .modal {
   display: none;
   position: fixed;
@@ -17,7 +16,6 @@
   /* تمكين التمرير داخل المودال */
 }
 
-.payments-modal-content,
 .modal-content {
   margin: auto;
   padding: 20px;
@@ -30,7 +28,6 @@
 
 @supports (backdrop-filter: blur(8px)) or (-webkit-backdrop-filter: blur(8px)) {
 
-  .payments-modal,
   .modal {
     background-color: var(--background-menu-link);
     backdrop-filter: blur(12px);
@@ -38,7 +35,6 @@
   }
 }
 
-.payments-modal-header,
 .modal-header {
   display: flex;
   justify-content: space-between;
@@ -48,14 +44,12 @@
   border-bottom: 1px solid var(--divider-color);
 }
 
-.payments-modal-header h2,
 .modal-header h2,
 p {
   margin: 0;
   color: var(--text-color);
 }
 
-.payments-modal.show,
 .modal.show {
   display: flex;
 }
@@ -70,7 +64,6 @@ p {
   color: var(--text-color);
 }
 
-.payments-body,
 .modal-body {
   line-height: 1.6;
   font-size: 1.2rem;
@@ -80,7 +73,6 @@ p {
   /* 120px = رأس المودال + هامش */
 }
 
-.payments-body p,
 .modal-body p {
   margin: 0;
   white-space: pre-line;
@@ -129,12 +121,10 @@ p {
   color: var(--status-approved-text);
 }
 /* تأثير الخروج */
-.modal.exit,
-.payments-modal.exit {
+.modal.exit {
   animation: fadeOut 0.3s forwards;
 }
 
-.modal-content.exit,
-.payments-modal-content.exit {
+.modal-content.exit {
   animation: slideDown 0.3s forwards;
 }

@@ -184,7 +184,6 @@ export class AppManager {
 
             this.initState.loaded = true;
             this.initState.error = null;
-            console.log('✅ تم تهيئة AppManager بنجاح');
         } catch (error) {
             this.initState.error = error;
             console.error('❌ فشل تهيئة التطبيق:', error);
@@ -204,7 +203,6 @@ export class AppManager {
         // تحميل مسبق لأيقونات تبويب التطبيقات
         //await this.appsTabIcons.preloadIcons(essentialIcons);
 
-        console.log('✅ تم التحميل المسبق للأيقونات الأساسية');
     }
 
     /**
@@ -308,7 +306,6 @@ export class AppManager {
         setTimeout(() => {
             this.searchManager = new SearchManager(this);
         }, 1000);
-        console.log('✅ تم تهيئة التبويبات بنجاح');
     }
     /**
      * التعامل مع رسالة تحديث الطلبات
@@ -347,12 +344,10 @@ export class AppManager {
      * @private
      */
     _handleTabChange(tabId) {
-        console.log('Clicked Tab : ', tabId);
         document.querySelector('.sidebar')?.classList.remove('active');
         document.querySelector('.overlay')?.classList.remove('active');
         this.updateBackBtnVisibility(tabId);
         //this._updateSearchBarVisibility(tabId); // ✅ تفعيل شريط البحث حسب التبويب
-        console.log(`🔀 تم تغيير التبويب إلى: ${tabId}`);
     }
 
     /**
@@ -397,7 +392,6 @@ export class AppManager {
      * @private
      */
     _whichCardClick(index, card) {
-        console.log('🃏 نقر على بطاقة:', card.title, '، الفهرس:', index);
 
         // تفعيل التبويب المحدد في البطاقة
         if (card.whichTab && this.taber) {
@@ -410,7 +404,6 @@ export class AppManager {
      * @param {Object} card - بيانات التطبيق
      */
     handleAppsCardsClick(card) {
-        console.log('📱 تم النقر على التطبيق:', card.name);
         // لاحقًا: this.dialogs.purchase.open(app) أو favoritesManager.add(app)
     }
 
@@ -421,14 +414,12 @@ export class AppManager {
      */
     async _refreshAppData() {
         try {
-            console.log('🔄 جاري تحديث بيانات التطبيقات...');
             this.appsData = await _fetchAppsData();
 
             if (this.tabs.apps && typeof this.tabs.apps.refresh === 'function') {
                 this.tabs.apps.refresh(this.appsData);
             }
 
-            console.log('✅ تم تحديث بيانات التطبيقات بنجاح');
         } catch (error) {
             console.error('❌ فشل تحديث بيانات التطبيقات:', error);
         }
@@ -450,7 +441,6 @@ export class AppManager {
         const activeTab = this.tabs[activeTabId];
         if (activeTab && typeof activeTab.refresh === 'function') {
             activeTab.refresh();
-            console.log(`🔄 تم تحديث التبويب النشط: ${activeTabId}`);
         }
     }
 
@@ -488,6 +478,5 @@ export class AppManager {
         this.tabs.OrdersTab.stopAutoRefresh();
         // إزالة مستمعات الأحداث
         document.removeEventListener('refreshData', this._eventHandlers.refreshData);
-        console.log('🧹 تم تنظيف موارد AppManager');
     }
 }

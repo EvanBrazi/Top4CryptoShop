@@ -31,7 +31,7 @@ export class GamesTab {
             themeColor: options.themeColor || '#6a5acd',
             onCardClick: typeof options.onCardClick === 'function'
                 ? options.onCardClick
-                : () => console.log('🖱️ تم النقر على اللعبة')
+                : () => {}
         };
 
         this.isInitialized = false;
@@ -50,14 +50,12 @@ export class GamesTab {
 
         // ✅ منع التهيئة إذا كانت الشبكة موجودة مسبقًا
         if (this.container.querySelector('.grid-layout')) {
-            console.log('⚠️ الشبكة موجودة مسبقًا، لن تتم إعادة التهيئة');
             return;
         }
 
         await this._renderGamesGrid();
         await this._setupLazyLoading();
 
-        console.log('✅ تم تهيئة تبويب الألعاب');
         this.isInitialized = true;
     }
 

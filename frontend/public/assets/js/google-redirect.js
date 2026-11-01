@@ -6,7 +6,7 @@ import { STORAGE_KEYS } from "./utils/appUtils.js";
  * @param {string} token - رمز التوثيق
  */
 function saveSession(userId, token, sessionId) {
-    console.log('💾 حفظ بيانات الجلسة في التخزين المحلي', userId, token, sessionId);
+    // TODO(C5b): Migrate to cookie-only. See CLEANUP_REPORT.md.
     localStorage.setItem(STORAGE_KEYS.USER_ID, userId);
     localStorage.setItem(STORAGE_KEYS.USER_TOKEN, token);
     localStorage.setItem(STORAGE_KEYS.SESSION_ID, sessionId)
@@ -20,7 +20,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!token || !sessionId) return window.location.href = '/login.html';
 
-    console.log('✅ تم استلام التوكن ومعرف الجلسة:', { token, sessionId });
     // 📥 جلب بيانات المستخدم الحالي
     fetch('/api/users/me', {
         headers: {
@@ -40,7 +39,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     : '👋 مرحبًا بك!';
             }
 
-            console.log('✅ بيانات المستخدم:', user);
             // 💾 حفظ بيانات الجلسة
             saveSession(user.id, token, sessionId);
             const roleRedirects = {

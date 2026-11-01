@@ -28,7 +28,6 @@ export class SearchManager {
         });
 
         this.setupTabObserver();
-        console.log('🔍 SearchManager initialized');
     }
 
     storeOriginalContents() {
@@ -54,7 +53,6 @@ export class SearchManager {
     }
 
     async reinitializeIcons(section) {
-        console.log(`♻️ إعادة تهيئة الأيقونات في قسم: ${section}`);
         /**
          * استخدام طريقة عامة لإعادة عرض الشبكة بدلاً من الاعتماد على طريقة خاصة بالتحميل الكسول
          * والتي قد لا تكون موجودة في جميع التبويبات
@@ -112,7 +110,6 @@ export class SearchManager {
 
     displaySingleResult(item) {
         this.clearAllSections();
-        console.log('🔍 عرض نتيجة واحدة:', item, ' في:', this.appManager.getActiveTabId());
         const container = document.getElementById(`${this.appManager.getActiveTabId()}-tab-container`);
         if (!container) return;
         // إنشاء شبكة لعرض النتيجة

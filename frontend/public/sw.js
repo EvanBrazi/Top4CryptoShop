@@ -27,7 +27,6 @@ async function cleanOldIcons(ttl = 24 * 60 * 60 * 1000) {
     const dateHeader = response.headers.get('X-Timestamp');
     if (dateHeader && now - Number(dateHeader) > ttl) {
       await cache.delete(request);
-      console.log(`🧹 حذف أيقونة منتهية الصلاحية: ${request.url}`);
     }
   }
 }

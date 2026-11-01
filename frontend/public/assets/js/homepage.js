@@ -52,13 +52,12 @@ class HomePage {
             await this._loadUserData();
             this._setupEventListeners();
             //await this._registerServiceWorker();
-            console.log('✅ تم تحميل النظام بنجاح');
         } catch (error) {
             console.error('❌ فشل تحميل التطبيق:', error);
             this._showFatalError();
         }
         navigator.serviceWorker.controller
-            ? console.log('✅ SW is controlling the page')
+            ? undefined
             : console.warn('❌ SW is NOT controlling the page');
 
     }
@@ -518,13 +517,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // ✅ تهيئة WebSocket لاستقبال إشعارات لحظية من السيرفر
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsUrl = `${protocol}//${window.location.host}`;
-        console.log('📡 محاولة الاتصال بـ WebSocket:', wsUrl);
         const socket = new WebSocket(wsUrl);
         const sessionId = localStorage.getItem(STORAGE_KEYS.SESSION_ID) || `session_${Date.now()}`;
-        console.log('Session_Id: ', sessionId);
+        // TODO(C5b): Migrate to cookie-only. See CLEANUP_REPORT.md.
         if (!localStorage.getItem(STORAGE_KEYS.SESSION_ID)) localStorage.setItem(STORAGE_KEYS.SESSION_ID, sessionId);
         socket.addEventListener('open', () => {
-            console.log('✅ WebSocket connected (user)');
             // تعريف المستخدم عند الاتصال
             socket.send(JSON.stringify({
                 type: 'auth',
@@ -538,9 +535,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = JSON.parse(event.data);
                 // التحقق من ان الرسالة موجهة لهذا المستخدم
                 if (data.userId !== localStorage.getItem(STORAGE_KEYS.USER_ID)) return;
-                console.log('📨 إشعار WebSocket للمستخدم:', data);
                 if (data.status === 'accepted' || data.status === 'rejected') {
-                    console.log('Catch new status: ', data.status);
                     const { text, level } = generateNotificationMessage(data.type);
                     showUserNotification(text, level);
                     enqueueNotification(text, level);
@@ -576,7 +571,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     default:
                         showUserNotification('📨 إشعار غير معروف:', data);
-                        console.log('📨 إشعار غير معروف:', data);
                 }
             } catch (error) {
                 console.error('Error while processing WebSocket message:', error);
@@ -591,7 +585,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if ('serviceWorker' in navigator) {
         try {
             navigator.serviceWorker.register('/sw.js', { type: 'module', scope: '/' });
-            console.log('✅ Service Worker مسجل بنجاح');
         } catch (err) {
             console.error('❌ فشل تسجيل Service Worker:', err);
         }
@@ -601,7 +594,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 document.addEventListener('switchTab', (e) => {
-    console.log('Switching to tab:', e.detail);
     if (window.homePage?.components?.taber) window.homePage.components.taber.activateTab(e.detail);
 });
 

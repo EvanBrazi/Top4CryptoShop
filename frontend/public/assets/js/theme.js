@@ -28,7 +28,6 @@ export async function toggleTheme() {
 }
 
 export function toggleDBTheme(userDBTheme) {
-    console.log('Theme from User', userDBTheme);
     if (!userDBTheme) return;
     localStorage.setItem('theme', userDBTheme);
     initTheme();

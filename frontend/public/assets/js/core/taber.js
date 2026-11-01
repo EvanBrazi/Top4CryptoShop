@@ -60,19 +60,6 @@ class Taber {
     }
 
     /**
-     * معالجة حدث النقر على التاب
-     * @param {number} tabIndex - فهرس التاب الذي تم النقر عليه
-     */
-    _handleTabClick(tabIndex) {
-        this.activateTab(tabIndex);
-
-        // استدعاء جميع الـ listeners المسجلة لحدث النقر
-        this.eventListeners.tabClick.forEach(listener => {
-            listener(tabIndex, this.tabs[tabIndex]);
-        });
-    }
-
-    /**
      * 
      * @param {string} tabId 
      * @param {HTMLElement} link 
@@ -139,7 +126,6 @@ class Taber {
             // @TODO: Update back button when reload;
             return savedTab;
         } else {
-            console.log('Error while Restored Tab:\t' + savedTab + '\t!\tGo to default: ' + this.options.defaultTab);
             // إذا كان التاب المحفوظ غير موجود، نستخدم الافتراضي
         }
         return this.options.defaultTab;
@@ -175,7 +161,6 @@ class Taber {
 
         // إذا كان التبويب من خارج القائمة (مثل تبويب جانبي)
         if (!targetLink) {
-            console.log(`📌 تبويب خارجي تم التقاطه: ${tabId}`);
             if (currentPane && currentPane !== targetPane) {
                 currentPane.classList.add('hide');
                 setTimeout(() => {

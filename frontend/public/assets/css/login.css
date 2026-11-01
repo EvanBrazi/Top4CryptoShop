@@ -301,31 +301,9 @@ body {
 }
 
 /* الفاصل */
-.links {
-    text-align: center;
-    margin: 20px 0;
-    position: relative;
-    color: var(--text-color);
-    font-size: 0.9rem;
-}
 
-.links::before,
-.links::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    width: 40%;
-    height: 1px;
-    background: var(--divider-color);
-}
 
-.links::before {
-    right: 0;
-}
 
-.links::after {
-    left: 0;
-}
 
 .register {
     display: flex;

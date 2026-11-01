@@ -9,12 +9,10 @@ import { STORAGE_KEYS } from "./utils/appUtils.js";
 import { initAdminOrders } from './utils/adminOrders.js';
 
 function initAdminWebSocket() {
-  console.log('initAdminWebSocket');
   try {
     // ✅ تهيئة WebSocket لاستقبال إشعارات لحظية من السيرفر
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}`;
-    console.log('📡 محاولة الاتصال بـ WebSocket:', wsUrl);
     const adminSocket = new WebSocket(wsUrl);
     // Financial resources are loaded exclusively through authenticated HTTP.
     adminSocket.onopen = () => {
@@ -78,7 +76,6 @@ function showNotification(message, type = 'success') {
  * ✅ تحميل المستخدمين من السيرفر وعرضهم في الجدول
  */
 async function loadUsers() {
-  console.log('loadUsers ...');
   const tbody = document.querySelector('#usersTable tbody');
   tbody.innerHTML = '<tr><td colspan="10">⏳ جاري تحميل المستخدمين...</td></tr>';
 
@@ -127,13 +124,6 @@ async function loadPendingPayments() {
   } catch (err) {
     showNotification('فشل تحميل الدفعات المعلقة', 'error');
   }
-}
-
-function getReceiptImageUrl(filename) {
-  console.log('📷 مسار الصورة:', filename);
-  if (!filename || typeof filename !== 'string') return '/assets/images/loading.gif';
-  else if (filename.startsWith('/images/payments/')) return filename
-  else return `/images/payments/${filename}`;
 }
 
 /**

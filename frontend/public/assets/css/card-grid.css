@@ -78,12 +78,6 @@
 }
 
 /* الوصف */
-.big-card-description {
-  display: none;
-  font-size: clamp(0.9rem, 1.2vw, 1rem);
-  color: #555;
-  text-align: center;
-}
 
 /* استجابة للشاشات */
 @media (max-width: 1024px) {
@@ -95,9 +89,6 @@
   }
   .big-card-title {
     font-size: clamp(1.2rem, 2.5vw, 1.6rem);
-  }
-  .big-card-description {
-    font-size: clamp(0.85rem, 2vw, 1rem);
   }
 }
 
@@ -114,9 +105,6 @@
   }
   .big-card-title {
     font-size: 1.4rem;
-  }
-  .big-card-description {
-    font-size: 0.9rem;
   }
 }
 

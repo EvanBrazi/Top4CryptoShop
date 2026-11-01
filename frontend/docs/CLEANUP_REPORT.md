@@ -248,3 +248,30 @@ Frontend-only source line counts relative to HEAD include staged and unstaged ch
 - Outstanding: runtime, real browser-auth and visual verification blocked by the test-tool permission classifier. Do not infer successful login/logout or unchanged visuals from static tests alone.
 
 Report file: **250 added lines**, zero removed. Combined C5a scope: **35 files, +262/−519** (including this new report; excluding pre-existing backend changes).
+
+## Manual Verification Results (2026-11-01)
+
+Executed by user on localhost with disposable PostgreSQL:
+
+**PASSED:**
+- [Top4] v1.0.0 loaded (once)
+- Zero Token:false, zero compare-token 503
+- Zero extra console.log
+- Registration: 201 + redirect
+- Login: 200 + redirect
+- Session persistence after F5
+- Logout: 200 + all cookies cleared
+- session-info after logout: 401 MISSING_CREDENTIALS
+- Visual: login.html, register.html unchanged
+- purchase-client.test.js: 25/25
+
+**EXPECTED (not bugs):**
+- GET /api/auth/check-session 401 on login page load (no session yet — correct)
+- admin.html 401 (user is role:user, not admin — correct)
+- homepage.html 403 (admin-protected — correct)
+
+## Issues Noticed (defer to future phases)
+
+1. **USER_USERNAME_TAKEN raw code** — C5c: replace with friendly Arabic message
+2. **admin.html/homepage.html inaccessible to non-admin users** — C5e: build user dashboard
+3. **/api/auth/check-session 401 on login page** — cosmetic, filter from console (C5c)

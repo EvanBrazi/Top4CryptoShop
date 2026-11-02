@@ -1,6 +1,7 @@
+import { ensureCsrfToken } from '../securefetch.js';
 // Financial intents are persisted before dispatch. Only the server settles money.
 export class PurchaseClient {
-  constructor({ storage = localStorage, fetcher = fetch, uuid = () => crypto.randomUUID() } = {}) {
+  constructor({ storage = localStorage, fetcher = (u, o) => window.fetch(u, o), uuid = () => crypto.randomUUID() } = {}) {
     this.storage = storage; this.fetcher = fetcher; this.uuid = uuid;
   }
   headers() {
@@ -31,6 +32,14 @@ export class PurchaseClient {
   }
   async purchase(input, expectedOwner = this.storage.getItem('userId')) {
     const headers = this.headers();
+    // Bootstrap before owner verification or intent writes; never retry a financial POST.
+    if (!headers['x-csrf-token']) {
+      await ensureCsrfToken();
+      const fresh = this.headers();
+      if (this.storage.getItem('userId') !== expectedOwner || fresh.Authorization !== headers.Authorization || fresh['x-session-id'] !== headers['x-session-id']) throw new Error('Authentication changed. Retry from the original account.');
+      if (!fresh['x-csrf-token']) throw new Error('CSRF cookie unavailable. Retry before submitting the purchase.');
+      headers['x-csrf-token'] = fresh['x-csrf-token'];
+    }
     const auth = await this.fetcher('/api/auth/session-info', { headers, credentials: 'include' });
     if (!auth.ok) throw new Error('Sign in again before retrying this purchase');
     const session = await auth.json();

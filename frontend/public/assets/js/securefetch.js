@@ -42,7 +42,7 @@ function csrfFailure(code = 'CSRF_BOOTSTRAP_FAILED', status = 0) {
     return Object.assign(new Error(code), { code, status, type: 'csrf_error' });
 }
 
-async function ensureCsrfToken() {
+export async function ensureCsrfToken() {
     if (!csrfInitialized || !getCsrfTokenFromCookie()) {
         if (!csrfInFlight) {
             // Native fetch avoids recursion. Share initialization, never a cached token.
@@ -78,7 +78,7 @@ function withDisplayMessage(result) {
     return { ...result, displayMessage: getErrorMessage(result) };
 }
 
-// TODO(C5b): purchaseClient.js bypasses secureFetch; its CSRF bootstrap gap is not covered here.
+// PurchaseClient shares this CSRF bootstrap; its financial dispatch and recovery remain independent.
 /**
  * إرسال طلب آمن تلقائيًا مع رمز CSRF، دون إعادة إرسال أي طلب تعديل.
  * @param {string} url - عنوان من نفس الأصل

@@ -139,6 +139,98 @@ Orders/payments router prefix `backend/services/financial/`; auth/users as above
 
 C5a closed as fully verified and committed: one startup banner, no Token:false, no landing compare-token503, local registration/login/persistence/logout working, visuals unchanged, purchase tests25/25. User deferred raw USER_USERNAME_TAKEN and login-page check-session401 to C5c, nonadmin missing dashboard to C5e. Static discrepancies above do not invalidate those manual results; they expose flows/DTO assumptions not covered by that report.
 
+## Deferred to C5d/C5e
+
+Follow-up inspection after the owner verified and committed C5c.2a (`fb2a88a`),
+2026-11-02. Documentation only: no layout, notification, backend, storage, or
+financial changes. Visual symptoms are user-reported, not browser-reproduced.
+
+### G-LAYOUT-01 — Homepage card alignment/distribution
+
+- **Description:** On the admin-authorized `/homepage.html`, cards have visible
+  alignment, spacing, or distribution problems.
+- **Classification:** **(b) Likely pre-existing issue**, supported by source/history;
+  not a confirmed C5a regression or a confirmed newly introduced defect. The exact
+  affected tab/viewport and visual cause remain unverified.
+- **Suspected source:** Home cards combine a 400px minimum grid track, percentage
+  margins/asymmetric padding, and CSS card sizes with viewport-based inline width
+  and height overrides in `js/tabs/hometab.js:238–262`. Product tabs have another
+  candidate: `homepage.html:160–175` already supplies `.grid-layout` roots, while
+  apps/games/cryptos/balances render a nested `.grid-layout`. They also redundantly
+  inject the stylesheet already loaded in the page head.
+- **History evidence:** `tabs-layout.css:4–11` still defines the product grid
+  (`display:grid`, auto-fit/minmax columns, gap and padding); that file has no diff
+  from `342b666^` to `fb2a88a`. C5a `342b666` removed only unused
+  `.big-card-description` rules from `card-grid.css`, not its grid rules. Home card
+  sizing and the reviewed product-grid construction existed before C5a; reviewed
+  tab JS changes were logging/no-op fallback cleanup, not layout rewrites.
+- **Priority / recommended phase:** **P2 → C5d** responsive-layout review. Compare
+  pre-C5a/current screenshots at the same viewport and active tab, inspect computed
+  grid/card sizes, then review conflicting size ownership and nested grids.
+  No CSS/JS adjustment is authorized by this entry.
+
+### G-NOTIFICATIONS-01 — Unexpected pending indicators on admin homepage
+
+- **Description:** The owner sees indicators apparently representing pending
+  purchase/sale approvals; possible earlier `games` product 1 / `apps` product 1
+  test purchases. Whether these correspond to real pending rows or stale UI state
+  is **not yet confirmed**.
+- **Suspected source / source evidence:** Real undecided test orders are one
+  possibility. However, `homepage.html:37` contains `#user-notifications`, whereas
+  the admin pending queue's `#admin-notifications` is on
+  `backend/protectedViews/admin.html:65`, loaded through `js/admin.js` and
+  `js/utils/adminOrders.js:4–20`. The latter reads `/api/orders/admin?limit=100` and
+  can include saved decision recovery rows; those are not automatically stale.
+  Existing Page-versus-array and amount-field mismatches are already registered
+  as **G-DATA-01 (P1)** and **G-ADMIN-02**; their original priorities/phases remain.
+- **Notification-state evidence:** Homepage's legacy `notificationQueue` is
+  in-memory (`js/homepage.js:426`), not a persistent notification store. Current
+  `backend/services/serverApplication.js:60–64` disables WebSocket initialization
+  and `/api/notifications`. The service worker's normal GET caching branch stores
+  images, not JSON (`frontend/public/sw.js:102–124`). None of these observations
+  proves what produced the reported indicator; do not assume stale JSON caching.
+- **Database evidence / limitation:** A successful metadata-only, read-only
+  inspection of the loopback database configured in `backend/.env.local` confirmed
+  PostgreSQL 18.6 and public `orders`, `payments`, and `financial_operations` tables,
+  with no public notification table. It did **not** read order/payment rows.
+  Subsequent status-count/product-1 SELECT attempts were blocked by tool
+  classifier timeouts/permission errors before execution. No pending counts,
+  matching test order IDs, or debit/refund links are confirmed. The inspected local
+  database has also not been established as the database behind the owner's
+  observed browser session; the remote configuration was not queried.
+- **Priority / recommended phase:** **P2 → C5d** indicator/source triage, then
+  **C5e** supported queue/empty-state workflow review after existing contract gaps
+  are resolved. Notification transport re-enablement remains the separate C7
+  dependency, not permission to remount it in C5d/C5e.
+- **Next read-only check:** Establish the browser/runtime database target, run the
+  following queries there, then correlate returned public order IDs, timestamps,
+  and statuses with the actual visible DOM and network responses. These queries
+  are recorded for follow-up and **have not successfully executed in this pass**:
+
+```sql
+BEGIN READ ONLY;
+SELECT status, count(*)::text AS count
+FROM public.orders GROUP BY status ORDER BY status;
+SELECT status, count(*)::text AS count
+FROM public.payments GROUP BY status ORDER BY status;
+SELECT order_id, catalog_category, catalog_product_id::text,
+       quantity, charge_cents::text, status, created_at
+FROM public.orders
+WHERE catalog_category IN ('games', 'apps') AND catalog_product_id = 1
+ORDER BY created_at LIMIT 50;
+ROLLBACK;
+```
+
+- **Cleanup versus investigation:** If confirmed to be exclusively disposable
+  test data, a separately approved SQL test-data reset is possible, but must
+  reconcile/reset associated journal references and balances together. A bare
+  order DELETE or status UPDATE can break financial invariants; do not use it to
+  hide a badge. Non-disposable debited orders require the supported, audited
+  decision/refund flow. If indicators lack matching pending database rows,
+  investigate page/asset versions, DOM producer, endpoint DTOs and recovery state
+  instead. Do not clear preserved purchase/order-decision intents as cleanup.
+  **No SQL mutation, cancellation, refund, storage clearing, or UI fix performed.**
+
 ## Verification and scope (historical C5b documentation audit)
 
 | Check | Result |
@@ -258,3 +350,16 @@ security, legal, infrastructure, or provider decisions have been completed.
 - C8 depends on KYC provider selection; decide before C8 starts.
 - C8 depends on legal counsel for country lists and retention policies: a
   non-technical prerequisite.
+
+## G-UI-ADMIN-HOMEPAGE-01 (P1 → C5e)
+After C3 removed Mongoose features, /homepage.html (admin) has multiple broken flows:
+- appmanager.js:478 — TypeError on destroy() (stopAutoRefresh undefined)
+- GET /api/cards → 503 (feature disabled, UI not updated)
+- GET /api/security/status → 503 (feature disabled)
+- GET /api/payments?userId=X → 400 (strict DTO rejects query param)
+- GET /api/orders?limit=100 → 503 (order read endpoint disabled or strict)
+- WebSocket handshake failure (notifications disabled, expected)
+- POST /api/compare-token → 503 (documented, C6)
+
+These are UI cleanup work, not C5c.2b.1 regressions.
+Target: C5e (admin dashboard + user dashboard build-out).

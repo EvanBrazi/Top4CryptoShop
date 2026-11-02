@@ -58,7 +58,7 @@ function createBrowserLogout({ initialStorage = {}, fetcher, confirmed = true } 
   const fetch = jest.fn(fetcher || (async url => new URL(url, 'http://localhost').pathname === '/api/auth/csrf'
     ? response(200, { success: true, csrfToken: jar.get('x-csrf-token') })
     : response(200, { success: true, message: 'Logged out' })));
-  const window = { location: { href: 'http://localhost/dashboard.html', origin: 'http://localhost', replace: jest.fn() } };
+  const window = { fetch, location: { href: 'http://localhost/dashboard.html', origin: 'http://localhost', replace: jest.fn() } };
   const indexedDB = { databases: jest.fn(async () => [{ name: 'keep-db' }]), deleteDatabase: jest.fn() };
   const showToast = jest.fn(), confirm = jest.fn(() => confirmed), timers = [];
   const setTimeout = jest.fn((fn, delay) => { timers.push(fn); return timers.length; });
@@ -68,13 +68,14 @@ function createBrowserLogout({ initialStorage = {}, fetcher, confirmed = true } 
     CustomEvent: class { constructor(type, init) { this.type = type; this.detail = init.detail; } } };
   const utils = browserModule('utils/appUtils.js', ['STORAGE_KEYS', 'clearBrowserData'], globals);
   const messages = browserModule('utils/errorMessages.js', ['getErrorMessage'], globals);
-  const { secureFetch } = browserModule('securefetch.js', ['secureFetch'], { ...globals, ...messages });
+  const transport = browserModule('securefetch.js', ['secureFetch', 'ensureCsrfToken'], { ...globals, ...messages });
+  const { secureFetch } = transport;
   const auth = browserModule('auth.js', ['logout', 'login'], { ...globals, ...utils, secureFetch });
   const logout = jest.fn(auth.logout);
   const { UserManager } = browserModule('usermanager.js', ['UserManager'], {
     ...globals, ...utils, logout, toggleDBTheme: jest.fn()
   });
-  const { PurchaseClient } = browserModule('utils/purchaseClient.js', ['PurchaseClient'], globals);
+  const { PurchaseClient } = browserModule('utils/purchaseClient.js', ['PurchaseClient'], { ...globals, ensureCsrfToken: transport.ensureCsrfToken });
   const { OrderClient } = browserModule('utils/orderClient.js', ['OrderClient'], { ...globals, PurchaseClient });
   return { manager: UserManager.getInstance(), auth, logout, localStorage, sessionStorage,
     document, cookieWrites, receiveCookies, indexedDB, fetch, confirm, showToast, setTimeout, window,

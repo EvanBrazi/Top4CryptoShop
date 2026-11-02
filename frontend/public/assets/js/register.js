@@ -7,6 +7,8 @@
  * @updated 2025-08-24
  */
 import { register } from './auth.js'; // دالة التسجيل الموحدة عبر secureFetch
+import { getErrorMessage, getErrorField } from './utils/errorMessages.js';
+import { bindPasswordToggles, validatePasswordConfirmation } from './utils/formUX.js';
 
 function showAlert(icon, title, text) {
     if (window.Swal) {
@@ -172,6 +174,15 @@ function showToastNotification(message, type = 'info', duration = 3000) {
     }, duration);
 }
 
+const registerForm = byId('registerForm');
+bindPasswordToggles(registerForm);
+const checkConfirmation = () => validatePasswordConfirmation(
+    byId('password'), byId('confirmPassword'), byId('confirmPasswordError'));
+byId('confirmPassword').addEventListener('blur', checkConfirmation);
+byId('password').addEventListener('blur', () => {
+    if (byId('confirmPassword').value) checkConfirmation();
+});
+
 // 📝 التعامل مع نموذج التسجيل
 byId('registerForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -201,6 +212,8 @@ byId('registerForm').addEventListener('submit', async (e) => {
         return;
     }
 
+    if (!checkConfirmation().valid) return;
+
     // ⏳ حالة تحميل مؤقتة بعد نجاح التحقق المحلي
     spinner.style.display = 'inline-block';
     btnText.style.display = 'none';
@@ -209,27 +222,18 @@ byId('registerForm').addEventListener('submit', async (e) => {
     try {
         const result = await register(username, password, email, fullPhoneNumber);
         if (!result.success) {
-            const msg = result.error || 'حدث خطأ أثناء التسجيل';
+            const msg = getErrorMessage(result);
             showToastNotification(msg, 'error', 1500);
-            switch (result.type) {
-                case 'invalid_username':
-                    showError('usernameError', msg);
-                    shakeElement('username');
-                    break;
-                case 'invalid_password':
-                    showError('passwordError', msg);
-                    shakeElement('password');
-                    break;
-                case 'invalid_email':
-                    showError('emailError', msg);
-                    shakeElement('email');
-                    break;
-                case 'invalid_phone':
-                    showError('phoneError', msg);
-                    shakeElement('phoneNumber');
-                    break;
-                default:
-                    showGeneralError(msg);
+            const field = getErrorField(result);
+            if (field === 'generalError') {
+                // TODO(C5c.3): AUTH_FORBIDDEN reactivation UI needs a real request endpoint.
+                // See GAPS.md → G-REACTIVATION-01. No redirect until that flow exists.
+                showGeneralError(msg);
+            } else {
+                showError(field, msg);
+                const inputId = { usernameError: 'username', passwordError: 'password',
+                    emailError: 'email', phoneError: 'phoneNumber' }[field];
+                if (inputId) shakeElement(inputId);
             }
             return;
         }

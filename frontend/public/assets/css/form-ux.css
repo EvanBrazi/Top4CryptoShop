@@ -1,0 +1,48 @@
+/* Local, opt-in toggle positioning; no layout change before successful binding. */
+[data-form-ux="password"][data-form-ux-ready] {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--input-radius, var(--radius-md));
+}
+[data-form-ux="password"] > button[data-password-toggle] {
+    inline-size: calc(var(--border-radius) * 3);
+    block-size: calc(var(--border-radius) * 3);
+    padding: initial;
+    margin: initial;
+    border: initial;
+    border-radius: var(--input-radius, var(--radius-md));
+    background: var(--card-color, var(--card-bg));
+    color: var(--text-color);
+    box-shadow: none;
+    transform: none;
+    display: grid;
+    place-items: center;
+}
+[data-form-ux="password"] > button[data-password-toggle]::after,
+[data-form-ux="password"] > button[data-password-toggle][hidden] {
+    display: none;
+}
+[data-form-ux="password"] > button[data-password-toggle]:focus-visible {
+    outline: calc(var(--input-radius, var(--radius-md)) / 4) solid var(--primary-color);
+    outline-offset: calc(var(--input-radius, var(--radius-md)) / 4);
+}
+[data-form-ux="password"] > button[data-password-toggle]:hover {
+    color: var(--primary-color);
+}
+[data-form-ux="password"] > button[data-password-toggle] > svg {
+    inline-size: calc(var(--border-radius) * 2);
+    block-size: calc(var(--border-radius) * 2);
+    pointer-events: none;
+}
+[data-form-ux="feedback-icon"] {
+    display: inline-block;
+    margin-inline-end: calc(var(--input-radius, var(--radius-md)) / 2);
+    color: var(--text-color);
+}
+[data-form-ux="feedback-icon"][data-kind="error"] {
+    color: var(--error-color, var(--danger-color, var(--text-color)));
+}
+[data-form-ux="feedback-icon"][data-kind="success"] {
+    color: var(--success-color, var(--primary-color));
+}

@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تسجيل حساب جديد - متجر العملات الرقمية</title>
     <link rel="stylesheet" href="./assets/css/register.css">
+    <link rel="stylesheet" href="./assets/css/form-ux.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
@@ -39,15 +40,43 @@
                 <div id="usernameError" class="error-message"></div>
             </div>
             <div class="form-group">
-                <input type="password" id="password" placeholder="كلمة المرور" required minlength="8"
-                    autocomplete="new-password">
+                <div data-form-ux="password">
+                    <input type="password" id="password" placeholder="كلمة المرور" required minlength="8"
+                        autocomplete="new-password" aria-label="كلمة المرور" aria-describedby="passwordError">
+                    <button type="button" data-password-toggle hidden aria-controls="password"
+                        aria-label="إظهار كلمة المرور" aria-pressed="false">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false">
+                            <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z" />
+                            <circle cx="12" cy="12" r="3" />
+                            <path data-password-slash d="M3 3l18 18" visibility="hidden" />
+                        </svg>
+                    </button>
+                </div>
                 <div id="passwordError" class="error-message"></div>
+            </div>
+            <div class="form-group">
+                <div data-form-ux="password">
+                    <input type="password" id="confirmPassword" placeholder="تأكيد كلمة المرور" required
+                        autocomplete="new-password" aria-label="تأكيد كلمة المرور"
+                        aria-describedby="confirmPasswordError" data-feedback-id="confirmPasswordError">
+                    <button type="button" data-password-toggle hidden aria-controls="confirmPassword"
+                        aria-label="إظهار كلمة المرور" aria-pressed="false">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false">
+                            <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z" />
+                            <circle cx="12" cy="12" r="3" />
+                            <path data-password-slash d="M3 3l18 18" visibility="hidden" />
+                        </svg>
+                    </button>
+                </div>
+                <div id="confirmPasswordError" class="error-message"
+                    role="status" aria-live="polite" aria-atomic="true"></div>
             </div>
             <div class="form-group">
                 <input type="email" id="email" placeholder="البريد الإلكتروني" required autocomplete="email">
                 <div id="emailError" class="error-message"></div>
             </div>
             <div class="form-group">
+                <label for="phoneNumber">رقم الهاتف — اختياري</label>
                 <div class="phone-input-group">
                     <select id="countryCode" class="country-code" title="رمز الدولة"
                         autocomplete="tel-country-code">

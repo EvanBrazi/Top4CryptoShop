@@ -67,7 +67,8 @@ function createBrowserLogout({ initialStorage = {}, fetcher, confirmed = true } 
     crypto: { randomUUID: () => 'logout-browser-uuid' },
     CustomEvent: class { constructor(type, init) { this.type = type; this.detail = init.detail; } } };
   const utils = browserModule('utils/appUtils.js', ['STORAGE_KEYS', 'clearBrowserData'], globals);
-  const { secureFetch } = browserModule('securefetch.js', ['secureFetch'], globals);
+  const messages = browserModule('utils/errorMessages.js', ['getErrorMessage'], globals);
+  const { secureFetch } = browserModule('securefetch.js', ['secureFetch'], { ...globals, ...messages });
   const auth = browserModule('auth.js', ['logout', 'login'], { ...globals, ...utils, secureFetch });
   const logout = jest.fn(auth.logout);
   const { UserManager } = browserModule('usermanager.js', ['UserManager'], {

@@ -1,6 +1,8 @@
 import { login } from './auth.js';
 import { STORAGE_KEYS } from './utils/appUtils.js';
 import { secureFetch } from './securefetch.js';
+import { getErrorMessage, getErrorField } from './utils/errorMessages.js';
+import { bindPasswordToggles } from './utils/formUX.js';
 
 function loginRedirectFor(user) {
     if (user.role === 'admin') return '/homepage.html';
@@ -15,10 +17,16 @@ const submitBtn = document.getElementById('submitBtn');
 // ✅ تطبيق الثيم المحفوظ
 document.addEventListener('DOMContentLoaded', () => {
     (async () => {
-        const result = await secureFetch('/api/auth/check-session');
-        if (result.success && result.data.isAuthenticated === true &&
-            result.data.user?.id && typeof result.data.user.role === 'string') {
-            window.location.href = loginRedirectFor(result.data.user);
+        try {
+            const result = await secureFetch('/api/auth/check-session');
+            // A logged-out 401 is expected; browser-generated network entries cannot be suppressed here.
+            if (result.status === 401) return;
+            if (result.success && result.data.isAuthenticated === true &&
+                result.data.user?.id && typeof result.data.user.role === 'string') {
+                window.location.href = loginRedirectFor(result.data.user);
+            }
+        } catch {
+            // Contain unexpected failures; leave the login form available.
         }
     })();
     /**
@@ -94,30 +102,6 @@ function clearErrors() {
 }
 
 /**
- * استخراج رسالة خطأ مفهومة من أي كائن خطأ
- * @param {any} err - الكائن الخطأ
- * @returns {String} - رسالة نصية قابلة للعرض
- */
-function extractErrorMessage(err) {
-    if (!err) return 'حدث خطأ غير معروف';
-
-    // إذا كانت الرسالة موجودة بشكل مباشر
-    if (typeof err === 'string') return err;
-    if (typeof err.message === 'string') return err.message;
-
-    // إذا كانت الرسالة داخل response أو data
-    if (err.response?.data?.error) return err.response.data.error;
-    if (err.data?.error) return err.data.error;
-
-    // إذا كان كائن JSON
-    try {
-        return JSON.stringify(err, null, 2);
-    } catch {
-        return 'حدث خطأ غير متوقع';
-    }
-}
-
-/**
  * عرض إشعار توست جذاب في أعلى الشاشة
  * @param {String} message - نص الرسالة
  * @param {'success'|'error'|'info'|'warning'} type - نوع الرسالة
@@ -181,59 +165,25 @@ function showAlert(icon, title, text) {
  * @param {string} password - كلمة المرور
  */
 async function loginUser(username, password) {
-    clearErrors(); // 🧼 تنظيف الأخطاء السابقة
-    spinner.style.display = 'inline-block';
-    btnText.style.display = 'none';
-    submitBtn.disabled = true;
-
     try {
+        clearErrors(); // 🧼 تنظيف الأخطاء السابقة
+        spinner.style.display = 'inline-block';
+        btnText.style.display = 'none';
+        submitBtn.disabled = true;
+
         const result = await login(username, password);
 
-        // ✅ معالجة الأخطاء المعروفة
-        if (result.error === "يجب توفير رمز الجلسة") {
-            showAlert('error', 'رمز الجلسة مفقود', 'يرجى إعادة تحميل الصفحة أو تسجيل الدخول من جديد.');
-            showToastNotification('⚠️ رمز الجلسة مفقود. أعد المحاولة.', 'error', 3000);
-            shakeElement('usernameInput');
-            return;
-        }
-
-        if (result.type === 'invalid_credentials') {
-            showError('usernameError', extractErrorMessage(result.error));
-            shakeElement('usernameInput');
-            return;
-        }
-
-        if (result.type === 'missing_password') {
-            showError('passwordError', extractErrorMessage(result.error));
-            shakeElement('passwordInput');
-            return;
-        }
-
-        if (result.type === 'invalid_password' && result.remainingAttempts !== undefined) {
-            showError('passwordError', extractErrorMessage(result.error));
-            showError('attemptsWarning', `❌ تبقّى ${result.remainingAttempts} محاولة قبل تعليق الحساب`);
-            shakeElement('passwordInput');
-            return;
-        }
-
-        if (result.type === 'too_many_attempts') {
-            const suspendedMessage = `
-        🚫 تم تعليق الحساب مؤقتًا بسبب عدد المحاولات.
-        <br>📞 يمكنك مراسلتنا عبر <a href="https://wa.me/+963980217649" target="_blank" style="color:green;font-weight:bold;">واتساب</a>
-        أو الضغط هنا لإرسال طلب إعادة التفعيل.
-      `;
-            const generalError = document.getElementById('generalError');
-            generalError.innerHTML = suspendedMessage;
-            generalError.classList.add('show');
-            shakeElement('usernameInput');
-            shakeElement('passwordInput');
-            return;
-        }
-
         if (!result.success || !result.user) {
-            const msg = extractErrorMessage(result.error) || 'حدث خطأ أثناء تسجيل الدخول';
+            const msg = getErrorMessage(result);
+            if (result.code === 'AUTH_FORBIDDEN') {
+                // TODO(C5c.3): Replace inline WhatsApp number with modal + real reactivation
+                // request endpoint. See GAPS.md → G-REACTIVATION-01.
+                showError('generalError', msg);
+            } else showError(getErrorField(result), msg);
             showToastNotification(`🚨 ${msg}`, 'error', 3000);
-            showError('generalError', msg);
+            if (['INVALID_LOGIN', 'INVALID_PASSWORD'].includes(result.code) && Number.isInteger(result.remainingAttempts)) {
+                showError('attemptsWarning', `❌ تبقّى ${result.remainingAttempts} محاولة قبل تعليق الحساب`);
+            }
             shakeElement('usernameInput');
             shakeElement('passwordInput');
             return;
@@ -253,7 +203,7 @@ async function loginUser(username, password) {
 
         showToastNotification(`👋 أهلاً بعودتك يا ${username} 🌟`, 'success', 2000);
     } catch (err) {
-        const msg = extractErrorMessage(err.message || err);
+        const msg = getErrorMessage(err);
         console.error('Login request failed');
         showAlert('error', 'فشل تسجيل الدخول', msg);
         showToastNotification(`🚨 ${msg}`, 'error', 3000);
@@ -269,26 +219,32 @@ async function loginUser(username, password) {
 // ✅ ربط النموذج بعملية تسجيل الدخول
 const loginForm = document.getElementById('loginForm');
 if (loginForm) {
+    bindPasswordToggles(loginForm);
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        document.querySelectorAll('.error-message').forEach(el => {
-            el.classList.remove('show');
-            el.textContent = '';
-        });
+        try {
+            document.querySelectorAll('.error-message').forEach(el => {
+                el.classList.remove('show');
+                el.textContent = '';
+            });
 
-        const generalError = document.getElementById('generalError');
-        generalError.classList.remove('show');
-        generalError.textContent = '';
+            const generalError = document.getElementById('generalError');
+            generalError.classList.remove('show');
+            generalError.textContent = '';
 
-        const username = document.getElementById('username')?.value.trim();
-        const password = document.getElementById('password')?.value;
+            const username = document.getElementById('username')?.value.trim();
+            const password = document.getElementById('password')?.value;
 
-        if (!username || !password) {
-            showAlert('warning', 'بيانات ناقصة', 'يرجى إدخال اسم المستخدم وكلمة المرور');
-            return;
+            if (!username || !password) {
+                showAlert('warning', 'بيانات ناقصة', 'يرجى إدخال اسم المستخدم وكلمة المرور');
+                return;
+            }
+
+            await loginUser(username, password);
+        } catch (err) {
+            console.error('Login request failed');
+            showToastNotification(getErrorMessage(err), 'error', 3000);
         }
-
-        await loginUser(username, password);
     });
 }

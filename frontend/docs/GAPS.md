@@ -153,3 +153,108 @@ C5a closed as fully verified and committed: one startup banner, no Token:false, 
 | Browser/live backend/visual testing | Not rerun in C5b; this documentation audit reports static discrepancies, not new runtime reproductions |
 
 The first audit-checker run needed to recognize a valid external HTTPS import and correct an obsolete documentation-only contract label; no application test failed or source fix was made. Documentation findings are not implementation approvals. The individually approved C5b.1 G-P0-01 fix and current verification are recorded in Resolved above; no C5c work has begun. **No commit/push** until user verification; G-STORAGE-01 remains P0-Deferred-to-C5c with storage/logout untouched.
+
+## G-REACTIVATION-01 (P2 → C5c.3)
+
+**Deferred; documentation only in C5c.2a.** Suspended users currently see a
+plain-text WhatsApp number (`+963980217649`) to contact support manually.
+No reactivation endpoint, modal, migration, admin workflow, or redirect is
+implemented by C5c.2a. Interim copy is not an automatic account reactivation.
+
+C5c.3 will add:
+- `POST /api/auth/reactivation-request`: public, CSRF-protected, rate-limited.
+- Migration 006: `reactivation_requests` table with `id`, `username`, `user_id`,
+  `reason`, `contact_email`, `contact_phone`, `ip_address`, `status`, `reviewed_by`,
+  `reviewed_at`, `review_note`, and `created_at`.
+- Unique partial index on `(username) WHERE status = 'pending'`.
+- Frontend modal: reason (10–500 characters) plus optional contact details.
+- Admin view within the existing `/homepage.html` admin section.
+- Admin approve/reject workflow with audit.
+- Prevent duplicate pending requests per username.
+- Rate limiting: 3 requests/IP/hour and 1 request/username/24 hours.
+- Uniform response to prevent username enumeration, including duplicate cases.
+
+## G-CHAT-AND-SECURITY-VISION (P3 → C7/C8)
+
+**Deferred long-term vision, not implemented.** These features are outside
+C5c.2a, C5c.2b, C5c.2c, C5d, and C5e. They are recorded so the requirements are
+not lost; their presence here does not authorize implementation or claim that
+security, legal, infrastructure, or provider decisions have been completed.
+
+### In-Site Chat (C7)
+
+- Real-time messaging between suspended/suspended-adjacent users and admins.
+- WebSocket-based, reusing existing socket infrastructure after Step 5 C4.
+- Persistent message store: new `chat_messages` table.
+- Read receipts and optional typing indicators.
+- Verification-document attachments using private uploads.
+- AI assistant for FAQ deflection:
+  - Simple rule-based plus LLM hybrid.
+  - Never claims to be human and never approves anything itself.
+  - Escalates complex queries to a human admin.
+  - Canned answers for password reset, suspended accounts, KYC, and refund policy.
+  - Rate-limited, logged, and clearly labeled "AI assistant".
+
+### Password Change Request via Chat (C7)
+
+- User initiates the request from chat.
+- Enforced requirements:
+  - A human admin responds: NOT AI and NOT a robot.
+  - Justification text: minimum 50 characters, including a specific reason.
+  - Admin verifies identity through chat using country-specific KYC.
+  - Admin checks account history, IP, and device to confirm it is not fraudulent.
+  - No policy violations in the reason.
+  - Admin approval requires an explicit confirmation checkbox.
+- Upon approval:
+  - Generate a password reset link with a single-use token.
+  - User must set the new password within 15 minutes.
+  - Token expires after use.
+  - Invalidate all existing sessions.
+  - Email notification to the user's registered email address.
+
+### Security Policies After Password Change (C7)
+
+- Cooling-off window: 24-hour purchase restriction after password change.
+- During cooling-off, users may log in, view balance, and browse.
+- Users cannot purchase, withdraw, submit payments, or approve orders.
+- Rationale: prevent immediate financial exploitation after account takeover.
+- Notify the user at login:
+  "Your account has a 24h restriction after recent password change. Purchases
+  will unlock on [date]."
+- Emergency admin override requires an audit log.
+
+### Country-Specific KYC (C8)
+
+- ID verification required for high-value transactions, password changes, and
+  account reactivation.
+- Country tiers:
+  - Tier 1 (low risk): email and phone only.
+  - Tier 2 (medium): additionally government ID.
+  - Tier 3 (high): additionally proof of address and video verification.
+- Identity documents stored privately in Cloudinary using signed URLs, with
+  7-day retention.
+- Admin verification workflow with an audit trail.
+- GDPR/data residency compliance where required.
+- Refuse service to users from embargoed countries per OFAC/EU lists maintained
+  externally; legal counsel must determine the applicable policy before rollout.
+
+### Policy Enforcement
+
+- Every password change request must include:
+  - Reason: minimum 50 characters.
+  - Admin notes: minimum 30 characters.
+  - Verification method used, such as in-person, video, or ID.
+  - Timestamp, admin user ID, and user ID.
+- Log all actions to an immutable audit table: append-only, no DELETE.
+- Monthly review of password change requests by a second admin.
+- Suspicious pattern detection: 3+ requests from the same IP in 24 hours → freeze.
+
+### Dependencies
+
+- C7 depends on Step 5 WebSocket authentication, completed in C4 as reported by
+  the project owner; this documentation update does not reverify that gate.
+- C7 depends on notification infrastructure: currently disabled and must be
+  re-enabled in C7.
+- C8 depends on KYC provider selection; decide before C8 starts.
+- C8 depends on legal counsel for country lists and retention policies: a
+  non-technical prerequisite.

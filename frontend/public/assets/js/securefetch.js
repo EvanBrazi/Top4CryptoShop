@@ -1,3 +1,5 @@
+import { getErrorMessage } from './utils/errorMessages.js';
+
 function inferErrorType(message = '') {
     if (message.includes('اسم المستخدم')) return 'invalid_credentials';
     if (message.includes('كلمة المرور')) return 'invalid_password';
@@ -72,6 +74,10 @@ async function ensureCsrfToken() {
     return token;
 }
 
+function withDisplayMessage(result) {
+    return { ...result, displayMessage: getErrorMessage(result) };
+}
+
 // TODO(C5b): purchaseClient.js bypasses secureFetch; its CSRF bootstrap gap is not covered here.
 /**
  * إرسال طلب آمن تلقائيًا مع رمز CSRF، دون إعادة إرسال أي طلب تعديل.
@@ -84,8 +90,8 @@ export async function secureFetch(url, options = {}) {
         const target = new URL(url, window.location.href);
         if (!['http:', 'https:'].includes(target.protocol) ||
             target.origin !== window.location.origin || target.username || target.password) {
-            return { success: false, status: 0, code: 'CROSS_ORIGIN_REQUEST_BLOCKED',
-                error: 'CROSS_ORIGIN_REQUEST_BLOCKED', type: 'request_error' };
+            return withDisplayMessage({ success: false, status: 0, code: 'CROSS_ORIGIN_REQUEST_BLOCKED',
+                error: 'CROSS_ORIGIN_REQUEST_BLOCKED', type: 'request_error' });
         }
         const method = options.method?.toUpperCase() || 'GET';
         const needsCsrf = !['GET', 'HEAD', 'OPTIONS'].includes(method);
@@ -108,26 +114,26 @@ export async function secureFetch(url, options = {}) {
         try {
             data = await readJson(response);
         } catch {
-            return { success: false, status: response.status, code: 'INVALID_RESPONSE',
-                error: 'INVALID_RESPONSE', type: 'response_error' };
+            return withDisplayMessage({ success: false, status: response.status, code: 'INVALID_RESPONSE',
+                error: 'INVALID_RESPONSE', type: 'response_error' });
         }
         if (!response.ok || data.success === false) {
             if (response.status === 403 && data.code === 'CSRF_INVALID') csrfInitialized = false;
             const error = typeof data.error === 'string' ? data.error : 'REQUEST_FAILED';
-            return {
+            return withDisplayMessage({
                 remainingAttempts: data.remainingAttempts,
                 success: false,
                 status: response.status,
                 code: typeof data.code === 'string' ? data.code : error,
                 error,
                 type: data.type || inferErrorType(error)
-            };
+            });
         }
         return { success: true, status: response.status, data };
     } catch (err) {
         const code = err?.type === 'csrf_error' ? err.code : 'NETWORK_ERROR';
-        return { success: false, status: err?.status || 0, code, error: code,
-            type: err?.type === 'csrf_error' ? 'csrf_error' : 'network_error' };
+        return withDisplayMessage({ success: false, status: err?.status || 0, code, error: code,
+            type: err?.type === 'csrf_error' ? 'csrf_error' : 'network_error' });
     }
 }
 

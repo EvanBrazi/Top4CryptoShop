@@ -26,6 +26,7 @@
     <link rel="stylesheet" href="./assets/css/tabs-layout.css">
     <link rel="stylesheet" href="./assets/css/card-grid.css">
     <link rel="stylesheet" href="./assets/css/homepage.css">
+    <link rel="stylesheet" href="./assets/css/form-ux.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.19.0/js/md5.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.min.js"></script>
@@ -413,16 +414,36 @@
 
                         <div class="form-group">
                             <label for="newPassword"><i class="fas fa-lock"></i> كلمة المرور الجديدة</label>
-                            <input type="password" id="newPassword" autocomplete="new-password"
-                                placeholder="أدخل كلمة المرور الجديدة" />
+                            <div data-form-ux="password">
+                                <input type="password" id="newPassword" autocomplete="new-password"
+                                    placeholder="أدخل كلمة المرور الجديدة" />
+                                <button type="button" data-password-toggle hidden aria-controls="newPassword"
+                                    aria-label="إظهار كلمة المرور" aria-pressed="false">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false">
+                                        <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z" />
+                                        <circle cx="12" cy="12" r="3" />
+                                        <path data-password-slash d="M3 3l18 18" visibility="hidden" />
+                                    </svg>
+                                </button>
+                            </div>
                             <span class="field-icon" id="newPassword-icon"></span>
                             <small class="field-message" id="newPassword-msg"></small>
                         </div>
 
                         <div class="form-group">
                             <label for="confirmPassword"><i class="fas fa-lock"></i> تأكيد كلمة المرور</label>
-                            <input type="password" id="confirmPassword" autocomplete="new-password"
-                                placeholder="أكد كلمة المرور الجديدة" />
+                            <div data-form-ux="password">
+                                <input type="password" id="confirmPassword" autocomplete="new-password"
+                                    placeholder="أكد كلمة المرور الجديدة" />
+                                <button type="button" data-password-toggle hidden aria-controls="confirmPassword"
+                                    aria-label="إظهار كلمة المرور" aria-pressed="false">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false">
+                                        <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z" />
+                                        <circle cx="12" cy="12" r="3" />
+                                        <path data-password-slash d="M3 3l18 18" visibility="hidden" />
+                                    </svg>
+                                </button>
+                            </div>
                             <span class="field-icon" id="confirmPassword-icon"></span>
                             <small class="field-message" id="confirmPassword-msg"></small>
                         </div>
@@ -650,6 +671,10 @@
     <script type="module" src="./assets/js/usermanager.js"></script>
     <script type="module" src="./assets/js/appmanager.js"></script>
     <script type="module" src="./assets/js/homepage.js"></script>
+    <script type="module">
+        import { bindPasswordToggles } from './assets/js/utils/formUX.js';
+        bindPasswordToggles(document.getElementById('settings-form'));
+    </script>
 
 </body>
 

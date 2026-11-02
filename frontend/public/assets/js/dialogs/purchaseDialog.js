@@ -173,7 +173,7 @@ export class DialogPurchase {
           }
         } catch (_) { this.savedIntentError = true; }
         const errorElement = $('.dialog-error');
-        errorElement.textContent = error.message;
+        errorElement.textContent = error.displayMessage || error.message;
         errorElement.classList.add('show');
       } finally {
         this.purchaseInFlight = false;

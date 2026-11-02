@@ -75,7 +75,7 @@ export async function logout() {
     }
     // Clear only auth-owned storage after server logout; preserve theme and financial intents.
     [STORAGE_KEYS.USER_ID, STORAGE_KEYS.USER_TOKEN, STORAGE_KEYS.SESSION_ID,
-        'user_id', 'user_token'].forEach(key => localStorage.removeItem(key));
+        'user_id', 'user_token', 'authToken'].forEach(key => localStorage.removeItem(key));
     return {
         success: true,
         message: result.data.message || 'تم تسجيل الخروج بنجاح'

@@ -18,6 +18,7 @@ const { createApplication } = require('../server');
 const catalog = require('../services/catalogService');
 const cloud = require('../config/cloudinary');
 const H = require('./helpers/disposablePg');
+const { createBrowserLogout, response: browserResponse } = require('./helpers/browserLogout');
 let db, runtime, app, directory, fixture, image, providerStep, providerFailure, providerPatch,
   uploadBuffers, fault, financialWrites, saveAttempts, preventSave, beforeLocks;
 const SECRET = 'financial-http-parent-signing-secret-'.repeat(2);
@@ -42,6 +43,53 @@ async function logged(username = 'Owner_U') {
   const login = await agent.post('/api/auth/login').set('x-csrf-token', boot.body.csrfToken)
     .send({ username, password: H.PASSWORD }).expect(200);
   return { agent, csrf: login.body.csrfToken, login };
+}
+// Adapt fetch to real HTTP on a cookie-managing Supertest agent. The only fault
+// is dropping an already-received financial acknowledgment, after server commit.
+function browserSession(b, ownerId) {
+  const http = { history: [], dropAcknowledgment: null };
+  const persistAuth = data => {
+    http.browser.localStorage.setItem('userId', data.user.id);
+    http.browser.localStorage.setItem('userToken', data.token);
+    http.browser.localStorage.setItem('customSessionId', data.sessionId);
+  };
+  http.browser = createBrowserLogout({
+    initialStorage: { userId: ownerId, userToken: b.login.body.token,
+      customSessionId: b.login.body.sessionId, user_id: ownerId,
+      user_token: 'legacy-token', authToken: 'legacy-analytics-token', theme: 'night', activeTab: 'orders' },
+    fetcher: async (url, options = {}) => {
+      const endpoint = new URL(url, 'http://localhost').pathname, method = (options.method || 'GET').toLowerCase();
+      expect(options.credentials).toBe('include');
+      let r = b.agent[method](endpoint).set(Object.fromEntries(new Headers(options.headers)));
+      const body = options.body ? JSON.parse(options.body) : undefined;
+      if (body) r = r.send(body);
+      const entry = { endpoint, method, body, storageAtDispatch: http.browser.localStorage.snapshot() };
+      const result = await r;
+      http.browser.receiveCookies(result.headers['set-cookie']);
+      http.history.push({ ...entry, status: result.status, receipt: result.body });
+      if (http.dropAcknowledgment === endpoint) {
+        http.dropAcknowledgment = null;
+        throw new Error('Test transport dropped the committed HTTP acknowledgment');
+      }
+      return browserResponse(result.status, result.body);
+    }
+  });
+  http.browser.receiveCookies(b.login.headers['set-cookie']);
+  http.login = async identifier => {
+    const result = await http.browser.auth.login(identifier, H.PASSWORD);
+    expect(result.success).toBe(true); persistAuth(result); return result;
+  };
+  http.logout = async () => {
+    await http.browser.manager._handleLogout();
+    expect(await http.browser.logout.mock.results.at(-1).value).toMatchObject({ success: true });
+    expect(http.history.filter(entry => entry.endpoint === '/api/auth/logout').at(-1).status).toBe(200);
+    for (const key of ['userId', 'userToken', 'customSessionId', 'user_id', 'user_token', 'authToken']) {
+      expect(http.browser.localStorage.getItem(key)).toBeNull();
+    }
+    expect(http.browser.cookieWrites).not.toHaveBeenCalled();
+    expect(http.browser.indexedDB.deleteDatabase).not.toHaveBeenCalled();
+  };
+  return http;
 }
 const buy = (b, extra = {}) => b.agent.post('/api/orders/purchase').set('x-csrf-token', b.csrf).send(purchaseBody(extra));
 const decide = (b, kind, id, action, extra = {}) => b.agent.put(`/api/${kind}/${id}/${action}`)
@@ -149,6 +197,90 @@ test('purchase is 201, exact committed receipt; replay is 200 with one debit', a
   expect(j).toMatchObject({ id: first.body.operationId, user_id: H.OWNER, source_id: o.id, effect: 'debit', before_cents: '10000', after_cents: '9901', delta_cents: '-99' });
   expect(o.debit_operation_id).toBe(j.id);
 });
+test('purchase client recovers lost HTTP acknowledgment across real logout/re-login, isolated from another owner', async () => {
+  const b = await logged(), http = browserSession(b, H.OWNER), browser = http.browser;
+  const input = { category: 'apps', productId: 1, quantity: 1900, fulfillmentTarget: { accountId: 'Acct_123' } };
+  const key = `purchase-intent-v1:${H.OWNER}:apps:1`;
+  const client = new browser.PurchaseClient({ uuid: () => 'logout-purchase' });
+  expect(client.key(H.OWNER, 'apps', 1)).toBe(key);
+  http.dropAcknowledgment = '/api/orders/purchase';
+  await expect(client.purchase(input)).rejects.toThrow('unknown');
+  const committed = http.history.find(entry => entry.endpoint === '/api/orders/purchase');
+  expect(committed.status).toBe(201); expect(committed.receipt.replayed).toBe(false);
+  const saved = browser.localStorage.getItem(key);
+  expect(committed.storageAtDispatch[key]).toBe(saved); // Persisted before financial dispatch.
+  expect(JSON.parse(saved)).toEqual({ payload: { ...input, idempotencyKey: 'purchase-logout-purchase' }, unknown: true });
+  const settled = await balance(), journals = await operations(), writes = financialWrites;
+  expect(settled).toBe('9901'); expect(await count('orders')).toBe('1');
+  expect(journals).toHaveLength(1); expect(journals[0].effect).toBe('debit');
+
+  await http.logout(); expect(browser.localStorage.getItem(key)).toBe(saved);
+  expect(browser.localStorage.getItem('theme')).toBe('night');
+  const other = await http.login('Other_U'); expect(other.user.id).toBe(H.OTHER);
+  const otherClient = new browser.PurchaseClient(), otherOrders = new browser.OrderClient();
+  expect(otherClient.pending(H.OTHER, 'apps', 1)).toBeNull();
+  expect(otherClient.pendingPurchases(H.OTHER)).toEqual([]); expect(otherOrders.pendingDecisions(H.OTHER)).toEqual([]);
+  const financialCalls = http.history.filter(entry => entry.endpoint === '/api/orders/purchase').length;
+  await expect(otherClient.purchase(input, H.OWNER)).rejects.toThrow('original account');
+  expect(http.history.filter(entry => entry.endpoint === '/api/orders/purchase')).toHaveLength(financialCalls);
+  expect(browser.localStorage.getItem(key)).toBe(saved);
+  await http.logout(); expect(browser.localStorage.getItem(key)).toBe(saved); // Other-owner logout cannot clear it.
+
+  const relogged = await http.login('Owner_U'); expect(relogged.user.id).toBe(H.OWNER);
+  expect(relogged.sessionId).not.toBe(b.login.body.sessionId);
+  const reloaded = new browser.PurchaseClient({ uuid: () => { throw new Error('Must reuse the persisted key'); } });
+  const replay = await reloaded.purchase(input);
+  expect(replay).toEqual({ ...committed.receipt, replayed: true });
+  const attempts = http.history.filter(entry => entry.endpoint === '/api/orders/purchase');
+  expect(attempts.map(entry => entry.status)).toEqual([201, 200]);
+  expect(attempts[1].body).toEqual(attempts[0].body);
+  expect(browser.localStorage.getItem(key)).toBeNull();
+  expect(await count('orders')).toBe('1'); expect(await balance()).toBe(settled);
+  expect(await operations()).toEqual(journals); expect(financialWrites).toBe(writes);
+});
+
+test('order client recovers lost cancellation acknowledgment across admin logout/re-login without another refund', async () => {
+  const owner = await logged(), admin = await logged('Admin_A'), bought = await buy(owner).expect(201);
+  const http = browserSession(admin, H.ADMIN), browser = http.browser, id = bought.body.orderId;
+  const key = `order-decision-v1:${H.ADMIN}:${id}`, reason = 'Verified cancellation across logout';
+  const client = new browser.OrderClient({ uuid: () => 'logout-cancellation' });
+  expect(client.decisionKey(H.ADMIN, id)).toBe(key);
+  http.dropAcknowledgment = `/api/orders/${id}/reject`;
+  await expect(client.decide(id, 'reject', reason)).rejects.toThrow('unknown');
+  const committed = http.history.find(entry => entry.endpoint === `/api/orders/${id}/reject`);
+  expect(committed.status).toBe(200); expect(committed.receipt).toMatchObject({ status: 'cancelled', replayed: false });
+  const saved = browser.localStorage.getItem(key);
+  expect(committed.storageAtDispatch[key]).toBe(saved);
+  expect(JSON.parse(saved)).toEqual({ orderId: id, action: 'reject', payload: { idempotencyKey: 'decision-logout-cancellation', reason } });
+  const settled = await balance(), journals = await operations(), order = await row('orders', 'order_id', id), writes = financialWrites;
+  expect(settled).toBe('10000'); expect(journals).toHaveLength(2);
+  expect(journals.filter(entry => entry.effect === 'refund')).toHaveLength(1);
+
+  await http.logout(); expect(browser.localStorage.getItem(key)).toBe(saved);
+  const other = await http.login('Other_U'); expect(other.user.id).toBe(H.OTHER);
+  const otherOrders = new browser.OrderClient(), otherPurchases = new browser.PurchaseClient();
+  expect(otherOrders.pendingDecisions(H.OTHER)).toEqual([]); expect(otherPurchases.pendingPurchases(H.OTHER)).toEqual([]);
+  const decisionCalls = http.history.filter(entry => entry.method === 'put').length;
+  await expect(otherOrders.decide(id, 'reject', reason, H.ADMIN)).rejects.toThrow('original account');
+  expect(http.history.filter(entry => entry.method === 'put')).toHaveLength(decisionCalls);
+  expect(browser.localStorage.getItem(key)).toBe(saved);
+  await http.logout(); expect(browser.localStorage.getItem(key)).toBe(saved);
+
+  const relogged = await http.login('Admin_A'); expect(relogged.user.id).toBe(H.ADMIN);
+  expect(relogged.sessionId).not.toBe(admin.login.body.sessionId);
+  const reloaded = new browser.OrderClient({ uuid: () => { throw new Error('Must reuse saved decision'); } });
+  expect(reloaded.pendingDecisions(H.ADMIN)).toEqual([JSON.parse(saved)]);
+  const replay = await reloaded.decide(id, 'reject', reason);
+  expect(replay).toEqual({ ...committed.receipt, replayed: true });
+  const attempts = http.history.filter(entry => entry.method === 'put');
+  expect(attempts).toHaveLength(2); expect(attempts[1].endpoint).toBe(attempts[0].endpoint);
+  expect(attempts[1].body).toEqual(attempts[0].body); // Same action, reason and key.
+  expect(browser.localStorage.getItem(key)).toBeNull();
+  expect(await balance()).toBe(settled); expect(await operations()).toEqual(journals);
+  expect(await count('orders')).toBe('1'); expect(await row('orders', 'order_id', id)).toEqual(order);
+  expect(financialWrites).toBe(writes);
+});
+
 test.each(['purchase', 'purchase replay', 'order completion', 'order cancellation', 'payment approval', 'payment rejection'])
 ('HTTP acknowledgment includes success and preserves receipt: %s', async command => {
   const owner = await logged();

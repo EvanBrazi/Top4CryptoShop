@@ -13,6 +13,24 @@ const fullPathByCategoryMap = {
 
 export const SUPPORT_PHONE = '+963980217649';
 
+/**
+ * ⚠️ DANGER — HARD RESET ONLY
+ *
+ * This wipes ALL browser storage, including unresolved financial intents:
+ *   - purchase-intent-v1:${owner}:${category}:${productId}
+ *   - order-decision-v1:${owner}:${orderId}
+ *
+ * These intents are written by purchaseClient.js and orderClient.js to
+ * recover from network failures after a committed financial operation.
+ * Wiping them causes duplicate-operation risk on next login.
+ *
+ * ✅ USE FOR: explicit "factory reset" flows (none currently).
+ * ❌ DO NOT USE FOR: logout, login, register, or any auth transition.
+ *    → Use auth.logout() for auth-only cleanup.
+ *
+ * Retained for future hard-reset features. Not called by any current code.
+ * See C5c.1 / G-STORAGE-01 in GAPS.md.
+ */
 export function clearBrowserData(withIndexedDB = false) {
     // حذف التخزين المحلي
     localStorage.clear();

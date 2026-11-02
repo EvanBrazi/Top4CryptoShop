@@ -1,7 +1,7 @@
 import { logout } from './auth.js';
 import { toggleDBTheme } from './theme.js';
 import { showToast } from './utils/toast.js';
-import { clearBrowserData, STORAGE_KEYS } from './utils/appUtils.js';
+import { STORAGE_KEYS } from './utils/appUtils.js';
 
 class UserManager {
   static #instance = null;
@@ -220,11 +220,9 @@ class UserManager {
 
       this.#user = null;
       showToast(result.message || 'تم تسجيل الخروج بنجاح', 'success');
-      clearBrowserData(false);
       setTimeout(() => window.location.replace(result.redirectTo || '/logout.html'), 100);
     } catch (err) {
       showToast(err.message || '❌ حدث خطأ أثناء تسجيل الخروج', 'error');
-      clearBrowserData(false);
     }
   }
 

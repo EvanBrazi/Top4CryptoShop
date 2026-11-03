@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>حسابي — Top4CryptoShop</title>
+  <link rel="stylesheet" href="/assets/css/themes.css">
+  <link rel="stylesheet" href="/assets/css/account.css">
+</head>
+<body class="account-page">
+  <div class="account-gate">
+    <p id="account-gate-state" role="status" aria-live="polite">
+      جارٍ التحقق من تسجيل الدخول…
+    </p>
+    <button id="account-gate-retry" class="account-button"
+      type="button" hidden>إعادة المحاولة</button>
+    <noscript>يرجى تفعيل JavaScript لاستخدام لوحة الحساب.</noscript>
+  </div>
+
+  <main id="account-shell" class="account-shell" hidden>
+    <header class="account-header">
+      <h1>حسابي</h1>
+      <p>مرحبًا <span id="account-username"></span></p>
+      <p>الرصيد: <output id="account-balance">—</output></p>
+      <button id="account-logout" class="account-button"
+        type="button">تسجيل الخروج</button>
+    </header>
+    <p id="account-message" class="account-message"
+      role="status" aria-live="polite"></p>
+
+    <nav class="account-nav" aria-label="أقسام الحساب">
+      <button id="account-tab-browse" class="account-button"
+        type="button" data-account-tab="browse"
+        aria-controls="account-panel-browse"
+        aria-pressed="true">تصفح المنتجات</button>
+      <button id="account-tab-orders" class="account-button"
+        type="button" data-account-tab="orders"
+        aria-controls="account-panel-orders"
+        aria-pressed="false">طلباتي</button>
+      <button id="account-tab-payments" class="account-button"
+        type="button" data-account-tab="payments"
+        aria-controls="account-panel-payments"
+        aria-pressed="false">دفعاتي</button>
+      <button id="account-tab-topup" class="account-button"
+        type="button" data-account-tab="topup"
+        aria-controls="account-panel-topup"
+        aria-pressed="false">إضافة الرصيد — قريبًا</button>
+      <button id="account-tab-settings" class="account-button"
+        type="button" data-account-tab="settings"
+        aria-controls="account-panel-settings"
+        aria-pressed="false">الإعدادات — قريبًا</button>
+    </nav>
+
+    <section id="account-panel-browse" class="account-panel"
+      aria-labelledby="account-tab-browse">
+      <h2>تصفح المنتجات</h2>
+      <div class="account-categories" aria-label="فئات المنتجات">
+        <button class="account-button" type="button"
+          data-account-category="apps">التطبيقات</button>
+        <button class="account-button" type="button"
+          data-account-category="games">الألعاب</button>
+        <button class="account-button" type="button"
+          data-account-category="cryptos">العملات الرقمية</button>
+        <button class="account-button" type="button"
+          data-account-category="balances">الأرصدة</button>
+      </div>
+      <p id="account-catalog-state" role="status" aria-live="polite">
+        اختر فئة لعرض المنتجات.
+      </p>
+      <button id="account-catalog-retry" class="account-button"
+        type="button" hidden>إعادة المحاولة</button>
+      <div id="account-products" class="account-grid"></div>
+    </section>
+
+    <section id="account-panel-orders" class="account-panel"
+      aria-labelledby="account-tab-orders" hidden>
+      <h2>طلباتي</h2>
+      <p id="account-orders-state" role="status" aria-live="polite"></p>
+      <button id="account-orders-retry" class="account-button"
+        type="button" hidden>إعادة المحاولة</button>
+      <div class="account-table-container">
+        <table class="account-table">
+          <thead><tr>
+            <th scope="col">رقم الطلب</th>
+            <th scope="col">المنتج</th>
+            <th scope="col">المبلغ</th>
+            <th scope="col">الحالة</th>
+            <th scope="col">التاريخ</th>
+          </tr></thead>
+          <tbody id="account-orders-body"></tbody>
+        </table>
+      </div>
+      <button id="account-orders-more" class="account-button"
+        type="button" hidden>تحميل المزيد</button>
+    </section>
+
+    <section id="account-panel-payments" class="account-panel"
+      aria-labelledby="account-tab-payments" hidden>
+      <h2>دفعاتي</h2>
+      <p id="account-payments-state" role="status" aria-live="polite"></p>
+      <button id="account-payments-retry" class="account-button"
+        type="button" hidden>إعادة المحاولة</button>
+      <div class="account-table-container">
+        <table class="account-table">
+          <thead><tr>
+            <th scope="col">رقم الدفعة</th>
+            <th scope="col">المبلغ المقدم</th>
+            <th scope="col">الحالة</th>
+            <th scope="col">التاريخ</th>
+          </tr></thead>
+          <tbody id="account-payments-body"></tbody>
+        </table>
+      </div>
+      <button id="account-payments-more" class="account-button"
+        type="button" hidden>تحميل المزيد</button>
+    </section>
+
+    <section id="account-panel-topup" class="account-panel"
+      aria-labelledby="account-tab-topup" hidden>
+      <h2>إضافة الرصيد</h2>
+      <p>قريبًا — Coming soon. إضافة الرصيد غير متاحة من هذه الصفحة بعد.</p>
+    </section>
+
+    <section id="account-panel-settings" class="account-panel"
+      aria-labelledby="account-tab-settings" hidden>
+      <h2>الإعدادات</h2>
+      <p>قريبًا — Coming soon. تعديل الملف الشخصي غير متاح بعد.</p>
+    </section>
+  </main>
+
+  <script type="module" src="/assets/js/account.js"></script>
+</body>
+</html>

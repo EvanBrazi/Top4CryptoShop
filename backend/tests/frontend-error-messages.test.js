@@ -255,7 +255,8 @@ describe('Actual frontend error map and integrations (48 cases)', () => {
     expect(failed.console.error).not.toHaveBeenCalled(); expect(failed.window.location.href).toBe('http://localhost/login.html');
   });
   test('successful login preserves top-level session ID, storage, toast and both role redirects', async () => {
-    for (const [role, target] of [['admin', '/homepage.html'], ['user', '/']]) {
+    // Non-admin redirect updated in C5e.1a to land on the dashboard, not the marketing page.
+    for (const [role, target] of [['admin', '/homepage.html'], ['user', '/account']]) {
       const receipt = { success: true, user: { id: `${role}-id`, role, sessionId: 'WRONG_NESTED' },
         token: 'token', sessionId: 'TOP_LEVEL_SESSION', csrfToken: 'a'.repeat(64) };
       env = environment('login.html', async url => String(url).endsWith('/csrf')

@@ -89,6 +89,9 @@ function createApplication({ poolProvider = getPool, authOptions = {}, avatarOpt
     protectedPage(path.join(staticPath, 'homepage.html')));
   app.get(['/admin', '/admin.html'], context.sessionMiddleware, context.auth.verifyToken, context.auth.checkAdmin,
     protectedPage(path.join(__dirname, '../protectedViews/admin.html')));
+  app.get('/account', context.sessionMiddleware, (req, res) => {
+    res.set('Cache-Control', 'no-store').sendFile(path.join(staticPath, 'account.html'));
+  });
   if (staticFiles) {
     for (const [route, name] of [['/', 'dashboard'], ['/dashboard', 'dashboard'], ['/register', 'register'], ['/login', 'login']]) app.get(route, page(path.join(staticPath, name + '.html')));
     app.use(express.static(path.join(__dirname, '../public')));

@@ -1,0 +1,90 @@
+.account-page {
+  margin: 0;
+  font-family: sans-serif;
+  color: var(--text-color, #2b2b2b);
+  background: var(--bg-color, #fdfdfd);
+}
+.account-shell,
+.account-gate {
+  max-width: 1100px;
+  margin: auto;
+  padding: var(--space-lg);
+}
+.account-shell[hidden],
+.account-gate[hidden],
+.account-panel[hidden],
+.account-button[hidden] {
+  display: none;
+}
+.account-header,
+.account-nav,
+.account-categories {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+.account-header h1 {
+  margin-inline-end: auto;
+}
+.account-button {
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--dialog-border, #ddd);
+  border-radius: var(--radius-md);
+  background: var(--card-bg, #fffaf2);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.account-button[aria-pressed="true"] {
+  font-weight: bold;
+  border-color: var(--navbar-color, #6e4c2f);
+}
+.account-button:focus-visible {
+  outline: 3px solid var(--navbar-color, #6e4c2f);
+  outline-offset: 3px;
+}
+.account-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.account-panel {
+  padding-block: var(--space-md);
+}
+.account-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-md);
+}
+.account-card {
+  padding: var(--space-md);
+  border: 1px solid var(--dialog-border, #ddd);
+  border-radius: var(--radius-md);
+  background: var(--card-bg, #fffaf2);
+}
+.account-card-name {
+  overflow-wrap: anywhere;
+}
+.account-card-price,
+.account-card-availability {
+  margin-block: var(--space-sm);
+}
+.account-table-container {
+  overflow-x: auto;
+  margin-bottom: var(--space-md);
+}
+.account-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.account-table th,
+.account-table td {
+  padding: var(--space-sm);
+  border-bottom: 1px solid var(--dialog-border, #ddd);
+  text-align: start;
+  overflow-wrap: anywhere;
+}
+.account-message[data-kind="error"] {
+  color: var(--error-color, #dc3545);
+}

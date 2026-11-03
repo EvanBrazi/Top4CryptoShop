@@ -7,7 +7,7 @@ import { bindPasswordToggles } from './utils/formUX.js';
 function loginRedirectFor(user) {
     if (user.role === 'admin') return '/homepage.html';
     // TODO(C5): Replace with user dashboard when built
-    return '/';
+    return '/account';
 }
 // ✅ عناصر الواجهة
 const spinner = document.getElementById('spinner');

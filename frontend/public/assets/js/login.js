@@ -5,7 +5,7 @@ import { getErrorMessage, getErrorField } from './utils/errorMessages.js';
 import { bindPasswordToggles } from './utils/formUX.js';
 
 function loginRedirectFor(user) {
-    if (user.role === 'admin') return '/homepage.html';
+    if (user.role === 'admin') return '/admin'; // Admin redirect updated in C5e.2a to land on the new admin console.
     // TODO(C5): Replace with user dashboard when built
     return '/account';
 }

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Console — Top4CryptoShop</title>
+  <link rel="stylesheet" href="/assets/css/themes.css">
+  <link rel="stylesheet" href="/assets/css/admin.css">
+</head>
+<body class="admin-page day-theme">
+  <div class="admin-gate">
+    <p id="admin-gate-state" role="status" aria-live="polite">جارٍ التحقق من صلاحيات الإدارة…</p>
+    <button id="admin-gate-retry" class="admin-button" type="button" hidden>إعادة المحاولة</button>
+    <noscript>يرجى تفعيل JavaScript لاستخدام لوحة الإدارة.</noscript>
+  </div>
+  <main id="admin-shell" class="admin-shell" hidden>
+    <header class="admin-header">
+      <h1>Admin Console</h1>
+      <p>مرحبًا <span id="admin-username"></span></p>
+      <span id="admin-role" class="admin-badge"></span>
+      <button id="admin-logout" class="admin-button" type="button">تسجيل الخروج</button>
+    </header>
+    <p id="admin-info" class="admin-info" lang="en" dir="ltr">
+      Decision UI coming in C5e.2b. For now, use browser Console with copied IDs.
+    </p>
+    <p id="admin-message" class="admin-message" role="status" aria-live="polite"></p>
+    <div id="admin-copy-box" class="admin-copy-box" hidden>
+      <label for="admin-copy-fallback">المعرف للنسخ اليدوي</label>
+      <input id="admin-copy-fallback" class="admin-copy-input admin-ltr" type="text"
+        readonly hidden aria-describedby="admin-message">
+    </div>
+    <nav class="admin-nav" aria-label="أقسام الإدارة">
+      <button id="admin-tab-orders" class="admin-button" type="button" data-admin-tab="orders"
+        aria-controls="admin-panel-orders" aria-pressed="true">الطلبات المعلقة</button>
+      <button id="admin-tab-payments" class="admin-button" type="button" data-admin-tab="payments"
+        aria-controls="admin-panel-payments" aria-pressed="false">المدفوعات المعلقة</button>
+      <button id="admin-tab-users" class="admin-button" type="button" data-admin-tab="users"
+        aria-controls="admin-panel-users" aria-pressed="false">المستخدمون</button>
+    </nav>
+    <section id="admin-panel-orders" class="admin-panel" aria-labelledby="admin-tab-orders">
+      <h2>الطلبات المعلقة</h2>
+      <p id="admin-orders-state" role="status" aria-live="polite"></p>
+      <button id="admin-orders-retry" class="admin-button" type="button" hidden>إعادة المحاولة</button>
+      <div class="admin-table-container">
+        <table class="admin-table">
+          <caption>قائمة الطلبات المعلقة — عرض فقط</caption>
+          <thead><tr>
+            <th scope="col">رقم الطلب</th>
+            <th scope="col">معرف المستخدم</th>
+            <th scope="col">المنتج</th>
+            <th scope="col">المبلغ</th>
+            <th scope="col">الحالة</th>
+            <th scope="col">التاريخ</th>
+            <th scope="col">نسخ المعرف</th>
+          </tr></thead>
+          <tbody id="admin-orders-body"></tbody>
+        </table>
+      </div>
+      <button id="admin-orders-more" class="admin-button" type="button" hidden>تحميل المزيد</button>
+    </section>
+    <section id="admin-panel-payments" class="admin-panel" aria-labelledby="admin-tab-payments" hidden>
+      <h2>المدفوعات المعلقة</h2>
+      <p id="admin-payments-state" role="status" aria-live="polite"></p>
+      <button id="admin-payments-retry" class="admin-button" type="button" hidden>إعادة المحاولة</button>
+      <div class="admin-table-container">
+        <table class="admin-table">
+          <caption>قائمة المدفوعات المعلقة — عرض فقط</caption>
+          <thead><tr>
+            <th scope="col">رقم الدفعة</th>
+            <th scope="col">معرف المستخدم</th>
+            <th scope="col">المبلغ المقدم</th>
+            <th scope="col">طريقة الدفع</th>
+            <th scope="col">التاريخ</th>
+            <th scope="col">نسخ المعرف</th>
+          </tr></thead>
+          <tbody id="admin-payments-body"></tbody>
+        </table>
+      </div>
+      <button id="admin-payments-more" class="admin-button" type="button" hidden>تحميل المزيد</button>
+    </section>
+    <section id="admin-panel-users" class="admin-panel" aria-labelledby="admin-tab-users" hidden>
+      <h2>المستخدمون</h2>
+      <p id="admin-users-state" role="status" aria-live="polite"></p>
+      <button id="admin-users-retry" class="admin-button" type="button" hidden>إعادة المحاولة</button>
+      <div class="admin-table-container">
+        <table class="admin-table">
+          <caption>قائمة المستخدمين — عرض فقط</caption>
+          <thead><tr>
+            <th scope="col">معرف المستخدم</th>
+            <th scope="col">اسم المستخدم</th>
+            <th scope="col">البريد الإلكتروني</th>
+            <th scope="col">الدور</th>
+            <th scope="col">حالة الحساب</th>
+            <th scope="col">الرصيد</th>
+            <th scope="col">تاريخ الإنشاء</th>
+            <th scope="col">نسخ المعرف</th>
+          </tr></thead>
+          <tbody id="admin-users-body"></tbody>
+        </table>
+      </div>
+      <button id="admin-users-more" class="admin-button" type="button" hidden>تحميل المزيد</button>
+    </section>
+  </main>
+  <script type="module" src="/assets/js/admin.js"></script>
+</body>
+</html>

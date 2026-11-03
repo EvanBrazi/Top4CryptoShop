@@ -1,413 +1,170 @@
-/**
- * @file admin-panel.js
- * @description لوحة تحكم الأدمن: إدارة المستخدمين والدفعات وتحديث الرصيد والحالة
- * @version 2.1.0
- * @author Evan Brazi
- * @lastModified 2025-08-29
- */
-import { STORAGE_KEYS } from "./utils/appUtils.js";
-import { initAdminOrders } from './utils/adminOrders.js';
+import { fetchCurrentAdmin, fetchOrdersPage, fetchPaymentsPage, fetchUsersPage, normalizeOrder, normalizePayment, normalizeUser } from './utils/adminData.js';
+import { logout } from './auth.js';
 
-function initAdminWebSocket() {
+const byId = id => document.getElementById(`admin-${id}`);
+const tabs = [...document.querySelectorAll('[data-admin-tab]')];
+const panels = [...document.querySelectorAll('.admin-panel')];
+const lists = {
+  orders: { fetchPage: fetchOrdersPage, normalize: normalizeOrder, empty: 'لا توجد طلبات معلقة', copy: 'نسخ رقم الطلب' },
+  payments: { fetchPage: fetchPaymentsPage, normalize: normalizePayment, empty: 'لا توجد مدفوعات معلقة', copy: 'نسخ رقم الدفعة' },
+  users: { fetchPage: fetchUsersPage, normalize: normalizeUser, empty: 'لا يوجد مستخدمون', copy: 'نسخ معرف المستخدم' }
+};
+for (const state of Object.values(lists)) Object.assign(state, { loaded: false, loading: false, nextBefore: null });
+let initializing = false, blocked = false;
+
+function deny(error) {
+  if (!['UNAUTHENTICATED', 'FORBIDDEN'].includes(error?.code)) return false;
+  blocked = true;
+  byId('shell').hidden = true;
+  byId('gate-retry').hidden = true;
+  document.querySelector('.admin-gate').hidden = false;
+  byId('gate-state').textContent = 'غير مسموح. هذه الصفحة مخصصة للإدارة فقط.';
+  byId('username').textContent = '';
+  byId('role').textContent = '';
+  byId('copy-box').hidden = true;
+  byId('copy-fallback').value = '';
+  byId('message').textContent = '';
+  for (const name of Object.keys(lists)) byId(`${name}-body`).textContent = '';
+  if (error.code === 'UNAUTHENTICATED') window.location.replace('/login.html');
+  return true;
+}
+function errorMessage(error) {
+  return error?.code === 'CONTRACT_ERROR'
+    ? 'خطأ في عقد الاستجابة. يرجى إعادة المحاولة.'
+    : 'تعذر تحميل البيانات. يرجى إعادة المحاولة.';
+}
+function element(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+function selectTab(name) {
+  if (blocked) return;
+  for (const tab of tabs) tab.setAttribute('aria-pressed', String(tab.dataset.adminTab === name));
+  for (const panel of panels) panel.hidden = panel.id !== `admin-panel-${name}`;
+  const state = lists[name];
+  if (state && !state.loaded && !state.loading) void loadPage(name, true);
+}
+
+async function initialize() {
+  if (initializing || blocked) return;
+  initializing = true;
+  byId('gate-retry').hidden = true;
+  byId('gate-state').textContent = 'جارٍ التحقق من صلاحيات الإدارة…';
   try {
-    // ✅ تهيئة WebSocket لاستقبال إشعارات لحظية من السيرفر
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}`;
-    const adminSocket = new WebSocket(wsUrl);
-    // Financial resources are loaded exclusively through authenticated HTTP.
-    adminSocket.onopen = () => {
-      const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
-      if (userId) {
-        adminSocket.send(JSON.stringify({ type: 'auth', role: 'admin', userId }));
-        updateConnectionStatus(true);
-      }
-    };
-    adminSocket.onclose = () => {
-      updateConnectionStatus(false);
-      setTimeout(initAdminWebSocket, 5000);
-    };
-    adminSocket.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      updateConnectionStatus(false);
-    };
-    adminSocket.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (/payment|order/i.test(data.type || '') || data.orderId || data.paymentId) return;
-        if (data.type === 'backupStatus') {
-          // ✅ إشعار النسخ الاحتياطي
-          showNotification(data.message, data.status);
-          renderBackupNotification(data); // يمكنك إنشاء هذه الدالة لعرضه في جدول أو سجل
-        } else {
-          console.warn('⚠️ إشعار غير معروف من WebSocket!');
-        }
-      } catch (error) {
-        console.error('❌ خطأ أثناء معالجة رسالة WebSocket:', error);
-      }
-    };
+    const account = await fetchCurrentAdmin();
+    if (blocked) return;
+    if (account?.role !== 'admin') throw Object.assign(new Error('FORBIDDEN'), { code: 'FORBIDDEN' });
+    byId('username').textContent = account.username;
+    byId('role').textContent = 'Admin';
+    document.querySelector('.admin-gate').hidden = true;
+    byId('shell').hidden = false;
+    selectTab('orders');
   } catch (error) {
-    console.error('WebSocket initial failed!', error);
-  }
+    if (deny(error)) return;
+    byId('gate-state').textContent = errorMessage(error);
+    byId('gate-retry').hidden = false;
+  } finally { initializing = false; }
 }
 
-/**
- * ✅ عرض حالة الاتصال في شريط الحالة
- */
-function updateConnectionStatus(connected) {
-  const statusBar = document.getElementById('connectionStatus');
-  if (statusBar) {
-    statusBar.textContent = connected ? '🟢 متصل' : '🔴 غير متصل';
-    statusBar.style.color = connected ? 'green' : 'red';
-  }
-}
-
-/**
- * ✅ عرض إشعار عام في أعلى الصفحة
- */
-function showNotification(message, type = 'success') {
-  const bar = document.getElementById('globalNotification');
-  bar.textContent = message;
-  bar.style.backgroundColor = type === 'error' ? '#e74c3c' : '#27ae60';
-  bar.style.display = 'block';
-  setTimeout(() => bar.style.display = 'none', 3000);
-}
-
-/**
- * ✅ تحميل المستخدمين من السيرفر وعرضهم في الجدول
- */
-async function loadUsers() {
-  const tbody = document.querySelector('#usersTable tbody');
-  tbody.innerHTML = '<tr><td colspan="10">⏳ جاري تحميل المستخدمين...</td></tr>';
-
+async function copyId(id, button) {
+  if (blocked || button.disabled) return;
+  button.disabled = true;
+  byId('copy-box').hidden = true;
+  byId('copy-fallback').hidden = true;
+  byId('message').textContent = '';
+  byId('message').dataset.kind = '';
   try {
-    const res = await fetch('/api/users');
-    if (!res.ok) throw new Error('فشل في جلب المستخدمين');
-
-    const users = await res.json(); // ← مباشرة بدون json.users
-
-    tbody.innerHTML = ''; // تفريغ الجدول بعد التحميل
-
-    users.forEach(user => {
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${user._id}</td>
-        <td>${user.username}</td>
-        <td>${user.phone || '-'}</td>
-        <td>${parseFloat(user.balance).toFixed(2)}</td>
-        <td>${user.accountStatus === 'active' ? '🟢 نشط' : '🔴 محظور'}</td>
-        <td>${user.loginAttempts || 0}</td>
-        <td>${user.lastLogin ? new Date(user.lastLogin).toLocaleString('ar-EG') : '-'}</td>
-        <td><button class="edit-btn" data-id="${user._id}">✏️</button></td>
-        <td><button class="delete-btn" data-id="${user._id}">🗑️</button></td>
-        <td><button class="unban-btn" data-id="${user._id}">🔓</button></td>
-      `;
-      tbody.appendChild(row);
-    });
-  } catch (err) {
-    tbody.innerHTML = '<tr><td colspan="10">❌ فشل تحميل المستخدمين</td></tr>';
-    showNotification(err.message, 'error');
+    await navigator.clipboard.writeText(id);
+    if (!blocked) byId('message').textContent = '✓ Copied';
+  } catch {
+    if (blocked) return;
+    const input = byId('copy-fallback');
+    input.value = id;
+    byId('copy-box').hidden = false;
+    input.hidden = false;
+    input.focus();
+    input.select();
+    byId('message').textContent = 'Press Ctrl+C to copy';
+  } finally { button.disabled = false; }
+}
+function appendRows(name, items) {
+  for (const item of items) {
+    const row = lists[name].normalize(item), tr = element('tr');
+    row.cells.forEach((value, index) => tr.appendChild(element('td', row.ltr.includes(index) ? 'admin-ltr' : '', value)));
+    const cell = element('td'), copy = element('button', 'admin-button', lists[name].copy);
+    copy.type = 'button';
+    copy.dataset.adminCopy = row.id;
+    copy.setAttribute('aria-label', `${lists[name].copy}: ${row.id}`);
+    copy.addEventListener('click', () => void copyId(row.id, copy));
+    cell.appendChild(copy);
+    tr.appendChild(cell);
+    byId(`${name}-body`).appendChild(tr);
   }
 }
-
-/**
- * ✅ تحميل الدفعات المعلقة من السيرفر وعرضها في تبويب الأدمن
- */
-async function loadPendingPayments() {
-  const container = document.getElementById('admin-notifications');
-  container.innerHTML = '';
-
+async function loadPage(name, reset = false) {
+  const state = lists[name];
+  if (blocked || state.loading || (!reset && state.nextBefore === null)) return;
+  state.loading = true;
+  const more = byId(`${name}-more`), retry = byId(`${name}-retry`);
+  more.disabled = true;
+  retry.disabled = true;
+  retry.hidden = true;
+  byId(`${name}-state`).textContent = 'جارٍ تحميل البيانات…';
+  if (reset) {
+    state.loaded = false;
+    state.nextBefore = null;
+    more.hidden = true;
+    byId(`${name}-body`).textContent = '';
+  }
   try {
-    const res = await fetch('/api/payments/admin');
-    const payments = await res.json();
-
-    payments.forEach(data => renderPaymentNotification(data));
-  } catch (err) {
-    showNotification('فشل تحميل الدفعات المعلقة', 'error');
+    const page = await state.fetchPage({ before: reset ? null : state.nextBefore });
+    if (blocked) return;
+    appendRows(name, page.items);
+    state.loaded = true;
+    state.nextBefore = page.nextBefore;
+    byId(`${name}-state`).textContent = byId(`${name}-body`).children.length ? '' : state.empty;
+    more.hidden = page.nextBefore === null;
+  } catch (error) {
+    if (deny(error) || blocked) return;
+    byId(`${name}-state`).textContent = errorMessage(error);
+    retry.hidden = false;
+    more.hidden = true;
+  } finally {
+    state.loading = false;
+    more.disabled = false;
+    retry.disabled = false;
   }
 }
 
-/**
- * ✅ عرض دفعة جديدة في واجهة الأدمن
- */
-function renderPaymentNotification(data) {
-  const container = document.getElementById('admin-notifications'); // ✅ بدل admin-notes
-  if (container.querySelector(`[data-id="${data.paymentId}"]`)) return;
-
-  const box = document.createElement('div');
-  box.className = 'note-box';
-  box.innerHTML = `
-    <h4>دفعة جديدة من المستخدم ${data.userId}</h4>
-    <p><strong>الطريقة:</strong> ${data.method}</p>
-    <p><strong>المبلغ:</strong> ${data.amount} 💵</p>
-    <p><strong>المبلغ:</strong> ${data.amountInUSD} 💵</p>
-    ${data.note ? `<p><strong>ملاحظة:</strong> ${data.note}</p>` : ''}
-    <img src="${data.receiptImage}" style="max-width:100%; margin-top:10px;" />
-    <div class="payment-actions">
-      <button class="accept-btn" data-id="${data.paymentId}">✅ قبول</button>
-      <button class="reject-btn" data-id="${data.paymentId}">❌ رفض</button>
-    </div>
-  `;
-  if (data.status === 'accepted' || data.status === 'rejected') {
-    showNotification(`✅ تم ${data.status === 'accepted' ? 'قبول' : 'رفض'} الدفعة`);
-    box.closest('.note-box').remove(); // ← حذف العنصر من الواجهة
-  }
-  container.appendChild(box);
+for (const tab of tabs) tab.addEventListener('click', () => selectTab(tab.dataset.adminTab));
+for (const name of Object.keys(lists)) {
+  byId(`${name}-more`).addEventListener('click', () => void loadPage(name));
+  byId(`${name}-retry`).addEventListener('click', () => void loadPage(name, true));
 }
-
-/**
- * عرض إشعار طلب جديد في واجهة الأدمن
- * @param {Object} data - بيانات الطلب
- * @param {string} data.orderId - معرف الطلب
- * @param {string} data.userId - معرف المستخدم
- * @param {string} data.playerId - معرف اللاعب
- * @param {number} data.amount - المبلغ
- * @param {string} data.method - طريقة الدفع
- * @param {string} data.service - الخدمة المطلوبة
- * @param {string} data.status - حالة الطلب (اختياري)
- * @param {string} data.createdAt - تاريخ الإنشاء (اختياري)
- */
-// Order queue, private fulfillment rendering, and persisted decisions live in utils/adminOrders.js.
-
-/**
- * 
- * @param {*} data 
- * @returns 
- */
-function renderBackupNotification(data) {
-  const container = document.getElementById('backupNotifications');
-  if (!container) return;
-
-  const entry = document.createElement('div');
-  entry.className = 'backup-entry';
-  entry.innerHTML = `
-    <strong>${data.source}</strong> - 
-    <span style="color:${data.status === 'success' ? 'green' : 'red'}">${data.message}</span> 
-    <small>${new Date(data.timestamp).toLocaleString()}</small>
-  `;
-  container.prepend(entry);
-}
-
-/**
- * 🔄 معالجة قبول أو رفض الطلب من لوحة التحكم
- * @param {string} orderId - معرف الطلب
- * @param {'accept'|'reject'} action - الإجراء المطلوب
- * @returns {Promise<void>}
- */
-// No legacy accept/reject dispatch: modern decisions require persisted keys and reasons.
-
-/**
- * ✅ تعديل رصيد مستخدم معين
- */
-document.getElementById('updateBalanceBtn').addEventListener('click', async () => {
-  const userId = document.getElementById('userId').value.trim();
-  const newBalance = document.getElementById('newBalance').value.trim();
-  const result = document.getElementById('balanceResult');
-
-  if (!userId || !newBalance) {
-    showNotification('يرجى إدخال جميع الحقول', 'error');
-    return;
-  }
-
+byId('gate-retry').addEventListener('click', () => void initialize());
+byId('logout').addEventListener('click', async () => {
+  const button = byId('logout');
+  if (blocked || button.disabled) return;
+  button.disabled = true;
+  byId('message').textContent = '';
   try {
-    const res = await fetch(`/api/users/${userId}/balance`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ balance: parseFloat(newBalance) })
-    });
-
-    if (res.ok) {
-      result.textContent = '✅ تم تحديث الرصيد بنجاح';
-      showNotification('تم تحديث الرصيد');
-      loadUsers();
-    } else {
-      throw new Error('فشل التحديث');
+    const result = await logout();
+    if (result?.success) {
+      blocked = true;
+      window.location.replace('/login.html');
+      return;
     }
-  } catch (err) {
-    result.textContent = '❌ حدث خطأ أثناء التحديث';
-    showNotification(err.message, 'error');
-  }
-});
-
-/**
- * ✅ تغيير حالة مستخدم معين
- */
-document.getElementById('updateStatusBtn').addEventListener('click', async () => {
-  const userId = document.getElementById('statusUserId').value.trim();
-  const newStatus = document.getElementById('newStatus').value;
-  const result = document.getElementById('statusResult');
-
-  if (!userId) {
-    showNotification('يرجى إدخال معرف المستخدم', 'error');
-    return;
-  }
-
-  try {
-    const res = await fetch(`/api/users/${userId}/status`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: newStatus })
-    });
-
-    if (res.ok) {
-      result.textContent = '✅ تم تغيير الحالة بنجاح';
-      showNotification('تم تغيير حالة المستخدم');
-      loadUsers();
-    } else {
-      throw new Error('فشل تغيير الحالة');
+    if (result?.status === 401 || result?.code === 'UNAUTHENTICATED') {
+      deny({ code: 'UNAUTHENTICATED' });
+      return;
     }
-  } catch (err) {
-    result.textContent = '❌ حدث خطأ أثناء تغيير الحالة';
-    showNotification(err.message, 'error');
-  }
+    throw new Error('Logout failed');
+  } catch (error) {
+    if (deny(error)) return;
+    byId('message').dataset.kind = 'error';
+    byId('message').textContent = 'تعذر تسجيل الخروج. يرجى إعادة المحاولة.';
+  } finally { button.disabled = false; }
 });
-
-/**
- * ✅ حذف مستخدم
- */
-async function deleteUser(id) {
-  if (!confirm('هل أنت متأكد من حذف هذا المستخدم؟')) return;
-
-  try {
-    const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
-    if (res.ok) {
-      showNotification('تم حذف المستخدم');
-      loadUsers();
-    } else {
-      throw new Error('فشل الحذف');
-    }
-  } catch (err) {
-    showNotification(err.message, 'error');
-  }
-}
-
-/**
- * ✅ فك الحظر عن مستخدم
- */
-async function unbanUser(id) {
-  try {
-    const res = await fetch(`/api/users/${id}/unban`, { method: 'POST' });
-    if (res.ok) {
-      showNotification('تم فك الحظر');
-      loadUsers();
-    } else {
-      throw new Error('فشل فك الحظر');
-    }
-  } catch (err) {
-    showNotification(err.message, 'error');
-  }
-}
-
-/**
- * ✅ ربط الأحداث الديناميكية مثل قبول ورفض الدفعات وحذف المستخدم
- */
-document.addEventListener('click', (e) => {
-  const target = e.target;
-
-  // ✅ تحديد العنصر الذي يحتوي على الزر
-  const noteBox = target.closest('.note-box');
-
-  if (target.classList.contains('accept-btn')) {
-    const paymentId = target.dataset.id;
-
-    // ✅ منع التفاعل المكرر
-    target.disabled = true;
-
-    fetch(`/api/payments/${paymentId}/accept`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' }
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data.status === 'accepted') {
-          showNotification('✅ تم قبول الدفعة');
-        } else {
-          showNotification('⚠️ لم يتم قبول الدفعة');
-        }
-      })
-      .catch(() => showNotification('❌ فشل في قبول الدفعة', 'error'))
-      .finally(() => {
-        if (noteBox) noteBox.remove(); // ✅ إزالة العنصر من الواجهة
-      });
-  }
-
-  if (target.classList.contains('reject-btn')) {
-    const paymentId = target.dataset.id;
-
-    // ✅ منع التفاعل المكرر
-    target.disabled = true;
-
-    fetch(`/api/payments/${paymentId}/reject`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' }
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data.status === 'rejected') {
-          showNotification('❌ تم رفض الدفعة');
-        } else {
-          showNotification('⚠️ لم يتم رفض الدفعة');
-        }
-      })
-      .catch(() => showNotification('❌ فشل في رفض الدفعة', 'error'))
-      .finally(() => {
-        if (noteBox) noteBox.remove(); // ✅ إزالة العنصر من الواجهة
-      });
-  }
-
-  if (target.classList.contains('delete-btn')) {
-    deleteUser(target.dataset.id);
-  }
-
-  if (target.classList.contains('unban-btn')) {
-    unbanUser(target.dataset.id);
-  }
-
-  if (target.classList.contains('edit-btn')) {
-    const userId = target.dataset.id;
-    showNotification(`🔧 تعديل المستخدم ${userId}`);
-    // يمكنك لاحقًا فتح نافذة تعديل أو تعبئة نموذج
-  }
-});
-
-function sendTestNotification() {
-  const type = document.getElementById('notification-type').value;
-  const userId = document.getElementById('target-user-id').value;
-
-  const payload = {
-    status: type.includes('Accepted') ? 'accepted' : 'rejected',
-    amount: 100,
-    service: 'اختبار',
-    paymentId: 'test-pay-id',
-    orderId: 'test-order-id'
-  };
-
-  fetch('/dev/simulate-notification', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      type,
-      payload,
-      targetRole: 'user',
-      targetUserId: userId
-    })
-  })
-    .then(res => res.json())
-    .then(data => {
-      alert(data.message);
-    })
-    .catch(err => {
-      alert('❌ فشل إرسال الإشعار التجريبي');
-      console.error(err);
-    });
-}
-
-/**
- * ✅ بدء التهيئة عند تحميل الصفحة
- */
-window.addEventListener('DOMContentLoaded', () => {
-  initAdminWebSocket();
-  loadUsers();              // تحميل المستخدمين
-  loadPendingPayments();    // تحميل الدفعات المعلقة
-  initAdminOrders();         // Authenticated HTTP queue; no financial socket dispatch.
-  document.getElementById('test-button').addEventListener('click', sendTestNotification);
-});
+void initialize();

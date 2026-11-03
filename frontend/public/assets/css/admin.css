@@ -1,141 +1,90 @@
-body {
-  font-family: 'Segoe UI', sans-serif;
-  background-color: #f0f2f5;
+.admin-page {
   margin: 0;
-  padding: 20px;
-  direction: rtl;
+  font-family: sans-serif;
+  color: var(--text-color, #2b2b2b);
+  background: var(--bg-color, #fdfdfd);
 }
-
-header h1 {
-  text-align: center;
-  color: #2c3e50;
-  margin-bottom: 10px;
+.admin-shell,
+.admin-gate {
+  max-width: 1200px;
+  margin: auto;
+  padding: var(--space-lg);
 }
-
-.notification-bar {
-  background-color: #27ae60;
-  color: white;
-  padding: 10px;
-  text-align: center;
+.admin-page [hidden] {
   display: none;
-  border-radius: 6px;
-  margin-bottom: 20px;
 }
-
-.card {
-  background-color: #fff;
-  padding: 20px;
-  margin-bottom: 30px;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+.admin-header,
+.admin-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
 }
-
-label {
-  display: block;
-  margin-top: 10px;
-  font-weight: bold;
-  color: #34495e;
+.admin-header h1 {
+  margin-inline-end: auto;
 }
-
-input, select {
-  padding: 8px;
-  margin: 5px 0;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  width: 100%;
-  max-width: 300px;
-}
-
-button {
-  padding: 10px 16px;
-  background-color: #3498db;
-  color: white;
-  border: none;
-  border-radius: 4px;
+.admin-button {
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--dialog-border, #ddd);
+  border-radius: var(--radius-md);
+  background: var(--card-bg, #fffaf2);
+  color: inherit;
+  font: inherit;
   cursor: pointer;
-  margin-top: 10px;
 }
-
-button:hover {
-  background-color: #2980b9;
+.admin-button[aria-pressed="true"] {
+  font-weight: bold;
+  border-color: var(--navbar-color, #6e4c2f);
 }
-
-.status-message {
-  margin-top: 10px;
-  font-size: 0.9rem;
-  color: green;
+.admin-button:focus-visible,
+.admin-copy-input:focus-visible {
+  outline: 3px solid var(--navbar-color, #6e4c2f);
+  outline-offset: 3px;
 }
-
-table {
+.admin-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.admin-badge,
+.admin-info {
+  padding: var(--space-sm);
+  border: 1px solid var(--dialog-border, #ddd);
+  border-radius: var(--radius-md);
+  background: var(--card-bg, #fffaf2);
+}
+.admin-panel {
+  padding-block: var(--space-md);
+}
+.admin-table-container {
+  overflow-x: auto;
+  margin-bottom: var(--space-md);
+}
+.admin-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 10px;
 }
-
-th, td {
-  padding: 10px;
-  border-bottom: 1px solid #ddd;
-  text-align: center;
+.admin-table th,
+.admin-table td,
+.admin-table caption {
+  padding: var(--space-sm);
+  text-align: start;
+  overflow-wrap: anywhere;
 }
-
-th {
-  background-color: #ecf0f1;
-  font-weight: bold;
+.admin-table th,
+.admin-table td {
+  border-bottom: 1px solid var(--dialog-border, #ddd);
 }
-
-img {
-  width: 32px;
-  height: 32px;
-  border-radius: 4px;
+.admin-ltr {
+  direction: ltr;
+  unicode-bidi: isolate;
 }
-
-@media (max-width: 768px) {
-  input, select, button {
-    width: 100%;
-  }
-
-  table, thead, tbody, th, td, tr {
-    display: block;
-    width: 100%;
-  }
-
-  th {
-    background-color: transparent;
-    font-weight: bold;
-    text-align: right;
-  }
-
-  td {
-    border: none;
-    padding: 8px;
-    text-align: right;
-  }
+.admin-copy-input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: var(--space-sm);
+  margin-block: var(--space-sm);
 }
-
-
-.order-box {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border: 1px solid #dee2e6;
-  border-radius: 10px;
-  padding: 15px;
-  margin-bottom: 15px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-  opacity: 0;
-  transform: translateY(10px);
-}
-
-.order-box.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.order-box.accepted {
-  border-left: 4px solid #28a745;
-  background: linear-gradient(135deg, #f0fff4 0%, #e6f7e9 100%);
-}
-
-.order-box.rejected {
-  border-left: 4px solid #dc3545;
-  background: linear-gradient(135deg, #fff5f5 0%, #ffe6e6 100%);
+.admin-message[data-kind="error"] {
+  color: var(--error-color, #dc3545);
 }

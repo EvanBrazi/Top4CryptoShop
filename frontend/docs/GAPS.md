@@ -363,3 +363,20 @@ After C3 removed Mongoose features, /homepage.html (admin) has multiple broken f
 
 These are UI cleanup work, not C5c.2b.1 regressions.
 Target: C5e (admin dashboard + user dashboard build-out).
+
+## G-UI-ADMIN-NAV-01 (P3 → C5e.3+)
+Direct /admin navigation while unauthenticated returns HTTP 401.
+Direct /admin navigation while non-admin returns HTTP 403.
+Server-authoritative by design. Future: friendly redirect to /login.html.
+Not in MVP scope.
+
+## G-UI-ADMIN-LEGACY-01 (P3 → C6)
+After C5e.2a, these files are no longer used by the canonical password-login admin path:
+- backend/protectedViews/admin.html (was /admin target; replaced by frontend/public/admin.html)
+- frontend/public/assets/js/admin.js and admin.css (replaced by C5e.2a content)
+- frontend/public/homepage.html and its modules (homepage.js, appmanager.js, usermanager.js, tabs/*) remain reachable through the still-guarded /homepage and /homepage.html routes.
+
+Legacy OAuth destinations in backend/services/auth/httpRouter.js:23,36-38 continue to
+reference legacy paths and remain outside this MVP.
+
+C6 will decide: repair, replace, or redirect /homepage to /admin.

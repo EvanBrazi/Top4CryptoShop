@@ -380,3 +380,16 @@ Legacy OAuth destinations in backend/services/auth/httpRouter.js:23,36-38 contin
 reference legacy paths and remain outside this MVP.
 
 C6 will decide: repair, replace, or redirect /homepage to /admin.
+
+## G-PROXY-01 (IMPLEMENTED — production verification pending)
+express-rate-limit logged ERR_ERL_UNEXPECTED_X_FORWARDED_FOR behind
+Render/Cloudflare because Express trust proxy was false. Rate limiting was
+effectively global.
+Fix: TRUST_PROXY env var (numeric hop count 1-9), fail-closed parsing
+(rejects "true", "0", "10+", non-numeric). Explicit trustProxy option
+preserves precedence for tests. Default when unset = false.
+Production verification pending:
+- Correct req.ip on both custom domain and Render hostname
+- Rejection of client-spoofed X-Forwarded-For
+- Zero ERR_ERL_UNEXPECTED_X_FORWARDED_FOR in Render logs
+G-PROXY-01 will be marked RESOLVED only after all three are confirmed.

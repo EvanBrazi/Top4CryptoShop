@@ -28,6 +28,7 @@ done
 if [ "$READY" != 1 ]; then podman logs "$NAME"; exit 1; fi
 # The strict runner verifies TLS against this CA and applies only to this URL.
 node backend/db/migrate.js --apply
+unset TRUST_PROXY
 if [ "$#" -eq 0 ]; then
   npm test -- --runInBand
 else

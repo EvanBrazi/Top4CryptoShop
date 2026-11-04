@@ -7,3 +7,4 @@ package-lock.json
 config/gdrive-key.json
 scripts/
 .vscode/
+seed-production-admin.js

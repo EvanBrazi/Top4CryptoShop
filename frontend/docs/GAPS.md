@@ -381,15 +381,38 @@ reference legacy paths and remain outside this MVP.
 
 C6 will decide: repair, replace, or redirect /homepage to /admin.
 
-## G-PROXY-01 (IMPLEMENTED — production verification pending)
+## G-PROXY-01 (RESOLVED — configuration/log warning; coarse buckets accepted)
 express-rate-limit logged ERR_ERL_UNEXPECTED_X_FORWARDED_FOR behind
-Render/Cloudflare because Express trust proxy was false. Rate limiting was
-effectively global.
+Render/Cloudflare because Express trust proxy was false, sharing proxy-IP buckets.
 Fix: TRUST_PROXY env var (numeric hop count 1-9), fail-closed parsing
 (rejects "true", "0", "10+", non-numeric). Explicit trustProxy option
 preserves precedence for tests. Default when unset = false.
-Production verification pending:
-- Correct req.ip on both custom domain and Render hostname
-- Rejection of client-spoofed X-Forwarded-For
-- Zero ERR_ERL_UNEXPECTED_X_FORWARDED_FOR in Render logs
-G-PROXY-01 will be marked RESOLVED only after all three are confirmed.
+Production evidence reported by the user on 2026-11-03:
+- Render deployed commit 1b36b56 from main; TRUST_PROXY=2 remains in Render env.
+- Custom-domain /__debug/ip returned HTTP 200.
+- req.ip was 172.71.151.112 (Cloudflare edge), not the real client 46.213.209.142.
+- XFF was "46.213.209.142, 172.71.151.112, 10.196.147.54"; socket peer was 127.0.0.1.
+- Render logs showed zero ERR_ERL_UNEXPECTED_X_FORWARDED_FOR after deployment.
+Acceptance: proxy configuration/log-warning fix is resolved; shared Cloudflare-edge
+buckets are accepted for MVP. This is not verified real-client-IP rate limiting or
+a guarantee against spoofing across all ingress paths; remaining work is G-PROXY-02.
+The v1.5.1 cleanup removes the temporary /__debug/ip route.
+
+## G-PROXY-02 (P2 → C5e.3 or C6)
+Real-client-IP rate limiting and verified proxy/header trust remain open.
+With TRUST_PROXY=2 on the observed custom-domain path, multiple clients using the
+same Cloudflare edge share a rate-limit bucket; one actor can exhaust that bucket.
+The forged-XFF curl test was not performed: refreshing the page injected no header.
+Raw Render hostname IP/spoofing results were not supplied in this verification.
+Numeric hop-count trust is positional, not proxy-identity verification. A selected
+Cloudflare-looking address alone does not prove header sanitization or safety on
+shorter/direct ingress paths. Verify all reachable paths with forged XFF headers.
+Candidate: use CF-Connecting-IP only after enforcing/validating trusted Cloudflare
+ingress, with Cloudflare IP allowlisting at the appropriate ingress boundary or a
+verified, sanitized intermediary chain. Do not trust that header based solely on
+loopback req.socket.remoteAddress or unverified forwarded-address claims.
+Alternative: TRUST_PROXY=3 requires real-client-IP and spoofing verification on
+both custom-domain and direct Render paths before changing the deployment value.
+IP-based buckets are per client IP, not per user account; shared public IPs remain shared.
+No resolver, rate-limiter/keyGenerator, CSRF, cookie, or session-adapter changes in
+this cleanup. Keep TRUST_PROXY=2; follow-up is outside MVP scope.

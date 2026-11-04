@@ -108,22 +108,6 @@ function createApplication({ poolProvider = getPool, authOptions = {}, avatarOpt
   app.get('/account', context.sessionMiddleware, (req, res) => {
     res.set('Cache-Control', 'no-store').sendFile(path.join(staticPath, 'account.html'));
   });
-  // Temporary production diagnostic; preserve the reviewed response-persistence boundary.
-  app.get('/__debug/ip', context.sessionMiddleware, context.auth.verifyToken, context.auth.checkAdmin,
-    async (req, res, next) => {
-      try {
-        res.set('Cache-Control', 'no-store');
-        const xff = req.headers['x-forwarded-for'];
-        const data = {
-          ip: req.ip,
-          xff: typeof xff === 'string' ? xff : null,
-          remote: req.socket?.remoteAddress || null,
-          hops: xff ? String(xff).split(',').map(s => s.trim()).length : 0
-        };
-        await context.adapter.persistResponse(req, res);
-        res.json(data);
-      } catch (error) { next(error); }
-    });
   if (staticFiles) {
     for (const [route, name] of [['/', 'dashboard'], ['/dashboard', 'dashboard'], ['/register', 'register'], ['/login', 'login']]) app.get(route, page(path.join(staticPath, name + '.html')));
     app.use(express.static(path.join(__dirname, '../public')));

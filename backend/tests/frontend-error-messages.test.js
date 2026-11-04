@@ -120,7 +120,25 @@ const EXPECTED_MESSAGES = [
   ['MISSING_CREDENTIALS', 'يرجى تسجيل الدخول للمتابعة'],
   ['PAYMENT_ALREADY_DECIDED', 'تم اتخاذ قرار بشأن هذه الدفعة بالفعل'],
   ['IDEMPOTENCY_CONFLICT', 'تعارض في مفتاح العملية. راجع العملية الأصلية ولا تنشئ عملية جديدة'],
-  ['INSUFFICIENT_FUNDS', 'الرصيد غير كافٍ لإتمام العملية']
+  ['INSUFFICIENT_FUNDS', 'الرصيد غير كافٍ لإتمام العملية'],
+  ['INVALID_SUBMISSION_ID', 'رقم طلب الإيداع غير صالح. أعد تحميل الصفحة قبل الإرسال'],
+  ['INVALID_PAYMENT_UPLOAD', 'إيصال الدفع مطلوب. اختر صورة JPEG أو PNG أو WebP صالحة حتى 5 ميغابايت'],
+  ['INVALID_PAYMENT_METHOD', 'اختر وسيلة دفع صالحة'],
+  ['INVALID_PAYMENT_AMOUNT', 'المبلغ غير صالح. أدخل مبلغاً ضمن الحدود المعروضة بمنزلتين عشريتين كحد أقصى'],
+  ['INVALID_PAYMENT_NOTE', 'الملاحظة يجب ألا تتجاوز 500 حرف ولا تحتوي على < أو >'],
+  ['PAYMENT_SUBMISSION_EXISTS', 'يوجد طلب بهذا الرقم بالفعل. تحقق من حالته ولا ترسل طلباً جديداً.'],
+  ['PAYMENT_SUBMISSION_OUTCOME_UNKNOWN', 'لم تتأكد نتيجة الإرسال. تحقق من حالة الطلب ولا تكرر رفع الإيصال.'],
+  ['RECEIPT_STORAGE_UNAVAILABLE', 'تعذر حفظ الإيصال. تحقق من حالة الطلب ولا تكرر رفع الإيصال.'],
+  ['INVALID_RECEIPT_STORAGE', 'تعذر التحقق من حفظ الإيصال. تحقق من حالة الطلب ولا تكرر رفع الإيصال.'],
+  ['PAYMENT_SUBMISSION_UNAVAILABLE', 'خدمة إرسال الطلب غير متاحة. تحقق من حالة الطلب قبل أي محاولة جديدة.'],
+  ['RESOURCE_READ_UNAVAILABLE', 'تعذر التحقق من حالة الطلب. حاول التحقق مرة أخرى بعد دقائق.'],
+  ['storage_failure_before_dispatch', 'تعذر حفظ رقم الطلب على هذا الجهاز. لم يتم إرسال الطلب.'],
+  ['unknown_outcome', 'تم الإرسال لكن لم نتأكد من النتيجة. يرجى التحقق من الحالة.'],
+  ['duplicate_submission', 'يوجد طلب بهذا الرقم بالفعل. تحقق من حالته ولا ترسل طلباً جديداً.'],
+  ['receipt_too_large', 'الملف أكبر من 5 ميغابايت. صغّر الصورة وأعد المحاولة.'],
+  ['submission_acknowledged', 'تم إرسال طلبك بنجاح — قيد مراجعة الإدارة. لم يضف الرصيد بعد.'],
+  ['submission_recovered', 'تم إرسال طلبك بنجاح. راجع دفعاتي لمعرفة الحالة الحالية.'],
+  ['unresolved_submission', 'لا يزال قيد المعالجة. حاول مرة أخرى بعد دقائق']
 ];
 const EXPECTED_FIELDS = [
   ['INVALID_USERNAME', 'usernameError'], ['USER_USERNAME_TAKEN', 'usernameError'],

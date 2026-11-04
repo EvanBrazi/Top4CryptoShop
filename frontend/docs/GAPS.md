@@ -416,3 +416,11 @@ both custom-domain and direct Render paths before changing the deployment value.
 IP-based buckets are per client IP, not per user account; shared public IPs remain shared.
 No resolver, rate-limiter/keyGenerator, CSRF, cookie, or session-adapter changes in
 this cleanup. Keep TRUST_PROXY=2; follow-up is outside MVP scope.
+
+## G-TOPUP-INSTRUCTIONS-01 (P2 → C5e.1b.2 or C6)
+Top-up UI does not show real payment instructions (bank account numbers,
+wallet addresses, merchant IDs) because the legacy wallettab.js contains
+sample/placeholder data. Operator-provided instructions must be supplied
+and approved separately before they can be displayed. Backend validates
+receipt metadata only; it does not verify that the payment was sent to a
+real destination.

@@ -51,6 +51,9 @@ function dom() {
         if (!handlers.has(type)) handlers.set(type, []);
         handlers.get(type).push(handler);
       },
+      removeEventListener(type, handler) {
+        handlers.set(type, (handlers.get(type) || []).filter(fn => fn !== handler));
+      },
       dispatchEvent(event) {
         return Promise.all((handlers.get(event.type) || []).map(handler => handler({ target: el, ...event })));
       },
@@ -129,8 +132,11 @@ function environment({ me = ok(account()) } = {}) {
   const auth = browser('auth.js', ['logout'], { ...globals, ...utils });
   const logout = jest.fn(auth.logout);
   const data = browser('utils/accountData.js', ['assertPageShape', 'fetchCurrentAccount', 'fetchCategory',
-    'fetchOrdersPage', 'fetchPaymentsPage', 'normalizeOrder', 'normalizePayment'], globals);
-  browser('account.js', [], { ...globals, ...data, DialogPurchase, logout });
+    'fetchOrdersPage', 'fetchPaymentsPage', 'normalizeOrder', 'normalizePayment', 'submitPayment', 'fetchSubmissionStatus'], globals);
+  const messages = browser('utils/errorMessages.js', ['getErrorMessage'], globals);
+  const submission = browser('utils/paymentSubmissionClient.js', ['PAYMENT_METHODS', 'validatePayment', 'PaymentSubmissionClient'], { ...globals, ...data });
+  const topup = browser('accountTopup.js', ['mountTopup'], { ...globals, ...messages, ...submission });
+  browser('account.js', [], { ...globals, ...data, ...topup, DialogPurchase, logout });
   const e = { document, localStorage, routes, catalogs, secureFetch, fetch, window, data, DialogPurchase, logout,
     node: name => document.getElementById(`account-${name}`),
     calls: endpoint => secureFetch.mock.calls.filter(([url]) => new URL(url, 'https://shop.test').pathname === endpoint),
@@ -300,10 +306,14 @@ describe('C5e.1a account dashboard (real account.js and accountData.js)', () => 
     expect(refused.node('message').dataset.kind).toBe('error'); expect(refused.node('logout').disabled).toBe(false);
   });
 
-  test('12 Top-up is Coming soon with no form or extra fetch', async () => {
+  test('12 Top-up contains submission form with no extra fetch', async () => {
     const e = await ready(); await e.tab('topup');
-    expect(e.node('panel-topup').hidden).toBe(false); expect(e.node('panel-topup').textContent).toContain('Coming soon');
-    expect(e.node('panel-topup').querySelector('form')).toBeNull(); expect(e.secureFetch).toHaveBeenCalledTimes(1);
+    expect(e.node('panel-topup').hidden).toBe(false);
+    const form = e.node('panel-topup').querySelector('form');
+    expect(form).not.toBeNull(); expect(form.querySelector('select')).not.toBeNull();
+    expect(form.querySelector('#account-topup-amount')).not.toBeNull();
+    expect(form.querySelector('input[type="file"]')).not.toBeNull();
+    expect(form.querySelector('button[type="submit"]')).not.toBeNull(); expect(e.secureFetch).toHaveBeenCalledTimes(1);
     expect(e.fetch).not.toHaveBeenCalled();
     for (const name of ['browse', 'orders', 'payments', 'settings']) {
       expect(e.node(`panel-${name}`).hidden).toBe(true); expect(e.node(`tab-${name}`).getAttribute('aria-pressed')).toBe('false');

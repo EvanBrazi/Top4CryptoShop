@@ -78,3 +78,15 @@ export function normalizePayment(payment) {
     createdAt: payment.createdAt
   };
 }
+
+// Keep structured transport results: POST is 201, recovery is a 200 union.
+export async function submitPayment(formData, submissionId) {
+  return secureFetch('/api/payments', {
+    method: 'POST', body: formData, headers: { 'x-submission-id': submissionId }
+  });
+}
+export async function fetchSubmissionStatus(submissionId) {
+  return secureFetch(`/api/payments/submissions/${encodeURIComponent(submissionId)}`, {
+    method: 'GET', cache: 'no-store'
+  });
+}

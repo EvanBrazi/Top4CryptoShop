@@ -44,7 +44,7 @@
       <button id="account-tab-topup" class="account-button"
         type="button" data-account-tab="topup"
         aria-controls="account-panel-topup"
-        aria-pressed="false">إضافة الرصيد — قريبًا</button>
+        aria-pressed="false">إضافة رصيد</button>
       <button id="account-tab-settings" class="account-button"
         type="button" data-account-tab="settings"
         aria-controls="account-panel-settings"
@@ -118,7 +118,29 @@
     <section id="account-panel-topup" class="account-panel"
       aria-labelledby="account-tab-topup" hidden>
       <h2>إضافة الرصيد</h2>
-      <p>قريبًا — Coming soon. إضافة الرصيد غير متاحة من هذه الصفحة بعد.</p>
+      <p>أرسل إثبات الدفع للمراجعة. لا يضاف الرصيد حتى موافقة الإدارة؛ هذه الصفحة لا تنفذ تحويلات.</p>
+      <form id="account-topup-form" class="account-topup-form" novalidate>
+        <label for="account-topup-method">وسيلة الدفع</label>
+        <select id="account-topup-method" required aria-describedby="account-topup-limits">
+          <option value="">اختر وسيلة الدفع</option>
+        </select>
+        <p id="account-topup-limits" class="account-topup-guidance" aria-live="polite"></p>
+        <label for="account-topup-amount">المبلغ بعملة وسيلة الدفع</label>
+        <input id="account-topup-amount" type="text" inputmode="decimal" required
+          autocomplete="off" aria-describedby="account-topup-limits">
+        <label for="account-topup-note">ملاحظة (اختياري)</label>
+        <textarea id="account-topup-note" maxlength="500" rows="3"></textarea>
+        <label for="account-topup-receipt">إيصال الدفع (مطلوب)</label>
+        <input id="account-topup-receipt" type="file" accept="image/jpeg,image/png,image/webp"
+          required aria-describedby="account-topup-file-guide">
+        <p id="account-topup-file-guide" class="account-topup-guidance">JPEG, PNG, WebP — حتى 5 ميغابايت</p>
+        <button id="account-topup-submit" class="account-button" type="submit" disabled>إرسال طلب إضافة رصيد</button>
+      </form>
+      <p id="account-topup-message" class="account-message" role="status" aria-live="polite"></p>
+      <div id="account-topup-recovery" class="account-topup-recovery" hidden>
+        <p>لديك محاولة إيداع قيد التحقق</p>
+        <button id="account-topup-check" class="account-button" type="button">تحقق من الحالة</button>
+      </div>
     </section>
 
     <section id="account-panel-settings" class="account-panel"

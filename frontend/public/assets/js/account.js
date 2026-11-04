@@ -1,6 +1,7 @@
 import { fetchCurrentAccount, fetchCategory, fetchOrdersPage, fetchPaymentsPage, normalizeOrder, normalizePayment } from './utils/accountData.js';
 import { DialogPurchase } from './dialogs/purchaseDialog.js';
 import { logout } from './auth.js';
+import { mountTopup } from './accountTopup.js';
 
 const byId = id => document.getElementById(`account-${id}`);
 const tabs = [...document.querySelectorAll('[data-account-tab]')];
@@ -12,6 +13,7 @@ const histories = {
 for (const state of Object.values(histories)) {
   Object.assign(state, { loaded: false, loading: false, nextBefore: null, version: 0 });
 }
+let topup;
 let category = null, catalogVersion = 0, initializing = false, redirected = false;
 
 function unauthenticated(error) {
@@ -43,6 +45,7 @@ function element(tag, className, text) {
   return node;
 }
 function selectTab(name, lazy = true) {
+  if (name === 'topup') topup?.refresh();
   for (const tab of tabs) tab.setAttribute('aria-pressed', String(tab.dataset.accountTab === name));
   for (const panel of panels) panel.hidden = panel.id !== `account-panel-${name}`;
   const state = histories[name];
@@ -58,6 +61,16 @@ async function initialize() {
     const account = await fetchCurrentAccount();
     if (redirected) return;
     renderHeader(account);
+    topup = mountTopup(account.id, { isActive: () => !redirected, onCommitted: async payment => {
+      await loadHistory('payments', true);
+      if (redirected || payment?.status !== 'completed') return;
+      try {
+        const current = await fetchCurrentAccount();
+        if (!redirected) renderHeader(current);
+      } catch (error) {
+        if (!unauthenticated(error)) byId('message').textContent = errorMessage(error);
+      }
+    } });
     document.querySelector('.account-gate').hidden = true;
     byId('shell').hidden = false;
   } catch (error) {
@@ -191,6 +204,7 @@ byId('logout').addEventListener('click', async () => {
     const result = await logout();
     if (result?.success) {
       redirected = true;
+      topup?.destroy();
       window.location.replace('/login.html');
       return;
     }

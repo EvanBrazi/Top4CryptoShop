@@ -88,3 +88,41 @@
 .account-message[data-kind="error"] {
   color: var(--error-color, #dc3545);
 }
+
+.account-topup-form {
+  display: grid;
+  gap: var(--space-sm);
+  max-width: 540px;
+}
+.account-topup-form label {
+  font-weight: bold;
+}
+.account-topup-form input,
+.account-topup-form select,
+.account-topup-form textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: var(--space-sm);
+  border: 1px solid var(--dialog-border, #ddd);
+  border-radius: var(--radius-md);
+  background: var(--card-bg, #fffaf2);
+  color: inherit;
+  font: inherit;
+}
+.account-topup-form :focus-visible {
+  outline: 3px solid var(--navbar-color, #6e4c2f);
+  outline-offset: 3px;
+}
+.account-topup-guidance {
+  margin-block: var(--space-sm);
+  overflow-wrap: anywhere;
+}
+.account-topup-recovery {
+  max-width: 540px;
+  padding: var(--space-md);
+  border: 1px solid var(--navbar-color, #6e4c2f);
+  border-radius: var(--radius-md);
+}
+.account-topup-recovery[hidden] {
+  display: none;
+}

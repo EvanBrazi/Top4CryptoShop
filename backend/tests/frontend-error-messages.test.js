@@ -138,7 +138,13 @@ const EXPECTED_MESSAGES = [
   ['receipt_too_large', 'الملف أكبر من 5 ميغابايت. صغّر الصورة وأعد المحاولة.'],
   ['submission_acknowledged', 'تم إرسال طلبك بنجاح — قيد مراجعة الإدارة. لم يضف الرصيد بعد.'],
   ['submission_recovered', 'تم إرسال طلبك بنجاح. راجع دفعاتي لمعرفة الحالة الحالية.'],
-  ['unresolved_submission', 'لا يزال قيد المعالجة. حاول مرة أخرى بعد دقائق']
+  ['unresolved_submission', 'لا يزال قيد المعالجة. حاول مرة أخرى بعد دقائق'],
+  ['ORDER_ALREADY_DECIDED', 'تم اتخاذ قرار بشأن هذا الطلب بالفعل'], ['INVALID_FINANCIAL_REASON', 'سبب القرار غير صالح. تحقق من الطول والمحارف المسموحة'], ['INVALID_IDEMPOTENCY_KEY', 'مفتاح القرار غير صالح. راجع القرار المحفوظ قبل المحاولة مجدداً'],
+  ['INVALID_FINANCIAL_INPUT', 'بيانات القرار غير صالحة. تحقق منها قبل الإرسال'], ['ORDER_NOT_FOUND', 'الطلب غير موجود أو لم يعد متاحاً'], ['FINANCIAL_OUTCOME_UNKNOWN', 'لم تتأكد نتيجة القرار. تحقق باستخدام القرار المحفوظ، ولا تنشئ قراراً جديداً'],
+  ['FINANCIAL_FORBIDDEN', 'لا تملك صلاحية تنفيذ هذا القرار'], ['FINANCIAL_UNAVAILABLE', 'خدمة القرارات غير متاحة. احتفظ بالقرار المحفوظ وتحقق من حالته'], ['FINANCIAL_RETRY_EXHAUSTED', 'خدمة القرارات غير متاحة. احتفظ بالقرار المحفوظ وتحقق من حالته'],
+  ['FINANCIAL_USER_INACTIVE', 'حساب المستخدم غير نشط. تعذر تنفيذ القرار'], ['BALANCE_CONFLICT', 'تغيّر الرصيد أثناء المعالجة. احتفظ بالقرار المحفوظ وراجع النتيجة'], ['ORDER_RECONCILIATION_REQUIRED', 'تتطلب العملية مراجعة مالية. لا تكرر القرار أو تغيّره'],
+  ['PAYMENT_RECONCILIATION_REQUIRED', 'تتطلب العملية مراجعة مالية. لا تكرر القرار أو تغيّره'], ['FINANCIAL_RECONCILIATION_REQUIRED', 'تتطلب العملية مراجعة مالية. لا تكرر القرار أو تغيّره'], ['BALANCE_RECONCILIATION_REQUIRED', 'تتطلب العملية مراجعة مالية. لا تكرر القرار أو تغيّره'],
+  ['MONEY_OVERFLOW', 'المبلغ خارج الحدود المالية المدعومة'], ['MONEY_MIRROR_UNREPRESENTABLE', 'المبلغ خارج الحدود المالية المدعومة']
 ];
 const EXPECTED_FIELDS = [
   ['INVALID_USERNAME', 'usernameError'], ['USER_USERNAME_TAKEN', 'usernameError'],

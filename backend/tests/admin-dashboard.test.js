@@ -105,7 +105,7 @@ function environment({ me = response(200, account()) } = {}) {
     if (!handler) throw new Error(`Unexpected request: ${url}`);
     return handler(target, options);
   });
-  const window = { fetch, location: { href: 'https://shop.test/admin', origin: 'https://shop.test', replace: jest.fn() } };
+  const window = { fetch, location: { href: 'https://shop.test/admin', origin: 'https://shop.test', replace: jest.fn() }, addEventListener: jest.fn() };
   const navigator = { clipboard: { writeText: jest.fn(async () => {}) } };
   const WebSocket = jest.fn(() => { throw new Error('WebSocket forbidden'); });
   const setInterval = jest.fn(() => { throw new Error('Auto-refresh forbidden'); });
@@ -117,8 +117,11 @@ function environment({ me = response(200, account()) } = {}) {
   const logout = jest.fn(auth.logout);
   const data = browser('utils/adminData.js', ['fetchCurrentAdmin', 'fetchOrdersPage', 'fetchPaymentsPage', 'fetchUsersPage',
     'assertPageShape', 'formatBalance', 'normalizeOrder', 'normalizePayment', 'normalizeUser'], { ...globals, ...transport });
-  browser('admin.js', [], { ...globals, ...data, logout, logVersionBanner: jest.fn() });
-  const e = { document, localStorage, routes, fetch, window, navigator, WebSocket, setInterval, data, logout,
+  const decisionClient = { decide: jest.fn(), pendingDecisions: jest.fn(() => []), recoverDecision: jest.fn(), discardConfirmedDecision: jest.fn() };
+  const OrderDecisionClient = jest.fn(() => decisionClient);
+  const mountAdminDecisions = jest.fn(() => ({ open: jest.fn(), close: jest.fn(), refreshPending: jest.fn(), destroy: jest.fn() }));
+  browser('admin.js', [], { ...globals, ...data, logout, logVersionBanner: jest.fn(), OrderDecisionClient, mountAdminDecisions });
+  const e = { document, localStorage, routes, fetch, window, navigator, WebSocket, setInterval, data, logout, decisionClient, mountAdminDecisions,
     node: name => document.getElementById(`admin-${name}`),
     calls: endpoint => fetch.mock.calls.filter(([url]) => new URL(url, 'https://shop.test').pathname === endpoint),
     async tab(name) { await e.node(`tab-${name}`).click(); await settle(); },
@@ -128,7 +131,7 @@ function environment({ me = response(200, account()) } = {}) {
   return e;
 }
 async function ready(options) { const e = environment(options); await settle(); return e; }
-function values(e, name) { return e.row(name).children.slice(0, -1).map(cell => cell.textContent); }
+function values(e, name) { return e.row(name).children.slice(0, name === 'orders' ? -2 : -1).map(cell => cell.textContent); }
 function expectRedirect(e) { expect(e.window.location.replace).toHaveBeenCalledWith('/login.html'); }
 
 // Execute the actual page-composition source block to verify guards, aliases and persistence ordering.
@@ -331,7 +334,7 @@ describe('C5e.2a minimal admin dashboard: real scripts, transport, auth and HTML
     expect(failed.node('orders-state').textContent).toBe('لا توجد طلبات معلقة');
   });
 
-  test('15 admin calls no marketplace/disabled endpoints and imports no legacy managers or decision UI', async () => {
+  test('15 admin reads only on load, mounts orders decisions and imports no legacy managers', async () => {
     const e = await ready(); await e.tab('payments'); await e.tab('users');
     const endpoints = e.fetch.mock.calls.map(([url]) => new URL(url, 'https://shop.test').pathname);
     expect(endpoints).toEqual(['/api/users/me', '/api/orders/admin', '/api/payments/admin', '/api/users']);
@@ -342,8 +345,11 @@ describe('C5e.2a minimal admin dashboard: real scripts, transport, auth and HTML
       expect(source).not.toMatch(/(?:appmanager|usermanager|homepage|adminOrders|purchaseClient|orderClient)\.js/);
       expect(source).not.toMatch(/\/accept|\/reject/);
     }
-    expect(e.node('info').textContent).toContain('Decision UI coming in C5e.2b');
-    expect(e.node('info').querySelector('script')).toBeNull(); expect(e.document.querySelector('form')).toBeNull();
+    expect(e.node('info').textContent).toContain('قرارات الطلبات');
+    expect(e.node('info').querySelector('script')).toBeNull();
+    expect(e.document.querySelector('dialog form').getAttribute('method')).toBe('dialog');
+    expect(e.mountAdminDecisions).toHaveBeenCalledWith(expect.objectContaining({ adminId: 'admin-owner' }));
+    expect(e.decisionClient.decide).not.toHaveBeenCalled(); expect(e.decisionClient.recoverDecision).not.toHaveBeenCalled();
     expect(e.document.querySelectorAll('script').map(node => node.getAttribute('src'))).toEqual(['/assets/js/admin.js']);
     expect(e.localStorage.setItem).not.toHaveBeenCalled(); expect(e.localStorage.removeItem).not.toHaveBeenCalled();
   });

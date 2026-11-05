@@ -1,6 +1,8 @@
 import { fetchCurrentAdmin, fetchOrdersPage, fetchPaymentsPage, fetchUsersPage, normalizeOrder, normalizePayment, normalizeUser } from './utils/adminData.js';
 import { logout } from './auth.js';
 import { logVersionBanner } from './utils/version.js';
+import { OrderDecisionClient } from './utils/orderDecisionClient.js';
+import { mountAdminDecisions } from './adminDecisionModal.js';
 logVersionBanner();
 
 const byId = id => document.getElementById(`admin-${id}`);
@@ -12,11 +14,23 @@ const lists = {
   users: { fetchPage: fetchUsersPage, normalize: normalizeUser, empty: 'لا يوجد مستخدمون', copy: 'نسخ معرف المستخدم' }
 };
 for (const state of Object.values(lists)) Object.assign(state, { loaded: false, loading: false, nextBefore: null });
-let initializing = false, blocked = false;
+let initializing = false, blocked = false, currentAdminId = null, decisions = null, refreshOrders = false;
+const orderItems = new Map(), retiredOrders = new Set();
+function finishOrder(orderId, message) {
+  retiredOrders.add(orderId);
+  for (const row of byId('orders-body').children) if (row.dataset.adminOrderId === orderId) row.remove();
+  byId('message').dataset.kind = '';
+  byId('message').textContent = message;
+  if (lists.orders.loading) refreshOrders = true;
+  else void loadPage('orders', true);
+}
 
 function deny(error) {
   if (!['UNAUTHENTICATED', 'FORBIDDEN'].includes(error?.code)) return false;
   blocked = true;
+  currentAdminId = null;
+  decisions?.destroy();
+  orderItems.clear();
   byId('shell').hidden = true;
   byId('gate-retry').hidden = true;
   document.querySelector('.admin-gate').hidden = false;
@@ -62,6 +76,16 @@ async function initialize() {
     byId('role').textContent = 'Admin';
     document.querySelector('.admin-gate').hidden = true;
     byId('shell').hidden = false;
+    currentAdminId = account.id;
+    const adminId = currentAdminId;
+    const isActive = () => !blocked && currentAdminId === adminId && !byId('logout').disabled;
+    const client = new OrderDecisionClient({ isActive });
+    decisions = mountAdminDecisions({ client, adminId, isActive, getOrder: id => orderItems.get(id),
+      onSuccess: ({ orderId }) => finishOrder(orderId, 'تم تنفيذ القرار بنجاح'),
+      onUnknown: () => decisions.refreshPending(),
+      onAlreadyDecided: ({ orderId }) => finishOrder(orderId, 'قرار سابق موجود'),
+      onAuthFailure: error => deny({ code: error.status === 403 ? 'FORBIDDEN' : 'UNAUTHENTICATED' })
+    });
     selectTab('orders');
   } catch (error) {
     if (deny(error)) return;
@@ -93,6 +117,7 @@ async function copyId(id, button) {
 }
 function appendRows(name, items) {
   for (const item of items) {
+    if (name === 'orders' && retiredOrders.has(item.orderId)) continue;
     const row = lists[name].normalize(item), tr = element('tr');
     row.cells.forEach((value, index) => tr.appendChild(element('td', row.ltr.includes(index) ? 'admin-ltr' : '', value)));
     const cell = element('td'), copy = element('button', 'admin-button', lists[name].copy);
@@ -102,8 +127,22 @@ function appendRows(name, items) {
     copy.addEventListener('click', () => void copyId(row.id, copy));
     cell.appendChild(copy);
     tr.appendChild(cell);
+    if (name === 'orders') {
+      tr.dataset.adminOrderId = row.id;
+      orderItems.set(row.id, item);
+      const actions = element('td', 'admin-decision-actions');
+      if (item.status === 'pending') for (const [action, label] of [['accept', 'قبول'], ['reject', 'رفض']]) {
+        const button = element('button', 'admin-button', label);
+        button.type = 'button'; button.dataset.adminDecision = row.id;
+        button.setAttribute('aria-label', `${label} الطلب: ${row.id}`);
+        button.addEventListener('click', () => decisions.open({ order: item, action, trigger: button }));
+        actions.appendChild(button);
+      }
+      tr.appendChild(actions);
+    }
     byId(`${name}-body`).appendChild(tr);
   }
+  if (name === 'orders') decisions.refreshPending();
 }
 async function loadPage(name, reset = false) {
   const state = lists[name];
@@ -119,6 +158,7 @@ async function loadPage(name, reset = false) {
     state.nextBefore = null;
     more.hidden = true;
     byId(`${name}-body`).textContent = '';
+    if (name === 'orders') orderItems.clear();
   }
   try {
     const page = await state.fetchPage({ before: reset ? null : state.nextBefore });
@@ -137,6 +177,10 @@ async function loadPage(name, reset = false) {
     state.loading = false;
     more.disabled = false;
     retry.disabled = false;
+    if (name === 'orders' && refreshOrders && !blocked) {
+      refreshOrders = false;
+      void loadPage('orders', true);
+    }
   }
 }
 
@@ -155,6 +199,8 @@ byId('logout').addEventListener('click', async () => {
     const result = await logout();
     if (result?.success) {
       blocked = true;
+      currentAdminId = null;
+      decisions?.destroy();
       window.location.replace('/login.html');
       return;
     }
@@ -167,6 +213,9 @@ byId('logout').addEventListener('click', async () => {
     if (deny(error)) return;
     byId('message').dataset.kind = 'error';
     byId('message').textContent = 'تعذر تسجيل الخروج. يرجى إعادة المحاولة.';
-  } finally { button.disabled = false; }
+  } finally { button.disabled = false; if (!blocked) decisions?.refreshPending(); }
+});
+window.addEventListener('pagehide', () => {
+  blocked = true; currentAdminId = null; decisions?.destroy();
 });
 void initialize();

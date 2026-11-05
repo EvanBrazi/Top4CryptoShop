@@ -88,3 +88,51 @@
 .admin-message[data-kind="error"] {
   color: var(--error-color, #dc3545);
 }
+.admin-decision-dialog {
+  box-sizing: border-box;
+  width: min(95vw, 600px);
+  max-height: 90vh;
+  overflow: auto;
+  padding: var(--space-lg);
+  border: 1px solid var(--dialog-border, #ddd);
+  border-radius: var(--radius-md);
+  color: var(--text-color, #2b2b2b);
+  background: var(--card-bg, #fffaf2);
+}
+.admin-decision-dialog::backdrop {
+  background: rgb(0 0 0 / 55%);
+}
+.admin-decision-details {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-sm);
+  overflow-wrap: anywhere;
+}
+.admin-decision-details dd { margin: 0; }
+.admin-decision-dialog textarea {
+  box-sizing: border-box;
+  width: 100%;
+  margin-block: var(--space-sm);
+  padding: var(--space-sm);
+  color: inherit;
+  background: inherit;
+  font: inherit;
+}
+.admin-decision-dialog textarea:focus-visible {
+  outline: 3px solid var(--navbar-color, #6e4c2f);
+}
+.admin-decision-actions { display: flex; flex-wrap: wrap; gap: var(--space-sm); }
+#admin-decision-error { color: var(--error-color, #dc3545); }
+#admin-decisions-pending { padding: var(--space-sm); border: 1px solid var(--dialog-border, #ddd); }
+#admin-decision-progress::before {
+  content: '';
+  display: inline-block;
+  width: 0.8em; height: 0.8em;
+  margin-inline-end: var(--space-sm);
+  border: 2px solid currentColor;
+  border-inline-end-color: transparent;
+  border-radius: 50%;
+  animation: admin-spin 1s linear infinite;
+}
+@keyframes admin-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { #admin-decision-progress::before { animation: none; } }

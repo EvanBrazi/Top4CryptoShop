@@ -20,8 +20,8 @@
       <span id="admin-role" class="admin-badge"></span>
       <button id="admin-logout" class="admin-button" type="button">تسجيل الخروج</button>
     </header>
-    <p id="admin-info" class="admin-info" lang="en" dir="ltr">
-      Decision UI coming in C5e.2b. For now, use browser Console with copied IDs.
+    <p id="admin-info" class="admin-info">
+      قرارات الطلبات متاحة للإدارة. المدفوعات والمستخدمون للعرض فقط.
     </p>
     <p id="admin-message" class="admin-message" role="status" aria-live="polite"></p>
     <div id="admin-copy-box" class="admin-copy-box" hidden>
@@ -39,11 +39,15 @@
     </nav>
     <section id="admin-panel-orders" class="admin-panel" aria-labelledby="admin-tab-orders">
       <h2>الطلبات المعلقة</h2>
+      <section id="admin-decisions-pending" aria-label="قرارات محفوظة" hidden>
+        <p role="status" aria-live="polite">لديك قرارات قيد التحقق. تحقق من الحالة</p>
+        <ul id="admin-decisions-list"></ul>
+      </section>
       <p id="admin-orders-state" role="status" aria-live="polite"></p>
       <button id="admin-orders-retry" class="admin-button" type="button" hidden>إعادة المحاولة</button>
       <div class="admin-table-container">
         <table class="admin-table">
-          <caption>قائمة الطلبات المعلقة — عرض فقط</caption>
+          <caption>قائمة الطلبات المعلقة — قبول أو رفض</caption>
           <thead><tr>
             <th scope="col">رقم الطلب</th>
             <th scope="col">معرف المستخدم</th>
@@ -52,6 +56,7 @@
             <th scope="col">الحالة</th>
             <th scope="col">التاريخ</th>
             <th scope="col">نسخ المعرف</th>
+            <th scope="col">إجراءات</th>
           </tr></thead>
           <tbody id="admin-orders-body"></tbody>
         </table>
@@ -101,6 +106,31 @@
       <button id="admin-users-more" class="admin-button" type="button" hidden>تحميل المزيد</button>
     </section>
   </main>
+  <dialog id="admin-decision-dialog" class="admin-decision-dialog"
+          aria-labelledby="admin-decision-title" aria-describedby="admin-decision-help">
+    <form id="admin-decision-form" method="dialog" novalidate>
+      <h2 id="admin-decision-title"></h2>
+      <dl class="admin-decision-details">
+        <dt>رقم الطلب</dt><dd id="admin-decision-order-id" dir="ltr"></dd>
+        <dt>معرف المستخدم</dt><dd id="admin-decision-user-id" dir="ltr"></dd>
+        <dt>الخدمة</dt><dd id="admin-decision-service"></dd>
+        <dt>المبلغ</dt><dd id="admin-decision-amount" dir="ltr"></dd>
+        <dt>الحالة</dt><dd id="admin-decision-status"></dd>
+      </dl>
+      <p id="admin-decision-help">أدخل سبباً من 10 إلى 500 محرف، في سطر واحد ومن دون المحارف المحظورة.</p>
+      <label for="admin-decision-reason">سبب القرار</label>
+      <textarea id="admin-decision-reason" required minlength="10" maxlength="500" rows="2"
+                aria-describedby="admin-decision-help admin-decision-error"></textarea>
+      <p id="admin-decision-error" role="alert" hidden></p>
+      <p id="admin-decision-unknown" role="status" hidden>قيد التحقق</p>
+      <p id="admin-decision-progress" role="status" hidden>جارٍ الإرسال…</p>
+      <div class="admin-decision-actions">
+        <button id="admin-decision-submit" class="admin-button" type="submit">تأكيد القرار</button>
+        <button id="admin-decision-recover" class="admin-button" type="button" hidden>تحقق من الحالة</button>
+        <button id="admin-decision-cancel" class="admin-button" type="button">إلغاء</button>
+      </div>
+    </form>
+  </dialog>
   <script type="module" src="/assets/js/admin.js"></script>
 </body>
 </html>

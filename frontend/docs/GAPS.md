@@ -424,3 +424,24 @@ sample/placeholder data. Operator-provided instructions must be supplied
 and approved separately before they can be displayed. Backend validates
 receipt metadata only; it does not verify that the payment was sent to a
 real destination.
+
+## G-AUTH-STALE-SESSION-01 (P1 → C6 — auth hardening)
+During v1.6.0 manual testing, the following symptom was observed but could
+not be reproduced after several hours:
+- User logged in, closed tab, returned after session TTL.
+- / redirected to marketing page (expected, session expired).
+- Attempts to login or register returned errors until browser site-data
+  (cookies + localStorage) was cleared.
+- After some hours, the symptom disappeared without code changes.
+- Likely cause: rate limiter window exhaustion (multiple failed attempts
+  within 15 minutes) or stale cookies (session_token, customSessionId,
+  x-csrf-token) conflicting with new session creation.
+Not reproducible at time of recording; no fix applied. Investigation
+deferred to C6:
+- Confirm whether verifyToken runs on /api/auth/login or /api/auth/register.
+- Ensure stale cookies are cleared on login POST success.
+- Ensure CSRF failure clears x-csrf-token cookie.
+- Add frontend recovery: if AUTH_ALREADY_AUTHENTICATED but session-info
+  returns 401, force logout + retry once.
+- Add explicit Arabic message for 429 rate-limit response on auth endpoints
+  (currently relies on rate-limit middleware response, verify UI displays it).

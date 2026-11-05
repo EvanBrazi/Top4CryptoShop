@@ -136,7 +136,7 @@ function environment({ me = ok(account()) } = {}) {
   const messages = browser('utils/errorMessages.js', ['getErrorMessage'], globals);
   const submission = browser('utils/paymentSubmissionClient.js', ['PAYMENT_METHODS', 'validatePayment', 'PaymentSubmissionClient'], { ...globals, ...data });
   const topup = browser('accountTopup.js', ['mountTopup'], { ...globals, ...messages, ...submission });
-  browser('account.js', [], { ...globals, ...data, ...topup, DialogPurchase, logout });
+  browser('account.js', [], { ...globals, ...data, ...topup, DialogPurchase, logout, logVersionBanner: jest.fn() });
   const e = { document, localStorage, routes, catalogs, secureFetch, fetch, window, data, DialogPurchase, logout,
     node: name => document.getElementById(`account-${name}`),
     calls: endpoint => secureFetch.mock.calls.filter(([url]) => new URL(url, 'https://shop.test').pathname === endpoint),

@@ -1,4 +1,5 @@
-console.info('[Top4] v1.0.0 loaded');
+import { logVersionBanner } from './utils/version.js';
+logVersionBanner();
 // عناصر DOM
 const menuBtn = document.getElementById('menuBtn');
 const closeBtn = document.getElementById('closeBtn');

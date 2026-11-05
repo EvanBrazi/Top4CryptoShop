@@ -111,7 +111,7 @@ async function environment({ localStorage = storage(), owner = OWNER } = {}) {
   const topup = browser('accountTopup.js', ['mountTopup'], { ...globals, ...messages, ...submission });
   const { STORAGE_KEYS } = browser('utils/appUtils.js', ['STORAGE_KEYS'], globals);
   const auth = browser('auth.js', ['logout'], { ...globals, ...transport, STORAGE_KEYS });
-  browser('account.js', [], { ...globals, ...data, ...topup, ...auth, DialogPurchase: jest.fn() });
+  browser('account.js', [], { ...globals, ...data, ...topup, ...auth, DialogPurchase: jest.fn(), logVersionBanner: jest.fn() });
   await settle();
   const e = { ...globals, ...messages, ...transport, ...data, ...submission, ...auth, routes, server, account, uuid,
     node: name => document.getElementById(`account-${name}`), t: name => document.getElementById(`account-topup-${name}`),

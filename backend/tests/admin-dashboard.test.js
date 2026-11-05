@@ -117,7 +117,7 @@ function environment({ me = response(200, account()) } = {}) {
   const logout = jest.fn(auth.logout);
   const data = browser('utils/adminData.js', ['fetchCurrentAdmin', 'fetchOrdersPage', 'fetchPaymentsPage', 'fetchUsersPage',
     'assertPageShape', 'formatBalance', 'normalizeOrder', 'normalizePayment', 'normalizeUser'], { ...globals, ...transport });
-  browser('admin.js', [], { ...globals, ...data, logout });
+  browser('admin.js', [], { ...globals, ...data, logout, logVersionBanner: jest.fn() });
   const e = { document, localStorage, routes, fetch, window, navigator, WebSocket, setInterval, data, logout,
     node: name => document.getElementById(`admin-${name}`),
     calls: endpoint => fetch.mock.calls.filter(([url]) => new URL(url, 'https://shop.test').pathname === endpoint),

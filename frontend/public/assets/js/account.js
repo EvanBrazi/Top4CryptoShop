@@ -2,6 +2,8 @@ import { fetchCurrentAccount, fetchCategory, fetchOrdersPage, fetchPaymentsPage,
 import { DialogPurchase } from './dialogs/purchaseDialog.js';
 import { logout } from './auth.js';
 import { mountTopup } from './accountTopup.js';
+import { logVersionBanner } from './utils/version.js';
+logVersionBanner();
 
 const byId = id => document.getElementById(`account-${id}`);
 const tabs = [...document.querySelectorAll('[data-account-tab]')];

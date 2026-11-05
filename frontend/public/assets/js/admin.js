@@ -1,5 +1,7 @@
 import { fetchCurrentAdmin, fetchOrdersPage, fetchPaymentsPage, fetchUsersPage, normalizeOrder, normalizePayment, normalizeUser } from './utils/adminData.js';
 import { logout } from './auth.js';
+import { logVersionBanner } from './utils/version.js';
+logVersionBanner();
 
 const byId = id => document.getElementById(`admin-${id}`);
 const tabs = [...document.querySelectorAll('[data-admin-tab]')];
